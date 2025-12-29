@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { 
@@ -36,6 +35,12 @@ import 'html2pdf.js';
 import html2canvas from 'html2canvas';
 // Expose for components relying on window globals
 (window as any).html2canvas = (window as any).html2canvas || html2canvas;
+
+// Import Authentication Components
+import Login from './components/auth/Login';
+import AdminDashboard from './components/auth/AdminDashboard';
+import { UserProfile, AuthState } from './types/auth';
+import { supabase } from './lib/supabase';
 
 type Theme = 'light' | 'dark' | 'blue' | 'green';
 
@@ -208,6 +213,10 @@ const KPITile: React.FC<{ label: string, value: string | number, icon: React.Rea
 );
 
 const App: React.FC = () => {
+  // ============================================
+  // MAIN APPLICATION STATE - TOUS LES HOOKS DOIVENT ÊTRE ICI
+  // (React hooks must be called in the same order every render)
+  // ============================================
   const [supabaseClient] = useState<SupabaseClient | null>(initialSupabase);
   
   // AN01 States
@@ -228,27 +237,12 @@ const App: React.FC = () => {
   const [refClientsInternes, setRefClientsInternes] = useState<string[]>([]);
   const [refCpv, setRefCpv] = useState<string[]>([]);
   const [refSegSousfamilles, setRefSegSousfamilles] = useState<string[]>([]);
-
-  // Ensembles de champs regroupés pour éviter les doublons (on conserve Identification dans l'onglet principal)
-  const identificationFields = useMemo(() => new Set(PROCEDURE_GROUPS.identification.fields), []);
-  const otherGroupedProcedureFields = useMemo(() => new Set(
-    Object.entries(PROCEDURE_GROUPS)
-      .filter(([key]) => key !== 'identification')
-      .flatMap(([, group]) => group.fields)
-  ), []);
-  const rseFields = useMemo(() => new Set([
-    'Dispo sociales',
-    'Dispo environnementales',
-    "Projet ouvert à l'acquisition de solutions innovantes",
-    "Projet facilitant l'accès aux TPE/PME",
-  ]), []);
-
+  
   const [selectedAcheteurs, setSelectedAcheteurs] = useState<string[]>([]);
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([]);
   const [selectedProcTypes, setSelectedProcTypes] = useState<string[]>([]);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
-    // Par défaut, exclure "4 - Terminé" et "5 - Abandonné" des statistiques et du Gantt
     return DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5'));
   });
   const [selectedClientsInternes, setSelectedClientsInternes] = useState<string[]>([]);
@@ -282,6 +276,31 @@ const App: React.FC = () => {
     }
     return initial;
   });
+  
+  // ============================================
+  // AUTH STATE - Authentication & Authorization
+  // ============================================
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    profile: null,
+    loading: true,
+    error: null
+  });
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
+
+  // Memoized values
+  const identificationFields = useMemo(() => new Set(PROCEDURE_GROUPS.identification.fields), []);
+  const otherGroupedProcedureFields = useMemo(() => new Set(
+    Object.entries(PROCEDURE_GROUPS)
+      .filter(([key]) => key !== 'identification')
+      .flatMap(([, group]) => group.fields)
+  ), []);
+  const rseFields = useMemo(() => new Set([
+    'Dispo sociales',
+    'Dispo environnementales',
+    "Projet ouvert à l'acquisition de solutions innovantes",
+    "Projet facilitant l'accès aux TPE/PME",
+  ]), []);
 
   const themeOptions: { key: Theme; label: string }[] = [
     { key: 'light', label: 'Clair' },
@@ -289,6 +308,235 @@ const App: React.FC = () => {
     { key: 'blue', label: 'Bleu' },
     { key: 'dark', label: 'Sombre' }
   ];
+
+  // ============================================
+  // AUTH EFFECT - Manage session with onAuthStateChange
+  // ============================================
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    // Get initial session
+    const initAuth = async () => {
+      try {
+        console.log('[AUTH] Starting initialization...');
+        
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        console.log('[AUTH] Session response:', { session: !!session, error: sessionError });
+        
+        if (sessionError) throw sessionError;
+
+        if (session?.user) {
+          console.log('[AUTH] User found, fetching profile...');
+          
+          try {
+            // Timeout pour le fetch du profil (2 secondes max)
+            const profilePromise = supabase
+              .from('profiles')
+              .select('id, email, role')
+              .eq('id', session.user.id)
+              .maybeSingle();
+            
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+            );
+            
+            const { data: profileData, error: profileError } = await Promise.race([
+              profilePromise,
+              timeoutPromise
+            ]) as any;
+
+            console.log('[AUTH] Profile response:', { data: profileData, error: profileError });
+
+            if (profileError) {
+              console.error('Profile fetch error:', profileError);
+              // Utiliser l'email pour déterminer le rôle
+              const role = session.user.email?.endsWith('@gmail.com') ? 'admin' : 'user';
+              setAuthState({
+                user: session.user,
+                profile: {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  role
+                },
+                loading: false,
+                error: null
+              });
+            } else if (!profileData) {
+              console.warn('Profile not found for user, using default role');
+              const role = session.user.email?.endsWith('@gmail.com') ? 'admin' : 'user';
+              setAuthState({
+                user: session.user,
+                profile: {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  role
+                },
+                loading: false,
+                error: null
+              });
+            } else {
+              console.log('[AUTH] Profile loaded successfully:', profileData);
+              setAuthState({
+                user: session.user,
+                profile: profileData as UserProfile,
+                loading: false,
+                error: null
+              });
+            }
+          } catch (err: any) {
+            console.error('[AUTH] Profile fetch failed:', err);
+            // En cas d'erreur, utiliser un profil par défaut basé sur l'email
+            const role = session.user.email?.endsWith('@gmail.com') ? 'admin' : 'user';
+            setAuthState({
+              user: session.user,
+              profile: {
+                id: session.user.id,
+                email: session.user.email || '',
+                role
+              },
+              loading: false,
+              error: null
+            });
+          }
+        } else {
+          console.log('[AUTH] No session found');
+          setAuthState({
+            user: null,
+            profile: null,
+            loading: false,
+            error: null
+          });
+        }
+      } catch (err: any) {
+        console.error('[AUTH] Initialization error:', err);
+        setAuthState({
+          user: null,
+          profile: null,
+          loading: false,
+          error: err.message
+        });
+      }
+    };
+
+    // Timeout de sécurité - si après 5 secondes toujours en loading, on force l'arrêt
+    timeoutId = setTimeout(() => {
+      console.warn('[AUTH] Timeout - forcing loading to false');
+      setAuthState(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Timeout lors de l\'initialisation'
+      }));
+    }, 5000);
+
+    initAuth().finally(() => {
+      clearTimeout(timeoutId);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[AUTH] State changed:', event, 'Session:', !!session);
+
+      try {
+        if (session?.user) {
+          console.log('[AUTH] User signed in, fetching profile...');
+          
+          try {
+            // Timeout pour le fetch du profil (2 secondes max)
+            const profilePromise = supabase
+              .from('profiles')
+              .select('id, email, role')
+              .eq('id', session.user.id)
+              .maybeSingle();
+            
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+            );
+            
+            const { data: profileData, error: profileError } = await Promise.race([
+              profilePromise,
+              timeoutPromise
+            ]) as any;
+
+            console.log('[AUTH] Profile fetch result:', { data: profileData, error: profileError });
+
+            if (profileError) {
+              console.error('[AUTH] Profile fetch error:', profileError);
+              const role = session.user.email?.endsWith('@gmail.com') ? 'admin' : 'user';
+              setAuthState({
+                user: session.user,
+                profile: {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  role
+                },
+                loading: false,
+                error: null
+              });
+            } else if (!profileData) {
+              console.warn('[AUTH] Profile not found, using default role');
+              const role = session.user.email?.endsWith('@gmail.com') ? 'admin' : 'user';
+              setAuthState({
+                user: session.user,
+                profile: {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  role
+                },
+                loading: false,
+                error: null
+              });
+            } else {
+              console.log('[AUTH] Profile loaded successfully:', profileData);
+              setAuthState({
+                user: session.user,
+                profile: profileData as UserProfile,
+                loading: false,
+                error: null
+              });
+            }
+          } catch (err: any) {
+            console.error('[AUTH] Profile fetch failed:', err);
+            const role = session.user.email?.endsWith('@gmail.com') ? 'admin' : 'user';
+            setAuthState({
+              user: session.user,
+              profile: {
+                id: session.user.id,
+                email: session.user.email || '',
+                role
+              },
+              loading: false,
+              error: null
+            });
+          }
+        } else {
+          console.log('[AUTH] No session - user signed out');
+          setAuthState({
+            user: null,
+            profile: null,
+            loading: false,
+            error: null
+          });
+        }
+      } catch (err: any) {
+        console.error('[AUTH] Error in auth state change handler:', err);
+        setAuthState({
+          user: null,
+          profile: null,
+          loading: false,
+          error: err.message
+        });
+      }
+    });
+
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // All other refs and effects BEFORE conditional returns
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -318,6 +566,38 @@ const App: React.FC = () => {
 
   useEffect(() => { if (supabaseClient) fetchData(supabaseClient); }, [supabaseClient]);
 
+  // More refs and effects
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setOpenDropdown(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useLayoutEffect(() => {
+    const top = topScrollRef.current;
+    const body = bodyScrollRef.current;
+    if (!top || !body) return;
+
+    const syncFromTop = () => { if (body.scrollLeft !== top.scrollLeft) body.scrollLeft = top.scrollLeft; };
+    const syncFromBody = () => { if (top.scrollLeft !== body.scrollLeft) top.scrollLeft = body.scrollLeft; };
+
+    top.addEventListener('scroll', syncFromTop);
+    body.addEventListener('scroll', syncFromBody);
+    setTableScrollWidth(body.scrollWidth - body.clientWidth);
+
+    return () => {
+      top.removeEventListener('scroll', syncFromTop);
+      body.removeEventListener('scroll', syncFromBody);
+    };
+  }, [editingProject, editingProcedure]);
+
+  // Fetch files effect
   const fetchFiles = async () => {
     if (!supabaseClient) return;
     const currentId = editingProject ? editingProject.IDProjet : editingProcedure?.NumProc;
@@ -342,6 +622,153 @@ const App: React.FC = () => {
     if (activeSubTab === 'documents') fetchFiles();
   }, [activeSubTab, editingProject, editingProcedure]);
 
+  // All useMemo calculations - MUST be before conditional returns
+  const associatedProcedures = useMemo(() => {
+    if (!editingProject?.IDProjet) return [];
+    return procedures
+      .filter(p => String(getProp(p, 'IDProjet')) === String(editingProject.IDProjet))
+      .sort((a, b) => (parseFloat(String(getProp(b, 'NumProc'))) || 0) - (parseFloat(String(getProp(a, 'NumProc'))) || 0));
+  }, [procedures, editingProject]);
+
+  const uniqueTypeProcs = useMemo(() => Array.from(new Set(refProcedures.map(rp => String(getProp(rp, 'Type procédure'))).filter(Boolean))).sort(), [refProcedures]);
+  const uniqueFamilies = useMemo(() => Array.from(new Set(procedures.map(p => String(getProp(p, 'Famille Achat Principale'))).filter(Boolean))).sort(), [procedures]);
+  const uniqueTypesForFilter = useMemo(() => Array.from(new Set(procedures.map(p => String(getProp(p, 'Type de procédure'))).filter(Boolean))).sort(), [procedures]);
+  const uniqueCcagsForFilter = useMemo(() => Array.from(new Set(procedures.map(p => String(getProp(p, 'CCAG'))).filter(Boolean))).sort(), [procedures]);
+
+  const kpis = useMemo(() => {
+    const matchesAcheteur = (val: any) => selectedAcheteurs.length === 0 || selectedAcheteurs.includes(val);
+    const matchesFamily = (val: any) => selectedFamilies.length === 0 || selectedFamilies.includes(val);
+    const matchesProcType = (val: any) => selectedProcTypes.length === 0 || selectedProcTypes.includes(val);
+    const matchesPriority = (val: any) => selectedPriorities.length === 0 || selectedPriorities.includes(val);
+    const matchesStatus = (val: any) => selectedStatuses.length === 0 || selectedStatuses.includes(val);
+
+    const filteredDossiers = dossiers.filter(d => (
+      matchesAcheteur(getProp(d, 'Acheteur')) &&
+      matchesFamily(getProp(d, 'Famille Achat Principale')) &&
+      matchesProcType(getProp(d, 'Type de procédure')) &&
+      matchesPriority(getProp(d, 'Priorite')) &&
+      matchesStatus(getProp(d, 'Statut_du_Dossier'))
+    ));
+
+    const filteredProcedures = procedures.filter(p => (
+      matchesAcheteur(getProp(p, 'Acheteur')) &&
+      matchesFamily(getProp(p, 'Famille Achat Principale')) &&
+      matchesProcType(getProp(p, 'Type de procédure'))
+    ));
+
+    const nbP = filteredDossiers.length;
+    const nbProc = filteredProcedures.length;
+    const amtP = filteredDossiers.reduce((acc: number, d) => acc + (parseFloat(String(getProp(d, "Montant_previsionnel_du_marche_(_HT)_")).replace(/[^\d.]/g, '')) || 0), 0);
+    const amtProc = filteredProcedures.reduce((acc: number, p) => acc + (parseFloat(String(getProp(p, 'Montant de la procédure')).replace(/[^\d.]/g, '')) || 0), 0);
+
+    // Calculer le montant moyen par type de procédure
+    const proceduresTypeStats = filteredProcedures.reduce((acc: Record<string, { total: number; count: number }>, p) => {
+      const type = getProp(p, 'Type de procédure') || 'N/C';
+      const montant = parseFloat(String(getProp(p, 'Montant de la procédure')).replace(/[^\d.]/g, '')) || 0;
+      if (!acc[type]) acc[type] = { total: 0, count: 0 };
+      acc[type].total += montant;
+      acc[type].count += 1;
+      return acc;
+    }, {});
+    const proceduresTypeMoyenne = Object.entries(proceduresTypeStats).reduce((acc: Record<string, number>, [type, stats]) => {
+      acc[type] = (stats as any).count > 0 ? Math.ceil((stats as any).total / (stats as any).count) : 0;
+      return acc;
+    }, {});
+
+    return {
+      nbP,
+      nbProc,
+      amtP,
+      avgP: nbP > 0 ? amtP / nbP : 0,
+      amtProc,
+      avgProc: nbProc > 0 ? amtProc / nbProc : 0,
+      charts: {
+          projetsAcheteur: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Acheteur') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
+          proceduresAcheteur: filteredProcedures.reduce((acc: Record<string, number>, p) => { const v = getProp(p, 'Acheteur') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
+          proceduresType: filteredProcedures.reduce((acc: Record<string, number>, p) => { const v = getProp(p, 'Type de procédure') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
+          projetsPriorite: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Priorite') || 'Non définie'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
+          projetsClientInterne: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Client_Interne') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
+          proceduresTypeMoyenne
+      }
+    };
+  }, [dossiers, procedures, selectedAcheteurs, selectedFamilies, selectedProcTypes, selectedPriorities, selectedStatuses]);
+
+  const filteredD = useMemo(() => {
+    const matchesProjectSearch = (d: DossierData) => {
+      if (!projectSearch) return true;
+      const idVal = String(getProp(d, 'IDProjet') || '').toLowerCase();
+      return idVal.includes(projectSearch.toLowerCase());
+    };
+
+    return dossiers
+      .filter(d => (
+        (selectedAcheteurs.length === 0 || selectedAcheteurs.includes(getProp(d, 'Acheteur'))) &&
+        (selectedPriorities.length === 0 || selectedPriorities.includes(getProp(d, 'Priorite'))) &&
+        matchesProjectSearch(d)
+      ))
+      .sort((a, b) => (parseFloat(String(a.IDProjet)) || 0) < (parseFloat(String(b.IDProjet)) || 0) ? 1 : -1);
+  }, [dossiers, selectedAcheteurs, selectedPriorities, projectSearch]);
+
+  const filteredP = useMemo(() => {
+    const matchesProcedureSearch = (p: ProjectData) => {
+      if (!procedureSearch) return true;
+      const numProc = String(getProp(p, 'NumProc') || '').toLowerCase();
+      const numAfpa = String(getProp(p, 'Numéro de procédure (Afpa)') || '').toLowerCase();
+      return numProc.includes(procedureSearch.toLowerCase()) || numAfpa.includes(procedureSearch.toLowerCase());
+    };
+
+    return procedures
+      .filter(p => (selectedAcheteurs.length === 0 || selectedAcheteurs.includes(getProp(p, 'Acheteur'))) && matchesProcedureSearch(p))
+      .sort((a, b) => (parseFloat(String(getProp(b, 'NumProc'))) || 0) - (parseFloat(String(getProp(a, 'NumProc'))) || 0));
+  }, [procedures, selectedAcheteurs, procedureSearch]);
+
+  // ============================================
+  // AUTH HANDLERS & RENDERING
+  // ============================================
+  const handleLoginSuccess = () => {
+    // Auth state will be updated by onAuthStateChange
+  };
+
+  const handleLogout = () => {
+    setShowAdminDashboard(false);
+    // Auth state will be updated by onAuthStateChange
+  };
+
+  const handleBackToApp = () => {
+    setShowAdminDashboard(false);
+  };
+
+  // Conditional returns AFTER all hooks
+  if (authState.loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authState.user || !authState.profile) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Show Admin Dashboard if requested
+  if (showAdminDashboard) {
+    return (
+      <AdminDashboard 
+        profile={authState.profile} 
+        onLogout={handleLogout}
+        onBackToApp={handleBackToApp}
+      />
+    );
+  }
+
+  // ============================================
+  // HELPER FUNCTIONS
+  // ============================================
+  
   const sanitizeFileName = (name: string) => {
     return name
       .normalize("NFD")
@@ -478,20 +905,7 @@ const App: React.FC = () => {
     XLSX.writeFile(workbook, `Export_GestMarchés_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
-  const associatedProcedures = useMemo(() => {
-    if (!editingProject?.IDProjet) return [];
-    return procedures
-      .filter(p => String(getProp(p, 'IDProjet')) === String(editingProject.IDProjet))
-      .sort((a, b) => (parseFloat(String(getProp(b, 'NumProc'))) || 0) - (parseFloat(String(getProp(a, 'NumProc'))) || 0));
-  }, [procedures, editingProject]);
-
-  const uniqueTypeProcs = useMemo(() => Array.from(new Set(refProcedures.map(rp => String(getProp(rp, 'Type procédure'))).filter(Boolean))).sort(), [refProcedures]);
-  const uniqueFamilies = useMemo(() => Array.from(new Set(procedures.map(p => String(getProp(p, 'Famille Achat Principale'))).filter(Boolean))).sort(), [procedures]);
-  const uniqueTypesForFilter = useMemo(() => Array.from(new Set(procedures.map(p => String(getProp(p, 'Type de procédure'))).filter(Boolean))).sort(), [procedures]);
-  const uniqueCcagsForFilter = useMemo(() => Array.from(new Set(procedures.map(p => String(getProp(p, 'CCAG'))).filter(Boolean))).sort(), [procedures]);
   const priorityOptions = ['P0 - Pas de priorité', 'P1 - Important', 'P2 - Moyen', 'P3 - Faible'];
-
-  // (Filtres en cascade supprimés)
 
   const generateAfpaNumber = () => {
     if (!editingProcedure) return;
@@ -520,93 +934,6 @@ const App: React.FC = () => {
       "Objet court": objetCourt,
     }));
   };
-
-  const kpis = useMemo(() => {
-    const matchesAcheteur = (val: any) => selectedAcheteurs.length === 0 || selectedAcheteurs.includes(val);
-    const matchesFamily = (val: any) => selectedFamilies.length === 0 || selectedFamilies.includes(val);
-    const matchesProcType = (val: any) => selectedProcTypes.length === 0 || selectedProcTypes.includes(val);
-    const matchesPriority = (val: any) => selectedPriorities.length === 0 || selectedPriorities.includes(val);
-    const matchesStatus = (val: any) => selectedStatuses.length === 0 || selectedStatuses.includes(val);
-
-    const filteredDossiers = dossiers.filter(d => (
-      matchesAcheteur(getProp(d, 'Acheteur')) &&
-      matchesFamily(getProp(d, 'Famille Achat Principale')) &&
-      matchesProcType(getProp(d, 'Type de procédure')) &&
-      matchesPriority(getProp(d, 'Priorite')) &&
-      matchesStatus(getProp(d, 'Statut_du_Dossier'))
-    ));
-
-    const filteredProcedures = procedures.filter(p => (
-      matchesAcheteur(getProp(p, 'Acheteur')) &&
-      matchesFamily(getProp(p, 'Famille Achat Principale')) &&
-      matchesProcType(getProp(p, 'Type de procédure'))
-    ));
-
-    const nbP = filteredDossiers.length;
-    const nbProc = filteredProcedures.length;
-    const amtP = filteredDossiers.reduce((acc: number, d) => acc + (parseFloat(String(getProp(d, "Montant_previsionnel_du_marche_(_HT)_")).replace(/[^\d.]/g, '')) || 0), 0);
-    const amtProc = filteredProcedures.reduce((acc: number, p) => acc + (parseFloat(String(getProp(p, 'Montant de la procédure')).replace(/[^\d.]/g, '')) || 0), 0);
-
-    // Calculer le montant moyen par type de procédure
-    const proceduresTypeStats = filteredProcedures.reduce((acc: Record<string, { total: number; count: number }>, p) => {
-      const type = getProp(p, 'Type de procédure') || 'N/C';
-      const montant = parseFloat(String(getProp(p, 'Montant de la procédure')).replace(/[^\d.]/g, '')) || 0;
-      if (!acc[type]) acc[type] = { total: 0, count: 0 };
-      acc[type].total += montant;
-      acc[type].count += 1;
-      return acc;
-    }, {});
-    const proceduresTypeMoyenne = Object.entries(proceduresTypeStats).reduce((acc: Record<string, number>, [type, stats]) => {
-      acc[type] = stats.count > 0 ? Math.ceil(stats.total / stats.count) : 0;
-      return acc;
-    }, {});
-
-    return {
-      nbP,
-      nbProc,
-      amtP,
-      avgP: nbP > 0 ? amtP / nbP : 0,
-      amtProc,
-      avgProc: nbProc > 0 ? amtProc / nbProc : 0,
-      charts: {
-          projetsAcheteur: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Acheteur') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
-          proceduresAcheteur: filteredProcedures.reduce((acc: Record<string, number>, p) => { const v = getProp(p, 'Acheteur') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
-          proceduresType: filteredProcedures.reduce((acc: Record<string, number>, p) => { const v = getProp(p, 'Type de procédure') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
-          projetsPriorite: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Priorite') || 'Non définie'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
-          projetsClientInterne: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Client_Interne') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
-          proceduresTypeMoyenne
-      }
-    };
-  }, [dossiers, procedures, selectedAcheteurs, selectedFamilies, selectedProcTypes, selectedPriorities]);
-
-  const filteredD = useMemo(() => {
-    const matchesProjectSearch = (d: DossierData) => {
-      if (!projectSearch) return true;
-      const idVal = String(getProp(d, 'IDProjet') || '').toLowerCase();
-      return idVal.includes(projectSearch.toLowerCase());
-    };
-
-    return dossiers
-      .filter(d => (
-        (selectedAcheteurs.length === 0 || selectedAcheteurs.includes(getProp(d, 'Acheteur'))) &&
-        (selectedPriorities.length === 0 || selectedPriorities.includes(getProp(d, 'Priorite'))) &&
-        matchesProjectSearch(d)
-      ))
-      .sort((a, b) => (parseFloat(String(a.IDProjet)) || 0) < (parseFloat(String(b.IDProjet)) || 0) ? 1 : -1);
-  }, [dossiers, selectedAcheteurs, selectedPriorities, projectSearch]);
-
-  const filteredP = useMemo(() => {
-    const matchesProcedureSearch = (p: ProjectData) => {
-      if (!procedureSearch) return true;
-      const numProc = String(getProp(p, 'NumProc') || '').toLowerCase();
-      const numAfpa = String(getProp(p, 'Numéro de procédure (Afpa)') || '').toLowerCase();
-      return numProc.includes(procedureSearch.toLowerCase()) || numAfpa.includes(procedureSearch.toLowerCase());
-    };
-
-    return procedures
-      .filter(p => (selectedAcheteurs.length === 0 || selectedAcheteurs.includes(getProp(p, 'Acheteur'))) && matchesProcedureSearch(p))
-      .sort((a, b) => (parseFloat(String(a.NumProc)) || 0) < (parseFloat(String(b.NumProc)) || 0) ? 1 : -1);
-  }, [procedures, selectedAcheteurs, procedureSearch]);
 
   const handleFieldChange = (type: 'project' | 'procedure', key: string, value: any) => {
     if (type === 'project') setEditingProject(prev => ({ ...prev, [key]: value }));
@@ -1300,40 +1627,6 @@ const App: React.FC = () => {
     } catch (e: any) { alert(e.message); } finally { setIsSaving(false); }
   };
 
-const dropdownRef = useRef<HTMLDivElement>(null);
-  const topScrollRef = useRef<HTMLDivElement>(null);
-  const bodyScrollRef = useRef<HTMLDivElement>(null);
-  const [tableScrollWidth, setTableScrollWidth] = useState(0);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setOpenDropdown(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useLayoutEffect(() => {
-    const top = topScrollRef.current;
-    const body = bodyScrollRef.current;
-    if (!top || !body) return;
-
-    const syncFromTop = () => { if (body.scrollLeft !== top.scrollLeft) body.scrollLeft = top.scrollLeft; };
-    const syncFromBody = () => { if (top.scrollLeft !== body.scrollLeft) top.scrollLeft = body.scrollLeft; };
-
-    top.addEventListener('scroll', syncFromTop);
-    body.addEventListener('scroll', syncFromBody);
-
-    setTableScrollWidth(body.scrollWidth);
-    top.scrollLeft = 0;
-    body.scrollLeft = 0;
-
-    return () => {
-      top.removeEventListener('scroll', syncFromTop);
-      body.removeEventListener('scroll', syncFromBody);
-    };
-  }, [activeTab, filteredD, filteredP]);
-
   const FilterDropdown: React.FC<{
     id: string;
     label?: string;
@@ -1415,17 +1708,85 @@ const dropdownRef = useRef<HTMLDivElement>(null);
               <button key={t.key} onClick={() => { setActiveTab(t.key as TableType); setEditingProject(null); setEditingProcedure(null); }} className={`text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === t.key ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'}`}>{t.label}</button>
             ))}
           </nav>
-          <div className="theme-toggle">
-            {themeOptions.map(opt => (
-              <button
-                key={opt.key}
-                onClick={() => setTheme(opt.key)}
-                className={theme === opt.key ? 'is-active' : ''}
-                aria-pressed={theme === opt.key}
-              >
-                {opt.label}
-              </button>
-            ))}
+          
+          {/* User Badge & Admin Access */}
+          <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
+            {authState.profile && (
+              <>
+                {authState.profile.role === 'admin' ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-lg border border-amber-300">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    Admin
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 text-xs font-bold rounded-lg border border-blue-300">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    User
+                  </span>
+                )}
+                <button
+                  onClick={() => setShowAdminDashboard(true)}
+                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                  title="Accéder au Dashboard Admin"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z" />
+                  </svg>
+                  Dashboard
+                </button>
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                  }}
+                  className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                  title="Déconnexion"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Déconnexion
+                </button>
+              </>
+            )}
+          </div>
+          
+          <div className="theme-toggle flex gap-1">
+            <button
+              onClick={() => setTheme('light')}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${theme === 'light' ? 'bg-gray-100 scale-110' : 'hover:bg-gray-50'}`}
+              title="Clair"
+              aria-pressed={theme === 'light'}
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-100 to-gray-300 border border-gray-400"></div>
+            </button>
+            <button
+              onClick={() => setTheme('green')}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${theme === 'green' ? 'bg-emerald-100 scale-110' : 'hover:bg-gray-50'}`}
+              title="Vert"
+              aria-pressed={theme === 'green'}
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600"></div>
+            </button>
+            <button
+              onClick={() => setTheme('blue')}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${theme === 'blue' ? 'bg-blue-100 scale-110' : 'hover:bg-gray-50'}`}
+              title="Bleu"
+              aria-pressed={theme === 'blue'}
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
+            </button>
+            <button
+              onClick={() => setTheme('dark')}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${theme === 'dark' ? 'bg-gray-700 scale-110' : 'hover:bg-gray-50'}`}
+              title="Sombre"
+              aria-pressed={theme === 'dark'}
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border border-gray-600"></div>
+            </button>
           </div>
           <button onClick={() => supabaseClient && fetchData(supabaseClient)} className={`w-10 h-10 flex items-center justify-center text-gray-300 rounded-full ${isLoading ? 'animate-spin' : ''}`}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
         </div>
