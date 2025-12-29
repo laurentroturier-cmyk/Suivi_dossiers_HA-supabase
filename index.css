@@ -419,3 +419,81 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Panneaux/cartes avec effet verre - Style corporate */
+  backdrop-filter: blur(14px) saturate(115%);
+  -webkit-backdrop-filter: blur(14px) saturate(115%);
+}
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(107, 147, 184, 0.25);
+}
+
+/* Inputs avec effet verre - Palette froide */
+  backdrop-filter: blur(10px) saturate(110%);
+  -webkit-backdrop-filter: blur(10px) saturate(110%);
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: rgba(255, 255, 255, 0.98) !important;
+}
+
+  color: rgba(255, 255, 255, 0.5);
+}
+
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+}
+
+/* Tableaux avec verre translucide - Style professionnel */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 2px 12px rgba(107, 147, 184, 0.15);
+}
+
+/* Badges et chips - Style discret et professionnel */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 0 10px rgba(107, 147, 184, 0.15);
+}
+
+  width: 8px;
+  height: 8px;
+}
+
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+}
+
+  background: rgba(107, 147, 184, 0.35);
+}
+
+/* Effet de brillance subtile sur les cartes */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+/* Ombres subtiles pour les éléments interactifs */
+  filter: drop-shadow(0 0 6px rgba(107, 147, 184, 0.3));
+}
+
+/* Surcharge pour les graphiques/charts */
+  filter: drop-shadow(0 4px 12px rgba(79, 172, 254, 0.3));
+}

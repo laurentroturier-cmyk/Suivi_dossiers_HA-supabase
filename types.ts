@@ -97,4 +97,4 @@ export interface SegmentationRow {
   dna_sousfamille: string;
 }
 
-export type TableType = 'procedures' | 'dossiers' | 'dashboard' | 'ai' | 'export' | 'gantt' | 'an01';
+export type TableType = 'procedures' | 'dossiers' | 'dashboard' | 'ai' | 'export' | 'gantt' | 'an01' | 'commission';

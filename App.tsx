@@ -212,6 +212,8 @@ const App: React.FC = () => {
   
   // AN01 States
   const [an01Data, setAn01Data] = useState<{ lots: AnalysisData[], globalMetadata: Record<string, string> } | null>(null);
+  const [an01ProcedureNumber, setAn01ProcedureNumber] = useState<string>('');
+  const [an01LoadMode, setAn01LoadMode] = useState<'manual' | 'auto'>('auto');
   const [an01SelectedLotIndex, setAn01SelectedLotIndex] = useState<number | null>(null);
   const [an01ViewMode, setAn01ViewMode] = useState<'grid' | 'table'>('grid');
   const [an01IsLoading, setAn01IsLoading] = useState(false);
@@ -258,6 +260,12 @@ const App: React.FC = () => {
   const [projectSearch, setProjectSearch] = useState('');
   const [procedureSearch, setProcedureSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [commissionSortColumn, setCommissionSortColumn] = useState<string>('');
+  const [commissionSortDirection, setCommissionSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [dossierSortColumn, setDossierSortColumn] = useState<string>('');
+  const [dossierSortDirection, setDossierSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [procedureSortColumn, setProcedureSortColumn] = useState<string>('');
+  const [procedureSortDirection, setProcedureSortDirection] = useState<'asc' | 'desc'>('asc');
   const [isSaving, setIsSaving] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
@@ -590,8 +598,9 @@ const App: React.FC = () => {
   const filteredP = useMemo(() => {
     const matchesProcedureSearch = (p: ProjectData) => {
       if (!procedureSearch) return true;
-      const numVal = String(getProp(p, 'NumProc') || '').toLowerCase();
-      return numVal.includes(procedureSearch.toLowerCase());
+      const numProc = String(getProp(p, 'NumProc') || '').toLowerCase();
+      const numAfpa = String(getProp(p, 'Numéro de procédure (Afpa)') || '').toLowerCase();
+      return numProc.includes(procedureSearch.toLowerCase()) || numAfpa.includes(procedureSearch.toLowerCase());
     };
 
     return procedures
@@ -622,6 +631,87 @@ const App: React.FC = () => {
   };
 
   // AN01 Handlers
+  const handleAn01LoadFromSupabase = async (procedureNum: string) => {
+    if (!supabaseClient) {
+      setAn01Error("Client Supabase non disponible");
+      return;
+    }
+
+    setAn01IsLoading(true);
+    setAn01Error(null);
+
+    try {
+      // 1. Prendre les 5 premiers caractères du numéro saisi
+      const searchPrefix = procedureNum.substring(0, 5);
+      
+      // 2. Chercher la procédure dans la base avec le numéro Afpa
+      const { data: procedureData, error: procError } = await supabaseClient
+        .from('procédures')
+        .select('NumProc, "Numéro de procédure (Afpa)"')
+        .or(`"Numéro de procédure (Afpa)".ilike.${searchPrefix}%`)
+        .limit(1);
+
+      if (procError) {
+        console.error("Erreur recherche procédure:", procError);
+        throw new Error(`Erreur lors de la recherche de la procédure ${searchPrefix}`);
+      }
+
+      if (!procedureData || procedureData.length === 0) {
+        throw new Error(`Procédure ${searchPrefix} non trouvée dans la base de données`);
+      }
+
+      const numProc = procedureData[0].NumProc;
+
+      // 3. Lister les fichiers de cette procédure
+      const folder = `procedures/${numProc}`;
+      const { data: filesList, error: listError } = await supabaseClient.storage
+        .from(BUCKET_NAME)
+        .list(folder);
+
+      if (listError) {
+        console.error("Erreur liste fichiers:", listError);
+        throw listError;
+      }
+
+      // 4. Trouver un fichier contenant "an01"
+      const an01File = filesList?.find(file => 
+        file.name.toLowerCase().includes('an01')
+      );
+
+      if (!an01File) {
+        setAn01LoadMode('manual');
+        setAn01Error(`Aucun fichier AN01 trouvé pour la procédure ${searchPrefix} (${numProc})`);
+        setAn01IsLoading(false);
+        return;
+      }
+
+      // 5. Télécharger le fichier
+      const filePath = `${folder}/${an01File.name}`;
+      const { data: fileData, error: downloadError } = await supabaseClient.storage
+        .from(BUCKET_NAME)
+        .download(filePath);
+
+      if (downloadError) {
+        console.error("Erreur téléchargement:", downloadError);
+        throw downloadError;
+      }
+
+      // 6. Parser le fichier téléchargé
+      const result = await parseExcelFile(fileData as File);
+      setAn01Data(result);
+      
+      if (result.lots.length === 1) {
+        setAn01SelectedLotIndex(0);
+      }
+    } catch (err: any) {
+      console.error("Erreur chargement AN01:", err);
+      setAn01LoadMode('manual');
+      setAn01Error(err.message || "Erreur lors du chargement du fichier depuis Supabase");
+    } finally {
+      setAn01IsLoading(false);
+    }
+  };
+
   const handleAn01FileUpload = async (file: File) => {
     setAn01IsLoading(true);
     setAn01Error(null);
@@ -648,6 +738,8 @@ const App: React.FC = () => {
     setAn01SelectedLotIndex(null);
     setAn01Error(null);
     setAn01ViewMode('grid');
+    setAn01ProcedureNumber('');
+    setAn01LoadMode('auto');
   };
 
   const handleAn01BackToLotSelection = () => {
@@ -1319,7 +1411,7 @@ const dropdownRef = useRef<HTMLDivElement>(null);
         </div>
         <div className="flex items-center gap-6">
           <nav className="flex gap-8">
-            {[{ label: 'Projets', key: 'dossiers' }, { label: 'Procédures', key: 'procedures' }, { label: 'Indicateurs', key: 'dashboard' }, { label: 'Gantt', key: 'gantt' }, { label: 'AN01', key: 'an01' }, { label: 'Export', key: 'export' }].map(t => (
+            {[{ label: 'Projets', key: 'dossiers' }, { label: 'Procédures', key: 'procedures' }, { label: 'Indicateurs', key: 'dashboard' }, { label: 'Gantt', key: 'gantt' }, { label: 'Commission HA', key: 'commission' }, { label: 'Export', key: 'export' }, { label: 'AN01', key: 'an01' }].map(t => (
               <button key={t.key} onClick={() => { setActiveTab(t.key as TableType); setEditingProject(null); setEditingProcedure(null); }} className={`text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === t.key ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'}`}>{t.label}</button>
             ))}
           </nav>
@@ -1814,11 +1906,48 @@ const dropdownRef = useRef<HTMLDivElement>(null);
                       const visibleDossierFields = DOSSIER_FIELDS.filter(f => !hiddenDossierColumns.includes(f.id));
                       const visibleProjectFields = PROJECT_FIELDS;
                       const fieldsForTab = activeTab === 'dossiers' ? visibleDossierFields : visibleProjectFields;
-                      const rows = activeTab === 'dossiers' ? filteredD : filteredP;
+                      
+                      const sortColumn = activeTab === 'dossiers' ? dossierSortColumn : procedureSortColumn;
+                      const sortDirection = activeTab === 'dossiers' ? dossierSortDirection : procedureSortDirection;
+                      
+                      const handleSort = (fieldId: string) => {
+                        if (activeTab === 'dossiers') {
+                          if (dossierSortColumn === fieldId) {
+                            setDossierSortDirection(dossierSortDirection === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setDossierSortColumn(fieldId);
+                            setDossierSortDirection('asc');
+                          }
+                        } else {
+                          if (procedureSortColumn === fieldId) {
+                            setProcedureSortDirection(procedureSortDirection === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setProcedureSortColumn(fieldId);
+                            setProcedureSortDirection('asc');
+                          }
+                        }
+                      };
+                      
+                      const baseRows = activeTab === 'dossiers' ? filteredD : filteredP;
+                      const rows = sortColumn ? [...baseRows].sort((a, b) => {
+                        const aVal = String(getProp(a, sortColumn) || '');
+                        const bVal = String(getProp(b, sortColumn) || '');
+                        const comparison = aVal.localeCompare(bVal, 'fr', { numeric: true });
+                        return sortDirection === 'asc' ? comparison : -comparison;
+                      }) : baseRows;
+                      
                       return (
                         <table className="themed-table min-w-full divide-y divide-gray-50">
                           <thead><tr className="bg-gray-50/50">
-                            {fieldsForTab.map(f => <th key={f.id} className="px-8 py-5 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">{f.label}</th>)}
+                            {fieldsForTab.map(f => (
+                              <th 
+                                key={f.id} 
+                                className="px-8 py-5 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest cursor-pointer hover:text-[#004d3d] transition-colors"
+                                onClick={() => handleSort(f.id)}
+                              >
+                                {f.label} {sortColumn === f.id && (sortDirection === 'asc' ? '↑' : '↓')}
+                              </th>
+                            ))}
                             <th className="px-8 py-5 text-right sticky right-0 bg-white">Actions</th>
                           </tr></thead>
                           <tbody className="divide-y divide-gray-50">
@@ -1945,11 +2074,50 @@ const dropdownRef = useRef<HTMLDivElement>(null);
           <div className="an01-wrapper">
             {!an01Data ? (
               <div className="h-screen w-full font-sans text-gray-900 bg-gray-100 flex flex-col">
-                <UploadView 
-                  onFileUpload={handleAn01FileUpload} 
-                  isLoading={an01IsLoading} 
-                  error={an01Error} 
-                />
+                {an01LoadMode === 'auto' ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="surface-card p-12 rounded-[2rem] shadow-sm border border-gray-100 max-w-2xl w-full">
+                      <h2 className="text-2xl font-black text-[#004d3d] mb-6">Charger l'analyse AN01</h2>
+                      <p className="text-sm text-gray-600 mb-6">Saisissez le numéro de procédure Afpa pour charger automatiquement le fichier depuis la base de données.</p>
+                      
+                      <input
+                        type="text"
+                        placeholder="Numéro de procédure (Afpa)"
+                        value={an01ProcedureNumber}
+                        onChange={(e) => setAn01ProcedureNumber(e.target.value)}
+                        className="w-full px-6 py-4 rounded-xl border border-gray-200 text-sm font-bold mb-4 focus:outline-none focus:border-[#004d3d]"
+                      />
+                      
+                      {an01Error && (
+                        <div className="bg-red-50 text-red-700 px-6 py-4 rounded-xl text-sm mb-4">
+                          {an01Error}
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => an01ProcedureNumber && handleAn01LoadFromSupabase(an01ProcedureNumber)}
+                          disabled={!an01ProcedureNumber || an01IsLoading}
+                          className="flex-1 px-8 py-4 bg-[#004d3d] text-white rounded-xl font-bold text-sm hover:bg-[#006d57] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {an01IsLoading ? 'Chargement...' : 'Charger depuis la base'}
+                        </button>
+                        <button
+                          onClick={() => setAn01LoadMode('manual')}
+                          className="px-8 py-4 border-2 border-gray-200 text-gray-600 rounded-xl font-bold text-sm hover:border-gray-300 transition-colors"
+                        >
+                          Chargement manuel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <UploadView 
+                    onFileUpload={handleAn01FileUpload} 
+                    isLoading={an01IsLoading} 
+                    error={an01Error}
+                  />
+                )}
               </div>
             ) : an01SelectedLotIndex !== null && an01Data.lots[an01SelectedLotIndex] ? (
               <div className="h-screen w-full font-sans text-gray-900 bg-gray-100 flex flex-col">
@@ -1980,6 +2148,130 @@ const dropdownRef = useRef<HTMLDivElement>(null);
             )}
           </div>
         )}
+
+        {activeTab === 'commission' && (() => {
+          const handleSort = (column: string) => {
+            if (commissionSortColumn === column) {
+              setCommissionSortDirection(commissionSortDirection === 'asc' ? 'desc' : 'asc');
+            } else {
+              setCommissionSortColumn(column);
+              setCommissionSortDirection('asc');
+            }
+          };
+          
+          const filteredCommissionProjects = dossiers.filter(d => {
+            if (d.Commission_Achat !== "Oui") return false;
+            const dateVal = d["NO_-_Date_de_validation_du_document"];
+            if (!dateVal || dateVal.trim() === "") {
+              const statut = d.Statut_du_Dossier || '';
+              return !statut.startsWith('4') && !statut.startsWith('5');
+            }
+            const numDate = Number(dateVal);
+            return !(numDate > 0 && !isNaN(numDate));
+          });
+          
+          const sortedProjects = [...filteredCommissionProjects].sort((a, b) => {
+            if (!commissionSortColumn) return 0;
+            
+            let aVal = '';
+            let bVal = '';
+            
+            switch(commissionSortColumn) {
+              case 'dossier': aVal = a.IDProjet || ''; bVal = b.IDProjet || ''; break;
+              case 'objet': aVal = a.Titre_du_dossier || ''; bVal = b.Titre_du_dossier || ''; break;
+              case 'acheteur': aVal = a.Acheteur || ''; bVal = b.Acheteur || ''; break;
+              case 'priorite': aVal = a.Priorite || ''; bVal = b.Priorite || ''; break;
+              case 'montant': aVal = a["Montant_previsionnel_du_marche_(_HT)_"] || ''; bVal = b["Montant_previsionnel_du_marche_(_HT)_"] || ''; break;
+              case 'date': aVal = a["NO_-_Date_previsionnelle_CA_ou_Commission"] || ''; bVal = b["NO_-_Date_previsionnelle_CA_ou_Commission"] || ''; break;
+            }
+            
+            const comparison = String(aVal).localeCompare(String(bVal), 'fr', { numeric: true });
+            return commissionSortDirection === 'asc' ? comparison : -comparison;
+          });
+          
+          return (
+          <div className="space-y-8 animate-in fade-in duration-700">
+            <div className="grid grid-cols-1 gap-6 mb-8">
+              <div className="surface-card p-10 rounded-[2rem] shadow-sm border border-gray-100">
+                <h2 className="text-xs font-black uppercase tracking-widest text-gray-300 mb-3">Projets à présenter</h2>
+                <div className="text-5xl font-black text-[#004d3d]">
+                  {filteredCommissionProjects.length}
+                </div>
+              </div>
+            </div>
+
+            <div className="surface-card overflow-hidden rounded-[2rem] shadow-sm border border-gray-100">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('dossier')}>
+                        Dossier {commissionSortColumn === 'dossier' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('objet')}>
+                        Objet {commissionSortColumn === 'objet' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('acheteur')}>
+                        Acheteur {commissionSortColumn === 'acheteur' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('priorite')}>
+                        Priorité {commissionSortColumn === 'priorite' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('montant')}>
+                        Montant prévu {commissionSortColumn === 'montant' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('date')}>
+                        Date limite validation {commissionSortColumn === 'date' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedProjects.map((d, i) => (
+                        <tr key={i} className="border-b border-gray-100 hover:bg-emerald-50/30 transition-colors cursor-pointer" onClick={() => setEditingProject(d)}>
+                          <td className="px-8 py-6 text-sm font-black text-[#004d3d]">{d.IDProjet}</td>
+                          <td className="px-8 py-6 text-sm text-gray-700">{d.Titre_du_dossier}</td>
+                          <td className="px-8 py-6 text-sm text-gray-600">{d.Acheteur}</td>
+                          <td className="px-8 py-6 text-sm">
+                            <span className={`inline-block px-4 py-2 rounded-full text-xs font-black ${
+                              d.Priorite === "Haute" 
+                                ? "bg-red-50 text-red-700" 
+                                : d.Priorite === "Moyenne" 
+                                ? "bg-yellow-50 text-yellow-700" 
+                                : "bg-green-50 text-green-700"
+                            }`}>
+                              {d.Priorite || "Non définie"}
+                            </span>
+                          </td>
+                          <td className="px-8 py-6 text-sm text-gray-600 font-bold">
+                            {(() => {
+                              const montant = d["Montant_previsionnel_du_marche_(_HT)_"];
+                              if (!montant) return "—";
+                              const num = parseFloat(String(montant).replace(/[^\d.]/g, ''));
+                              if (isNaN(num)) return montant;
+                              return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(num);
+                            })()}
+                          </td>
+                          <td className="px-8 py-6 text-sm text-gray-600">
+                            {(() => {
+                              const dateStr = d["NO_-_Date_previsionnelle_CA_ou_Commission"];
+                              if (!dateStr) return "—";
+                              const num = Number(dateStr);
+                              if (!isNaN(num) && num > 0) {
+                                const date = new Date((num - 25569) * 86400 * 1000);
+                                return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                              }
+                              return dateStr;
+                            })()}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          );
+        })()}
       </main>
     </div>
   );
