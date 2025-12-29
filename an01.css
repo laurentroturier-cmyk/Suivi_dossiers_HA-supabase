@@ -1,0 +1,49 @@
+/* AN01 Style Isolation Wrapper */
+.an01-wrapper {
+  /* Isolation des styles AN01 pour éviter les conflits avec GestProjet */
+  all: initial;
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Réinitialiser tous les éléments dans AN01 */
+.an01-wrapper * {
+  box-sizing: border-box;
+}
+
+/* Permettre aux styles Tailwind de fonctionner dans AN01 */
+.an01-wrapper .h-screen {
+  height: 100vh;
+}
+
+.an01-wrapper .w-full {
+  width: 100%;
+}
+
+.an01-wrapper .font-sans {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+.an01-wrapper .text-gray-900 {
+  color: #111827;
+}
+
+.an01-wrapper .bg-gray-100 {
+  background-color: #f3f4f6;
+}
+
+.an01-wrapper .flex {
+  display: flex;
+}
+
+.an01-wrapper .flex-col {
+  flex-direction: column;
+}

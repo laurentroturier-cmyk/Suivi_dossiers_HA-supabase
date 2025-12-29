@@ -1,0 +1,5 @@
+{
+  "name": "Gestionnaire de Marchés Publics",
+  "description": "Une application React performante permettant de visualiser, modifier et ajouter des données pour deux tables de suivi de projets et de dossiers de consultation.",
+  "requestFramePermissions": []
+}
