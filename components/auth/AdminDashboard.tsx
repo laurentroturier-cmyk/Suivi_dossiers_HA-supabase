@@ -11,11 +11,16 @@ import {
   XCircle,
   ArrowLeft,
   FileSpreadsheet,
-  Download
+  Download,
+  UserPlus,
+  Clock,
+  UserCheck,
+  UserX,
+  Mail
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
-import { UserProfile, DataRecord } from '../../types/auth';
+import { UserProfile, DataRecord, AccessRequest } from '../../types/auth';
 import { PROJECT_FIELDS, DOSSIER_FIELDS, PROCEDURE_GROUPS } from '../../constants';
 
 interface AdminDashboardProps {
@@ -29,9 +34,13 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rlsError, setRlsError] = useState(false);
+  const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
+  const [activeTab, setActiveTab] = useState<'data' | 'requests'>('data');
+  const [requestsLoading, setRequestsLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
+    fetchAccessRequests();
   }, []);
 
   const fetchData = async () => {
@@ -68,6 +77,60 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   const handleLogout = async () => {
     await supabase.auth.signOut();
     onLogout();
+  };
+
+  const fetchAccessRequests = async () => {
+    try {
+      setRequestsLoading(true);
+      const { data: requests, error: requestsError } = await supabase
+        .from('access_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (requestsError) throw requestsError;
+      setAccessRequests(requests || []);
+    } catch (err: any) {
+      console.error('Erreur lors du chargement des demandes:', err);
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
+  const handleApproveRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase.rpc('approve_access_request', {
+        request_id: requestId,
+        admin_id: profile.id
+      });
+
+      if (error) throw error;
+
+      await fetchAccessRequests();
+      alert('Demande approuvée avec succès !');
+    } catch (err: any) {
+      console.error('Erreur lors de l\'approbation:', err);
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    const reason = prompt('Raison du rejet (optionnel):');
+    
+    try {
+      const { error } = await supabase.rpc('reject_access_request', {
+        request_id: requestId,
+        admin_id: profile.id,
+        reason: reason || null
+      });
+
+      if (error) throw error;
+
+      await fetchAccessRequests();
+      alert('Demande rejetée.');
+    } catch (err: any) {
+      console.error('Erreur lors du rejet:', err);
+      alert('Erreur: ' + err.message);
+    }
   };
 
   const exportFieldsStructure = () => {
@@ -162,8 +225,13 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
       <aside className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white shadow-xl">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center relative">
               <LayoutDashboard className="w-6 h-6" />
+              {accessRequests.filter(r => r.status === 'pending').length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+                  {accessRequests.filter(r => r.status === 'pending').length}
+                </span>
+              )}
             </div>
             <div>
               <h1 className="text-lg font-bold">Enterprise</h1>
@@ -198,10 +266,32 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
 
           {/* Navigation */}
           <nav className="space-y-2">
-            <button className="w-full flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={() => setActiveTab('data')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === 'data' ? 'bg-blue-600' : 'text-gray-300 hover:bg-gray-700'
+              }`}
+            >
               <Database className="w-4 h-4" />
               Mes données
             </button>
+
+            {profile.role === 'admin' && (
+              <button 
+                onClick={() => setActiveTab('requests')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'requests' ? 'bg-blue-600' : 'text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                <UserPlus className="w-4 h-4" />
+                Demandes d'accès
+                {accessRequests.filter(r => r.status === 'pending').length > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    {accessRequests.filter(r => r.status === 'pending').length}
+                  </span>
+                )}
+              </button>
+            )}
             
             {onBackToApp && (
               <button 
@@ -247,15 +337,11 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">Statut</span>
-              {error ? (
-                <XCircle className="w-5 h-5 text-red-600" />
-              ) : (
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              )}
+              <span className="text-sm font-medium text-gray-600">Demandes en attente</span>
+              <Clock className="w-5 h-5 text-orange-600" />
             </div>
-            <p className="text-lg font-semibold text-gray-900">
-              {error ? 'Erreur' : 'Connecté'}
+            <p className="text-3xl font-bold text-gray-900">
+              {accessRequests.filter(r => r.status === 'pending').length}
             </p>
           </div>
 
@@ -268,8 +354,10 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
           </div>
         </div>
 
-        {/* Admin-only Features */}
-        {profile.role === 'admin' && (
+        {activeTab === 'data' && (
+          <>
+            {/* Admin-only Features */}
+            {profile.role === 'admin' && (
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 mb-8">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -434,37 +522,167 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             ) : null}
           </div>
         </div>
+          </>
+        )}
 
-        {/* Admin Features */}
-        {profile.role === 'admin' && (
-          <div className="mt-8">
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-amber-900 mb-2">
-                    Fonctionnalités Administrateur
-                  </h3>
-                  <p className="text-sm text-amber-700 mb-4">
-                    En tant qu'administrateur, vous avez accès à toutes les fonctionnalités de gestion de la plateforme.
+        {/* Access Requests Tab */}
+        {activeTab === 'requests' && profile.role === 'admin' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Demandes d'accès</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Gérez les demandes d'accès des nouveaux utilisateurs
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <button className="px-4 py-3 bg-white border border-amber-200 rounded-lg text-sm font-medium text-amber-900 hover:bg-amber-50 transition-colors text-left">
-                      🛠️ Gestion des utilisateurs
-                    </button>
-                    <button className="px-4 py-3 bg-white border border-amber-200 rounded-lg text-sm font-medium text-amber-900 hover:bg-amber-50 transition-colors text-left">
-                      📊 Rapports avancés
-                    </button>
-                    <button className="px-4 py-3 bg-white border border-amber-200 rounded-lg text-sm font-medium text-amber-900 hover:bg-amber-50 transition-colors text-left">
-                      ⚙️ Configuration système
-                    </button>
-                    <button className="px-4 py-3 bg-white border border-amber-200 rounded-lg text-sm font-medium text-amber-900 hover:bg-amber-50 transition-colors text-left">
-                      🔒 Permissions RLS
-                    </button>
-                  </div>
                 </div>
+                <button
+                  onClick={fetchAccessRequests}
+                  disabled={requestsLoading}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                >
+                  <RefreshCw className={`w-4 h-4 ${requestsLoading ? 'animate-spin' : ''}`} />
+                  Actualiser
+                </button>
+              </div>
+
+              <div className="p-6">
+                {requestsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
+                  </div>
+                ) : accessRequests.length === 0 ? (
+                  <div className="text-center py-12">
+                    <UserPlus className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600">Aucune demande d'accès</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Pending Requests */}
+                    {accessRequests.filter(r => r.status === 'pending').length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-orange-600" />
+                          En attente ({accessRequests.filter(r => r.status === 'pending').length})
+                        </h4>
+                        <div className="space-y-3">
+                          {accessRequests.filter(r => r.status === 'pending').map(request => (
+                            <div key={request.id} className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <p className="font-semibold text-gray-900">
+                                      {request.first_name} {request.last_name}
+                                    </p>
+                                    <span className="px-2 py-0.5 bg-orange-200 text-orange-800 text-xs rounded-full">
+                                      En attente
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-700 mb-2">
+                                    <Mail className="w-3 h-3 inline mr-1" />
+                                    {request.email}
+                                  </p>
+                                  {request.reason && (
+                                    <div className="bg-white rounded p-3 mb-3">
+                                      <p className="text-xs font-medium text-gray-600 mb-1">Raison :</p>
+                                      <p className="text-sm text-gray-800">{request.reason}</p>
+                                    </div>
+                                  )}
+                                  <p className="text-xs text-gray-500">
+                                    Demandé le {new Date(request.created_at).toLocaleString('fr-FR')}
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleApproveRequest(request.id)}
+                                    className="inline-flex items-center gap-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                                  >
+                                    <UserCheck className="w-4 h-4" />
+                                    Approuver
+                                  </button>
+                                  <button
+                                    onClick={() => handleRejectRequest(request.id)}
+                                    className="inline-flex items-center gap-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                                  >
+                                    <UserX className="w-4 h-4" />
+                                    Rejeter
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Approved Requests */}
+                    {accessRequests.filter(r => r.status === 'approved').length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          Approuvées ({accessRequests.filter(r => r.status === 'approved').length})
+                        </h4>
+                        <div className="space-y-2">
+                          {accessRequests.filter(r => r.status === 'approved').slice(0, 5).map(request => (
+                            <div key={request.id} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-gray-900 text-sm">
+                                    {request.first_name} {request.last_name}
+                                  </p>
+                                  <p className="text-xs text-gray-600">{request.email}</p>
+                                </div>
+                                <div className="text-right">
+                                  <span className="px-2 py-0.5 bg-green-200 text-green-800 text-xs rounded-full">
+                                    Approuvée
+                                  </span>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {new Date(request.reviewed_at!).toLocaleDateString('fr-FR')}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rejected Requests */}
+                    {accessRequests.filter(r => r.status === 'rejected').length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <XCircle className="w-4 h-4 text-red-600" />
+                          Rejetées ({accessRequests.filter(r => r.status === 'rejected').length})
+                        </h4>
+                        <div className="space-y-2">
+                          {accessRequests.filter(r => r.status === 'rejected').slice(0, 5).map(request => (
+                            <div key={request.id} className="bg-red-50 border border-red-200 rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-gray-900 text-sm">
+                                    {request.first_name} {request.last_name}
+                                  </p>
+                                  <p className="text-xs text-gray-600">{request.email}</p>
+                                  {request.rejection_reason && (
+                                    <p className="text-xs text-red-700 mt-1">Raison: {request.rejection_reason}</p>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  <span className="px-2 py-0.5 bg-red-200 text-red-800 text-xs rounded-full">
+                                    Rejetée
+                                  </span>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {new Date(request.reviewed_at!).toLocaleDateString('fr-FR')}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

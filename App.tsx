@@ -287,6 +287,29 @@ const App: React.FC = () => {
     error: null
   });
   const [showAdminDashboard, setShowAdminDashboard] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+
+  // Fetch pending requests count for admin
+  useEffect(() => {
+    if (authState.profile?.role === 'admin') {
+      const fetchPendingCount = async () => {
+        const { data, error } = await supabase
+          .from('access_requests')
+          .select('id')
+          .eq('status', 'pending');
+        
+        if (!error && data) {
+          setPendingRequestsCount(data.length);
+        }
+      };
+      
+      fetchPendingCount();
+      
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchPendingCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [authState.profile]);
 
   // Memoized values
   const identificationFields = useMemo(() => new Set(PROCEDURE_GROUPS.identification.fields), []);
@@ -462,6 +485,37 @@ const App: React.FC = () => {
 
             if (profileError) {
               console.error('[AUTH] Profile fetch error:', profileError);
+              
+              // Vérifier si c'est un utilisateur sans profil approuvé
+              const { data: accessRequest } = await supabase
+                .from('access_requests')
+                .select('status')
+                .eq('user_id', session.user.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+              if (accessRequest?.status === 'pending') {
+                await supabase.auth.signOut();
+                setAuthState({
+                  user: null,
+                  profile: null,
+                  loading: false,
+                  error: 'Votre demande d\'accès est en cours d\'examen. Vous ne pouvez pas encore vous connecter.'
+                });
+                return;
+              } else if (accessRequest?.status === 'rejected') {
+                await supabase.auth.signOut();
+                setAuthState({
+                  user: null,
+                  profile: null,
+                  loading: false,
+                  error: 'Votre demande d\'accès a été refusée. Contactez un administrateur.'
+                });
+                return;
+              }
+              
+              // Si pas de demande ou autre erreur, utiliser le rôle par défaut
               const role = session.user.email?.endsWith('@gmail.com') ? 'admin' : 'user';
               setAuthState({
                 user: session.user,
@@ -1730,13 +1784,18 @@ const App: React.FC = () => {
                 )}
                 <button
                   onClick={() => setShowAdminDashboard(true)}
-                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 relative"
                   title="Accéder au Dashboard Admin"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z" />
                   </svg>
                   Dashboard
+                  {pendingRequestsCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                      {pendingRequestsCount}
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={async () => {

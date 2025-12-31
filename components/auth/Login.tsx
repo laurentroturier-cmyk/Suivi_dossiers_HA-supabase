@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LogIn, AlertCircle, Mail, Lock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import AccessRequestForm from './AccessRequestForm';
 
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -11,6 +12,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAccessRequest, setShowAccessRequest] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +30,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       }
 
       if (data.user) {
+        // Laisser App.tsx gérer la vérification du profil via onAuthStateChange
         onLoginSuccess();
       }
     } catch (err: any) {
@@ -37,6 +40,10 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       setLoading(false);
     }
   };
+
+  if (showAccessRequest) {
+    return <AccessRequestForm onBack={() => setShowAccessRequest(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-emerald-50 to-green-50 flex items-center justify-center p-4">
@@ -128,6 +135,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
           {/* Footer */}
           <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+            <button
+              onClick={() => setShowAccessRequest(true)}
+              className="w-full text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors mb-3"
+            >
+              Pas encore d'accès ? Faire une demande
+            </button>
             <p className="text-xs text-gray-500 text-center">
               Protégé par Supabase Authentication
             </p>
