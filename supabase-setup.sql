@@ -457,3 +457,210 @@ SELECT
   reviewed_at
 FROM public.access_requests
 ORDER BY created_at DESC;
+
+-- ============================================
+-- POLITIQUES RLS POUR LES TABLES PROCÉDURES ET PROJETS
+-- Les utilisateurs authentifiés peuvent tout faire sauf supprimer
+-- ============================================
+
+-- Table: procédures
+-- Activer RLS
+ALTER TABLE public.procédures ENABLE ROW LEVEL SECURITY;
+
+-- Politique SELECT : Tous les utilisateurs authentifiés peuvent lire
+DROP POLICY IF EXISTS "Authenticated users can view procedures" ON public.procédures;
+CREATE POLICY "Authenticated users can view procedures"
+  ON public.procédures
+  FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+-- Politique INSERT : Tous les utilisateurs authentifiés peuvent insérer
+DROP POLICY IF EXISTS "Authenticated users can insert procedures" ON public.procédures;
+CREATE POLICY "Authenticated users can insert procedures"
+  ON public.procédures
+  FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- Politique UPDATE : Tous les utilisateurs authentifiés peuvent modifier
+DROP POLICY IF EXISTS "Authenticated users can update procedures" ON public.procédures;
+CREATE POLICY "Authenticated users can update procedures"
+  ON public.procédures
+  FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- Pas de politique DELETE : seuls les superusers/admins peuvent supprimer
+
+
+-- Table: projets
+-- Activer RLS
+ALTER TABLE public.projets ENABLE ROW LEVEL SECURITY;
+
+-- Politique SELECT : Tous les utilisateurs authentifiés peuvent lire
+DROP POLICY IF EXISTS "Authenticated users can view projects" ON public.projets;
+CREATE POLICY "Authenticated users can view projects"
+  ON public.projets
+  FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+-- Politique INSERT : Tous les utilisateurs authentifiés peuvent insérer
+DROP POLICY IF EXISTS "Authenticated users can insert projects" ON public.projets;
+CREATE POLICY "Authenticated users can insert projects"
+  ON public.projets
+  FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- Politique UPDATE : Tous les utilisateurs authentifiés peuvent modifier
+DROP POLICY IF EXISTS "Authenticated users can update projects" ON public.projets;
+CREATE POLICY "Authenticated users can update projects"
+  ON public.projets
+  FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- Pas de politique DELETE : seuls les superusers/admins peuvent supprimer
+
+
+-- ============================================
+-- POLITIQUES RLS POUR LES TABLES RÉFÉRENTIELLES
+-- Les utilisateurs authentifiés peuvent lire et modifier (pas supprimer)
+-- ============================================
+
+-- Table: Clients_internes
+ALTER TABLE public."Clients_internes" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view Clients_internes" ON public."Clients_internes";
+CREATE POLICY "Authenticated users can view Clients_internes"
+  ON public."Clients_internes" FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can insert Clients_internes" ON public."Clients_internes";
+CREATE POLICY "Authenticated users can insert Clients_internes"
+  ON public."Clients_internes" FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can update Clients_internes" ON public."Clients_internes";
+CREATE POLICY "Authenticated users can update Clients_internes"
+  ON public."Clients_internes" FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+
+-- Table: LeviersHA
+ALTER TABLE public."LeviersHA" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view LeviersHA" ON public."LeviersHA";
+CREATE POLICY "Authenticated users can view LeviersHA"
+  ON public."LeviersHA" FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can insert LeviersHA" ON public."LeviersHA";
+CREATE POLICY "Authenticated users can insert LeviersHA"
+  ON public."LeviersHA" FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can update LeviersHA" ON public."LeviersHA";
+CREATE POLICY "Authenticated users can update LeviersHA"
+  ON public."LeviersHA" FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+
+-- Table: Referentiel_acheteurs
+ALTER TABLE public."Referentiel_acheteurs" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view Referentiel_acheteurs" ON public."Referentiel_acheteurs";
+CREATE POLICY "Authenticated users can view Referentiel_acheteurs"
+  ON public."Referentiel_acheteurs" FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can insert Referentiel_acheteurs" ON public."Referentiel_acheteurs";
+CREATE POLICY "Authenticated users can insert Referentiel_acheteurs"
+  ON public."Referentiel_acheteurs" FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can update Referentiel_acheteurs" ON public."Referentiel_acheteurs";
+CREATE POLICY "Authenticated users can update Referentiel_acheteurs"
+  ON public."Referentiel_acheteurs" FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+
+-- Table: Referentiel_liste_procédures
+ALTER TABLE public."Referentiel_liste_procédures" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view Referentiel_liste_procédures" ON public."Referentiel_liste_procédures";
+CREATE POLICY "Authenticated users can view Referentiel_liste_procédures"
+  ON public."Referentiel_liste_procédures" FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can insert Referentiel_liste_procédures" ON public."Referentiel_liste_procédures";
+CREATE POLICY "Authenticated users can insert Referentiel_liste_procédures"
+  ON public."Referentiel_liste_procédures" FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can update Referentiel_liste_procédures" ON public."Referentiel_liste_procédures";
+CREATE POLICY "Authenticated users can update Referentiel_liste_procédures"
+  ON public."Referentiel_liste_procédures" FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+
+-- Table: Referentiel_segmentation
+ALTER TABLE public."Referentiel_segmentation" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view Referentiel_segmentation" ON public."Referentiel_segmentation";
+CREATE POLICY "Authenticated users can view Referentiel_segmentation"
+  ON public."Referentiel_segmentation" FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can insert Referentiel_segmentation" ON public."Referentiel_segmentation";
+CREATE POLICY "Authenticated users can insert Referentiel_segmentation"
+  ON public."Referentiel_segmentation" FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can update Referentiel_segmentation" ON public."Referentiel_segmentation";
+CREATE POLICY "Authenticated users can update Referentiel_segmentation"
+  ON public."Referentiel_segmentation" FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+
+-- Table: codes_cpv_long
+ALTER TABLE public.codes_cpv_long ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view codes_cpv_long" ON public.codes_cpv_long;
+CREATE POLICY "Authenticated users can view codes_cpv_long"
+  ON public.codes_cpv_long FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can insert codes_cpv_long" ON public.codes_cpv_long;
+CREATE POLICY "Authenticated users can insert codes_cpv_long"
+  ON public.codes_cpv_long FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can update codes_cpv_long" ON public.codes_cpv_long;
+CREATE POLICY "Authenticated users can update codes_cpv_long"
+  ON public.codes_cpv_long FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+
+-- Table: leviers dae
+ALTER TABLE public."leviers dae" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view leviers dae" ON public."leviers dae";
+CREATE POLICY "Authenticated users can view leviers dae"
+  ON public."leviers dae" FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can insert leviers dae" ON public."leviers dae";
+CREATE POLICY "Authenticated users can insert leviers dae"
+  ON public."leviers dae" FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated users can update leviers dae" ON public."leviers dae";
+CREATE POLICY "Authenticated users can update leviers dae"
+  ON public."leviers dae" FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');

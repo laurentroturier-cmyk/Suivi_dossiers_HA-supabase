@@ -73,6 +73,14 @@ export const PROCEDURE_STATUS_OPTIONS = [
   '5 - Terminée',
 ];
 
+// Liste déroulante pour "RP - Statut" (rapport de présentation)
+export const RP_STATUT_OPTIONS = [
+  '1-Initié',
+  '2-En cours',
+  '3-Validé',
+  '5-Refusé',
+];
+
 // Regroupements logiques pour l'édition des procédures
 export const PROCEDURE_GROUPS: Record<string, { label: string; fields: string[] }> = {
   identification: {

@@ -7,6 +7,7 @@ import {
   TYPE_VALIDATION_OPTIONS,
   NO_STATUT_OPTIONS,
   PROCEDURE_STATUS_OPTIONS,
+  RP_STATUT_OPTIONS,
   PROCEDURE_GROUPS,
   NON_ALLOTISSEMENT_OPTIONS,
   FORME_MARCHE_OPTIONS,
@@ -53,6 +54,27 @@ const getProp = (obj: any, key: string) => {
   const actualKeys = Object.keys(obj);
   const foundKey = actualKeys.find(k => k.toLowerCase().replace(/[\s_()-]/g, '') === target);
   return foundKey ? obj[foundKey] : undefined;
+};
+
+// Fonction pour déterminer si une colonne contient des valeurs numériques et doit être alignée à droite
+const isNumericField = (key: string) => {
+  const k = key.toLowerCase();
+  return k.includes('montant') || 
+         k.includes('prix') || 
+         k.includes('cout') || 
+         k.includes('coût') || 
+         k.includes('valeur') || 
+         k.includes('nombre') || 
+         k.includes('duree') || 
+         k.includes('durée') || 
+         k.includes('delai') || 
+         k.includes('délai') ||
+         k.includes('perf') ||
+         k.includes('economie') ||
+         k.includes('économie') ||
+         k === 'idprojet' ||
+         k === 'numproc' ||
+         /^\d+$/.test(k);
 };
 
 const isBooleanChoiceField = (key: string) => {
@@ -182,11 +204,17 @@ const SearchableSelect: React.FC<{
   );
 };
 
-const SimpleBarChart: React.FC<{ data: Record<string, number>, title: string, color: string }> = ({ data, title, color }) => {
+const SimpleBarChart: React.FC<{ data: Record<string, number>, title: string, color: string, onClick?: () => void, dataKey?: string }> = ({ data, title, color, onClick, dataKey }) => {
   const entries = Object.entries(data).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 8);
   const maxVal = Math.max(...entries.map(e => e[1] as number), 1);
   return (
-    <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col h-full transition-all hover:shadow-md">
+    <div 
+      className={`bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col h-full transition-all hover:shadow-md ${
+        onClick ? 'cursor-pointer hover:scale-[1.02] hover:border-blue-300' : ''
+      }`}
+      onClick={onClick}
+      title={onClick ? 'Cliquer pour voir le détail' : ''}
+    >
       <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-6">{title}</h4>
       <div className="flex-1 space-y-4">
         {entries.map(([label, val]) => (
@@ -202,15 +230,25 @@ const SimpleBarChart: React.FC<{ data: Record<string, number>, title: string, co
   );
 };
 
-const KPITile: React.FC<{ label: string, value: string | number, icon: React.ReactNode, colorClass: string, bgClass: string }> = ({ label, value, icon, colorClass, bgClass }) => (
-  <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 flex items-center gap-5 transition-all hover:shadow-lg hover:-translate-y-1 overflow-hidden min-h-[100px]">
-    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${bgClass} ${colorClass} shadow-inner shrink-0`}>{icon}</div>
-    <div className="min-w-0 flex-1">
-      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1 truncate">{label}</p>
-      <p className="text-xl font-black text-gray-900 truncate leading-none" title={String(value)}>{value}</p>
+const KPITile: React.FC<{ label: string, value: string | number, icon: React.ReactNode, colorClass: string, bgClass: string }> = ({ label, value, icon, colorClass, bgClass }) => {
+  const valueStr = String(value);
+  // Détecter si c'est un grand nombre (plus de 10 chiffres hors espaces et symboles)
+  const digitsOnly = valueStr.replace(/\D/g, '');
+  const isVeryLongValue = digitsOnly.length > 10;
+  const isLongValue = digitsOnly.length > 7;
+  
+  return (
+    <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 flex items-center gap-5 transition-all hover:shadow-lg hover:-translate-y-1 h-[120px]">
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${bgClass} ${colorClass} shadow-inner shrink-0`}>{icon}</div>
+      <div className="flex-1 flex flex-col justify-center min-w-0">
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-2 whitespace-nowrap">{label}</p>
+        <p className={`${isVeryLongValue ? 'text-base' : isLongValue ? 'text-xl' : 'text-2xl'} font-black text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis`} title={valueStr}>
+          {value}
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const App: React.FC = () => {
   // ============================================
@@ -229,6 +267,7 @@ const App: React.FC = () => {
   const [an01Error, setAn01Error] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TableType>('dashboard');
   const [activeSubTab, setActiveSubTab] = useState<'general' | 'opportunite' | 'procedures_liees' | 'documents' | 'publication' | 'offres' | 'rapport' | 'attribution' | 'marche' | 'strategie'>('general');
+  const [detailData, setDetailData] = useState<{ type: 'project' | 'procedure', data: any[], title: string } | null>(null);
   const [procedures, setProcedures] = useState<ProjectData[]>([]);
   const [dossiers, setDossiers] = useState<DossierData[]>([]);
   
@@ -736,6 +775,8 @@ const App: React.FC = () => {
       avgP: nbP > 0 ? amtP / nbP : 0,
       amtProc,
       avgProc: nbProc > 0 ? amtProc / nbProc : 0,
+      filteredDossiers,
+      filteredProcedures,
       charts: {
           projetsAcheteur: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Acheteur') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
           proceduresAcheteur: filteredProcedures.reduce((acc: Record<string, number>, p) => { const v = getProp(p, 'Acheteur') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
@@ -1147,7 +1188,17 @@ const App: React.FC = () => {
 
   const renderFormFields = (type: 'project' | 'procedure', data: any, filterFn?: (key: string) => boolean) => {
     const fields = type === 'project' ? DOSSIER_FIELDS : PROJECT_FIELDS;
-    let allKeys = Array.from(new Set([...fields.map(f => f.id), ...Object.keys(data)])).filter(k => k !== 'id' && k !== 'created_at');
+    // Pour les procédures, ajouter TOUS les champs des groupes pour être sûr qu'ils s'affichent même en création
+    const allProcedureFields = type === 'procedure' 
+      ? Array.from(new Set([
+          ...fields.map(f => f.id),
+          ...Object.keys(data),
+          ...Object.values(PROCEDURE_GROUPS).flatMap(g => g.fields),
+          'NumProc', 'Numéro de procédure (Afpa)', 'Acheteur', 'Famille Achat Principale', 'IDProjet'
+        ]))
+      : Array.from(new Set([...fields.map(f => f.id), ...Object.keys(data)]));
+    
+    let allKeys = allProcedureFields.filter(k => k !== 'id' && k !== 'created_at');
     if (filterFn) allKeys = allKeys.filter(filterFn);
 
     return (
@@ -1180,6 +1231,18 @@ const App: React.FC = () => {
               <select value={val} onChange={e => handleFieldChange(type, key, e.target.value)} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-semibold outline-none appearance-none cursor-pointer">
                 <option value="">Sélectionner...</option>
                 {PROCEDURE_STATUS_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+          );
+
+          if (key === "RP - Statut" && type === 'procedure') return (
+            <div key={key} className="flex flex-col gap-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
+              <select value={val} onChange={e => handleFieldChange(type, key, e.target.value)} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-semibold outline-none appearance-none cursor-pointer">
+                <option value="">Sélectionner...</option>
+                {RP_STATUT_OPTIONS.map(opt => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </select>
@@ -1753,12 +1816,15 @@ const App: React.FC = () => {
       )}
       <header className="surface-card border-b sticky top-0 z-40 shadow-sm h-20 flex items-center justify-between px-8">
         <div className="flex items-center gap-4">
-          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDQwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0yNDAgMTUwSDM0MFY5MEgyNDBWMTUwWiIgZmlsbD0iIzAwNGQzZCIvPgo8cGF0aCBkPSJNMjQwIDE4MEgxNDBWMzQwQzE0MCAzNjguNyAxNjMuMyAzOTIgMTkyIDM5MkgzNDBDMzY4LjcgMzkyIDM5MiAzNjguNyAzOTIgMzQwVjE4MEgyNDBaIiBmaWxsPSIjMDA0ZDNkIi8+CjxwYXRoIGQ9Ik0yODggOThIOTBDNjEuMyA5OCAzOCAxMjEuMyAzOCAxNTBWMzAwQzM4IDMyOC43IDYxLjMgMzUyIDkwIDM1MkgyODhDMzE2LjcgMzUyIDM0MCAzMjguNyAzNDAgMzAwVjE1MEMzNDAgMTIxLjMgMzE2LjcgOTggMjg4IDk4WiIgc3Ryb2tlPSIjMDA0ZDNkIiBzdHJva2Utd2lkdGg9IjE2IiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTcwIDIwNUgyMDhNMTcwIDI0NUgyNTBNMTcwIDI4NUgyNTAiIHN0cm9rZT0iIzAwNGQzZCIgc3Ryb2tlLXdpZHRoPSIxNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxwYXRoIGQ9Ik0yNDAgMTUwSDM0MEwzNjggMTMwVjkwTDM0MCA3MEgyNDBWMTUwWiIgZmlsbD0iIzAwNmQ1NyIvPgo8Y2lyY2xlIGN4PSIzNDgiIGN5PSIzMTIiIHI9IjU2IiBmaWxsPSIjMDA0ZDNkIi8+CjxwYXRoIGQ9Ik0zMjAgMzEyTDMzNiAzMjhMMzc2IDI4OCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0yNzAgNjBIMTA4QzEwMiA2MCA5NiA2NiA5NiA3MlYxMDBIOTBDNjEuMyAxMDAgMzggMTIzLjMgMzggMTUyVjE2MEM0MC42IDE1OC44IDQzLjYgMTU4IDQ3IDE1OEM2MC44IDE1OCA3MiAxNjkuMiA3MiAxODNWMzQzQzcyIDM1NS4xIDYxLjEgMzY1IDQ5IDM2NUg0N0M0My42IDM2NSA0MC42IDM2NC4yIDM4IDM2M1YzMDFDMzggMzI5LjcgNjEuMyAzNTMgOTAgMzUzSDEwOEMxMTQuNiAzNTMgMTIwIDM0Ny42IDEyMCAzNDFWODZDMTIwIDgwIDEyNS40IDc0LjQgMTMyIDc0LjRIMjQ2QzI1Mi42IDc0LjQgMjU4IDgwIDI1OCA4NlYxNTNDMjY2IDEzOCAyNzggMTI2IDI5MiAxMThWNzJDMjkyIDY2IDI4NiA2MCAyODAgNjBIMjcwWiIgZmlsbD0iIzAwNGQzZCIvPgo8L3N2Zz4=" alt="Logo" className="w-10 h-10" />
-          <h1 className="text-xl font-black text-[#004d3d]">GestProjet</h1>
+          <img src="/logo.svg" alt="Logo" className="w-12 h-12" />
+          <div className="flex flex-col">
+            <h1 className="text-xl font-black text-[#004d3d]">GestProjet</h1>
+            <span className="text-[9px] font-bold text-gray-400 tracking-wide">v1.0.0 • Mise à jour : 01/01/2026</span>
+          </div>
         </div>
         <div className="flex items-center gap-6">
           <nav className="flex gap-8">
-            {[{ label: 'Projets', key: 'dossiers' }, { label: 'Procédures', key: 'procedures' }, { label: 'Indicateurs', key: 'dashboard' }, { label: 'Gantt', key: 'gantt' }, { label: 'Commission HA', key: 'commission' }, { label: 'Export', key: 'export' }, { label: 'AN01', key: 'an01' }].map(t => (
+            {[{ label: 'Projets', key: 'dossiers' }, { label: 'Procédures', key: 'procedures' }, { label: 'Indicateurs', key: 'dashboard' }, { label: 'Gantt', key: 'gantt' }, { label: 'Commission HA', key: 'commission' }, { label: 'Export', key: 'export' }, { label: 'AN01', key: 'an01' }, ...(detailData ? [{ label: 'Détail', key: 'detail' }] : [])].map(t => (
               <button key={t.key} onClick={() => { setActiveTab(t.key as TableType); setEditingProject(null); setEditingProcedure(null); }} className={`text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === t.key ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'}`}>{t.label}</button>
             ))}
           </nav>
@@ -1897,22 +1963,70 @@ const App: React.FC = () => {
                 </div>
                 {/* Grille sur 2 lignes (3 colonnes en LG) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
-                  <KPITile label="Nb Projets" value={kpis.nbP} bgClass="bg-blue-50" colorClass="text-blue-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>} />
-                  <KPITile label="Nb Procédures" value={kpis.nbProc} bgClass="bg-indigo-50" colorClass="text-indigo-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" /></svg>} />
-                  <KPITile label="Total Projet" value={`${Math.round(kpis.amtP).toLocaleString()} €`} bgClass="bg-emerald-50" colorClass="text-emerald-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" /></svg>} />
-                  <KPITile label="Moyenne Projet" value={`${Math.round(kpis.avgP).toLocaleString()} €`} bgClass="bg-violet-50" colorClass="text-violet-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>} />
-                  <KPITile label="Total Procédures" value={`${Math.round(kpis.amtProc).toLocaleString()} €`} bgClass="bg-orange-50" colorClass="text-orange-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2" /></svg>} />
-                  <KPITile label="Moyenne Procédure" value={`${Math.round(kpis.avgProc).toLocaleString()} €`} bgClass="bg-rose-50" colorClass="text-rose-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>} />
+                  <KPITile label="Nb Projets" value={kpis.nbP.toLocaleString('fr-FR')} bgClass="bg-blue-50" colorClass="text-blue-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>} />
+                  <KPITile label="Nb Procédures" value={kpis.nbProc.toLocaleString('fr-FR')} bgClass="bg-indigo-50" colorClass="text-indigo-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" /></svg>} />
+                  <KPITile label="Total Projet" value={`${Math.round(kpis.amtP).toLocaleString('fr-FR')} €`} bgClass="bg-emerald-50" colorClass="text-emerald-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" /></svg>} />
+                  <KPITile label="Moyenne Projet" value={`${Math.round(kpis.avgP).toLocaleString('fr-FR')} €`} bgClass="bg-violet-50" colorClass="text-violet-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>} />
+                  <KPITile label="Total Procédures" value={`${Math.round(kpis.amtProc).toLocaleString('fr-FR')} €`} bgClass="bg-orange-50" colorClass="text-orange-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2" /></svg>} />
+                  <KPITile label="Moyenne Procédure" value={`${Math.round(kpis.avgProc).toLocaleString('fr-FR')} €`} bgClass="bg-rose-50" colorClass="text-rose-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>} />
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8 pt-4">
-                  <SimpleBarChart data={kpis.charts.projetsAcheteur} title={selectedAcheteurs.length > 0 ? "Répartition Projets Filtrés" : "Top Acheteurs (Projets)"} color="bg-[#004d3d]" />
-                  <SimpleBarChart data={kpis.charts.proceduresAcheteur} title={selectedAcheteurs.length > 0 ? "Répartition Procédures Filtrées" : "Top Acheteurs (Procédures)"} color="bg-indigo-600" />
-                  <SimpleBarChart data={kpis.charts.proceduresType} title="Nombre de Procédures par Type" color="bg-orange-600" />
-                  <SimpleBarChart data={kpis.charts.projetsPriorite} title="Répartition par Priorité" color="bg-[#004d3d]" />
+                  <SimpleBarChart 
+                    data={kpis.charts.projetsAcheteur} 
+                    title={selectedAcheteurs.length > 0 ? "Répartition Projets Filtrés" : "Top Acheteurs (Projets)"} 
+                    color="bg-[#004d3d]" 
+                    onClick={() => {
+                      setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Acheteur' });
+                      setActiveTab('detail');
+                    }}
+                  />
+                  <SimpleBarChart 
+                    data={kpis.charts.proceduresAcheteur} 
+                    title={selectedAcheteurs.length > 0 ? "Répartition Procédures Filtrées" : "Top Acheteurs (Procédures)"} 
+                    color="bg-indigo-600" 
+                    onClick={() => {
+                      setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Acheteur' });
+                      setActiveTab('detail');
+                    }}
+                  />
+                  <SimpleBarChart 
+                    data={kpis.charts.proceduresType} 
+                    title="Nombre de Procédures par Type" 
+                    color="bg-orange-600" 
+                    onClick={() => {
+                      setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Type' });
+                      setActiveTab('detail');
+                    }}
+                  />
+                  <SimpleBarChart 
+                    data={kpis.charts.projetsPriorite} 
+                    title="Répartition par Priorité" 
+                    color="bg-[#004d3d]" 
+                    onClick={() => {
+                      setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Priorité' });
+                      setActiveTab('detail');
+                    }}
+                  />
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 pt-4">
-                  <SimpleBarChart data={kpis.charts.projetsClientInterne} title="Projets par Client Interne" color="bg-violet-600" />
-                  <SimpleBarChart data={kpis.charts.proceduresTypeMoyenne} title="Montant Moyen par Type (€)" color="bg-emerald-600" />
+                  <SimpleBarChart 
+                    data={kpis.charts.projetsClientInterne} 
+                    title="Projets par Client Interne" 
+                    color="bg-violet-600" 
+                    onClick={() => {
+                      setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Client Interne' });
+                      setActiveTab('detail');
+                    }}
+                  />
+                  <SimpleBarChart 
+                    data={kpis.charts.proceduresTypeMoyenne} 
+                    title="Montant Moyen par Type (€)" 
+                    color="bg-emerald-600" 
+                    onClick={() => {
+                      setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Montant Moyen par Type' });
+                      setActiveTab('detail');
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -2311,9 +2425,48 @@ const App: React.FC = () => {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>Reset
                     </button>
                   )}
-                  <button onClick={() => activeTab === 'dossiers' ? setEditingProject({ IDProjet: `P${Date.now().toString().slice(-4)}` }) : setEditingProcedure({ NumProc: `PR${Date.now().toString().slice(-4)}` })} className={`whitespace-nowrap px-10 py-4 rounded-xl text-white font-semibold text-sm ${activeTab === 'dossiers' ? 'bg-green-600 hover:bg-green-700' : 'bg-green-600 hover:bg-green-700'} h-[54px] transition-colors flex items-center gap-2`}>
+                  <button onClick={() => {
+                    if (activeTab === 'dossiers') {
+                      const maxId = dossiers.reduce((max, p) => {
+                        const num = parseInt(String(p.IDProjet || '') || '0');
+                        return num > max ? num : max;
+                      }, 0);
+                      setEditingProject({ IDProjet: `${maxId + 1}` });
+                    } else {
+                      // Trouver le plus grand numéro de procédure standalone (format PR####)
+                      let maxProcNum = 0;
+                      procedures.forEach(proc => {
+                        const numProc = String(getProp(proc, 'NumProc') || '');
+                        if (numProc.startsWith('PR')) {
+                          const numPart = numProc.replace(/^PR/, '').replace(/\D/g, '');
+                          const num = parseInt(numPart);
+                          if (!isNaN(num) && num > maxProcNum) {
+                            maxProcNum = num;
+                          }
+                        }
+                      });
+                      const nextNum = (maxProcNum + 1).toString().padStart(4, '0');
+                      
+                      // Initialiser tous les champs d'identification + champs techniques
+                      const newProcedure: Partial<ProjectData> = {
+                        // Champs techniques (non dans PROCEDURE_GROUPS mais nécessaires)
+                        NumProc: `PR${nextNum}`,
+                        "Numéro de procédure (Afpa)": "",
+                        Acheteur: "",
+                        "Famille Achat Principale": "",
+                        IDProjet: "",
+                        // Champs d'identification (groupe)
+                        "Type de procédure": "",
+                        "Code CPV Principal": "",
+                        "Nom de la procédure": "",
+                        "Objet court": "",
+                        "Statut de la consultation": "1 - Initiée",
+                      };
+                      setEditingProcedure(newProcedure);
+                    }
+                  }} className={`whitespace-nowrap px-10 py-4 rounded-xl text-white font-semibold text-sm ${activeTab === 'dossiers' ? 'bg-green-600 hover:bg-green-700' : 'bg-green-600 hover:bg-green-700'} h-[54px] transition-colors flex items-center gap-2`}>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
-                    Export
+                    {activeTab === 'dossiers' ? 'Nouveau Projet' : 'Nouvelle Procédure'}
                   </button>
                 </div>
                 <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
@@ -2362,7 +2515,7 @@ const App: React.FC = () => {
                             {fieldsForTab.map(f => (
                               <th 
                                 key={f.id} 
-                                className="px-8 py-5 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest cursor-pointer hover:text-[#004d3d] transition-colors"
+                                className={`px-8 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest cursor-pointer hover:text-[#004d3d] transition-colors ${isNumericField(f.id) || isDateField(f.id) ? 'text-right' : 'text-left'}`}
                                 onClick={() => handleSort(f.id)}
                               >
                                 {f.label} {sortColumn === f.id && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -2373,7 +2526,7 @@ const App: React.FC = () => {
                           <tbody className="divide-y divide-gray-50">
                             {rows.map((item, i) => (
                               <tr key={i} className="hover:bg-gray-50/50 group transition-colors">
-                                {fieldsForTab.map(f => <td key={f.id} className="px-8 py-5 text-xs text-gray-600 font-bold max-w-[200px] truncate">{isDateField(f.id) ? formatDisplayDate(getProp(item, f.id)) : (getProp(item, f.id) || '-')}</td>)}
+                                {fieldsForTab.map(f => <td key={f.id} className={`px-8 py-5 text-xs text-gray-600 font-bold max-w-[200px] truncate ${isNumericField(f.id) || isDateField(f.id) ? 'text-right' : 'text-left'}`}>{isDateField(f.id) ? formatDisplayDate(getProp(item, f.id)) : (getProp(item, f.id) || '-')}</td>)}
                                 <td className="px-8 py-5 text-right sticky right-0 bg-white/80 transition-colors backdrop-blur-sm">
                                   <button onClick={() => { if(activeTab === 'dossiers') { setEditingProject(item); setActiveSubTab('general'); } else { setEditingProcedure(item); setActiveSubTab('general'); } }} className={`p-2.5 rounded-xl transition-all ${activeTab === 'dossiers' ? 'text-emerald-700 bg-emerald-50' : 'text-blue-600 bg-blue-50'}`}><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
                                 </td>
@@ -2569,6 +2722,95 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'detail' && detailData && (
+          <div className="space-y-6 animate-in fade-in duration-700">
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-[#004d3d] mb-2">{detailData.title}</h2>
+                  <p className="text-sm text-gray-500">{detailData.data.length} entrée(s) trouvée(s)</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setActiveTab('dashboard');
+                    setDetailData(null);
+                  }}
+                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                  Retour
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+              {/* Barre de défilement supérieure */}
+              <div 
+                className="overflow-x-auto border-b border-gray-200" 
+                onScroll={(e) => {
+                  const bottomScroll = document.getElementById('detail-table-bottom');
+                  if (bottomScroll) bottomScroll.scrollLeft = (e.target as HTMLDivElement).scrollLeft;
+                }}
+              >
+                <div style={{ height: '1px', width: `${(detailData.type === 'project' ? PROJECT_FIELDS.length : DOSSIER_FIELDS.length) * 200}px` }}></div>
+              </div>
+              
+              {/* Tableau principal */}
+              <div 
+                id="detail-table-bottom"
+                className="overflow-x-auto"
+                onScroll={(e) => {
+                  const topScroll = document.querySelector('.overflow-x-auto.border-b') as HTMLDivElement;
+                  if (topScroll) topScroll.scrollLeft = (e.target as HTMLDivElement).scrollLeft;
+                }}
+              >
+                <table className="themed-table w-full">
+                  <thead className="bg-gray-50/50">
+                    <tr>
+                      {detailData.type === 'project' ? (
+                        PROJECT_FIELDS.map(field => (
+                          <th key={field.id} className={`px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
+                            {field.label}
+                          </th>
+                        ))
+                      ) : (
+                        DOSSIER_FIELDS.map(field => (
+                          <th key={field.id} className={`px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
+                            {field.label}
+                          </th>
+                        ))
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {detailData.data.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                        {detailData.type === 'project' ? (
+                          PROJECT_FIELDS.map(field => (
+                            <td key={field.id} className={`px-6 py-4 text-xs font-semibold text-gray-700 whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
+                              {isDateField(field.id) 
+                                ? formatDisplayDate(getProp(item, field.id)) 
+                                : (getProp(item, field.id) || '-')}
+                            </td>
+                          ))
+                        ) : (
+                          DOSSIER_FIELDS.map(field => (
+                            <td key={field.id} className={`px-6 py-4 text-xs font-semibold text-gray-700 whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
+                              {isDateField(field.id) 
+                                ? formatDisplayDate(getProp(item, field.id)) 
+                                : (getProp(item, field.id) || '-')}
+                            </td>
+                          ))
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'commission' && (() => {
           const handleSort = (column: string) => {
             if (commissionSortColumn === column) {
@@ -2637,10 +2879,10 @@ const App: React.FC = () => {
                       <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('priorite')}>
                         Priorité {commissionSortColumn === 'priorite' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
                       </th>
-                      <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('montant')}>
+                      <th className="px-8 py-6 text-right text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('montant')}>
                         Montant prévu {commissionSortColumn === 'montant' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
                       </th>
-                      <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('date')}>
+                      <th className="px-8 py-6 text-right text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('date')}>
                         Date limite validation {commissionSortColumn === 'date' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
                       </th>
                     </tr>
@@ -2662,7 +2904,7 @@ const App: React.FC = () => {
                               {d.Priorite || "Non définie"}
                             </span>
                           </td>
-                          <td className="px-8 py-6 text-sm text-gray-600 font-bold">
+                          <td className="px-8 py-6 text-sm text-gray-600 font-bold text-right">
                             {(() => {
                               const montant = d["Montant_previsionnel_du_marche_(_HT)_"];
                               if (!montant) return "—";
@@ -2671,7 +2913,7 @@ const App: React.FC = () => {
                               return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(num);
                             })()}
                           </td>
-                          <td className="px-8 py-6 text-sm text-gray-600">
+                          <td className="px-8 py-6 text-sm text-gray-600 text-right">
                             {(() => {
                               const dateStr = d["NO_-_Date_previsionnelle_CA_ou_Commission"];
                               if (!dateStr) return "—";
