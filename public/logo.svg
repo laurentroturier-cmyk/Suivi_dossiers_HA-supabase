@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Mallette -->
+  <path d="M242 151h316c33.1 0 60 26.9 60 60v238c0 33.1-26.9 60-60 60H242c-33.1 0-60-26.9-60-60V211c0-33.1 26.9-60 60-60z" fill="#004d3d"/>
+  <rect x="320" y="100" width="160" height="51" rx="25" fill="#004d3d"/>
+  <path d="M242 151h316c33.1 0 60 26.9 60 60v30H182v-30c0-33.1 26.9-60 60-60z" fill="#006d57"/>
+  <rect x="290" y="270" width="80" height="30" rx="4" fill="white"/>
+  
+  <!-- Document -->
+  <rect x="380" y="180" width="200" height="280" rx="10" fill="white" stroke="#004d3d" stroke-width="12"/>
+  <path d="M540 180v60h60l-60-60z" fill="#004d3d"/>
+  <line x1="420" y1="280" x2="520" y2="280" stroke="#004d3d" stroke-width="10" stroke-linecap="round"/>
+  <line x1="420" y1="320" x2="540" y2="320" stroke="#004d3d" stroke-width="10" stroke-linecap="round"/>
+  <line x1="420" y1="360" x2="540" y2="360" stroke="#004d3d" stroke-width="10" stroke-linecap="round"/>
+  
+  <!-- Cercle de validation -->
+  <circle cx="520" cy="420" r="70" fill="#004d3d"/>
+  <path d="M480 420l25 25 55-55" stroke="white" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

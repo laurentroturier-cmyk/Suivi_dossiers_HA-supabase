@@ -35,6 +35,10 @@ export const DOSSIER_FIELDS = [
   { id: 'Commission_Achat', label: 'Commission Achat' },
   { id: 'NO_-_Type_de_validation', label: 'Type de validation' },
   { id: 'Montant_previsionnel_du_marche_(_HT)_', label: 'Montant Prév. HT' },
+  { id: 'Date_de_lancement_de_la_consultation', label: 'Date lancement consultation' },
+  { id: 'Date_de_deploiement_previsionnelle_du_marche', label: 'Date déploiement prév.' },
+  { id: 'Perf_achat_previsionnelle_(en_%)', label: 'Perf. achat prév. (%)' },
+  { id: 'Origine_du_montant_pour_le_calcul_de_l\'economie', label: 'Origine montant économie' },
 ];
 
 // Liste déroulante pour le champ "Statut_du_Dossier"

@@ -432,7 +432,7 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack }) => {
               </div>
               
               <div className="z-10 w-full md:w-auto">
-                <span className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded uppercase tracking-wide">Candidat Recommandé</span>
+                <span className="bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Candidat Recommandé</span>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-2 truncate max-w-xl" title={winner.name}>{winner.name}</h2>
                 <div className="flex flex-wrap items-center gap-4 mt-3">
                   <div className="flex items-center text-green-800 bg-white/50 px-3 py-1 rounded-full">

@@ -230,21 +230,34 @@ const SimpleBarChart: React.FC<{ data: Record<string, number>, title: string, co
   );
 };
 
-const KPITile: React.FC<{ label: string, value: string | number, icon: React.ReactNode, colorClass: string, bgClass: string }> = ({ label, value, icon, colorClass, bgClass }) => {
-  const valueStr = String(value);
-  // Détecter si c'est un grand nombre (plus de 10 chiffres hors espaces et symboles)
-  const digitsOnly = valueStr.replace(/\D/g, '');
-  const isVeryLongValue = digitsOnly.length > 10;
-  const isLongValue = digitsOnly.length > 7;
+// Helper function to format numbers with French conventions
+const formatNumberFR = (num: number): string => {
+  return new Intl.NumberFormat('fr-FR', { 
+    useGrouping: true,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(num).replace(/\s/g, '\u202F'); // Use narrow non-breaking space
+};
+
+const KPITile: React.FC<{ label: string, value: number, unit?: string }> = ({ label, value, unit }) => {
+  const formattedValue = formatNumberFR(value);
   
   return (
-    <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 flex items-center gap-5 transition-all hover:shadow-lg hover:-translate-y-1 h-[120px]">
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${bgClass} ${colorClass} shadow-inner shrink-0`}>{icon}</div>
-      <div className="flex-1 flex flex-col justify-center min-w-0">
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-2 whitespace-nowrap">{label}</p>
-        <p className={`${isVeryLongValue ? 'text-base' : isLongValue ? 'text-xl' : 'text-2xl'} font-black text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis`} title={valueStr}>
-          {value}
+    <div className="bg-white flex flex-col h-full rounded-2xl border border-gray-100">
+      <div className="px-8 py-7 flex flex-col justify-between h-full">
+        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-[0.08em] mb-6 leading-tight text-center">
+          {label}
         </p>
+        <div className="flex items-baseline gap-1 justify-end text-right">
+          <p className="text-4xl font-bold text-gray-900 leading-none tabular-nums tracking-tight">
+            {formattedValue}
+          </p>
+          {unit && (
+            <p className="text-base font-normal text-gray-500 leading-none ml-0.5">
+              {unit}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -281,6 +294,8 @@ const App: React.FC = () => {
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([]);
   const [selectedProcTypes, setSelectedProcTypes] = useState<string[]>([]);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
+  const [selectedYears, setSelectedYears] = useState<string[]>([]);
+  const [selectedDeployYears, setSelectedDeployYears] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
     return DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5'));
   });
@@ -727,6 +742,67 @@ const App: React.FC = () => {
   const uniqueFamilies = useMemo(() => Array.from(new Set(procedures.map(p => String(getProp(p, 'Famille Achat Principale'))).filter(Boolean))).sort(), [procedures]);
   const uniqueTypesForFilter = useMemo(() => Array.from(new Set(procedures.map(p => String(getProp(p, 'Type de procédure'))).filter(Boolean))).sort(), [procedures]);
   const uniqueCcagsForFilter = useMemo(() => Array.from(new Set(procedures.map(p => String(getProp(p, 'CCAG'))).filter(Boolean))).sort(), [procedures]);
+  
+  const uniqueYears = useMemo(() => {
+    const years = new Set<string>();
+    dossiers.forEach(d => {
+      const dateValue = getProp(d, 'Date_de_lancement_de_la_consultation');
+      if (dateValue) {
+        let year: number;
+        // Vérifier si c'est un nombre (format Excel)
+        const numValue = parseFloat(String(dateValue));
+        if (!isNaN(numValue) && numValue > 1000) {
+          // Format Excel: convertir le numéro de série en date
+          // Excel commence le 1er janvier 1900 (en réalité 1899-12-30 pour la compatibilité Lotus)
+          const excelDate = new Date((numValue - 25569) * 86400 * 1000);
+          year = excelDate.getFullYear();
+        } else {
+          // Format date standard
+          year = new Date(dateValue).getFullYear();
+        }
+        if (!isNaN(year) && year >= 2000 && year <= 2100) {
+          years.add(String(year));
+        }
+      }
+    });
+    return Array.from(years).sort();
+  }, [dossiers]);
+
+  const toggleYear = (year: string) => {
+    setSelectedYears(prev => prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]);
+  };
+
+  const uniqueDeployYears = useMemo(() => {
+    const years = new Set<string>();
+    dossiers.forEach(d => {
+      const dateValue = getProp(d, 'Date_de_deploiement_previsionnelle_du_marche');
+      if (dateValue) {
+        let year: number;
+        // Vérifier si c'est un nombre (format Excel)
+        const numValue = parseFloat(String(dateValue));
+        if (!isNaN(numValue) && numValue > 1000) {
+          // Format Excel: convertir le numéro de série en date
+          const excelDate = new Date((numValue - 25569) * 86400 * 1000);
+          year = excelDate.getFullYear();
+        } else {
+          // Format date standard
+          year = new Date(dateValue).getFullYear();
+        }
+        if (!isNaN(year) && year >= 2000 && year <= 2100) {
+          years.add(String(year));
+        }
+      }
+    });
+    return Array.from(years).sort();
+  }, [dossiers]);
+
+  const toggleDeployYear = (year: string) => {
+    setSelectedDeployYears(prev => prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]);
+  };
+
+  const toggleDossierStatus = (status: string) => {
+    setSelectedStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]);
+  };
 
   const kpis = useMemo(() => {
     const matchesAcheteur = (val: any) => selectedAcheteurs.length === 0 || selectedAcheteurs.includes(val);
@@ -734,13 +810,54 @@ const App: React.FC = () => {
     const matchesProcType = (val: any) => selectedProcTypes.length === 0 || selectedProcTypes.includes(val);
     const matchesPriority = (val: any) => selectedPriorities.length === 0 || selectedPriorities.includes(val);
     const matchesStatus = (val: any) => selectedStatuses.length === 0 || selectedStatuses.includes(val);
+    const matchesYear = (d: any) => {
+      if (selectedYears.length === 0) return true;
+      const dateValue = getProp(d, 'Date_de_lancement_de_la_consultation');
+      if (!dateValue) return false;
+      
+      let year: number;
+      // Vérifier si c'est un nombre (format Excel)
+      const numValue = parseFloat(String(dateValue));
+      if (!isNaN(numValue) && numValue > 1000) {
+        // Format Excel: convertir le numéro de série en date
+        const excelDate = new Date((numValue - 25569) * 86400 * 1000);
+        year = excelDate.getFullYear();
+      } else {
+        // Format date standard
+        year = new Date(dateValue).getFullYear();
+      }
+      
+      return selectedYears.includes(String(year));
+    };
+    
+    const matchesDeployYear = (d: any) => {
+      if (selectedDeployYears.length === 0) return true;
+      const dateValue = getProp(d, 'Date_de_deploiement_previsionnelle_du_marche');
+      if (!dateValue) return false;
+      
+      let year: number;
+      // Vérifier si c'est un nombre (format Excel)
+      const numValue = parseFloat(String(dateValue));
+      if (!isNaN(numValue) && numValue > 1000) {
+        // Format Excel: convertir le numéro de série en date
+        const excelDate = new Date((numValue - 25569) * 86400 * 1000);
+        year = excelDate.getFullYear();
+      } else {
+        // Format date standard
+        year = new Date(dateValue).getFullYear();
+      }
+      
+      return selectedDeployYears.includes(String(year));
+    };
 
     const filteredDossiers = dossiers.filter(d => (
       matchesAcheteur(getProp(d, 'Acheteur')) &&
       matchesFamily(getProp(d, 'Famille Achat Principale')) &&
       matchesProcType(getProp(d, 'Type de procédure')) &&
       matchesPriority(getProp(d, 'Priorite')) &&
-      matchesStatus(getProp(d, 'Statut_du_Dossier'))
+      matchesStatus(getProp(d, 'Statut_du_Dossier')) &&
+      matchesYear(d) &&
+      matchesDeployYear(d)
     ));
 
     const filteredProcedures = procedures.filter(p => (
@@ -781,12 +898,14 @@ const App: React.FC = () => {
           projetsAcheteur: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Acheteur') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
           proceduresAcheteur: filteredProcedures.reduce((acc: Record<string, number>, p) => { const v = getProp(p, 'Acheteur') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
           proceduresType: filteredProcedures.reduce((acc: Record<string, number>, p) => { const v = getProp(p, 'Type de procédure') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
+          proceduresStatut: filteredProcedures.reduce((acc: Record<string, number>, p) => { const v = getProp(p, 'Statut de la consultation') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
           projetsPriorite: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Priorite') || 'Non définie'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
+          projetsStatut: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Statut_du_Dossier') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
           projetsClientInterne: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Client_Interne') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
           proceduresTypeMoyenne
       }
     };
-  }, [dossiers, procedures, selectedAcheteurs, selectedFamilies, selectedProcTypes, selectedPriorities, selectedStatuses]);
+  }, [dossiers, procedures, selectedAcheteurs, selectedFamilies, selectedProcTypes, selectedPriorities, selectedStatuses, selectedYears, selectedDeployYears]);
 
   const filteredD = useMemo(() => {
     const matchesProjectSearch = (d: DossierData) => {
@@ -1040,6 +1159,8 @@ const App: React.FC = () => {
     setSelectedFamilies([]);
     setSelectedProcTypes([]);
     setSelectedPriorities([]);
+    setSelectedYears([]);
+    setSelectedDeployYears([]);
     // Réinitialiser avec les 6 statuts par défaut (exclure "4 - Terminé" et "5 - Abandonné")
     setSelectedStatuses(DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5')));
     setSelectedClientsInternes([]);
@@ -1816,7 +1937,7 @@ const App: React.FC = () => {
       )}
       <header className="surface-card border-b sticky top-0 z-40 shadow-sm h-20 flex items-center justify-between px-8">
         <div className="flex items-center gap-4">
-          <img src="/logo.svg" alt="Logo" className="w-12 h-12" />
+          <img src="/logo.png" alt="Logo" className="h-12 object-contain" />
           <div className="flex flex-col">
             <h1 className="text-xl font-black text-[#004d3d]">GestProjet</h1>
             <span className="text-[9px] font-bold text-gray-400 tracking-wide">v1.0.0 • Mise à jour : 01/01/2026</span>
@@ -1850,7 +1971,7 @@ const App: React.FC = () => {
                 )}
                 <button
                   onClick={() => setShowAdminDashboard(true)}
-                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 relative"
+                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 relative"
                   title="Accéder au Dashboard Admin"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1913,7 +2034,14 @@ const App: React.FC = () => {
               <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border border-gray-600"></div>
             </button>
           </div>
-          <button onClick={() => supabaseClient && fetchData(supabaseClient)} className={`w-10 h-10 flex items-center justify-center text-gray-300 rounded-full ${isLoading ? 'animate-spin' : ''}`}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+          <button 
+            onClick={() => supabaseClient && fetchData(supabaseClient)} 
+            className={`w-10 h-10 flex items-center justify-center bg-white hover:bg-gray-50 border border-gray-200 rounded-full transition-all ${isLoading ? 'animate-spin' : ''}`}
+          >
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -1955,78 +2083,169 @@ const App: React.FC = () => {
                     selected={selectedProcTypes}
                     onToggle={toggleProcType}
                   />
-                  {(selectedAcheteurs.length > 0 || selectedFamilies.length > 0 || selectedProcTypes.length > 0 || selectedPriorities.length > 0) && (
+                  <FilterDropdown 
+                    id="dash-year"
+                    label="Année de Lancement"
+                    options={uniqueYears}
+                    selected={selectedYears}
+                    onToggle={toggleYear}
+                  />
+                  <FilterDropdown 
+                    id="dash-deploy-year"
+                    label="Année de Déploiement"
+                    options={uniqueDeployYears}
+                    selected={selectedDeployYears}
+                    onToggle={toggleDeployYear}
+                  />
+                  <FilterDropdown 
+                    id="dash-status"
+                    label="Statut projet"
+                    options={DOSSIER_STATUS_OPTIONS}
+                    selected={selectedStatuses}
+                    onToggle={toggleDossierStatus}
+                  />
+                  {(selectedAcheteurs.length > 0 || selectedFamilies.length > 0 || selectedProcTypes.length > 0 || selectedPriorities.length > 0 || selectedYears.length > 0 || selectedDeployYears.length > 0 || selectedStatuses.length !== DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5')).length) && (
                     <button onClick={resetFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-xl transition-all flex items-center gap-2 h-[54px]">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>Reset
                     </button>
                   )}
                 </div>
-                {/* Grille sur 2 lignes (3 colonnes en LG) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
-                  <KPITile label="Nb Projets" value={kpis.nbP.toLocaleString('fr-FR')} bgClass="bg-blue-50" colorClass="text-blue-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>} />
-                  <KPITile label="Nb Procédures" value={kpis.nbProc.toLocaleString('fr-FR')} bgClass="bg-indigo-50" colorClass="text-indigo-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" /></svg>} />
-                  <KPITile label="Total Projet" value={`${Math.round(kpis.amtP).toLocaleString('fr-FR')} €`} bgClass="bg-emerald-50" colorClass="text-emerald-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" /></svg>} />
-                  <KPITile label="Moyenne Projet" value={`${Math.round(kpis.avgP).toLocaleString('fr-FR')} €`} bgClass="bg-violet-50" colorClass="text-violet-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>} />
-                  <KPITile label="Total Procédures" value={`${Math.round(kpis.amtProc).toLocaleString('fr-FR')} €`} bgClass="bg-orange-50" colorClass="text-orange-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2" /></svg>} />
-                  <KPITile label="Moyenne Procédure" value={`${Math.round(kpis.avgProc).toLocaleString('fr-FR')} €`} bgClass="bg-rose-50" colorClass="text-rose-600" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>} />
+                
+                {/* Titre avec années filtrées */}
+                {/* Affichage des filtres appliqués */}
+                {(selectedAcheteurs.length > 0 || selectedPriorities.length > 0 || selectedFamilies.length > 0 || 
+                  selectedProcTypes.length > 0 || selectedYears.length > 0 || selectedDeployYears.length > 0 || 
+                  selectedStatuses.length > 0) && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                    <p className="text-sm font-semibold text-blue-900 mb-2">Filtres appliqués :</p>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      {selectedAcheteurs.length > 0 && (
+                        <li>• Acheteur : {selectedAcheteurs.join(', ')}</li>
+                      )}
+                      {selectedPriorities.length > 0 && (
+                        <li>• Priorité : {selectedPriorities.join(', ')}</li>
+                      )}
+                      {selectedFamilies.length > 0 && (
+                        <li>• Famille d'achat : {selectedFamilies.join(', ')}</li>
+                      )}
+                      {selectedProcTypes.length > 0 && (
+                        <li>• Type de procédure : {selectedProcTypes.join(', ')}</li>
+                      )}
+                      {selectedYears.length > 0 && (
+                        <li>• Année de lancement : {selectedYears.join(', ')}</li>
+                      )}
+                      {selectedDeployYears.length > 0 && (
+                        <li>• Année de déploiement : {selectedDeployYears.join(', ')}</li>
+                      )}
+                      {selectedStatuses.length > 0 && (
+                        <li>• Statut projet : {selectedStatuses.join(', ')}</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+                
+                {/* Executive KPI Dashboard */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <KPITile label="NB PROJETS" value={kpis.nbP} />
+                  <KPITile label="NB PROCÉDURES" value={kpis.nbProc} />
+                  <KPITile label="TOTAL PROJET" value={Math.round(kpis.amtP)} unit="€" />
+                  <KPITile label="MOYENNE PROJET" value={Math.round(kpis.avgP)} unit="€" />
+                  <KPITile label="TOTAL PROCÉDURES" value={Math.round(kpis.amtProc)} unit="€" />
+                  <KPITile label="MOYENNE PROCÉDURE" value={Math.round(kpis.avgProc)} unit="€" />
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8 pt-4">
-                  <SimpleBarChart 
-                    data={kpis.charts.projetsAcheteur} 
-                    title={selectedAcheteurs.length > 0 ? "Répartition Projets Filtrés" : "Top Acheteurs (Projets)"} 
-                    color="bg-[#004d3d]" 
-                    onClick={() => {
-                      setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Acheteur' });
-                      setActiveTab('detail');
-                    }}
-                  />
-                  <SimpleBarChart 
-                    data={kpis.charts.proceduresAcheteur} 
-                    title={selectedAcheteurs.length > 0 ? "Répartition Procédures Filtrées" : "Top Acheteurs (Procédures)"} 
-                    color="bg-indigo-600" 
-                    onClick={() => {
-                      setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Acheteur' });
-                      setActiveTab('detail');
-                    }}
-                  />
-                  <SimpleBarChart 
-                    data={kpis.charts.proceduresType} 
-                    title="Nombre de Procédures par Type" 
-                    color="bg-orange-600" 
-                    onClick={() => {
-                      setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Type' });
-                      setActiveTab('detail');
-                    }}
-                  />
-                  <SimpleBarChart 
-                    data={kpis.charts.projetsPriorite} 
-                    title="Répartition par Priorité" 
-                    color="bg-[#004d3d]" 
-                    onClick={() => {
-                      setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Priorité' });
-                      setActiveTab('detail');
-                    }}
-                  />
+                
+                {/* Section PROJETS */}
+                <div className="mt-12">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-1 w-12 bg-[#004d3d] rounded"></div>
+                    <h2 className="text-2xl font-black text-gray-900 uppercase tracking-wide">Projets</h2>
+                    <div className="flex-1 h-1 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8">
+                    <SimpleBarChart 
+                      data={kpis.charts.projetsAcheteur} 
+                      title={selectedAcheteurs.length > 0 ? "Répartition Projets Filtrés" : "Top Acheteurs (Projets)"} 
+                      color="bg-[#004d3d]" 
+                      onClick={() => {
+                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Acheteur' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                    <SimpleBarChart 
+                      data={kpis.charts.projetsPriorite} 
+                      title="Projets par Priorité" 
+                      color="bg-teal-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Priorité' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                    <SimpleBarChart 
+                      data={kpis.charts.projetsStatut} 
+                      title="Projets par Statut" 
+                      color="bg-emerald-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Statut' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                    <SimpleBarChart 
+                      data={kpis.charts.projetsClientInterne} 
+                      title="Projets par Client Interne" 
+                      color="bg-violet-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Client Interne' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 pt-4">
-                  <SimpleBarChart 
-                    data={kpis.charts.projetsClientInterne} 
-                    title="Projets par Client Interne" 
-                    color="bg-violet-600" 
-                    onClick={() => {
-                      setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Client Interne' });
-                      setActiveTab('detail');
-                    }}
-                  />
-                  <SimpleBarChart 
-                    data={kpis.charts.proceduresTypeMoyenne} 
-                    title="Montant Moyen par Type (€)" 
-                    color="bg-emerald-600" 
-                    onClick={() => {
-                      setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Montant Moyen par Type' });
-                      setActiveTab('detail');
-                    }}
-                  />
+
+                {/* Section PROCÉDURES */}
+                <div className="mt-12">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-1 w-12 bg-indigo-600 rounded"></div>
+                    <h2 className="text-2xl font-black text-gray-900 uppercase tracking-wide">Procédures</h2>
+                    <div className="flex-1 h-1 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8">
+                    <SimpleBarChart 
+                      data={kpis.charts.proceduresAcheteur} 
+                      title={selectedAcheteurs.length > 0 ? "Répartition Procédures Filtrées" : "Top Acheteurs (Procédures)"} 
+                      color="bg-indigo-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Acheteur' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                    <SimpleBarChart 
+                      data={kpis.charts.proceduresType} 
+                      title="Procédures par Type" 
+                      color="bg-orange-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Type' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                    <SimpleBarChart 
+                      data={kpis.charts.proceduresStatut} 
+                      title="Procédures par Statut" 
+                      color="bg-blue-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Statut' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                    <SimpleBarChart 
+                      data={kpis.charts.proceduresTypeMoyenne} 
+                      title="Montant Moyen par Type (€)" 
+                      color="bg-rose-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Montant Moyen par Type' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -2550,7 +2769,7 @@ const App: React.FC = () => {
               <h2 className="text-sm font-black text-gray-900 uppercase tracking-[0.3em]">Édition {editingProject ? 'Dossier' : 'Procédure'}</h2>
               <div className="flex items-center gap-3">
                 <button onClick={() => save(editingProject ? 'project' : 'procedure')} disabled={isSaving} className={`px-12 py-4 rounded-2xl text-white font-black text-xs uppercase tracking-widest transition-all ${editingProject ? 'bg-[#004d3d]' : 'bg-blue-600'}`}>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</button>
-                <button onClick={() => { setEditingProject(null); setEditingProcedure(null); }} className="px-8 py-4 rounded-2xl bg-gray-100 text-gray-700 font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">Quitter</button>
+                <button onClick={() => { setEditingProject(null); setEditingProcedure(null); }} className="px-8 py-4 rounded-2xl bg-gray-700 text-white font-black text-xs uppercase tracking-widest hover:bg-gray-600 transition-all">Quitter</button>
               </div>
             </div>
             <div className="bg-white border border-gray-100 p-12 rounded-[3.5rem] shadow-sm min-h-[400px]">

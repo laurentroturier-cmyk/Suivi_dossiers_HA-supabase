@@ -27,6 +27,10 @@ export interface ProjectData {
   "Données essentielles": string;
   "Finalité de la consultation": string;
   "Statut de la consultation": string;
+  "Date_de_lancement_de_la_consultation": string;
+  "Date_de_deploiement_previsionnelle_du_marche": string;
+  "Perf_achat_previsionnelle_(en_%)": string;
+  "Origine_du_montant_pour_le_calcul_de_l'economie": string;
   "Délai de traitement (calcul)": string;
   "RP - Date validation MSA": string;
   "RP - Date envoi signature élec": string;
