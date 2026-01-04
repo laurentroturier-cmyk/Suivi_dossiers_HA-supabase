@@ -219,7 +219,7 @@ const SimpleBarChart: React.FC<{ data: Record<string, number>, title: string, co
       <div className="flex-1 space-y-4">
         {entries.map(([label, val]) => (
           <div key={label} className="space-y-1.5">
-            <div className="flex justify-between text-[11px] font-bold text-gray-700"><span className="truncate pr-4">{label || 'N/C'}</span><span>{Math.round(val).toLocaleString('fr-FR')}</span></div>
+            <div className="flex justify-between text-[11px] font-bold text-gray-700"><span className="truncate pr-4">{label || 'N/C'}</span><span>{Math.round(val as number).toLocaleString('fr-FR')}</span></div>
             <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
               <div className={`h-full transition-all duration-1000 ease-out ${color}`} style={{ width: `${((val as number) / (maxVal as number)) * 100}%` }} />
             </div>
@@ -243,17 +243,17 @@ const KPITile: React.FC<{ label: string, value: number, unit?: string }> = ({ la
   const formattedValue = formatNumberFR(value);
   
   return (
-    <div className="bg-white flex flex-col h-full rounded-2xl border border-gray-100">
-      <div className="px-8 py-7 flex flex-col justify-between h-full">
-        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-[0.08em] mb-6 leading-tight text-center">
+    <div className="bg-white flex flex-col h-full rounded-xl border border-gray-100">
+      <div className="px-4 py-4 flex flex-col justify-between h-full">
+        <p className="text-[9px] font-medium text-gray-400 uppercase tracking-[0.08em] mb-3 leading-tight text-center">
           {label}
         </p>
         <div className="flex items-baseline gap-1 justify-end text-right">
-          <p className="text-4xl font-bold text-gray-900 leading-none tabular-nums tracking-tight">
+          <p className="text-2xl font-bold text-gray-900 leading-none tabular-nums tracking-tight">
             {formattedValue}
           </p>
           {unit && (
-            <p className="text-base font-normal text-gray-500 leading-none ml-0.5">
+            <p className="text-sm font-normal text-gray-500 leading-none ml-0.5">
               {unit}
             </p>
           )}
@@ -885,6 +885,31 @@ const App: React.FC = () => {
       return acc;
     }, {});
 
+    // Calcul des taux de dispositions environnementales et sociales
+    const nbDispoEnv = filteredProcedures.filter(p => {
+      const val = String(getProp(p, 'Dispo environnementales') || '').toLowerCase();
+      return val === 'oui';
+    }).length;
+    const tauxDispoEnv = nbProc > 0 ? (nbDispoEnv / nbProc) * 100 : 0;
+
+    const nbDispoSoc = filteredProcedures.filter(p => {
+      const val = String(getProp(p, 'Dispo sociales') || '').toLowerCase();
+      return val === 'oui';
+    }).length;
+    const tauxDispoSoc = nbProc > 0 ? (nbDispoSoc / nbProc) * 100 : 0;
+
+    const nbProjetsInnovants = filteredProcedures.filter(p => {
+      const val = String(getProp(p, 'Projet ouvert à l\'acquisition de solutions innovantes') || '').toLowerCase();
+      return val === 'oui';
+    }).length;
+    const tauxProjetsInnovants = nbProc > 0 ? (nbProjetsInnovants / nbProc) * 100 : 0;
+
+    const nbProjetsTPEPME = filteredProcedures.filter(p => {
+      const val = String(getProp(p, 'Projet facilitant l\'accès aux TPE/PME') || '').toLowerCase();
+      return val === 'oui';
+    }).length;
+    const tauxProjetsTPEPME = nbProc > 0 ? (nbProjetsTPEPME / nbProc) * 100 : 0;
+
     return {
       nbP,
       nbProc,
@@ -892,6 +917,10 @@ const App: React.FC = () => {
       avgP: nbP > 0 ? amtP / nbP : 0,
       amtProc,
       avgProc: nbProc > 0 ? amtProc / nbProc : 0,
+      tauxDispoEnv,
+      tauxDispoSoc,
+      tauxProjetsInnovants,
+      tauxProjetsTPEPME,
       filteredDossiers,
       filteredProcedures,
       charts: {
@@ -902,7 +931,31 @@ const App: React.FC = () => {
           projetsPriorite: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Priorite') || 'Non définie'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
           projetsStatut: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Statut_du_Dossier') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
           projetsClientInterne: filteredDossiers.reduce((acc: Record<string, number>, d) => { const v = getProp(d, 'Client_Interne') || 'N/C'; acc[v] = (acc[v] || 0) + 1; return acc; }, {}),
-          proceduresTypeMoyenne
+          proceduresTypeMoyenne,
+          proceduresDispoEnv: filteredProcedures.reduce((acc: Record<string, number>, p) => { 
+            const v = String(getProp(p, 'Dispo environnementales') || '').toLowerCase();
+            const label = v === 'oui' ? 'Oui' : v === 'non' ? 'Non' : 'Non renseigné';
+            acc[label] = (acc[label] || 0) + 1; 
+            return acc; 
+          }, {}),
+          proceduresDispoSoc: filteredProcedures.reduce((acc: Record<string, number>, p) => { 
+            const v = String(getProp(p, 'Dispo sociales') || '').toLowerCase();
+            const label = v === 'oui' ? 'Oui' : v === 'non' ? 'Non' : 'Non renseigné';
+            acc[label] = (acc[label] || 0) + 1; 
+            return acc; 
+          }, {}),
+          proceduresProjetsInnovants: filteredProcedures.reduce((acc: Record<string, number>, p) => { 
+            const v = String(getProp(p, 'Projet ouvert à l\'acquisition de solutions innovantes') || '').toLowerCase();
+            const label = v === 'oui' ? 'Oui' : v === 'non' ? 'Non' : 'Non renseigné';
+            acc[label] = (acc[label] || 0) + 1; 
+            return acc; 
+          }, {}),
+          proceduresProjetsTPEPME: filteredProcedures.reduce((acc: Record<string, number>, p) => { 
+            const v = String(getProp(p, 'Projet facilitant l\'accès aux TPE/PME') || '').toLowerCase();
+            const label = v === 'oui' ? 'Oui' : v === 'non' ? 'Non' : 'Non renseigné';
+            acc[label] = (acc[label] || 0) + 1; 
+            return acc; 
+          }, {})
       }
     };
   }, [dossiers, procedures, selectedAcheteurs, selectedFamilies, selectedProcTypes, selectedPriorities, selectedStatuses, selectedYears, selectedDeployYears]);
@@ -1309,22 +1362,52 @@ const App: React.FC = () => {
 
   const renderFormFields = (type: 'project' | 'procedure', data: any, filterFn?: (key: string) => boolean) => {
     const fields = type === 'project' ? DOSSIER_FIELDS : PROJECT_FIELDS;
-    // Pour les procédures, ajouter TOUS les champs des groupes pour être sûr qu'ils s'affichent même en création
-    const allProcedureFields = type === 'procedure' 
-      ? Array.from(new Set([
+    
+    // Pour les procédures avec un groupe spécifique (publication, marche, etc.)
+    // On doit préserver l'ordre défini dans PROCEDURE_GROUPS
+    let orderedKeys: string[] = [];
+    
+    if (type === 'procedure' && filterFn) {
+      // Déterminer quel groupe est actif en testant les champs
+      let activeGroup: string[] | null = null;
+      for (const [groupName, groupDef] of Object.entries(PROCEDURE_GROUPS)) {
+        if (groupDef.fields.some(f => filterFn(f))) {
+          activeGroup = groupDef.fields;
+          break;
+        }
+      }
+      
+      if (activeGroup) {
+        // Utiliser l'ordre du groupe
+        orderedKeys = activeGroup.filter(k => k !== 'id' && k !== 'created_at' && filterFn(k));
+      } else {
+        // Fallback: ordre par défaut
+        const allProcedureFields = Array.from(new Set([
           ...fields.map(f => f.id),
           ...Object.keys(data),
           ...Object.values(PROCEDURE_GROUPS).flatMap(g => g.fields),
           'NumProc', 'Numéro de procédure (Afpa)', 'Acheteur', 'Famille Achat Principale', 'IDProjet'
-        ]))
-      : Array.from(new Set([...fields.map(f => f.id), ...Object.keys(data)]));
-    
-    let allKeys = allProcedureFields.filter(k => k !== 'id' && k !== 'created_at');
-    if (filterFn) allKeys = allKeys.filter(filterFn);
+        ]));
+        orderedKeys = allProcedureFields.filter(k => k !== 'id' && k !== 'created_at' && filterFn(k));
+      }
+    } else {
+      // Pour les projets ou sans groupe spécifique
+      const allFields = type === 'procedure' 
+        ? Array.from(new Set([
+            ...fields.map(f => f.id),
+            ...Object.keys(data),
+            ...Object.values(PROCEDURE_GROUPS).flatMap(g => g.fields),
+            'NumProc', 'Numéro de procédure (Afpa)', 'Acheteur', 'Famille Achat Principale', 'IDProjet'
+          ]))
+        : Array.from(new Set([...fields.map(f => f.id), ...Object.keys(data)]));
+      
+      orderedKeys = allFields.filter(k => k !== 'id' && k !== 'created_at');
+      if (filterFn) orderedKeys = orderedKeys.filter(filterFn);
+    }
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {allKeys.map(key => {
+        {orderedKeys.map(key => {
           const fieldDef = fields.find(f => f.id === key);
           const label = fieldDef ? fieldDef.label : key.replace(/_/g, ' ');
           const val = data[key] || '';
@@ -1535,6 +1618,13 @@ const App: React.FC = () => {
             return <SearchableSelect key={key} label={label} options={refClientsInternes} value={val} placeholder="Client interne..." onChange={v => handleFieldChange(type, key, v)} onRemoteSearch={remoteSearchClientsInternes} />;
           }
 
+          // Séparateur visuel
+          if (key === '---SEPARATOR---') return (
+            <div key={key} className="col-span-full my-4">
+              <div className="border-t-2 border-gray-200"></div>
+            </div>
+          );
+
           if (key === "Renouvellement_de_marche" && type === 'project') return (
             <div key={key} className="flex flex-col gap-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
@@ -1678,51 +1768,63 @@ const App: React.FC = () => {
           }
 
           if (key === "Durée de publication" && type === 'procedure') {
-            const dateCandidatures = getProp(data, 'Date de remise des candidatures');
-            const dateEcritureDCE = getProp(data, 'Date d\'écriture du DCE');
+            const dateRemiseOffres = getProp(data, 'Date de remise des offres');
+            const dateLancementConsultation = getProp(data, 'date_de_lancement_de_la_consultation');
+            const typeProcedure = String(getProp(data, 'Type de procédure') || '');
             
             let dureeCalculee = '';
+            let textColorClass = 'text-green-700 dark:text-green-400';
             
-            if (dateCandidatures && dateEcritureDCE) {
+            if (dateRemiseOffres && dateLancementConsultation) {
               try {
-                let dateCand: Date | null = null;
-                let dateDCE: Date | null = null;
+                let dateOffres: Date | null = null;
+                let dateLancement: Date | null = null;
                 
-                // Parser date de remise des candidatures
-                if (typeof dateCandidatures === 'string' && dateCandidatures.includes('/')) {
-                  const parts = dateCandidatures.split('/');
+                // Parser date de remise des offres
+                if (typeof dateRemiseOffres === 'string' && dateRemiseOffres.includes('/')) {
+                  const parts = dateRemiseOffres.split('/');
                   if (parts.length === 3) {
-                    dateCand = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                    dateOffres = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
                   }
                 } else {
-                  dateCand = new Date(dateCandidatures);
-                  if (isNaN(dateCand.getTime())) {
-                    const excelNum = parseFloat(String(dateCandidatures));
+                  dateOffres = new Date(dateRemiseOffres);
+                  if (isNaN(dateOffres.getTime())) {
+                    const excelNum = parseFloat(String(dateRemiseOffres));
                     if (!isNaN(excelNum) && excelNum > 40000) {
-                      dateCand = excelDateToJSDate(excelNum);
+                      dateOffres = excelDateToJSDate(excelNum);
                     }
                   }
                 }
                 
-                // Parser date d'écriture du DCE
-                if (typeof dateEcritureDCE === 'string' && dateEcritureDCE.includes('/')) {
-                  const parts = dateEcritureDCE.split('/');
+                // Parser date de lancement de la consultation
+                if (typeof dateLancementConsultation === 'string' && dateLancementConsultation.includes('/')) {
+                  const parts = dateLancementConsultation.split('/');
                   if (parts.length === 3) {
-                    dateDCE = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                    dateLancement = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
                   }
                 } else {
-                  dateDCE = new Date(dateEcritureDCE);
-                  if (isNaN(dateDCE.getTime())) {
-                    const excelNum = parseFloat(String(dateEcritureDCE));
+                  dateLancement = new Date(dateLancementConsultation);
+                  if (isNaN(dateLancement.getTime())) {
+                    const excelNum = parseFloat(String(dateLancementConsultation));
                     if (!isNaN(excelNum) && excelNum > 40000) {
-                      dateDCE = excelDateToJSDate(excelNum);
+                      dateLancement = excelDateToJSDate(excelNum);
                     }
                   }
                 }
                 
-                if (dateCand && dateDCE && !isNaN(dateCand.getTime()) && !isNaN(dateDCE.getTime())) {
-                  const jours = Math.ceil((dateCand.getTime() - dateDCE.getTime()) / (1000 * 60 * 60 * 24));
-                  dureeCalculee = String(jours);
+                if (dateOffres && dateLancement && !isNaN(dateOffres.getTime()) && !isNaN(dateLancement.getTime())) {
+                  const jours = Math.ceil((dateLancement.getTime() - dateOffres.getTime()) / (1000 * 60 * 60 * 24));
+                  dureeCalculee = String(Math.abs(jours));
+                  
+                  // Déterminer la couleur selon le type de procédure et la durée
+                  const dureeInt = parseInt(dureeCalculee);
+                  if (typeProcedure === 'Demande de Devis' && dureeInt < 15) {
+                    textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                  } else if (['Appel d\'Offre Ouvert', 'Appel d\'Offre Restreint', 'Dialogue Compétitif', 'Procédure Avec Négociation'].includes(typeProcedure) && dureeInt < 35) {
+                    textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                  } else if (typeProcedure === 'Marché A Procédure Adaptée' && dureeInt < 20) {
+                    textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                  }
                   
                   // Mettre à jour le champ avec la durée calculée
                   if (val !== dureeCalculee) {
@@ -1737,11 +1839,66 @@ const App: React.FC = () => {
             return (
               <div key={key} className="flex flex-col gap-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
-                <div className="w-full px-5 py-4 bg-gray-100 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-700 cursor-not-allowed">
+                <div className={`w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-semibold ${textColorClass} cursor-not-allowed`}>
                   {dureeCalculee ? `${dureeCalculee} jour${parseInt(dureeCalculee) !== 1 ? 's' : ''}` : 'Calcul en attente...'}
                 </div>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
-                  Calcul automatique : Date candidatures - Date DCE
+                  Calcul automatique : Date remise offres - Date lancement consultation
+                </p>
+              </div>
+            );
+          }
+
+          if (key === "Date de validité des offres (calculée)" && type === 'procedure') {
+            const dateRemise = getProp(data, 'Date de remise des offres');
+            const duree = getProp(data, 'Durée de validité des offres (en jours)');
+            
+            let dateCalculee = '';
+            
+            if (dateRemise && duree) {
+              try {
+                let dateObj: Date | null = null;
+                
+                // Parser la date de remise des offres
+                if (typeof dateRemise === 'string' && dateRemise.includes('/')) {
+                  const parts = dateRemise.split('/');
+                  if (parts.length === 3) {
+                    dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                  }
+                } else {
+                  dateObj = new Date(dateRemise);
+                  if (isNaN(dateObj.getTime())) {
+                    const excelNum = parseFloat(String(dateRemise));
+                    if (!isNaN(excelNum) && excelNum > 40000) {
+                      dateObj = excelDateToJSDate(excelNum);
+                    }
+                  }
+                }
+                
+                if (dateObj && !isNaN(dateObj.getTime())) {
+                  const jours = parseInt(String(duree).replace(/[^0-9]/g, ''), 10) || 0;
+                  dateObj.setDate(dateObj.getDate() + jours);
+                  dateCalculee = formatDisplayDate(dateObj.toISOString().split('T')[0]);
+                  
+                  // Mettre à jour le champ avec la date calculée
+                  const dateToStore = dateObj.toISOString().split('T')[0];
+                  if (val !== dateToStore) {
+                    handleFieldChange(type, key, dateToStore);
+                  }
+                }
+              } catch (e) {
+                console.error('Erreur calcul date validité offres:', e);
+              }
+            }
+            
+            return (
+              <div key={key} className="flex flex-col gap-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
+                <div className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-not-allowed">
+                  {dateCalculee || 'Calcul en attente...'}
+                </div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
+                  Calcul automatique : Date remise offres + Durée validité offres
                 </p>
               </div>
             );
@@ -2145,13 +2302,17 @@ const App: React.FC = () => {
                 )}
                 
                 {/* Executive KPI Dashboard */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   <KPITile label="NB PROJETS" value={kpis.nbP} />
                   <KPITile label="NB PROCÉDURES" value={kpis.nbProc} />
                   <KPITile label="TOTAL PROJET" value={Math.round(kpis.amtP)} unit="€" />
-                  <KPITile label="MOYENNE PROJET" value={Math.round(kpis.avgP)} unit="€" />
                   <KPITile label="TOTAL PROCÉDURES" value={Math.round(kpis.amtProc)} unit="€" />
+                  <KPITile label="MOYENNE PROJET" value={Math.round(kpis.avgP)} unit="€" />
                   <KPITile label="MOYENNE PROCÉDURE" value={Math.round(kpis.avgProc)} unit="€" />
+                  <KPITile label="TAUX DISPO. ENVIRONNEMENTALES" value={Math.round(kpis.tauxDispoEnv * 10) / 10} unit="%" />
+                  <KPITile label="TAUX DISPO. SOCIALES" value={Math.round(kpis.tauxDispoSoc * 10) / 10} unit="%" />
+                  <KPITile label="TAUX PROJETS INNOVANTS" value={Math.round(kpis.tauxProjetsInnovants * 10) / 10} unit="%" />
+                  <KPITile label="TAUX PROJETS TPE/PME" value={Math.round(kpis.tauxProjetsTPEPME * 10) / 10} unit="%" />
                 </div>
                 
                 {/* Section PROJETS */}
@@ -2242,6 +2403,42 @@ const App: React.FC = () => {
                       color="bg-rose-600" 
                       onClick={() => {
                         setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Montant Moyen par Type' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                    <SimpleBarChart 
+                      data={kpis.charts.proceduresDispoEnv} 
+                      title="Dispositions Environnementales" 
+                      color="bg-green-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Environnementales' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                    <SimpleBarChart 
+                      data={kpis.charts.proceduresDispoSoc} 
+                      title="Dispositions Sociales" 
+                      color="bg-purple-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Sociales' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                    <SimpleBarChart 
+                      data={kpis.charts.proceduresProjetsInnovants} 
+                      title="Projets Innovants" 
+                      color="bg-cyan-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Projets Innovants' });
+                        setActiveTab('detail');
+                      }}
+                    />
+                    <SimpleBarChart 
+                      data={kpis.charts.proceduresProjetsTPEPME} 
+                      title="Projets TPE/PME" 
+                      color="bg-amber-600" 
+                      onClick={() => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Projets TPE/PME' });
                         setActiveTab('detail');
                       }}
                     />

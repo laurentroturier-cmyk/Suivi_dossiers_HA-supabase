@@ -421,20 +421,24 @@ body {
 }
 
 /* Panneaux/cartes avec effet verre - Style corporate */
+.glass-panel {
   backdrop-filter: blur(14px) saturate(115%);
   -webkit-backdrop-filter: blur(14px) saturate(115%);
 }
 
+.glass-card {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.glass-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(107, 147, 184, 0.25);
 }
 
 /* Inputs avec effet verre - Palette froide */
+.glass-input {
   backdrop-filter: blur(10px) saturate(110%);
   -webkit-backdrop-filter: blur(10px) saturate(110%);
   background-color: rgba(255, 255, 255, 0.14) !important;
@@ -442,45 +446,55 @@ body {
   color: rgba(255, 255, 255, 0.98) !important;
 }
 
+.glass-input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
 
+.glass-input:focus {
   backdrop-filter: blur(16px) saturate(120%);
   -webkit-backdrop-filter: blur(16px) saturate(120%);
 }
 
 /* Tableaux avec verre translucide - Style professionnel */
+.glass-table {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
+.glass-table tbody tr:hover {
   background-color: rgba(255, 255, 255, 0.12) !important;
   box-shadow: 0 2px 12px rgba(107, 147, 184, 0.15);
 }
 
 /* Badges et chips - Style discret et professionnel */
+.glass-badge {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 0 10px rgba(107, 147, 184, 0.15);
 }
 
+.glass-badge::before {
   width: 8px;
   height: 8px;
 }
 
+.glass-scrollbar::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.03);
   border-radius: 10px;
 }
 
+.glass-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   backdrop-filter: blur(4px);
 }
 
+.glass-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(107, 147, 184, 0.35);
 }
 
 /* Effet de brillance subtile sur les cartes */
+.glass-shine::after {
   content: '';
   position: absolute;
   top: 0;
@@ -491,9 +505,11 @@ body {
 }
 
 /* Ombres subtiles pour les éléments interactifs */
+.glass-shadow {
   filter: drop-shadow(0 0 6px rgba(107, 147, 184, 0.3));
 }
 
 /* Surcharge pour les graphiques/charts */
+.glass-chart {
   filter: drop-shadow(0 4px 12px rgba(79, 172, 254, 0.3));
 }
