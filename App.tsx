@@ -1764,6 +1764,8 @@ const App: React.FC = () => {
           if (key === "Date d'échéance du marché" && type === 'procedure') {
             const dateNotification = getProp(data, 'Date de Notification');
             let inputClass = `w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-[#004d3d]/5 outline-none`;
+            let joursRestants: number | null = null;
+            let showAlert = false;
             
             // Calculer si la date d'échéance est dans moins de 120 jours et si Date de Notification est vide
             if (val && !dateNotification) {
@@ -1788,10 +1790,11 @@ const App: React.FC = () => {
                 
                 if (dateEcheance && !isNaN(dateEcheance.getTime())) {
                   const maintenant = new Date();
-                  const joursRestants = Math.ceil((dateEcheance.getTime() - maintenant.getTime()) / (1000 * 60 * 60 * 24));
+                  joursRestants = Math.ceil((dateEcheance.getTime() - maintenant.getTime()) / (1000 * 60 * 60 * 24));
                   
                   if (joursRestants < 120) {
                     inputClass = `w-full px-5 py-4 bg-red-50 border-2 border-red-400 rounded-2xl text-sm font-bold text-red-600 focus:ring-4 focus:ring-red-100 outline-none`;
+                    showAlert = true;
                   }
                 }
               } catch (e) {
@@ -1805,6 +1808,11 @@ const App: React.FC = () => {
                 <div className="relative group">
                   <input type="date" value={formatToInputDate(val)} onChange={e => handleFieldChange(type, key, inputToStoreDate(e.target.value))} className={inputClass} />
                 </div>
+                {showAlert && joursRestants !== null && (
+                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold px-1">
+                    ⚠️ Échéance dans {joursRestants} jour{joursRestants !== 1 ? 's' : ''} (moins de 120 jours et pas encore notifié)
+                  </p>
+                )}
               </div>
             );
           }
@@ -1855,17 +1863,23 @@ const App: React.FC = () => {
                 }
                 
                 if (dateOffres && dateLancement && !isNaN(dateOffres.getTime()) && !isNaN(dateLancement.getTime())) {
-                  const jours = Math.ceil((dateLancement.getTime() - dateOffres.getTime()) / (1000 * 60 * 60 * 24));
-                  dureeCalculee = String(Math.abs(jours));
+                  // Calcul correct : Date remise offres - Date lancement consultation
+                  const jours = Math.ceil((dateOffres.getTime() - dateLancement.getTime()) / (1000 * 60 * 60 * 24));
+                  dureeCalculee = String(jours);
                   
-                  // Déterminer la couleur selon le type de procédure et la durée
-                  const dureeInt = parseInt(dureeCalculee);
-                  if (typeProcedure === 'Demande de Devis' && dureeInt < 15) {
+                  // Vérification de cohérence : la remise des offres doit être après le lancement
+                  if (jours < 0) {
                     textColorClass = 'text-red-600 dark:text-red-400 font-bold';
-                  } else if (['Appel d\'Offre Ouvert', 'Appel d\'Offre Restreint', 'Dialogue Compétitif', 'Procédure Avec Négociation'].includes(typeProcedure) && dureeInt < 35) {
-                    textColorClass = 'text-red-600 dark:text-red-400 font-bold';
-                  } else if (typeProcedure === 'Marché A Procédure Adaptée' && dureeInt < 20) {
-                    textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                  } else {
+                    // Déterminer la couleur selon le type de procédure et la durée
+                    const dureeInt = jours;
+                    if (typeProcedure === 'Demande de Devis' && dureeInt < 15) {
+                      textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                    } else if (['Appel d\'Offre Ouvert', 'Appel d\'Offre Restreint', 'Dialogue Compétitif', 'Procédure Avec Négociation'].includes(typeProcedure) && dureeInt < 35) {
+                      textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                    } else if (typeProcedure === 'Marché A Procédure Adaptée' && dureeInt < 20) {
+                      textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                    }
                   }
                   
                   // Mettre à jour le champ avec la durée calculée
@@ -1878,12 +1892,19 @@ const App: React.FC = () => {
               }
             }
             
+            const isNegative = dureeCalculee && parseInt(dureeCalculee) < 0;
+            
             return (
               <div key={key} className="flex flex-col gap-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
                 <div className={`w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-semibold ${textColorClass} cursor-not-allowed`}>
-                  {dureeCalculee ? `${dureeCalculee} jour${parseInt(dureeCalculee) !== 1 ? 's' : ''}` : 'Calcul en attente...'}
+                  {dureeCalculee ? `${dureeCalculee} jour${Math.abs(parseInt(dureeCalculee)) !== 1 ? 's' : ''}` : 'Calcul en attente...'}
                 </div>
+                {isNegative && (
+                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold px-1">
+                    ⚠️ Erreur : La date de remise des offres ne peut pas être antérieure à la date de lancement de la consultation
+                  </p>
+                )}
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
                   Calcul automatique : Date remise offres - Date lancement consultation
                 </p>
@@ -2932,7 +2953,7 @@ const App: React.FC = () => {
                       };
                       setEditingProcedure(newProcedure);
                     }
-                  }} className={`whitespace-nowrap px-10 py-4 rounded-xl text-white font-semibold text-sm ${activeTab === 'dossiers' ? 'bg-green-600 hover:bg-green-700' : 'bg-green-600 hover:bg-green-700'} h-[54px] transition-colors flex items-center gap-2`}>
+                  }} className={`whitespace-nowrap px-10 py-4 rounded-xl text-white font-semibold text-sm bg-[#004d3d] hover:bg-[#006d57] h-[54px] transition-colors flex items-center gap-2`}>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
                     {activeTab === 'dossiers' ? 'Nouveau Projet' : 'Nouvelle Procédure'}
                   </button>
@@ -3039,7 +3060,7 @@ const App: React.FC = () => {
               <button onClick={() => { setEditingProject(null); setEditingProcedure(null); }} className="flex items-center gap-3 text-gray-300 font-black text-[10px] uppercase tracking-widest hover:text-gray-500 transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg> Retour</button>
               <h2 className="text-sm font-black text-gray-900 uppercase tracking-[0.3em]">Édition {editingProject ? 'Dossier' : 'Procédure'}</h2>
               <div className="flex items-center gap-3">
-                <button onClick={() => save(editingProject ? 'project' : 'procedure')} disabled={isSaving} className={`px-12 py-4 rounded-2xl text-white font-black text-xs uppercase tracking-widest transition-all ${editingProject ? 'bg-[#004d3d]' : 'bg-blue-600'}`}>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</button>
+                <button onClick={() => save(editingProject ? 'project' : 'procedure')} disabled={isSaving} className="px-12 py-4 rounded-2xl text-white font-black text-xs uppercase tracking-widest transition-all bg-[#004d3d] hover:bg-[#006d57]">{isSaving ? 'Enregistrement...' : 'Enregistrer'}</button>
                 <button onClick={() => { setEditingProject(null); setEditingProcedure(null); }} className="px-8 py-4 rounded-2xl bg-gray-700 text-white font-black text-xs uppercase tracking-widest hover:bg-gray-600 transition-all">Quitter</button>
               </div>
             </div>
@@ -3122,7 +3143,7 @@ const App: React.FC = () => {
                 )}
                 {activeSubTab === 'procedures_liees' && editingProject && (
                   <div className="space-y-6">
-                    <div className="flex justify-between items-center"><h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Liste des procédures rattachées à ce projet</h4><button onClick={() => { const projId = editingProject.IDProjet; const existingForProject = procedures.filter(p => String(getProp(p, 'IDProjet')) === String(projId)); let maxIdx = 0; existingForProject.forEach(p => { const num = String(getProp(p, 'NumProc')); if (num.includes('-P-')) { const parts = num.split('-P-'); const idx = parseInt(parts[parts.length - 1]); if (!isNaN(idx) && idx > maxIdx) maxIdx = idx; } }); const nextIdx = maxIdx + 1; const newProcId = `${projId}-P-${nextIdx}`; setEditingProcedure({ IDProjet: projId, Acheteur: getProp(editingProject, 'Acheteur'), "Objet court": getProp(editingProject, 'Titre_du_dossier'), NumProc: newProcId }); setEditingProject(null); setActiveSubTab('general'); }} className="px-6 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg">+ Nouvelle Procédure</button></div>
+                    <div className="flex justify-between items-center"><h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Liste des procédures rattachées à ce projet</h4><button onClick={() => { const projId = editingProject.IDProjet; const existingForProject = procedures.filter(p => String(getProp(p, 'IDProjet')) === String(projId)); let maxIdx = 0; existingForProject.forEach(p => { const num = String(getProp(p, 'NumProc')); if (num.includes('-P-')) { const parts = num.split('-P-'); const idx = parseInt(parts[parts.length - 1]); if (!isNaN(idx) && idx > maxIdx) maxIdx = idx; } }); const nextIdx = maxIdx + 1; const newProcId = `${projId}-P-${nextIdx}`; setEditingProcedure({ IDProjet: projId, Acheteur: getProp(editingProject, 'Acheteur'), "Objet court": getProp(editingProject, 'Titre_du_dossier'), NumProc: newProcId }); setEditingProject(null); setActiveSubTab('general'); }} className="px-6 py-3 bg-[#004d3d] hover:bg-[#006d57] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-colors">+ Nouvelle Procédure</button></div>
                     <div className="overflow-x-auto rounded-2xl border border-gray-50">
                       <table className="themed-table min-w-full divide-y divide-gray-50"><thead className="bg-gray-50/50"><tr><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">N° Afpa</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">Objet court</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">Statut</th><th className="px-6 py-4 text-right">Actions</th></tr></thead><tbody className="divide-y divide-gray-50">{associatedProcedures.length === 0 ? <tr><td colSpan={4} className="px-6 py-12 text-center text-xs font-bold text-gray-300 italic">Aucune procédure trouvée</td></tr> : associatedProcedures.map((proc, idx) => (<tr key={idx} className="hover:bg-gray-50/50"><td className="px-6 py-4 text-xs font-bold text-gray-600">{getProp(proc, 'Numéro de procédure (Afpa)') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600">{getProp(proc, 'Objet court') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600">{getProp(proc, 'Statut de la consultation') || '-'}</td><td className="px-6 py-4 text-right"><button onClick={() => { setEditingProcedure(proc); setEditingProject(null); setActiveSubTab('general'); }} className="p-2 text-blue-600 bg-blue-50 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button></td></tr>))}</tbody></table>
                     </div>
