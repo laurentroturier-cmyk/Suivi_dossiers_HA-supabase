@@ -90,6 +90,7 @@ export const PROCEDURE_GROUPS: Record<string, { label: string; fields: string[] 
   identification: {
     label: 'Identification',
     fields: [
+      'Numéro de procédure (Afpa)',
       'Type de procédure',
       'Code CPV Principal',
       'Nom de la procédure',
