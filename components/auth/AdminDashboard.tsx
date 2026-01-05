@@ -222,10 +222,10 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white shadow-xl">
+      <aside className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-[#004d3d] to-[#003329] text-white shadow-xl">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center relative">
+            <div className="w-10 h-10 bg-[#006d57] rounded-lg flex items-center justify-center relative">
               <LayoutDashboard className="w-6 h-6" />
               {accessRequests.filter(r => r.status === 'pending').length > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
@@ -235,26 +235,26 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             </div>
             <div>
               <h1 className="text-lg font-bold">Enterprise</h1>
-              <p className="text-xs text-gray-400">Dashboard</p>
+              <p className="text-xs text-emerald-200">Dashboard</p>
             </div>
           </div>
 
           {/* User Profile */}
-          <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+          <div className="bg-[#003329]/50 rounded-lg p-4 mb-6 border border-[#006d57]/30">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#006d57] to-[#004d3d] rounded-full flex items-center justify-center flex-shrink-0">
                 <User className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{profile.email}</p>
                 <div className="mt-2">
                   {profile.role === 'admin' ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-medium rounded-full border border-amber-500/30">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-400/20 text-emerald-200 text-xs font-medium rounded-full border border-emerald-400/30">
                       <Shield className="w-3 h-3" />
                       Admin
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/20 text-blue-300 text-xs font-medium rounded-full border border-blue-500/30">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#006d57]/20 text-emerald-200 text-xs font-medium rounded-full border border-[#006d57]/30">
                       <User className="w-3 h-3" />
                       User
                     </span>
@@ -269,7 +269,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             <button 
               onClick={() => setActiveTab('data')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'data' ? 'bg-blue-600' : 'text-gray-300 hover:bg-gray-700'
+                activeTab === 'data' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
               }`}
             >
               <Database className="w-4 h-4" />
@@ -280,7 +280,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
               <button 
                 onClick={() => setActiveTab('requests')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'requests' ? 'bg-blue-600' : 'text-gray-300 hover:bg-gray-700'
+                  activeTab === 'requests' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
                 }`}
               >
                 <UserPlus className="w-4 h-4" />
@@ -296,7 +296,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             {onBackToApp && (
               <button 
                 onClick={onBackToApp}
-                className="w-full flex items-center gap-3 px-4 py-3 text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 text-emerald-100 rounded-lg text-sm font-medium hover:bg-[#003329]/50 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Retour à l'application
@@ -306,7 +306,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         </div>
 
         {/* Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-700">
+        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-[#006d57]/30">
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600/10 text-red-400 rounded-lg text-sm font-medium hover:bg-red-600/20 border border-red-600/30 transition-colors"
@@ -327,30 +327,30 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-400">Total Entrées</span>
-              <Database className="w-5 h-5 text-blue-400" />
+              <span className="text-sm font-medium text-gray-500">Total Entrées</span>
+              <Database className="w-5 h-5 text-[#004d3d]" />
             </div>
-            <p className="text-3xl font-bold text-white">{data.length}</p>
+            <p className="text-3xl font-bold text-gray-900">{data.length}</p>
           </div>
 
-          <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-400">Demandes en attente</span>
-              <Clock className="w-5 h-5 text-orange-400" />
+              <span className="text-sm font-medium text-gray-500">Demandes en attente</span>
+              <Clock className="w-5 h-5 text-orange-500" />
             </div>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-3xl font-bold text-gray-900">
               {accessRequests.filter(r => r.status === 'pending').length}
             </p>
           </div>
 
-          <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-400">Rôle</span>
-              <Shield className="w-5 h-5 text-amber-400" />
+              <span className="text-sm font-medium text-gray-500">Rôle</span>
+              <Shield className="w-5 h-5 text-[#004d3d]" />
             </div>
-            <p className="text-lg font-semibold text-white capitalize">{profile.role}</p>
+            <p className="text-lg font-semibold text-gray-900 capitalize">{profile.role}</p>
           </div>
         </div>
 
@@ -358,57 +358,57 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
           <>
             {/* Admin-only Features */}
             {profile.role === 'admin' && (
-          <div className="bg-gradient-to-br from-amber-900/20 to-orange-900/20 border border-amber-700/30 rounded-xl p-6 mb-8">
+          <div className="bg-white border border-gray-100 rounded-2xl p-6 mb-8 shadow-sm">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 bg-[#004d3d] rounded-xl flex items-center justify-center flex-shrink-0">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-white mb-2">Fonctionnalités Administrateur</h3>
-                <p className="text-sm text-gray-300 mb-4">En tant qu'administrateur, vous avez accès à toutes les fonctionnalités de gestion de la plateforme.</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Fonctionnalités Administrateur</h3>
+                <p className="text-sm text-gray-600 mb-4">En tant qu'administrateur, vous avez accès à toutes les fonctionnalités de gestion de la plateforme.</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <button
                     onClick={exportFieldsStructure}
-                    className="inline-flex items-center gap-3 px-4 py-3 bg-gray-800 border border-amber-600/30 rounded-lg hover:bg-gray-700 hover:border-amber-500/50 transition-all group"
+                    className="inline-flex items-center gap-3 px-4 py-3 bg-[#004d3d] border border-[#004d3d] rounded-lg hover:bg-[#006d57] transition-all group"
                   >
-                    <div className="w-10 h-10 bg-green-900/30 rounded-lg flex items-center justify-center group-hover:bg-green-800/40 transition-colors">
-                      <FileSpreadsheet className="w-5 h-5 text-green-400" />
+                    <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                      <FileSpreadsheet className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1 text-left">
                       <p className="text-sm font-semibold text-white">Exporter la structure</p>
-                      <p className="text-xs text-gray-400">Tous les champs en Excel</p>
+                      <p className="text-xs text-emerald-100">Tous les champs en Excel</p>
                     </div>
-                    <Download className="w-4 h-4 text-gray-400 group-hover:text-green-400 transition-colors" />
+                    <Download className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
                   </button>
 
-                  <button className="inline-flex items-center gap-3 px-4 py-3 bg-gray-800 border border-amber-600/30 rounded-lg opacity-50 cursor-not-allowed">
-                    <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                      <User className="w-5 h-5 text-gray-500" />
+                  <button className="inline-flex items-center gap-3 px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg opacity-50 cursor-not-allowed">
+                    <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <User className="w-5 h-5 text-gray-400" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="text-sm font-semibold text-gray-300">Gestion des utilisateurs</p>
-                      <p className="text-xs text-gray-500">Bientôt disponible</p>
-                    </div>
-                  </button>
-
-                  <button className="inline-flex items-center gap-3 px-4 py-3 bg-gray-800 border border-amber-600/30 rounded-lg opacity-50 cursor-not-allowed">
-                    <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                      <Database className="w-5 h-5 text-gray-500" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-semibold text-gray-300">Rapports avancés</p>
-                      <p className="text-xs text-gray-500">Bientôt disponible</p>
+                      <p className="text-sm font-semibold text-gray-500">Gestion des utilisateurs</p>
+                      <p className="text-xs text-gray-400">Bientôt disponible</p>
                     </div>
                   </button>
 
-                  <button className="inline-flex items-center gap-3 px-4 py-3 bg-gray-800 border border-amber-600/30 rounded-lg opacity-50 cursor-not-allowed">
-                    <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                      <Shield className="w-5 h-5 text-gray-500" />
+                  <button className="inline-flex items-center gap-3 px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg opacity-50 cursor-not-allowed">
+                    <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <Database className="w-5 h-5 text-gray-400" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="text-sm font-semibold text-gray-300">Permissions RLS</p>
-                      <p className="text-xs text-gray-500">Bientôt disponible</p>
+                      <p className="text-sm font-semibold text-gray-500">Rapports avancés</p>
+                      <p className="text-xs text-gray-400">Bientôt disponible</p>
+                    </div>
+                  </button>
+
+                  <button className="inline-flex items-center gap-3 px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg opacity-50 cursor-not-allowed">
+                    <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <Shield className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold text-gray-500">Permissions RLS</p>
+                      <p className="text-xs text-gray-400">Bientôt disponible</p>
                     </div>
                   </button>
                 </div>
@@ -465,13 +465,13 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         )}
 
         {/* Data Table */}
-        <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">Mes Données</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Mes Données</h3>
             <button
               onClick={fetchData}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-gray-700 rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50 transition-colors"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Actualiser
@@ -482,36 +482,36 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <div className="text-center">
-                  <RefreshCw className="w-8 h-8 text-blue-400 animate-spin mx-auto mb-4" />
-                  <p className="text-gray-300">Chargement des données...</p>
+                  <RefreshCw className="w-8 h-8 text-[#004d3d] animate-spin mx-auto mb-4" />
+                  <p className="text-gray-600">Chargement des données...</p>
                 </div>
               </div>
             ) : data.length === 0 && !error ? (
               <div className="flex items-center justify-center py-16">
                 <div className="text-center">
-                  <Database className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400">Aucune donnée disponible</p>
+                  <Database className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">Aucune donnée disponible</p>
                 </div>
               </div>
             ) : !error ? (
               <table className="w-full">
-                <thead className="bg-gray-900 border-b border-gray-700">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
                     {data[0] && Object.keys(data[0]).map((key) => (
                       <th
                         key={key}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
                       >
                         {key}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-700">
+                <tbody className="divide-y divide-gray-100">
                   {data.map((row, idx) => (
-                    <tr key={row.id || idx} className="hover:bg-gray-700/50 transition-colors">
+                    <tr key={row.id || idx} className="hover:bg-gray-50 transition-colors">
                       {Object.values(row).map((value, cellIdx) => (
-                        <td key={cellIdx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-200">
+                        <td key={cellIdx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                         </td>
                       ))}
@@ -528,18 +528,18 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         {/* Access Requests Tab */}
         {activeTab === 'requests' && profile.role === 'admin' && (
           <div className="space-y-6">
-            <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">Demandes d'accès</h3>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <h3 className="text-lg font-semibold text-gray-900">Demandes d'accès</h3>
+                  <p className="text-sm text-gray-600 mt-1">
                     Gérez les demandes d'accès des nouveaux utilisateurs
                   </p>
                 </div>
                 <button
                   onClick={fetchAccessRequests}
                   disabled={requestsLoading}
-                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-gray-700 rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50 transition-colors"
                 >
                   <RefreshCw className={`w-4 h-4 ${requestsLoading ? 'animate-spin' : ''}`} />
                   Actualiser
@@ -549,43 +549,43 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
               <div className="p-6">
                 {requestsLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
+                    <RefreshCw className="w-8 h-8 text-[#004d3d] animate-spin" />
                   </div>
                 ) : accessRequests.length === 0 ? (
                   <div className="text-center py-12">
-                    <UserPlus className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400">Aucune demande d'accès</p>
+                    <UserPlus className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">Aucune demande d'accès</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {/* Pending Requests */}
                     {accessRequests.filter(r => r.status === 'pending').length > 0 && (
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-orange-400" />
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-orange-500" />
                           En attente ({accessRequests.filter(r => r.status === 'pending').length})
                         </h4>
                         <div className="space-y-3">
                           {accessRequests.filter(r => r.status === 'pending').map(request => (
-                            <div key={request.id} className="bg-orange-900/20 border border-orange-700/30 rounded-lg p-4">
+                            <div key={request.id} className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                               <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <p className="font-semibold text-white">
+                                    <p className="font-semibold text-gray-900">
                                       {request.first_name} {request.last_name}
                                     </p>
-                                    <span className="px-2 py-0.5 bg-orange-700/50 text-orange-200 text-xs rounded-full">
+                                    <span className="px-2 py-0.5 bg-orange-200 text-orange-700 text-xs rounded-full">
                                       En attente
                                     </span>
                                   </div>
-                                  <p className="text-sm text-gray-300 mb-2">
+                                  <p className="text-sm text-gray-700 mb-2">
                                     <Mail className="w-3 h-3 inline mr-1" />
                                     {request.email}
                                   </p>
                                   {request.reason && (
-                                    <div className="bg-gray-900/50 rounded p-3 mb-3">
-                                      <p className="text-xs font-medium text-gray-400 mb-1">Raison :</p>
-                                      <p className="text-sm text-gray-200">{request.reason}</p>
+                                    <div className="bg-white rounded p-3 mb-3 border border-gray-100">
+                                      <p className="text-xs font-medium text-gray-600 mb-1">Raison :</p>
+                                      <p className="text-sm text-gray-700">{request.reason}</p>
                                     </div>
                                   )}
                                   <p className="text-xs text-gray-500">
@@ -595,7 +595,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => handleApproveRequest(request.id)}
-                                    className="inline-flex items-center gap-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                                    className="inline-flex items-center gap-1 px-3 py-2 bg-[#004d3d] text-white text-sm font-medium rounded-lg hover:bg-[#006d57] transition-colors"
                                   >
                                     <UserCheck className="w-4 h-4" />
                                     Approuver
