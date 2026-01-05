@@ -11,6 +11,7 @@ export const RAW_CSV_DOSSIERS = `IDProjet,Titre_du_dossier,Acheteur,Prescripteur
 export const PROJECT_FIELDS = [
   { id: 'NumProc', label: 'N° Procédure (PK)' },
   { id: 'IDProjet', label: 'ID Projet (FK)' },
+  { id: 'NumeroAfpa5Chiffres', label: 'N° Afpa (5 chiffres)' },
   { id: 'Acheteur', label: 'Acheteur' },
   { id: 'Nom de la procédure', label: 'Nom Procédure' },
   { id: 'Objet court', label: 'Objet court' },
@@ -90,6 +91,8 @@ export const PROCEDURE_GROUPS: Record<string, { label: string; fields: string[] 
   identification: {
     label: 'Identification',
     fields: [
+      'NumProc',
+      'Acheteur',
       'Numéro de procédure (Afpa)',
       'Type de procédure',
       'Code CPV Principal',

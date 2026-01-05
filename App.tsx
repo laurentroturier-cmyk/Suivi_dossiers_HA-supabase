@@ -1176,30 +1176,72 @@ const App: React.FC = () => {
 
   const generateAfpaNumber = () => {
     if (!editingProcedure) return;
-    const year = new Date().getFullYear().toString().slice(-2);
+    
+    // Récupérer le numéro actuel s'il existe
+    const currentNumber = editingProcedure["Numéro de procédure (Afpa)"];
     const typeProc = editingProcedure["Type de procédure"] || "";
     const acheteur = editingProcedure["Acheteur"] || "";
     const objetCourt = editingProcedure["Objet court"] || editingProcedure["Nom de la procédure"] || "SANS OBJET";
-    let maxSeq = 0;
-    procedures.forEach(p => {
-      const n = getProp(p, 'Numéro de procédure (Afpa)');
-      if (n && String(n).startsWith(year)) {
-        const val = parseInt(String(n).substring(2, 5));
-        if (!isNaN(val) && val > maxSeq) maxSeq = val;
-      }
-    });
-    const seq = (maxSeq + 1).toString().padStart(3, '0');
-    const prefix = `${year}${seq}`;
-    const trigramme = (refAcheteurs.find(a => getProp(a, 'Personne') === acheteur) || {}).Trigramme || 'ZZZ';
-    const abrege = (refProcedures.find(rp => getProp(rp, 'Type procédure') === typeProc) || {}).Abrégé || 'ZZZZZ';
     
-    const afpaNum = `${prefix} – ${abrege} - ${objetCourt} – ${trigramme}`;
+    // Trouver l'abrégé du type de procédure dans le référentiel
+    const abrege = (refProcedures.find(rp => getProp(rp, 'Type procédure') === typeProc) || {})['Abrégé'] || 'ZZZZZ';
+    
+    // Trouver le trigramme de l'acheteur dans le référentiel
+    const trigramme = (refAcheteurs.find(a => getProp(a, 'Personne') === acheteur) || {}).Trigramme || 'ZZZ';
+    
+    let afpaNum = '';
+    
+    // Vérifier si un numéro existe déjà
+    if (currentNumber && currentNumber.trim() !== '') {
+      // Le numéro existe : garder le préfixe numérique mais mettre à jour les autres éléments
+      const parts = String(currentNumber).split('_');
+      if (parts.length > 0 && /^\d{5}$/.test(parts[0])) {
+        // Garder le préfixe numérique existant
+        afpaNum = `${parts[0]}_${abrege}_${objetCourt}_${trigramme}`;
+      } else {
+        // Format non reconnu, créer un nouveau numéro
+        afpaNum = createNewAfpaNumber(abrege, objetCourt, trigramme);
+      }
+    } else {
+      // Pas de numéro existant : création d'un nouveau numéro
+      afpaNum = createNewAfpaNumber(abrege, objetCourt, trigramme);
+    }
     
     setEditingProcedure(prev => ({ 
       ...prev, 
       "Numéro de procédure (Afpa)": afpaNum,
       "Objet court": objetCourt,
     }));
+  };
+  
+  // Fonction auxiliaire pour créer un nouveau numéro Afpa
+  const createNewAfpaNumber = (abrege: string, objetCourt: string, trigramme: string): string => {
+    const year = new Date().getFullYear().toString().slice(-2); // 26 pour 2026, 27 pour 2027
+    
+    // Trouver le numéro d'ordre maximum pour l'année en cours uniquement
+    let maxOrderNumber = 0;
+    procedures.forEach(p => {
+      const n = getProp(p, 'Numéro de procédure (Afpa)');
+      if (n) {
+        const numStr = String(n).split('_')[0]; // Prendre la première partie avant '_'
+        // Vérifier que le numéro est au format attendu (5 chiffres) et commence par l'année en cours
+        if (/^\d{5}$/.test(numStr) && numStr.startsWith(year)) {
+          const orderNum = parseInt(numStr.substring(2)); // Prendre les 3 derniers chiffres
+          if (!isNaN(orderNum) && orderNum > maxOrderNumber) {
+            maxOrderNumber = orderNum;
+          }
+        }
+      }
+    });
+    
+    // Incrémenter de 1 (si aucun numéro pour l'année, maxOrderNumber = 0 donc on commence à 1)
+    const nextOrderNumber = maxOrderNumber + 1;
+    
+    // Formater le numéro complet : AA### (ex: 26001, 26658)
+    const fullNumber = `${year}${nextOrderNumber.toString().padStart(3, '0')}`;
+    
+    // Construire le numéro Afpa complet
+    return `${fullNumber}_${abrege}_${objetCourt}_${trigramme}`;
   };
 
   const handleFieldChange = (type: 'project' | 'procedure', key: string, value: any) => {
@@ -1971,11 +2013,21 @@ const App: React.FC = () => {
             );
           }
 
+          // Vérifier si le champ doit être protégé (non modifiable manuellement)
+          const isProtectedField = key === "Numéro de procédure (Afpa)" || key === "NumProc" || key === "IDProjet";
+          const isFieldReadOnly = isProtectedField; // Toujours protégé, même pour les admins
+
           return (
             <div key={key} className="flex flex-col gap-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
               <div className="relative group">
-                <input type={isDate ? "date" : "text"} value={isDate ? formatToInputDate(val) : val} onChange={e => handleFieldChange(type, key, isDate ? inputToStoreDate(e.target.value) : e.target.value)} className={`w-full ${key === "Numéro de procédure (Afpa)" ? 'pr-14' : 'px-5'} py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-[#004d3d]/5 outline-none`} />
+                <input 
+                  type={isDate ? "date" : "text"} 
+                  value={isDate ? formatToInputDate(val) : val} 
+                  onChange={e => handleFieldChange(type, key, isDate ? inputToStoreDate(e.target.value) : e.target.value)} 
+                  disabled={isFieldReadOnly}
+                  className={`w-full ${key === "Numéro de procédure (Afpa)" ? 'pr-14' : 'px-5'} py-4 ${isFieldReadOnly ? 'bg-gray-50 dark:bg-gray-600 text-gray-700 dark:text-gray-300 cursor-not-allowed' : 'bg-gray-50'} border border-gray-100 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-[#004d3d]/5 outline-none`} 
+                />
                 {key === "Numéro de procédure (Afpa)" && <button onClick={generateAfpaNumber} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-[#004d3d] text-white rounded-xl shadow-lg hover:scale-105 transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></button>}
               </div>
             </div>
@@ -2942,7 +2994,29 @@ const App: React.FC = () => {
                           <tbody className="divide-y divide-gray-50">
                             {rows.map((item, i) => (
                               <tr key={i} className="hover:bg-gray-50/50 group transition-colors">
-                                {fieldsForTab.map(f => <td key={f.id} className={`px-8 py-5 text-xs text-gray-600 font-bold max-w-[200px] truncate ${isNumericField(f.id) || isDateField(f.id) ? 'text-right' : 'text-left'}`}>{isDateField(f.id) ? formatDisplayDate(getProp(item, f.id)) : (getProp(item, f.id) || '-')}</td>)}
+                                {fieldsForTab.map(f => {
+                                  let cellValue;
+                                  if (f.id === 'NumeroAfpa5Chiffres') {
+                                    // Extraire les 5 chiffres du numéro Afpa
+                                    const fullAfpa = getProp(item, 'Numéro de procédure (Afpa)');
+                                    if (fullAfpa) {
+                                      const match = String(fullAfpa).match(/\d{5}/);
+                                      cellValue = match ? match[0] : '-';
+                                    } else {
+                                      cellValue = '-';
+                                    }
+                                  } else if (isDateField(f.id)) {
+                                    cellValue = formatDisplayDate(getProp(item, f.id));
+                                  } else {
+                                    cellValue = getProp(item, f.id) || '-';
+                                  }
+                                  
+                                  return (
+                                    <td key={f.id} className={`px-8 py-5 text-xs text-gray-600 font-bold max-w-[200px] truncate ${isNumericField(f.id) || isDateField(f.id) ? 'text-right' : 'text-left'}`}>
+                                      {cellValue}
+                                    </td>
+                                  );
+                                })}
                                 <td className="px-8 py-5 text-right sticky right-0 bg-white/80 transition-colors backdrop-blur-sm">
                                   <button onClick={() => { if(activeTab === 'dossiers') { setEditingProject(item); setActiveSubTab('general'); } else { setEditingProcedure(item); setActiveSubTab('general'); } }} className={`p-2.5 rounded-xl transition-all ${activeTab === 'dossiers' ? 'text-emerald-700 bg-emerald-50' : 'text-blue-600 bg-blue-50'}`}><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
                                 </td>
@@ -3202,13 +3276,30 @@ const App: React.FC = () => {
                     {detailData.data.map((item, idx) => (
                       <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                         {detailData.type === 'project' ? (
-                          PROJECT_FIELDS.map(field => (
-                            <td key={field.id} className={`px-6 py-4 text-xs font-semibold text-gray-700 whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
-                              {isDateField(field.id) 
-                                ? formatDisplayDate(getProp(item, field.id)) 
-                                : (getProp(item, field.id) || '-')}
-                            </td>
-                          ))
+                          PROJECT_FIELDS.map(field => {
+                            let displayValue;
+                            if (field.id === 'NumeroAfpa5Chiffres') {
+                              // Extraire les 5 premiers chiffres du numéro Afpa
+                              const fullAfpa = getProp(item, 'Numéro de procédure (Afpa)');
+                              if (fullAfpa) {
+                                // Chercher 5 chiffres consécutifs n'importe où dans la chaîne
+                                const match = String(fullAfpa).match(/\d{5}/);
+                                displayValue = match ? match[0] : '-';
+                              } else {
+                                displayValue = '-';
+                              }
+                            } else if (isDateField(field.id)) {
+                              displayValue = formatDisplayDate(getProp(item, field.id));
+                            } else {
+                              displayValue = getProp(item, field.id) || '-';
+                            }
+                            
+                            return (
+                              <td key={field.id} className={`px-6 py-4 text-xs font-semibold text-gray-700 whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
+                                {displayValue}
+                              </td>
+                            );
+                          })
                         ) : (
                           DOSSIER_FIELDS.map(field => (
                             <td key={field.id} className={`px-6 py-4 text-xs font-semibold text-gray-700 whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
