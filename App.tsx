@@ -43,6 +43,10 @@ import AdminDashboard from './components/auth/AdminDashboard';
 import { UserProfile, AuthState } from './types/auth';
 import { supabase } from './lib/supabase';
 
+// Import Registre Retraits Component
+import RegistreRetraits from './components/RegistreRetraits';
+import RegistreDepots from './components/RegistreDepots';
+
 type Theme = 'light' | 'dark' | 'blue' | 'green';
 
 const BUCKET_NAME = 'Projets DNA';
@@ -2175,7 +2179,7 @@ const App: React.FC = () => {
         </div>
         <div className="flex items-center gap-6">
           <nav className="flex gap-8">
-            {[{ label: 'Projets', key: 'dossiers' }, { label: 'Procédures', key: 'procedures' }, { label: 'Indicateurs', key: 'dashboard' }, { label: 'Gantt', key: 'gantt' }, { label: 'Commission HA', key: 'commission' }, { label: 'Export', key: 'export' }, { label: 'AN01', key: 'an01' }, ...(detailData ? [{ label: 'Détail', key: 'detail' }] : [])].map(t => (
+            {[{ label: 'Projets', key: 'dossiers' }, { label: 'Procédures', key: 'procedures' }, { label: 'Indicateurs', key: 'dashboard' }, { label: 'Gantt', key: 'gantt' }, { label: 'Commission HA', key: 'commission' }, { label: 'Export', key: 'export' }, { label: 'AN01', key: 'an01' }, { label: 'Retraits', key: 'retraits' }, { label: 'Dépôts', key: 'depots' }, ...(detailData ? [{ label: 'Détail', key: 'detail' }] : [])].map(t => (
               <button key={t.key} onClick={() => { setActiveTab(t.key as TableType); setEditingProject(null); setEditingProcedure(null); }} className={`text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === t.key ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'}`}>{t.label}</button>
             ))}
           </nav>
@@ -3231,6 +3235,14 @@ const App: React.FC = () => {
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === 'retraits' && (
+          <RegistreRetraits />
+        )}
+
+        {activeTab === 'depots' && (
+          <RegistreDepots />
         )}
 
         {activeTab === 'detail' && detailData && (

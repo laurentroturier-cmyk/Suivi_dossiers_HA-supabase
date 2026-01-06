@@ -288,7 +288,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
               )}
             </div>
             <div>
-              <h1 className="text-lg font-bold">Enterprise</h1>
+              <h1 className="text-lg font-bold">DNA Gestprojet</h1>
               <p className="text-xs text-emerald-200">Dashboard</p>
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         {/* Header */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Tableau de bord</h2>
-          <p className="text-gray-600">Gérez vos données et votre entreprise</p>
+          <p className="text-gray-600">Gérez vos données et votre DNA Gestprojet</p>
         </div>
 
         {/* Stats Cards */}
