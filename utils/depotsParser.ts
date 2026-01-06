@@ -11,6 +11,93 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * Parse un fichier texte tabulé (TSV/TXT)
+ */
+const parseTextDepots = (text: string): DepotsData => {
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+  
+  if (lines.length < 11) {
+    throw new Error('Fichier texte invalide : pas assez de lignes');
+  }
+
+  // Extraire les métadonnées des premières lignes
+  const prenomAuteur = lines[0].replace('Prenom : ', '').replace('Prénom : ', '').trim();
+  const nomAuteur = lines[1].replace('Nom : ', '').trim();
+  const objet = lines[2].replace('Objet : ', '').trim();
+  const reference = lines[3].replace('Référence : ', '').replace('Reference : ', '').trim();
+  const datePublication = lines[4].replace('Date de publication :', '').replace('Date de publication : ', '').trim();
+  const dateCandidature = lines[5].replace('Date de candidature :', '').replace('Date de candidature : ', '').trim();
+  const dateOffre = lines[6].replace('Date offre :', '').replace('Date offre : ', '').trim();
+  const dateExport = lines[7].replace('Date export:', '').replace('Date export : ', '').trim();
+
+  // Ligne 9 (index 8) est vide
+  // Ligne 10 (index 9) contient les en-têtes - on peut la sauter
+  // Les données commencent à la ligne 11 (index 10)
+  
+  const entreprises: EntrepriseDepot[] = [];
+  
+  for (let i = 10; i < lines.length; i++) {
+    const parts = lines[i].split('\t');
+    if (parts.length >= 19) {
+      entreprises.push({
+        ordre: String(i - 9),
+        prenom: parts[0] || '',
+        nom: parts[1] || '',
+        societe: parts[2] || '',
+        siret: parts[3] || '',
+        email: parts[4] || '',
+        adresse: parts[5] || '',
+        cp: parts[6] || '',
+        ville: parts[7] || '',
+        telephone: parts[8] || '',
+        fax: parts[9] || '',
+        dateReception: parts[10] || '',
+        modeReception: parts[11] || '',
+        naturePli: parts[12] || '',
+        nomFichier: parts[13] || '',
+        taille: parts[14] || '',
+        lot: parts[15] || '',
+        observations: parts[16] || '',
+        copieSauvegarde: parts[17] || '',
+        horsDelai: parts[18] || '',
+      });
+    }
+  }
+
+  // Calculer les statistiques
+  const totalEnveloppesElectroniques = entreprises.filter(e => 
+    e.modeReception.toLowerCase().includes('electronique')
+  ).length;
+  const totalEnveloppesPapier = entreprises.filter(e => 
+    e.modeReception.toLowerCase().includes('papier')
+  ).length;
+
+  // Informations de procédure extraites du fichier
+  const procedureInfo: DepotsProcedureInfo = {
+    auteur: prenomAuteur && nomAuteur ? `${prenomAuteur} ${nomAuteur}` : '',
+    objet: objet || '',
+    reference: reference || '',
+    datePublication: datePublication,
+    dateCandidature: dateCandidature,
+    dateOffre: dateOffre || '',
+    dateExport: dateExport || new Date().toLocaleDateString('fr-FR'),
+    idEmp: '',
+  };
+
+  console.log('Dépôts texte chargés:', entreprises.length);
+  console.log('Procédure info:', procedureInfo);
+
+  return {
+    procedureInfo,
+    stats: {
+      totalEnveloppesElectroniques,
+      totalEnveloppesPapier,
+    },
+    entreprises,
+  };
+};
+
+/**
  * Parse un fichier Excel de dépôts
  */
 export const parseExcelDepots = async (file: File): Promise<DepotsData> => {
@@ -20,6 +107,16 @@ export const parseExcelDepots = async (file: File): Promise<DepotsData> => {
     reader.onload = (e) => {
       try {
         const data = e.target?.result;
+        
+        // Détecter si c'est un fichier texte ou un vrai Excel
+        if (typeof data === 'string') {
+          // C'est un fichier texte
+          const result = parseTextDepots(data);
+          resolve(result);
+          return;
+        }
+
+        // Sinon, parser comme Excel binaire
         const workbook = XLSX.read(data, { type: 'binary' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         
@@ -111,7 +208,9 @@ export const parseExcelDepots = async (file: File): Promise<DepotsData> => {
     };
 
     reader.onerror = () => reject(new Error('Erreur lors de la lecture du fichier'));
-    reader.readAsBinaryString(file);
+    
+    // Essayer de lire comme texte d'abord
+    reader.readAsText(file, 'UTF-8');
   });
 };
 

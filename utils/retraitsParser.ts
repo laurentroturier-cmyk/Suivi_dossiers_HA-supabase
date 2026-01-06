@@ -11,6 +11,104 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * Parse un fichier texte tabulé (TSV/TXT) de retraits
+ */
+const parseTextRetraits = (text: string): RetraitsData => {
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+  
+  if (lines.length < 11) {
+    throw new Error('Fichier texte invalide : pas assez de lignes');
+  }
+
+  // Extraire les métadonnées des premières lignes (si présentes)
+  let objet = '';
+  let reference = '';
+  let dateLimit = '';
+  let idEmp = '';
+  let startDataIndex = 0;
+
+  // Chercher l'en-tête du tableau
+  for (let i = 0; i < Math.min(15, lines.length); i++) {
+    const line = lines[i];
+    
+    if (line.includes('Objet :') || line.includes('Objet du marché') || line.includes('Objet du marche')) {
+      objet = line.split(':')[1]?.trim() || '';
+    }
+    if (line.includes('Référence :') || line.includes('Reference :') || line.includes('Votre référence')) {
+      reference = line.split(':')[1]?.trim() || '';
+    }
+    if (line.includes('Date offre') || line.includes('Date limite') || line.includes("Date d'offre")) {
+      dateLimit = line.split(':')[1]?.trim() || '';
+    }
+    if (line.includes('ID EMP')) {
+      idEmp = line.split(':')[1]?.trim() || '';
+    }
+    
+    // Détecter la ligne d'en-tête (contient "Prénom" ou "Prenom" et "Société")
+    if ((line.includes('Prénom') || line.includes('Prenom')) && line.includes('Société')) {
+      startDataIndex = i + 1;
+      break;
+    }
+  }
+
+  if (startDataIndex === 0) {
+    // Pas d'en-tête trouvé, supposer format simple avec données dès le début
+    startDataIndex = 0;
+  }
+
+  const entreprises: EntrepriseRetrait[] = [];
+  
+  for (let i = startDataIndex; i < lines.length; i++) {
+    const parts = lines[i].split('\t');
+    if (parts.length >= 10) {
+      entreprises.push({
+        prenom: parts[0] || '',
+        nom: parts[1] || '',
+        societe: parts[2] || '',
+        siret: parts[3] || '',
+        email: parts[4] || '',
+        adresse: parts[5] || '',
+        cp: parts[6] || '',
+        ville: parts[7] || '',
+        telephone: parts[8] || '',
+        fax: parts[9] || '',
+        typeRetrait: parts[10] || '',
+        lots: parts[11] || '',
+        intention: parts[12] || '',
+        premiereVisite: parts[13] || '',
+        derniereVisite: parts[14] || '',
+      });
+    }
+  }
+
+  // Calculer les statistiques
+  const totalTelecharges = entreprises.length;
+  const anonymes = entreprises.filter(e => 
+    !e.email || e.email.trim() === '' || 
+    e.societe.toLowerCase().includes('anonyme')
+  ).length;
+
+  const procedureInfo: ProcedureInfo = {
+    objet: objet || 'Registre des retraits',
+    reference: reference || '',
+    dateLimit: dateLimit || '',
+    idEmp: idEmp || '',
+  };
+
+  console.log('Retraits texte chargés:', entreprises.length);
+  console.log('Procédure info:', procedureInfo);
+
+  return {
+    procedureInfo,
+    stats: {
+      totalTelecharges,
+      anonymes,
+    },
+    entreprises,
+  };
+};
+
+/**
  * Parse un fichier Excel de retraits
  */
 export const parseExcelRetraits = async (file: File): Promise<RetraitsData> => {
@@ -20,6 +118,16 @@ export const parseExcelRetraits = async (file: File): Promise<RetraitsData> => {
     reader.onload = (e) => {
       try {
         const data = e.target?.result;
+        
+        // Détecter si c'est un fichier texte ou un vrai Excel
+        if (typeof data === 'string') {
+          // C'est un fichier texte
+          const result = parseTextRetraits(data);
+          resolve(result);
+          return;
+        }
+
+        // Sinon, parser comme Excel binaire
         const workbook = XLSX.read(data, { type: 'binary' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData: any[] = XLSX.utils.sheet_to_json(firstSheet, { raw: false });
@@ -77,7 +185,9 @@ export const parseExcelRetraits = async (file: File): Promise<RetraitsData> => {
     };
 
     reader.onerror = () => reject(new Error('Erreur lors de la lecture du fichier'));
-    reader.readAsBinaryString(file);
+    
+    // Essayer de lire comme texte d'abord
+    reader.readAsText(file, 'UTF-8');
   });
 };
 

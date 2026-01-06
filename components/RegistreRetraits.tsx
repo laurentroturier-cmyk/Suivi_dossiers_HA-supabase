@@ -61,15 +61,15 @@ const RegistreRetraits: React.FC = () => {
                 Registre des Retraits
               </h1>
               <p className="text-gray-600 mb-8">
-                Chargez un fichier Excel (.xls, .xlsx) ou PDF pour visualiser les données des retraits
+                Chargez un fichier PDF pour visualiser les retraits de DCE
               </p>
 
               <label className="inline-flex items-center gap-3 px-8 py-4 bg-[#005c4d] text-white rounded-xl font-medium hover:bg-[#004a3d] transition-colors cursor-pointer shadow-lg hover:shadow-xl">
                 <Upload className="w-5 h-5" />
-                Charger un fichier
+                Charger un fichier PDF
                 <input
                   type="file"
-                  accept=".xls,.xlsx,.pdf"
+                  accept=".pdf"
                   onChange={handleFileUpload}
                   className="hidden"
                   disabled={loading}
@@ -122,10 +122,10 @@ const RegistreRetraits: React.FC = () => {
               </button>
               <label className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                 <Upload className="w-4 h-4" />
-                Nouveau fichier
+                Nouveau PDF
                 <input
                   type="file"
-                  accept=".xls,.xlsx,.pdf"
+                  accept=".pdf"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
