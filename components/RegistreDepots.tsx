@@ -36,8 +36,7 @@ const RegistreDepots: React.FC = () => {
   const filteredEntreprises = depotsData?.entreprises.filter((entreprise) => {
     const matchSearch = 
       entreprise.societe.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entreprise.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entreprise.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entreprise.contact.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entreprise.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entreprise.lot.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -138,7 +137,7 @@ const RegistreDepots: React.FC = () => {
         {/* Informations de la procédure */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations de la Procédure</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="col-span-2">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -146,7 +145,7 @@ const RegistreDepots: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase font-medium mb-1">Objet du marché</p>
-                  <p className="text-sm font-medium text-gray-900">{depotsData.procedureInfo.objet}</p>
+                  <p className="text-sm font-medium text-gray-900">{depotsData.procedureInfo.objet || 'Non renseigné'}</p>
                   {depotsData.procedureInfo.auteur && (
                     <p className="text-xs text-gray-500 mt-1">Auteur: {depotsData.procedureInfo.auteur}</p>
                   )}
@@ -159,20 +158,39 @@ const RegistreDepots: React.FC = () => {
                   <FileText className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Référence</p>
-                  <p className="text-sm font-medium text-gray-900">{depotsData.procedureInfo.reference}</p>
+                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Votre référence</p>
+                  <p className="text-sm font-medium text-gray-900">{depotsData.procedureInfo.reference || 'Non renseigné'}</p>
                   {depotsData.procedureInfo.idEmp && (
                     <p className="text-xs text-gray-500 mt-1">ID EMP: {depotsData.procedureInfo.idEmp}</p>
                   )}
                 </div>
               </div>
             </div>
+            <div>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date d'offre</p>
+                  <p className="text-sm font-medium text-gray-900">{depotsData.procedureInfo.dateOffre || 'Non renseigné'}</p>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-            <div>
-              <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date offre</p>
-              <p className="text-sm font-medium text-gray-900">{depotsData.procedureInfo.dateOffre}</p>
-            </div>
+            {depotsData.procedureInfo.datePublication && (
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date de publication</p>
+                <p className="text-sm font-medium text-gray-900">{depotsData.procedureInfo.datePublication}</p>
+              </div>
+            )}
+            {depotsData.procedureInfo.dateCandidature && (
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date de candidature</p>
+                <p className="text-sm font-medium text-gray-900">{depotsData.procedureInfo.dateCandidature}</p>
+              </div>
+            )}
             {depotsData.procedureInfo.dateExport && (
               <div>
                 <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date export</p>
@@ -189,11 +207,11 @@ const RegistreDepots: React.FC = () => {
             <p className="text-3xl font-bold text-gray-900">{depotsData.entreprises.length}</p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <p className="text-sm text-gray-600 mb-1">Enveloppes Électroniques</p>
+            <p className="text-sm text-gray-600 mb-1">Enveloppes Électroniques Offre</p>
             <p className="text-3xl font-bold text-[#005c4d]">{depotsData.stats.totalEnveloppesElectroniques}</p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <p className="text-sm text-gray-600 mb-1">Enveloppes Papier</p>
+            <p className="text-sm text-gray-600 mb-1">Enveloppes Papier Offre</p>
             <p className="text-3xl font-bold text-blue-600">{depotsData.stats.totalEnveloppesPapier}</p>
           </div>
         </div>
@@ -205,7 +223,7 @@ const RegistreDepots: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Rechercher par société, nom, email, lot..."
+                placeholder="Rechercher par société, contact, email, lot..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#005c4d] focus:border-transparent"
@@ -233,13 +251,11 @@ const RegistreDepots: React.FC = () => {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Ordre</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Société</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">E-mail</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Mode Réception</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Lot</th>
                   <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Date Réception</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Taille</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Mode</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Société et Contact</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Observations</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Plis et lots</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -249,38 +265,16 @@ const RegistreDepots: React.FC = () => {
                       <span className="text-xs font-bold text-gray-900">{entreprise.ordre}</span>
                     </td>
                     <td className="px-3 py-2">
-                      <div>
-                        <p className="text-xs font-medium text-gray-900 whitespace-nowrap">{entreprise.prenom} {entreprise.nom}</p>
-                        {entreprise.telephone && (
-                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
-                            <Phone className="w-2.5 h-2.5 flex-shrink-0" />
-                            <span className="whitespace-nowrap">{entreprise.telephone}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="max-w-[200px]">
-                        <p className="text-xs font-medium text-gray-900 truncate" title={entreprise.societe}>{entreprise.societe}</p>
-                        {entreprise.ville && (
-                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
-                            <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
-                            <span className="truncate">{entreprise.ville} ({entreprise.cp})</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-1 max-w-[180px]">
-                        <Mail className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                        <a href={`mailto:${entreprise.email}`} className="text-xs text-blue-600 hover:underline truncate" title={entreprise.email}>
-                          {entreprise.email}
-                        </a>
+                      <div className="text-[10px] text-gray-600 whitespace-nowrap">
+                        <p className="flex items-center gap-1">
+                          <Calendar className="w-2.5 h-2.5 flex-shrink-0" />
+                          {entreprise.dateReception}
+                        </p>
                       </div>
                     </td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
-                        entreprise.modeReception.toLowerCase().includes('electronique')
+                        entreprise.modeReception.toLowerCase().includes('electronique') || entreprise.modeReception.toLowerCase().includes('électronique')
                           ? 'bg-blue-100 text-blue-700'
                           : 'bg-gray-100 text-gray-700'
                       }`}>
@@ -288,18 +282,53 @@ const RegistreDepots: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-3 py-2">
-                      <p className="text-xs text-gray-900 max-w-[150px] truncate" title={entreprise.lot}>{entreprise.lot}</p>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="text-[10px] text-gray-600 whitespace-nowrap">
-                        <p className="flex items-center gap-1">
-                          <Calendar className="w-2.5 h-2.5 flex-shrink-0" />
-                          {entreprise.dateReception.split(' ')[0]}
-                        </p>
+                      <div className="max-w-[250px]">
+                        <p className="text-xs font-medium text-gray-900 truncate" title={entreprise.societe}>{entreprise.societe}</p>
+                        {entreprise.contact && (
+                          <p className="text-xs text-gray-600 mt-0.5">{entreprise.contact}</p>
+                        )}
+                        {entreprise.adresse && (
+                          <p className="text-[10px] text-gray-500 mt-0.5 truncate">{entreprise.adresse}</p>
+                        )}
+                        {entreprise.ville && (
+                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
+                            <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+                            <span className="truncate">{entreprise.cp} {entreprise.ville}</span>
+                          </div>
+                        )}
+                        {entreprise.telephone && (
+                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
+                            <Phone className="w-2.5 h-2.5 flex-shrink-0" />
+                            <span className="whitespace-nowrap">{entreprise.telephone}</span>
+                          </div>
+                        )}
+                        {entreprise.email && (
+                          <div className="flex items-center gap-1 max-w-[180px] mt-0.5">
+                            <Mail className="w-2.5 h-2.5 text-gray-400 flex-shrink-0" />
+                            <a href={`mailto:${entreprise.email}`} className="text-[10px] text-blue-600 hover:underline truncate" title={entreprise.email}>
+                              {entreprise.email}
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-3 py-2">
-                      <span className="text-xs text-gray-600 whitespace-nowrap">{entreprise.taille}</span>
+                      <p className="text-xs text-gray-600 max-w-[120px]">{entreprise.observations || '-'}</p>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="text-xs text-gray-900 max-w-[200px]">
+                        {entreprise.lot && (
+                          <p className="mb-1 truncate" title={entreprise.lot}>{entreprise.lot}</p>
+                        )}
+                        {entreprise.nomFichier && (
+                          <p className="text-[10px] text-gray-500 font-mono truncate" title={entreprise.nomFichier}>
+                            {entreprise.nomFichier}
+                          </p>
+                        )}
+                        {entreprise.tailleFichier && (
+                          <p className="text-[10px] text-gray-400 mt-0.5">{entreprise.tailleFichier}</p>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

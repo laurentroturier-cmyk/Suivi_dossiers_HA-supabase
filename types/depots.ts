@@ -1,35 +1,30 @@
 export interface EntrepriseDepot {
   ordre: string;
-  prenom: string;
-  nom: string;
+  dateReception: string;
+  modeReception: string;
   societe: string;
-  siret: string;
-  email: string;
+  contact: string;
   adresse: string;
   cp: string;
   ville: string;
   telephone: string;
   fax: string;
-  dateReception: string;
-  modeReception: string;
-  naturePli: string;
-  nomFichier: string;
-  taille: string;
-  lot: string;
+  email: string;
   observations: string;
-  copieSauvegarde: string;
-  horsDelai: string;
+  lot: string;
+  nomFichier: string;
+  tailleFichier: string;
 }
 
 export interface DepotsProcedureInfo {
   auteur: string;
   objet: string;
-  reference: string;
   datePublication: string;
   dateCandidature: string;
   dateOffre: string;
+  reference: string;
+  idEmp: string;
   dateExport: string;
-  idEmp?: string;
 }
 
 export interface DepotsStats {

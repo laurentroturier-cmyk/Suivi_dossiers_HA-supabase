@@ -83,6 +83,7 @@ const parseTextRetraits = (text: string): RetraitsData => {
 
   // Calculer les statistiques
   const totalTelecharges = entreprises.length;
+  const totalReprographies = 0; // Non disponible dans format texte
   const anonymes = entreprises.filter(e => 
     !e.email || e.email.trim() === '' || 
     e.societe.toLowerCase().includes('anonyme')
@@ -91,8 +92,11 @@ const parseTextRetraits = (text: string): RetraitsData => {
   const procedureInfo: ProcedureInfo = {
     objet: objet || '',
     reference: reference || '',
-    dateLimit: dateLimit || '',
+    datePublication: '',
+    dateCandidature: '',
+    dateOffre: dateLimit || '',
     idEmp: idEmp || '',
+    dateImpression: '',
   };
 
   console.log('Retraits texte chargés:', entreprises.length);
@@ -102,6 +106,7 @@ const parseTextRetraits = (text: string): RetraitsData => {
     procedureInfo,
     stats: {
       totalTelecharges,
+      totalReprographies,
       anonymes,
     },
     entreprises,
@@ -158,6 +163,7 @@ export const parseExcelRetraits = async (file: File): Promise<RetraitsData> => {
 
         // Calculer les statistiques
         const totalTelecharges = entreprises.length;
+        const totalReprographies = 0; // Non disponible dans format Excel
         const anonymes = entreprises.filter(e => 
           e.lots.toLowerCase().includes('pièces communes') || 
           e.lots.toLowerCase().includes('pieces communes')
@@ -167,14 +173,18 @@ export const parseExcelRetraits = async (file: File): Promise<RetraitsData> => {
         const procedureInfo: ProcedureInfo = {
           objet: '',
           reference: '',
-          dateLimit: '',
+          datePublication: '',
+          dateCandidature: '',
+          dateOffre: '',
           idEmp: '',
+          dateImpression: '',
         };
 
         resolve({
           procedureInfo,
           stats: {
             totalTelecharges,
+            totalReprographies,
             anonymes,
           },
           entreprises,
@@ -205,9 +215,13 @@ export const parsePdfRetraits = async (file: File): Promise<RetraitsData> => {
     // Variables pour les informations de procédure
     let objet = '';
     let reference = '';
-    let dateLimit = '';
+    let datePublication = '';
+    let dateCandidature = '';
+    let dateOffre = '';
     let idEmp = '';
+    let dateImpression = '';
     let totalTelecharges = 0;
+    let totalReprographies = 0;
     let anonymes = 0;
     
     // Extraire le texte de toutes les pages avec positions
@@ -242,21 +256,35 @@ export const parsePdfRetraits = async (file: File): Promise<RetraitsData> => {
           objet = lineText.replace('Objet du marché :', '').replace('Objet du marché:', '').trim();
         }
         if (lineText.includes('Votre référence :')) {
-          reference = lineText.split('Votre référence :')[1]?.split(' ')[0]?.trim() || '';
+          reference = lineText.split('Votre référence :')[1]?.trim().split(/\s+/)[0] || '';
+        }
+        if (lineText.includes('Date de publication :')) {
+          datePublication = lineText.split('Date de publication :')[1]?.trim() || '';
+        }
+        if (lineText.includes('Date de candidature :')) {
+          dateCandidature = lineText.split('Date de candidature :')[1]?.trim() || '';
         }
         if (lineText.includes('Date d\'offre :') || lineText.includes("Date d'offre :")) {
-          const match = lineText.match(/(\d{2}\/\d{2}\/\d{4}\s+à\s+\d{2}h\d{2})/);
-          if (match) dateLimit = match[1];
+          const match = lineText.match(/Date d['']offre\s*:\s*(.+)/);
+          if (match) dateOffre = match[1].trim();
         }
         if (lineText.includes('ID EMP :')) {
-          idEmp = lineText.split('ID EMP :')[1]?.trim().split(' ')[0] || '';
+          idEmp = lineText.split('ID EMP :')[1]?.trim().split(/\s+/)[0] || '';
         }
-        if (lineText.includes('Total dce électroniques téléchargés :')) {
+        if (lineText.includes('Date impression:') || lineText.includes('Date impression :')) {
+          const match = lineText.match(/Date impression\s*:\s*(.+)/);
+          if (match) dateImpression = match[1].trim();
+        }
+        if (lineText.includes('Total dce électroniques téléchargés') && lineText.includes(':')) {
           const match = lineText.match(/Total dce électroniques téléchargés\s*:\s*(\d+)/);
           if (match) totalTelecharges = parseInt(match[1]);
         }
+        if (lineText.includes('Total dce reprographiés retirés')) {
+          const match = lineText.match(/Total dce reprographiés retirés\s*:\s*(\d+)/);
+          if (match) totalReprographies = parseInt(match[1]);
+        }
         if (lineText.includes('Total dce électroniques téléchargés anonymement')) {
-          const match = lineText.match(/Total dce électroniques téléchargés anonymement\s*(\d+)/);
+          const match = lineText.match(/Total dce électroniques téléchargés anonymement\s+(\d+)/);
           if (match) anonymes = parseInt(match[1]);
         }
         
@@ -295,7 +323,7 @@ export const parsePdfRetraits = async (file: File): Promise<RetraitsData> => {
     }
 
     console.log('Entreprises extraites du PDF:', entreprises.length);
-    console.log('Stats extraites - Total:', totalTelecharges, 'Anonymes:', anonymes);
+    console.log('Stats extraites - Total téléchargés:', totalTelecharges, 'Reprographiés:', totalReprographies, 'Anonymes:', anonymes);
 
     if (entreprises.length === 0) {
       throw new Error('Aucune donnée d\'entreprise détectée dans le PDF. Veuillez utiliser un fichier Excel.');
@@ -316,20 +344,27 @@ export const parsePdfRetraits = async (file: File): Promise<RetraitsData> => {
     const procedureInfo: ProcedureInfo = {
       objet: objet || '',
       reference: reference || '',
-      dateLimit: dateLimit || '',
+      datePublication: datePublication || '',
+      dateCandidature: dateCandidature || '',
+      dateOffre: dateOffre || '',
       idEmp: idEmp || '',
+      dateImpression: dateImpression || '',
     };
 
     console.log('Informations extraites du PDF Retraits:');
     console.log('- Objet:', objet || '(non trouvé)');
     console.log('- Référence:', reference || '(non trouvé)');
-    console.log('- Date limite:', dateLimit || '(non trouvé)');
+    console.log('- Date publication:', datePublication || '(non trouvé)');
+    console.log('- Date candidature:', dateCandidature || '(non trouvé)');
+    console.log('- Date offre:', dateOffre || '(non trouvé)');
     console.log('- ID EMP:', idEmp || '(non trouvé)');
+    console.log('- Date impression:', dateImpression || '(non trouvé)');
 
     return {
       procedureInfo,
       stats: {
         totalTelecharges,
+        totalReprographies,
         anonymes,
       },
       entreprises,

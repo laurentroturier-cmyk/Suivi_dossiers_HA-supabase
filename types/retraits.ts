@@ -19,12 +19,16 @@ export interface EntrepriseRetrait {
 export interface ProcedureInfo {
   objet: string;
   reference: string;
-  dateLimit: string;
+  datePublication?: string;
+  dateCandidature?: string;
+  dateOffre: string;
   idEmp?: string;
+  dateImpression?: string;
 }
 
 export interface RetraitsStats {
   totalTelecharges: number;
+  totalReprographies: number;
   anonymes: number;
 }
 

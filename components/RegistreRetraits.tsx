@@ -139,15 +139,15 @@ const RegistreRetraits: React.FC = () => {
         {/* Informations de la procédure */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations de la Procédure</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="col-span-2">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <FileText className="w-5 h-5 text-gray-600" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase font-medium mb-1">Objet du marché</p>
-                  <p className="text-sm font-medium text-gray-900">{retraitsData.procedureInfo.objet}</p>
+                  <p className="text-sm font-medium text-gray-900">{retraitsData.procedureInfo.objet || 'Non renseigné'}</p>
                 </div>
               </div>
             </div>
@@ -158,7 +158,10 @@ const RegistreRetraits: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase font-medium mb-1">Votre référence</p>
-                  <p className="text-sm font-medium text-gray-900">{retraitsData.procedureInfo.reference}</p>
+                  <p className="text-sm font-medium text-gray-900">{retraitsData.procedureInfo.reference || 'Non renseigné'}</p>
+                  {retraitsData.procedureInfo.idEmp && (
+                    <p className="text-xs text-gray-500 mt-1">ID EMP: {retraitsData.procedureInfo.idEmp}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -168,26 +171,47 @@ const RegistreRetraits: React.FC = () => {
                   <Calendar className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date limite</p>
-                  <p className="text-sm font-medium text-gray-900">{retraitsData.procedureInfo.dateLimit}</p>
-                  {retraitsData.procedureInfo.idEmp && (
-                    <p className="text-xs text-gray-500 mt-1">ID EMP: {retraitsData.procedureInfo.idEmp}</p>
-                  )}
+                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date d'offre</p>
+                  <p className="text-sm font-medium text-gray-900">{retraitsData.procedureInfo.dateOffre || 'Non renseigné'}</p>
                 </div>
               </div>
             </div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+            {retraitsData.procedureInfo.datePublication && (
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date de publication</p>
+                <p className="text-sm font-medium text-gray-900">{retraitsData.procedureInfo.datePublication}</p>
+              </div>
+            )}
+            {retraitsData.procedureInfo.dateCandidature && (
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date de candidature</p>
+                <p className="text-sm font-medium text-gray-900">{retraitsData.procedureInfo.dateCandidature}</p>
+              </div>
+            )}
+            {retraitsData.procedureInfo.dateImpression && (
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date impression</p>
+                <p className="text-sm font-medium text-gray-900">{retraitsData.procedureInfo.dateImpression}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Statistiques */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <p className="text-sm text-gray-600 mb-1">Total Entrées</p>
             <p className="text-3xl font-bold text-gray-900">{retraitsData.entreprises.length}</p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <p className="text-sm text-gray-600 mb-1">DCE Téléchargés</p>
+            <p className="text-sm text-gray-600 mb-1">DCE Électroniques</p>
             <p className="text-3xl font-bold text-[#005c4d]">{retraitsData.stats.totalTelecharges}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p className="text-sm text-gray-600 mb-1">DCE Reprographiés</p>
+            <p className="text-3xl font-bold text-purple-600">{retraitsData.stats.totalReprographies}</p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <p className="text-sm text-gray-600 mb-1">Téléchargements Anonymes</p>

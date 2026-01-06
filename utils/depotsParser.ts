@@ -1,8 +1,7 @@
-import * as XLSX from 'xlsx';
 import * as pdfjsLib from 'pdfjs-dist';
 import { DepotsData, EntrepriseDepot, DepotsProcedureInfo, DepotsStats } from '../types/depots';
 
-// Configuration du worker PDF.js depuis node_modules
+// Configuration du worker PDF.js
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -11,211 +10,7 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Parse un fichier texte tabulé (TSV/TXT)
- */
-const parseTextDepots = (text: string): DepotsData => {
-  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-  
-  if (lines.length < 11) {
-    throw new Error('Fichier texte invalide : pas assez de lignes');
-  }
-
-  // Extraire les métadonnées des premières lignes
-  const prenomAuteur = lines[0].replace('Prenom : ', '').replace('Prénom : ', '').trim();
-  const nomAuteur = lines[1].replace('Nom : ', '').trim();
-  const objet = lines[2].replace('Objet : ', '').trim();
-  const reference = lines[3].replace('Référence : ', '').replace('Reference : ', '').trim();
-  const datePublication = lines[4].replace('Date de publication :', '').replace('Date de publication : ', '').trim();
-  const dateCandidature = lines[5].replace('Date de candidature :', '').replace('Date de candidature : ', '').trim();
-  const dateOffre = lines[6].replace('Date offre :', '').replace('Date offre : ', '').trim();
-  const dateExport = lines[7].replace('Date export:', '').replace('Date export : ', '').trim();
-
-  // Ligne 9 (index 8) est vide
-  // Ligne 10 (index 9) contient les en-têtes - on peut la sauter
-  // Les données commencent à la ligne 11 (index 10)
-  
-  const entreprises: EntrepriseDepot[] = [];
-  
-  for (let i = 10; i < lines.length; i++) {
-    const parts = lines[i].split('\t');
-    if (parts.length >= 19) {
-      entreprises.push({
-        ordre: String(i - 9),
-        prenom: parts[0] || '',
-        nom: parts[1] || '',
-        societe: parts[2] || '',
-        siret: parts[3] || '',
-        email: parts[4] || '',
-        adresse: parts[5] || '',
-        cp: parts[6] || '',
-        ville: parts[7] || '',
-        telephone: parts[8] || '',
-        fax: parts[9] || '',
-        dateReception: parts[10] || '',
-        modeReception: parts[11] || '',
-        naturePli: parts[12] || '',
-        nomFichier: parts[13] || '',
-        taille: parts[14] || '',
-        lot: parts[15] || '',
-        observations: parts[16] || '',
-        copieSauvegarde: parts[17] || '',
-        horsDelai: parts[18] || '',
-      });
-    }
-  }
-
-  // Calculer les statistiques
-  const totalEnveloppesElectroniques = entreprises.filter(e => 
-    e.modeReception.toLowerCase().includes('electronique')
-  ).length;
-  const totalEnveloppesPapier = entreprises.filter(e => 
-    e.modeReception.toLowerCase().includes('papier')
-  ).length;
-
-  // Informations de procédure extraites du fichier
-  const procedureInfo: DepotsProcedureInfo = {
-    auteur: prenomAuteur && nomAuteur ? `${prenomAuteur} ${nomAuteur}` : '',
-    objet: objet || '',
-    reference: reference || '',
-    datePublication: datePublication,
-    dateCandidature: dateCandidature,
-    dateOffre: dateOffre || '',
-    dateExport: dateExport || new Date().toLocaleDateString('fr-FR'),
-    idEmp: '',
-  };
-
-  console.log('Dépôts texte chargés:', entreprises.length);
-  console.log('Procédure info:', procedureInfo);
-
-  return {
-    procedureInfo,
-    stats: {
-      totalEnveloppesElectroniques,
-      totalEnveloppesPapier,
-    },
-    entreprises,
-  };
-};
-
-/**
- * Parse un fichier Excel de dépôts
- */
-export const parseExcelDepots = async (file: File): Promise<DepotsData> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        
-        // Détecter si c'est un fichier texte ou un vrai Excel
-        if (typeof data === 'string') {
-          // C'est un fichier texte
-          const result = parseTextDepots(data);
-          resolve(result);
-          return;
-        }
-
-        // Sinon, parser comme Excel binaire
-        const workbook = XLSX.read(data, { type: 'binary' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        
-        // Extraire les métadonnées des premières lignes
-        const getCell = (cell: string) => {
-          const cellValue = firstSheet[cell];
-          return cellValue ? String(cellValue.v || cellValue.w || '') : '';
-        };
-
-        // Lire les informations d'en-tête (lignes 1-8)
-        const prenomAuteur = getCell('A1').replace('Prenom : ', '').replace('Prénom : ', '').trim();
-        const nomAuteur = getCell('A2').replace('Nom : ', '').trim();
-        const objet = getCell('A3').replace('Objet : ', '').trim();
-        const reference = getCell('A4').replace('Référence : ', '').replace('Reference : ', '').trim();
-        const datePublication = getCell('A5').replace('Date de publication :', '').replace('Date de publication : ', '').trim();
-        const dateCandidature = getCell('A6').replace('Date de candidature :', '').replace('Date de candidature : ', '').trim();
-        const dateOffre = getCell('A7').replace('Date offre :', '').replace('Date offre : ', '').trim();
-        const dateExport = getCell('A8').replace('Date export:', '').replace('Date export : ', '').trim();
-
-        // Parser les données du tableau (à partir de la ligne 10)
-        const jsonData: any[] = XLSX.utils.sheet_to_json(firstSheet, { 
-          raw: false,
-          range: 9 // Commence à la ligne 10 (index 9)
-        });
-
-        if (!jsonData || jsonData.length === 0) {
-          reject(new Error('Le fichier Excel est vide'));
-          return;
-        }
-
-        // Parser les entreprises
-        const entreprises: EntrepriseDepot[] = jsonData.map((row, index) => ({
-          ordre: String(index + 1),
-          prenom: row['Prénom'] || row['Prenom'] || '',
-          nom: row['Nom'] || '',
-          societe: row['Société'] || row['Societe'] || '',
-          siret: row['SIRET'] || '',
-          email: row['E-mail'] || row['Email'] || '',
-          adresse: row['Adresse'] || '',
-          cp: row['CP'] || '',
-          ville: row['Ville'] || '',
-          telephone: row['Téléphone'] || row['Telephone'] || '',
-          fax: row['Fax'] || '',
-          dateReception: row['Date de réception du pli'] || row['Date de reception du pli'] || row['Date de réce'] || '',
-          modeReception: row['Mode de réception du pli'] || row['Mode de reception du pli'] || row['Mode de réce'] || '',
-          naturePli: row['Nature du pli'] || row['Nature du pl'] || '',
-          nomFichier: row['Nom du fichier'] || row['Nom du fichi'] || '',
-          taille: row['Taille'] || '',
-          lot: row['Lot'] || '',
-          observations: row['Observations'] || row['Observation'] || '',
-          copieSauvegarde: row['Copie de sauvegarde'] || row['Copie de sau'] || '',
-          horsDelai: row['Hors délai'] || row['Hors delai'] || row['Hors délai'] || '',
-        }));
-
-        // Calculer les statistiques
-        const totalEnveloppesElectroniques = entreprises.filter(e => 
-          e.modeReception.toLowerCase().includes('electronique')
-        ).length;
-        const totalEnveloppesPapier = entreprises.filter(e => 
-          e.modeReception.toLowerCase().includes('papier')
-        ).length;
-
-        // Informations de procédure extraites du fichier
-        const procedureInfo: DepotsProcedureInfo = {
-          auteur: prenomAuteur && nomAuteur ? `${prenomAuteur} ${nomAuteur}` : '',
-          objet: objet || '',
-          reference: reference || '',
-          datePublication: datePublication,
-          dateCandidature: dateCandidature,
-          dateOffre: dateOffre || '',
-          dateExport: dateExport || new Date().toLocaleDateString('fr-FR'),
-          idEmp: '',
-        };
-
-        console.log('Dépôts Excel chargés:', entreprises.length);
-        console.log('Procédure info:', procedureInfo);
-
-        resolve({
-          procedureInfo,
-          stats: {
-            totalEnveloppesElectroniques,
-            totalEnveloppesPapier,
-          },
-          entreprises,
-        });
-      } catch (error) {
-        reject(error);
-      }
-    };
-
-    reader.onerror = () => reject(new Error('Erreur lors de la lecture du fichier'));
-    
-    // Essayer de lire comme texte d'abord
-    reader.readAsText(file, 'UTF-8');
-  });
-};
-
-/**
- * Parse un fichier PDF de dépôts
+ * Parse un fichier PDF de registre des dépôts
  */
 export const parsePdfDepots = async (file: File): Promise<DepotsData> => {
   try {
@@ -223,7 +18,7 @@ export const parsePdfDepots = async (file: File): Promise<DepotsData> => {
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     
     const entreprises: EntrepriseDepot[] = [];
-    let fullText = '';
+    const allLines: string[] = [];
     
     // Variables pour les informations de procédure
     let auteur = '';
@@ -236,44 +31,47 @@ export const parsePdfDepots = async (file: File): Promise<DepotsData> => {
     let idEmp = '';
     let totalEnveloppesElectroniques = 0;
     let totalEnveloppesPapier = 0;
-    
-    // Extraire le texte de toutes les pages avec positions
+
+    // Lire toutes les pages et collecter les lignes
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
+      const content = await page.getTextContent();
       
-      // Grouper les items par ligne (même Y)
-      const lineMap = new Map<number, any[]>();
-      
-      textContent.items.forEach((item: any) => {
-        const y = Math.round(item.transform[5]);
-        if (!lineMap.has(y)) {
-          lineMap.set(y, []);
+      // Grouper les éléments de texte par position Y (ligne)
+      const lines: Record<number, { x: number; text: string }[]> = {};
+      content.items.forEach((item: any) => {
+        if ('str' in item && item.str.trim()) {
+          const y = Math.round(item.transform[5]);
+          const x = Math.round(item.transform[4]);
+          if (!lines[y]) {
+            lines[y] = [];
+          }
+          lines[y].push({ x, text: item.str });
         }
-        lineMap.get(y)!.push(item);
       });
+
+      // Trier les lignes par position Y (du haut vers le bas)
+      const sortedY = Object.keys(lines).map(Number).sort((a, b) => b - a);
       
-      // Trier les lignes par Y (haut en bas)
-      const sortedLines = Array.from(lineMap.entries())
-        .sort((a, b) => b[0] - a[0]);
-      
-      let ordre = 1;
-      
-      // Parser chaque ligne
-      for (const [y, items] of sortedLines) {
-        const sortedItems = items.sort((a, b) => a.transform[4] - b.transform[4]);
-        const lineText = sortedItems.map(item => item.str).join(' ');
-        fullText += lineText + '\n';
+      sortedY.forEach(y => {
+        // Trier les éléments par position X (gauche à droite)
+        const sortedItems = lines[y].sort((a, b) => a.x - b.x);
+        const lineText = sortedItems.map(item => item.text).join(' ').trim();
+        if (lineText) {
+          allLines.push(lineText);
+        }
         
-        // Extraire les informations de l'en-tête
+        // Extraction des informations d'en-tête
         if (lineText.includes('Auteur de la procédure :')) {
           auteur = lineText.split('Auteur de la procédure :')[1]?.trim() || '';
         }
-        if (lineText.includes('Objet du marché :')) {
+        if (lineText.includes('Objet du marché :') || lineText.includes('Objet du marche :')) {
           objet = lineText.replace('Objet du marché :', '').replace('Objet du marche :', '').trim();
         }
-        if (lineText.includes('Référence :') || lineText.includes('Reference :')) {
-          reference = lineText.split(/Référence :|Reference :/)[1]?.trim().split(' ')[0] || '';
+        if (lineText.includes('Votre référence :')) {
+          reference = lineText.split('Votre référence :')[1]?.trim().split(/\s+/)[0] || '';
+        } else if (lineText.includes('Référence :') && !reference) {
+          reference = lineText.split('Référence :')[1]?.trim().split(/\s+/)[0] || '';
         }
         if (lineText.includes('Date de publication :')) {
           datePublication = lineText.split('Date de publication :')[1]?.trim() || '';
@@ -281,118 +79,245 @@ export const parsePdfDepots = async (file: File): Promise<DepotsData> => {
         if (lineText.includes('Date de candidature :')) {
           dateCandidature = lineText.split('Date de candidature :')[1]?.trim() || '';
         }
-        if (lineText.includes('Date offre :')) {
-          const match = lineText.match(/Date offre\s*:\s*(.+)/);
+        if (lineText.includes("Date d'offre :") || lineText.includes('Date offre :')) {
+          const match = lineText.match(/Date\s+d'offre\s*:\s*(.+)/i);
           if (match) dateOffre = match[1].trim();
         }
-        if (lineText.includes('Date export:')) {
-          dateExport = lineText.split('Date export:')[1]?.trim() || '';
+        if (lineText.includes('Date export:') || lineText.includes('Date export :')) {
+          const match = lineText.match(/Date export\s*:\s*(.+)/);
+          if (match) dateExport = match[1].trim();
         }
         if (lineText.includes('ID EMP :')) {
-          idEmp = lineText.split('ID EMP :')[1]?.trim().split(' ')[0] || '';
+          idEmp = lineText.split('ID EMP :')[1]?.trim().split(/\s+/)[0] || '';
         }
-        if (lineText.includes('Total enveloppes électroniques offre :')) {
-          const match = lineText.match(/Total enveloppes électroniques offre\s*:\s*(\d+)/);
+        if (lineText.includes('Total enveloppes électroniques')) {
+          const match = lineText.match(/Total enveloppes électroniques(?:\s+offre)?\s*:\s*(\d+)/i);
           if (match) totalEnveloppesElectroniques = parseInt(match[1]);
         }
-        if (lineText.includes('Total enveloppes papier offre :')) {
-          const match = lineText.match(/Total enveloppes papier offre\s*:\s*(\d+)/);
+        if (lineText.includes('Total enveloppes papier')) {
+          const match = lineText.match(/Total enveloppes papier(?:\s+offre)?\s*:\s*(\d+)/i);
           if (match) totalEnveloppesPapier = parseInt(match[1]);
         }
-        
-        // Détecter si c'est une ligne de données (contient un email ou SIRET)
-        const emailMatch = lineText.match(/[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}/);
-        
-        if (emailMatch) {
-          const email = emailMatch[0];
-          const parts = lineText.split(/\s{2,}/);
-          
-          entreprises.push({
-            ordre: String(ordre++),
-            prenom: '',
-            nom: parts[0] || '',
-            societe: parts[1] || '',
-            siret: parts[2] || '',
-            email: email,
-            adresse: parts[3] || '',
-            cp: parts[4] || '',
-            ville: parts[5] || '',
-            telephone: parts[6] || '',
-            fax: parts[7] || '',
-            dateReception: '',
-            modeReception: lineText.includes('Electronique') ? 'Electronique' : 'Papier',
-            naturePli: lineText.includes('Offre') ? 'Offre' : '',
-            nomFichier: '',
-            taille: '',
-            lot: '',
-            observations: '',
-            copieSauvegarde: '',
-            horsDelai: lineText.toLowerCase().includes('non') ? 'non' : '',
-          });
-        }
+      });
+    }
+
+    // Rechercher les entrées du tableau en identifiant le pattern clé:
+    // "N Electronique/Papier fichier.crypt" où N est le numéro d'ordre
+    // Exemple: "1 Electronique 1067020_offre_1069220_354205.crypt"
+    
+    const entryIndices: { index: number; ordre: string; mode: string; fichier: string }[] = [];
+    
+    for (let i = 0; i < allLines.length; i++) {
+      const line = allLines[i].trim();
+      // Pattern: numéro + mode + fichier.crypt
+      const match = line.match(/^(\d+)\s+(Electronique|Électronique|Papier)\s+(.+\.crypt)/i);
+      if (match) {
+        entryIndices.push({
+          index: i,
+          ordre: match[1],
+          mode: match[2],
+          fichier: match[3]
+        });
       }
     }
 
-    console.log('Dépôts extraits du PDF:', entreprises.length);
-    console.log('Stats extraites - Électroniques:', totalEnveloppesElectroniques, 'Papier:', totalEnveloppesPapier);
+    // Pour chaque entrée, collecter les données autour
+    for (let entryIdx = 0; entryIdx < entryIndices.length; entryIdx++) {
+      const entry = entryIndices[entryIdx];
+      const currentLineIdx = entry.index;
+      
+      // Déterminer les bornes de recherche
+      const prevEntryIdx = entryIdx > 0 ? entryIndices[entryIdx - 1].index : 0;
+      const nextEntryIdx = entryIdx < entryIndices.length - 1 
+        ? entryIndices[entryIdx + 1].index 
+        : allLines.length;
 
-    if (entreprises.length === 0) {
-      throw new Error('Aucune donnée de dépôt détectée dans le PDF. Veuillez utiliser un fichier Excel.');
-    }
+      const entreprise: EntrepriseDepot = {
+        ordre: entry.ordre,
+        dateReception: '',
+        modeReception: entry.mode,
+        societe: '',
+        contact: '',
+        adresse: '',
+        cp: '',
+        ville: '',
+        telephone: '',
+        fax: '',
+        email: '',
+        observations: '',
+        lot: '',
+        nomFichier: entry.fichier,
+        tailleFichier: ''
+      };
 
-    // Si les stats n'ont pas été extraites, les calculer
-    if (totalEnveloppesElectroniques === 0 && totalEnveloppesPapier === 0) {
-      totalEnveloppesElectroniques = entreprises.filter(e => 
-        e.modeReception.toLowerCase().includes('electronique')
-      ).length;
-      totalEnveloppesPapier = entreprises.filter(e => 
-        e.modeReception.toLowerCase().includes('papier')
-      ).length;
+      // Chercher dans les lignes AVANT la ligne principale (société, contact, adresse, lot)
+      // et les lignes APRÈS (heure, taille, téléphone, fax, email)
+      
+      // Lignes avant (entre l'entrée précédente et celle-ci)
+      const linesBefore = allLines.slice(Math.max(prevEntryIdx + 1, currentLineIdx - 10), currentLineIdx);
+      // Lignes après (jusqu'à la prochaine entrée)
+      const linesAfter = allLines.slice(currentLineIdx + 1, Math.min(currentLineIdx + 8, nextEntryIdx));
+
+      // Collecter les lignes candidates pour société et contact
+      const candidateLines: string[] = [];
+
+      // Parser les lignes AVANT pour société, contact, adresse, lot, date+ville
+      for (const line of linesBefore) {
+        const trimmed = line.trim();
+        
+        // Date avec CP/ville mélangés: "12/02/2025 à 02100 - SAINT-QUENTIN"
+        const dateVilleMatch = trimmed.match(/^(\d{2}\/\d{2}\/\d{4})\s*à?\s*(\d{5})\s*-\s*(.+)/);
+        if (dateVilleMatch) {
+          entreprise.dateReception = dateVilleMatch[1];
+          entreprise.cp = dateVilleMatch[2];
+          entreprise.ville = dateVilleMatch[3].trim();
+          continue;
+        }
+
+        // Lot: "- Lot unique :" ou "- Lot N :"
+        if (trimmed.startsWith('- Lot')) {
+          entreprise.lot = trimmed.replace(/^-\s*/, '').replace(/:$/, '').trim();
+          continue;
+        }
+
+        // Adresse (commence par un numéro, suivi de rue/boulevard/etc)
+        if (!entreprise.adresse && trimmed.match(/^\d+[\s,]/) && 
+            !trimmed.match(/^\d{5}/) && !trimmed.match(/^\d{2}\/\d{2}/)) {
+          entreprise.adresse = trimmed;
+          continue;
+        }
+
+        // Ignorer les en-têtes de tableau et lignes parasites
+        if (trimmed.match(/^Date|^Ordre|^Mode|^Société|^Observations|^Plis|^d'arrivée|^réception|^OFFRE/i)) {
+          continue;
+        }
+        
+        // Ignorer les lignes contenant "Total" ou "enveloppes" (lignes de stats)
+        if (trimmed.match(/Total|enveloppes|offre:/i)) {
+          continue;
+        }
+        
+        // Ignorer les lignes entre parenthèses (tailles de fichiers)
+        if (trimmed.match(/^\(.+\)$/)) {
+          continue;
+        }
+        
+        // Ignorer les lignes de téléphone/fax/email (appartiennent à l'entrée précédente)
+        if (trimmed.match(/^Tél|^Fax|@/i)) {
+          continue;
+        }
+        
+        // Ignorer les lignes d'heure seule
+        if (trimmed.match(/^\d{2}h\d{2}$/)) {
+          continue;
+        }
+
+        // Collecter les lignes candidates (nom société ou contact)
+        if (trimmed.length > 2 && trimmed.length < 80 && !trimmed.match(/^\d/) && !trimmed.startsWith('-')) {
+          candidateLines.push(trimmed);
+        }
+      }
+
+      // Analyser les candidats pour distinguer société et contact
+      // Contact = format "Prénom NOM" (prénom commence par majuscule, reste minuscule, NOM tout en majuscules)
+      // Société = tout le reste (acronymes, noms avec points, backslash, etc.)
+      
+      for (const candidate of candidateLines) {
+        // Pattern contact: "Prénom NOM" ou "Prénom NOM NOM"
+        // Prénom: commence par majuscule, suivi de minuscules (avec accents possibles)
+        // NOM: tout en majuscules (au moins 2 caractères)
+        const isContact = /^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç]+\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ]{2,}/.test(candidate) &&
+                          !candidate.includes('.') && 
+                          !candidate.includes('\\') &&
+                          !candidate.includes("'") &&
+                          candidate.split(' ').length <= 3;
+
+        if (isContact && !entreprise.contact) {
+          entreprise.contact = candidate;
+        } else if (!entreprise.societe) {
+          entreprise.societe = candidate;
+        }
+      }
+
+      // Parser les lignes APRÈS pour heure, taille, téléphone, fax, email
+      for (const line of linesAfter) {
+        const trimmed = line.trim();
+
+        // Heure seule: "12h15"
+        if (!entreprise.dateReception.includes('h') && trimmed.match(/^\d{2}h\d{2}$/)) {
+          entreprise.dateReception += ` à ${trimmed}`;
+          continue;
+        }
+
+        // Taille fichier: "(98.2 Mo)"
+        const tailleMatch = trimmed.match(/^\((\d+\.?\d*\s*Mo)\)$/);
+        if (tailleMatch) {
+          entreprise.tailleFichier = tailleMatch[1];
+          continue;
+        }
+
+        // Téléphone: "Tél.: 0323647230"
+        const telMatch = trimmed.match(/^Tél\.?\s*:?\s*([\d\s.]+)/i);
+        if (telMatch && telMatch[1].trim()) {
+          entreprise.telephone = telMatch[1].replace(/[\s.]/g, '');
+          continue;
+        }
+
+        // Fax: "Fax: 0372390692" ou "Fax:"
+        const faxMatch = trimmed.match(/^Fax\s*:?\s*([\d\s.]*)/i);
+        if (faxMatch) {
+          entreprise.fax = faxMatch[1] ? faxMatch[1].replace(/[\s.]/g, '') : '';
+          continue;
+        }
+
+        // Email
+        if (trimmed.includes('@')) {
+          const emailMatch = trimmed.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]{2,})/);
+          if (emailMatch) {
+            entreprise.email = emailMatch[1].toLowerCase();
+          }
+        }
+      }
+
+      entreprises.push(entreprise);
     }
 
     const procedureInfo: DepotsProcedureInfo = {
-      auteur: auteur || '',
-      objet: objet || '',
-      reference: reference || '',
-      datePublication: datePublication,
-      dateCandidature: dateCandidature,
-      dateOffre: dateOffre || '',
-      dateExport: dateExport || new Date().toLocaleDateString('fr-FR'),
-      idEmp: idEmp || '',
+      auteur,
+      objet,
+      datePublication,
+      dateCandidature,
+      dateOffre,
+      reference,
+      idEmp,
+      dateExport,
     };
 
-    console.log('Informations extraites du PDF Dépôts:');
-    console.log('- Auteur:', auteur || '(non trouvé)');
-    console.log('- Objet:', objet || '(non trouvé)');
-    console.log('- Référence:', reference || '(non trouvé)');
-    console.log('- Date offre:', dateOffre || '(non trouvé)');
-    console.log('- ID EMP:', idEmp || '(non trouvé)');
+    const stats: DepotsStats = {
+      totalEnveloppesElectroniques,
+      totalEnveloppesPapier,
+    };
 
     return {
       procedureInfo,
-      stats: {
-        totalEnveloppesElectroniques,
-        totalEnveloppesPapier,
-      },
+      stats,
       entreprises,
     };
   } catch (error) {
-    console.error('Erreur PDF:', error);
-    throw new Error(`Erreur lors de la lecture du PDF: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    console.error('Erreur parsing PDF dépôts:', error);
+    throw new Error('Erreur lors du parsing du PDF des dépôts');
   }
 };
 
 /**
- * Parser universel : détecte automatiquement le type de fichier et utilise le bon parser
+ * Point d'entrée principal pour parser un fichier de dépôts
  */
 export const parseDepotsFile = async (file: File): Promise<DepotsData> => {
-  const extension = file.name.split('.').pop()?.toLowerCase();
-
-  if (extension === 'pdf') {
+  const fileName = file.name.toLowerCase();
+  
+  if (fileName.endsWith('.pdf')) {
     return parsePdfDepots(file);
-  } else if (extension === 'xls' || extension === 'xlsx' || extension === 'txt') {
-    return parseExcelDepots(file);
-  } else {
-    throw new Error('Format de fichier non supporté. Utilisez .pdf, .xls, .xlsx ou .txt');
   }
+  
+  throw new Error('Format de fichier non supporté. Veuillez fournir un fichier PDF.');
 };
