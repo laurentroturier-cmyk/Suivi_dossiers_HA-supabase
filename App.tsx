@@ -209,22 +209,46 @@ const SearchableSelect: React.FC<{
   );
 };
 
-const SimpleBarChart: React.FC<{ data: Record<string, number>, title: string, color: string, onClick?: () => void, dataKey?: string }> = ({ data, title, color, onClick, dataKey }) => {
+const SimpleBarChart: React.FC<{ 
+  data: Record<string, number>, 
+  title: string, 
+  color: string, 
+  onClick?: (selectedLabel: string | null) => void, 
+  dataKey?: string 
+}> = ({ data, title, color, onClick, dataKey }) => {
   const entries = Object.entries(data).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 8);
   const maxVal = Math.max(...entries.map(e => e[1] as number), 1);
   return (
     <div 
-      className={`bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col h-full transition-all hover:shadow-md ${
-        onClick ? 'cursor-pointer hover:scale-[1.02] hover:border-blue-300' : ''
-      }`}
-      onClick={onClick}
-      title={onClick ? 'Cliquer pour voir le détail' : ''}
+      className={`bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col h-full transition-all hover:shadow-md`}
     >
-      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-6">{title}</h4>
+      <div className="flex items-center justify-between mb-6">
+        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">{title}</h4>
+        {onClick && (
+          <button 
+            onClick={() => onClick(null)}
+            className="text-[9px] font-bold text-gray-400 hover:text-[#004d3d] transition-colors px-2 py-1 rounded hover:bg-gray-50"
+            title="Voir tout"
+          >
+            Voir tout
+          </button>
+        )}
+      </div>
       <div className="flex-1 space-y-4">
         {entries.map(([label, val]) => (
-          <div key={label} className="space-y-1.5">
-            <div className="flex justify-between text-[11px] font-bold text-gray-700"><span className="truncate pr-4">{label || 'N/C'}</span><span>{Math.round(val as number).toLocaleString('fr-FR')}</span></div>
+          <div 
+            key={label} 
+            className={`space-y-1.5 ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onClick) onClick(label);
+            }}
+            title={onClick ? `Cliquer pour filtrer sur "${label || 'N/C'}"` : ''}
+          >
+            <div className="flex justify-between text-[11px] font-bold text-gray-700">
+              <span className="truncate pr-4">{label || 'N/C'}</span>
+              <span>{Math.round(val as number).toLocaleString('fr-FR')}</span>
+            </div>
             <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
               <div className={`h-full transition-all duration-1000 ease-out ${color}`} style={{ width: `${((val as number) / (maxVal as number)) * 100}%` }} />
             </div>
@@ -286,7 +310,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TableType>('home');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'general' | 'opportunite' | 'procedures_liees' | 'documents' | 'publication' | 'offres' | 'rapport' | 'attribution' | 'marche' | 'strategie'>('general');
-  const [detailData, setDetailData] = useState<{ type: 'project' | 'procedure', data: any[], title: string } | null>(null);
+  const [detailData, setDetailData] = useState<{ type: 'project' | 'procedure', data: any[], title: string, filterField?: string, filterValue?: string | null } | null>(null);
   const [procedures, setProcedures] = useState<ProjectData[]>([]);
   const [dossiers, setDossiers] = useState<DossierData[]>([]);
   
@@ -2554,8 +2578,8 @@ const App: React.FC = () => {
                       data={kpis.charts.projetsAcheteur} 
                       title={selectedAcheteurs.length > 0 ? "Répartition Projets Filtrés" : "Top Acheteurs (Projets)"} 
                       color="bg-[#004d3d]" 
-                      onClick={() => {
-                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Acheteur' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Acheteur', filterField: 'Acheteur', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2563,8 +2587,8 @@ const App: React.FC = () => {
                       data={kpis.charts.projetsPriorite} 
                       title="Projets par Priorité" 
                       color="bg-teal-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Priorité' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Priorité', filterField: 'Priorite', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2572,8 +2596,8 @@ const App: React.FC = () => {
                       data={kpis.charts.projetsStatut} 
                       title="Projets par Statut" 
                       color="bg-emerald-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Statut' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Statut', filterField: 'StatutDossier', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2581,8 +2605,8 @@ const App: React.FC = () => {
                       data={kpis.charts.projetsClientInterne} 
                       title="Projets par Client Interne" 
                       color="bg-violet-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Client Interne' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Client Interne', filterField: 'ClientInterne', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2601,8 +2625,8 @@ const App: React.FC = () => {
                       data={kpis.charts.proceduresAcheteur} 
                       title={selectedAcheteurs.length > 0 ? "Répartition Procédures Filtrées" : "Top Acheteurs (Procédures)"} 
                       color="bg-indigo-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Acheteur' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Acheteur', filterField: 'Acheteur', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2610,8 +2634,8 @@ const App: React.FC = () => {
                       data={kpis.charts.proceduresType} 
                       title="Procédures par Type" 
                       color="bg-orange-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Type' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Type', filterField: 'Type de procédure', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2619,8 +2643,8 @@ const App: React.FC = () => {
                       data={kpis.charts.proceduresStatut} 
                       title="Procédures par Statut" 
                       color="bg-blue-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Statut' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Statut', filterField: 'Statut de la consultation', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2628,8 +2652,8 @@ const App: React.FC = () => {
                       data={kpis.charts.proceduresTypeMoyenne} 
                       title="Montant Moyen par Type (€)" 
                       color="bg-rose-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Montant Moyen par Type' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Montant Moyen par Type', filterField: 'Type de procédure', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2637,8 +2661,8 @@ const App: React.FC = () => {
                       data={kpis.charts.proceduresDispoEnv} 
                       title="Dispositions Environnementales" 
                       color="bg-green-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Environnementales' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Environnementales', filterField: 'Dispo environnementales', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2646,8 +2670,8 @@ const App: React.FC = () => {
                       data={kpis.charts.proceduresDispoSoc} 
                       title="Dispositions Sociales" 
                       color="bg-purple-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Sociales' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Sociales', filterField: 'Dispo sociales', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2655,8 +2679,8 @@ const App: React.FC = () => {
                       data={kpis.charts.proceduresProjetsInnovants} 
                       title="Projets Innovants" 
                       color="bg-cyan-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Projets Innovants' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Projets Innovants', filterField: 'Projet ouvert à l\'acquisition de solutions innovantes', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -2664,8 +2688,8 @@ const App: React.FC = () => {
                       data={kpis.charts.proceduresProjetsTPEPME} 
                       title="Projets TPE/PME" 
                       color="bg-amber-600" 
-                      onClick={() => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Projets TPE/PME' });
+                      onClick={(label) => {
+                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Projets TPE/PME', filterField: 'Projet facilitant l\'accès aux TPE/PME', filterValue: label });
                         setActiveTab('detail');
                       }}
                     />
@@ -3016,6 +3040,47 @@ const App: React.FC = () => {
             )}
             {(activeTab === 'dossiers' || activeTab === 'procedures') && (
               <div className="space-y-6">
+                {/* Bouton retour à la liste détail si elle existe */}
+                {detailData && (
+                  <div className="bg-gradient-to-r from-[#004d3d]/10 to-[#004d3d]/5 p-4 rounded-2xl border border-[#004d3d]/20 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-[#004d3d] rounded-xl flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#004d3d]">Liste détail en mémoire</p>
+                        <p className="text-xs text-gray-600">{detailData.title} • {detailData.data.length} entrée(s)</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingProject(null);
+                          setEditingProcedure(null);
+                          setActiveTab('detail');
+                        }}
+                        className="px-4 py-2 bg-[#004d3d] text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-[#003d2d] transition-all flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Retour à la liste
+                      </button>
+                      <button
+                        onClick={() => setDetailData(null)}
+                        className="px-3 py-2 bg-gray-200 text-gray-600 rounded-xl font-bold text-xs hover:bg-gray-300 transition-all"
+                        title="Fermer la liste détail"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex flex-col md:flex-row flex-wrap items-end gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100" ref={dropdownRef}>
                   <div className="flex-1 min-w-[220px]">
                     {activeTab === 'dossiers' && (
@@ -3395,13 +3460,43 @@ const App: React.FC = () => {
           <RegistreDepots />
         )}
 
-        {activeTab === 'detail' && detailData && (
+        {activeTab === 'detail' && detailData && (() => {
+          // Filtrer les données selon la sélection du graphique
+          const filteredDetailData = detailData.filterValue !== null && detailData.filterValue !== undefined && detailData.filterField
+            ? detailData.data.filter(item => {
+                const itemValue = getProp(item, detailData.filterField!) || '';
+                const normalizedItemValue = String(itemValue).toLowerCase().trim();
+                const normalizedFilterValue = String(detailData.filterValue).toLowerCase().trim();
+                // Gérer le cas "N/C" ou valeur vide
+                if (normalizedFilterValue === 'n/c' || normalizedFilterValue === '') {
+                  return !itemValue || normalizedItemValue === 'n/c' || normalizedItemValue === '';
+                }
+                return normalizedItemValue === normalizedFilterValue;
+              })
+            : detailData.data;
+          
+          return (
           <div className="space-y-6 animate-in fade-in duration-700">
             <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-2xl font-black text-[#004d3d] mb-2">{detailData.title}</h2>
-                  <p className="text-sm text-gray-500">{detailData.data.length} entrée(s) trouvée(s)</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm text-gray-500">{filteredDetailData.length} entrée(s) trouvée(s)</p>
+                    {detailData.filterValue && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#004d3d]/10 text-[#004d3d] rounded-full text-xs font-bold">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                        {detailData.filterValue || 'N/C'}
+                        <button 
+                          onClick={() => setDetailData({ ...detailData, filterValue: null })}
+                          className="ml-1 hover:bg-[#004d3d]/20 rounded-full p-0.5"
+                          title="Supprimer le filtre"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button 
                   onClick={() => {
@@ -3425,7 +3520,7 @@ const App: React.FC = () => {
                   if (bottomScroll) bottomScroll.scrollLeft = (e.target as HTMLDivElement).scrollLeft;
                 }}
               >
-                <div style={{ height: '1px', width: `${(detailData.type === 'project' ? PROJECT_FIELDS.length : DOSSIER_FIELDS.length) * 200}px` }}></div>
+                <div style={{ height: '1px', width: `${((detailData.type === 'project' ? PROJECT_FIELDS.length : DOSSIER_FIELDS.length) + 1) * 200}px` }}></div>
               </div>
               
               {/* Tableau principal */}
@@ -3440,6 +3535,9 @@ const App: React.FC = () => {
                 <table className="themed-table w-full">
                   <thead className="bg-gray-50/50">
                     <tr>
+                      <th className="px-4 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap text-center sticky left-0 bg-gray-50/95 z-10">
+                        Actions
+                      </th>
                       {detailData.type === 'project' ? (
                         PROJECT_FIELDS.map(field => (
                           <th key={field.id} className={`px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
@@ -3456,8 +3554,30 @@ const App: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {detailData.data.map((item, idx) => (
+                    {filteredDetailData.map((item, idx) => (
                       <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-4 py-4 text-center sticky left-0 bg-white z-10">
+                          <button
+                            onClick={() => {
+                              if (detailData.type === 'project') {
+                                // Ouvrir la procédure en modification
+                                setEditingProject(item);
+                                setActiveTab('procedures');
+                              } else {
+                                // Ouvrir le dossier en modification
+                                setEditingProcedure(item);
+                                setActiveTab('dossiers');
+                              }
+                              // On garde detailData pour pouvoir revenir
+                            }}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#004d3d]/10 text-[#004d3d] hover:bg-[#004d3d] hover:text-white transition-all"
+                            title={detailData.type === 'project' ? 'Modifier la procédure' : 'Modifier le dossier'}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                        </td>
                         {detailData.type === 'project' ? (
                           PROJECT_FIELDS.map(field => {
                             let displayValue;
@@ -3499,7 +3619,8 @@ const App: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+        );
+        })()}
 
         {activeTab === 'commission' && (() => {
           const handleSort = (column: string) => {
