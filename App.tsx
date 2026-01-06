@@ -2164,6 +2164,17 @@ const App: React.FC = () => {
 
   return (
     <div className="app-shell min-h-screen pb-12">
+      {/* Overlay de chargement bloquant */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center">
+          <div className="bg-white rounded-3xl shadow-2xl p-12 text-center">
+            <div className="w-20 h-20 border-4 border-[#004d3d] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 className="text-2xl font-black text-[#004d3d] mb-2">Chargement des données...</h2>
+            <p className="text-sm text-gray-500">Veuillez patienter pendant le chargement de la base de données</p>
+          </div>
+        </div>
+      )}
+
       {viewingFile && (
         <DocumentViewer 
           fileName={viewingFile.name} 

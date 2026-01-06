@@ -89,7 +89,7 @@ const parseTextRetraits = (text: string): RetraitsData => {
   ).length;
 
   const procedureInfo: ProcedureInfo = {
-    objet: objet || 'Registre des retraits',
+    objet: objet || '',
     reference: reference || '',
     dateLimit: dateLimit || '',
     idEmp: idEmp || '',
@@ -163,12 +163,12 @@ export const parseExcelRetraits = async (file: File): Promise<RetraitsData> => {
           e.lots.toLowerCase().includes('pieces communes')
         ).length;
 
-        // Informations de procédure (à extraire du nom de fichier ou laisser vide)
+        // Informations de procédure (vides par défaut, à compléter manuellement)
         const procedureInfo: ProcedureInfo = {
-          objet: 'Accord cadre pour la réalisation de travaux d\'entretien et de réparation',
-          reference: '25001_ACO_TX-ENTRET-NAT_LMD',
-          dateLimit: '11/08/2025 à 18 h 00',
-          idEmp: '1100458',
+          objet: '',
+          reference: '',
+          dateLimit: '',
+          idEmp: '',
         };
 
         resolve({
@@ -314,11 +314,17 @@ export const parsePdfRetraits = async (file: File): Promise<RetraitsData> => {
 
     // Informations de procédure
     const procedureInfo: ProcedureInfo = {
-      objet: objet || 'Mission de MOE pour des travaux de mise en conformité d\'optimisation des postes de livraison HT-BT pour le centre Afpa de Saint-Dizier',
-      reference: reference || '25001_MAPA_MOE-CONFORM-HT-BT',
-      dateLimit: dateLimit || '13/02/2025 à 12h00',
-      idEmp: idEmp || '1067020',
+      objet: objet || '',
+      reference: reference || '',
+      dateLimit: dateLimit || '',
+      idEmp: idEmp || '',
     };
+
+    console.log('Informations extraites du PDF Retraits:');
+    console.log('- Objet:', objet || '(non trouvé)');
+    console.log('- Référence:', reference || '(non trouvé)');
+    console.log('- Date limite:', dateLimit || '(non trouvé)');
+    console.log('- ID EMP:', idEmp || '(non trouvé)');
 
     return {
       procedureInfo,

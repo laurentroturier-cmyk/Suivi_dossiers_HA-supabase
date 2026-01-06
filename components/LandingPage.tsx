@@ -95,9 +95,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
             </div>
             <h1 className="text-5xl font-black text-[#004d3d] mb-4">GestProjet</h1>
             <p className="text-xl text-gray-600 mb-2">Plateforme de gestion des projets achats DNA</p>
-            <p className="text-sm text-gray-500 max-w-2xl mx-auto">
-              Pilotez vos procédures de marchés publics, suivez vos projets achats et gérez l'exécution de vos marchés en toute simplicité
-            </p>
           </div>
 
           {/* Stats */}

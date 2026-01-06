@@ -182,11 +182,11 @@ export const parseExcelDepots = async (file: File): Promise<DepotsData> => {
         // Informations de procédure extraites du fichier
         const procedureInfo: DepotsProcedureInfo = {
           auteur: prenomAuteur && nomAuteur ? `${prenomAuteur} ${nomAuteur}` : '',
-          objet: objet || 'Accord cadre pour la réalisation de travaux d\'entretien et de réparation des centres Afpa',
-          reference: reference || '25091_AOO_TX-ENTRET-NAT_LMD',
+          objet: objet || '',
+          reference: reference || '',
           datePublication: datePublication,
           dateCandidature: dateCandidature,
-          dateOffre: dateOffre || '11/08/2025 à 18 h 00',
+          dateOffre: dateOffre || '',
           dateExport: dateExport || new Date().toLocaleDateString('fr-FR'),
           idEmp: '',
         };
@@ -351,15 +351,22 @@ export const parsePdfDepots = async (file: File): Promise<DepotsData> => {
     }
 
     const procedureInfo: DepotsProcedureInfo = {
-      auteur: auteur || 'Lauriane MALARD',
-      objet: objet || 'Mission de MOE pour des travaux de mise en conformité d\'optimisation des postes de livraison HT-BT',
-      reference: reference || '25001_MAPA_MOE-CONFORM-HT-BT',
+      auteur: auteur || '',
+      objet: objet || '',
+      reference: reference || '',
       datePublication: datePublication,
       dateCandidature: dateCandidature,
-      dateOffre: dateOffre || '13/02/2025 à 12h00',
+      dateOffre: dateOffre || '',
       dateExport: dateExport || new Date().toLocaleDateString('fr-FR'),
-      idEmp: idEmp || '1067020',
+      idEmp: idEmp || '',
     };
+
+    console.log('Informations extraites du PDF Dépôts:');
+    console.log('- Auteur:', auteur || '(non trouvé)');
+    console.log('- Objet:', objet || '(non trouvé)');
+    console.log('- Référence:', reference || '(non trouvé)');
+    console.log('- Date offre:', dateOffre || '(non trouvé)');
+    console.log('- ID EMP:', idEmp || '(non trouvé)');
 
     return {
       procedureInfo,
