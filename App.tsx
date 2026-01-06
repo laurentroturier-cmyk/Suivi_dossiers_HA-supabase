@@ -46,6 +46,7 @@ import { supabase } from './lib/supabase';
 // Import Registre Retraits Component
 import RegistreRetraits from './components/RegistreRetraits';
 import RegistreDepots from './components/RegistreDepots';
+import LandingPage from './components/LandingPage';
 
 type Theme = 'light' | 'dark' | 'blue' | 'green';
 
@@ -282,7 +283,8 @@ const App: React.FC = () => {
   const [an01ViewMode, setAn01ViewMode] = useState<'grid' | 'table'>('grid');
   const [an01IsLoading, setAn01IsLoading] = useState(false);
   const [an01Error, setAn01Error] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TableType>('dashboard');
+  const [activeTab, setActiveTab] = useState<TableType>('home');
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'general' | 'opportunite' | 'procedures_liees' | 'documents' | 'publication' | 'offres' | 'rapport' | 'attribution' | 'marche' | 'strategie'>('general');
   const [detailData, setDetailData] = useState<{ type: 'project' | 'procedure', data: any[], title: string } | null>(null);
   const [procedures, setProcedures] = useState<ProjectData[]>([]);
@@ -2171,17 +2173,145 @@ const App: React.FC = () => {
       )}
       <header className="surface-card border-b sticky top-0 z-40 shadow-sm h-20 flex items-center justify-between px-8">
         <div className="flex items-center gap-4">
-          <img src="/logo.png" alt="Logo" className="h-12 object-contain" />
-          <div className="flex flex-col">
-            <h1 className="text-xl font-black text-[#004d3d]">GestProjet</h1>
-            <span className="text-[9px] font-bold text-gray-400 tracking-wide">v1.0.0 • Mise à jour : 01/01/2026</span>
-          </div>
+          <button 
+            type="button"
+            onClick={() => { setActiveTab('home'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+            className="flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer"
+          >
+            <img src="/logo.png" alt="Logo" className="h-12 object-contain" />
+            <div className="flex flex-col">
+              <h1 className="text-xl font-black text-[#004d3d]">GestProjet</h1>
+              <span className="text-[9px] font-bold text-gray-400 tracking-wide">v1.0.1 • Mise à jour : 06/01/2026</span>
+            </div>
+          </button>
         </div>
         <div className="flex items-center gap-6">
-          <nav className="flex gap-8">
-            {[{ label: 'Projets', key: 'dossiers' }, { label: 'Procédures', key: 'procedures' }, { label: 'Indicateurs', key: 'dashboard' }, { label: 'Gantt', key: 'gantt' }, { label: 'Commission HA', key: 'commission' }, { label: 'Export', key: 'export' }, { label: 'AN01', key: 'an01' }, { label: 'Retraits', key: 'retraits' }, { label: 'Dépôts', key: 'depots' }, ...(detailData ? [{ label: 'Détail', key: 'detail' }] : [])].map(t => (
-              <button key={t.key} onClick={() => { setActiveTab(t.key as TableType); setEditingProject(null); setEditingProcedure(null); }} className={`text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === t.key ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'}`}>{t.label}</button>
-            ))}
+          <nav className="flex gap-6">
+            {/* Accueil */}
+            <button
+              onClick={() => { setActiveTab('home'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
+              className={`text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeTab === 'home' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+              }`}
+            >
+              Accueil
+            </button>
+
+            {/* Indicateurs */}
+            <div className="relative">
+              <button
+                onClick={() => setOpenMenu(openMenu === 'indicateurs' ? null : 'indicateurs')}
+                className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1 ${
+                  activeTab === 'dashboard' || activeTab === 'gantt' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+                }`}
+              >
+                Indicateurs
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {openMenu === 'indicateurs' && (
+                <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[160px] z-50">
+                  <button
+                    onClick={() => { setActiveTab('dashboard'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Tableau de bord
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('gantt'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Gantt
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Projets achats */}
+            <button
+              onClick={() => { setActiveTab('dossiers'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
+              className={`text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeTab === 'dossiers' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+              }`}
+            >
+              Projets achats
+            </button>
+
+            {/* Procédures */}
+            <button
+              onClick={() => { setActiveTab('procedures'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
+              className={`text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeTab === 'procedures' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+              }`}
+            >
+              Procédures
+            </button>
+
+            {/* Exécution des marchés */}
+            <div className="relative">
+              <button
+                onClick={() => setOpenMenu(openMenu === 'execution' ? null : 'execution')}
+                className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1 ${
+                  activeTab === 'commission' || activeTab === 'retraits' || activeTab === 'depots' || activeTab === 'an01' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+                }`}
+              >
+                Exécution
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {openMenu === 'execution' && (
+                <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[160px] z-50">
+                  <button
+                    onClick={() => { setActiveTab('commission'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Commission HA
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('retraits'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Registre Retraits
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('depots'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Registre Dépôts
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('an01'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    AN01
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Exports & données */}
+            <button
+              onClick={() => { setActiveTab('export'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
+              className={`text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeTab === 'export' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+              }`}
+            >
+              Exports & données
+            </button>
+
+            {/* Détail (conditionnel) */}
+            {detailData && (
+              <button
+                onClick={() => { setActiveTab('detail'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
+                className={`text-[10px] font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'detail' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+                }`}
+              >
+                Détail
+              </button>
+            )}
           </nav>
           
           {/* User Badge & Admin Access */}
@@ -2206,12 +2336,12 @@ const App: React.FC = () => {
                 <button
                   onClick={() => setShowAdminDashboard(true)}
                   className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 relative"
-                  title="Accéder au Dashboard Admin"
+                  title="Accéder à l'Administration"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z" />
                   </svg>
-                  Dashboard
+                  Administration
                   {pendingRequestsCount > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
                       {pendingRequestsCount}
@@ -2282,6 +2412,15 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-6 mt-10">
         {!editingProject && !editingProcedure && (
           <>
+            {activeTab === 'home' && (
+              <LandingPage 
+                onNavigate={(tab) => setActiveTab(tab as TableType)}
+                onOpenAdmin={() => setShowAdminDashboard(true)}
+                projectsCount={dossiers.length}
+                proceduresCount={procedures.length}
+              />
+            )}
+
             {activeTab === 'dashboard' && (
               <div className="space-y-8 animate-in fade-in duration-700">
                 <div className="flex flex-col md:flex-row flex-wrap items-end gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100" ref={dropdownRef}>

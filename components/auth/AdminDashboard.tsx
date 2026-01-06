@@ -55,32 +55,11 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
       setError(null);
       setRlsError(false);
 
-      const { data: fetchedData, error: fetchError } = await supabase
-        .from('mes_donnees')
-        .select('*')
-        .order('id', { ascending: true });
-
-      if (fetchError) {
-        // Ignorer silencieusement l'erreur si la table n'existe pas
-        if (fetchError.message.includes('does not exist') || fetchError.code === '42P01') {
-          console.log('[INFO] Table mes_donnees non trouvée (ignoré)');
-          setData([]);
-        } else if (fetchError.code === '42501' || fetchError.message.includes('permission denied')) {
-          setRlsError(true);
-          setError('Accès refusé : vos permissions ne permettent pas d\'accéder à ces données.');
-        } else {
-          setError(fetchError.message);
-        }
-        console.error('Erreur lors du chargement des données:', fetchError);
-      } else {
-        setData(fetchedData || []);
-      }
+      // Table mes_donnees désactivée - ne plus charger ces données
+      setData([]);
     } catch (err: any) {
       console.error('Erreur:', err);
-      // Ne pas afficher d'erreur si c'est juste que la table n'existe pas
-      if (!err.message?.includes('does not exist')) {
-        setError(err.message || 'Une erreur est survenue');
-      }
+      setError(err.message || 'Une erreur est survenue');
     } finally {
       setLoading(false);
     }
