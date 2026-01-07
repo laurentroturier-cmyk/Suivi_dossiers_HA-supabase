@@ -311,6 +311,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TableType>('home');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'general' | 'opportunite' | 'procedures_liees' | 'documents' | 'publication' | 'offres' | 'rapport' | 'attribution' | 'marche' | 'strategie'>('general');
+  const [previousTab, setPreviousTab] = useState<{tab: TableType, subTab?: string} | null>(null);
   const [detailData, setDetailData] = useState<{ type: 'project' | 'procedure', data: any[], title: string, filterField?: string, filterValue?: string | null } | null>(null);
   const [procedures, setProcedures] = useState<ProjectData[]>([]);
   const [dossiers, setDossiers] = useState<DossierData[]>([]);
@@ -3409,7 +3410,14 @@ const App: React.FC = () => {
         {(editingProject || editingProcedure) && (
           <div className="animate-in slide-in-from-bottom-8 duration-600 max-w-6xl mx-auto space-y-8">
             <div className="bg-white border border-gray-100 p-8 rounded-[2.5rem] shadow-2xl flex items-center justify-between">
-              <button onClick={() => { setEditingProject(null); setEditingProcedure(null); }} className="flex items-center gap-3 text-gray-300 font-black text-[10px] uppercase tracking-widest hover:text-gray-500 transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg> Retour</button>
+              <button onClick={() => { 
+                setEditingProject(null); 
+                setEditingProcedure(null); 
+                if (previousTab) {
+                  setActiveTab(previousTab.tab);
+                  setPreviousTab(null);
+                }
+              }} className="flex items-center gap-3 text-gray-300 font-black text-[10px] uppercase tracking-widest hover:text-gray-500 transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg> Retour</button>
               <div className="flex flex-col items-center gap-2">
                 <h2 className="text-sm font-black text-gray-900 uppercase tracking-[0.3em]">Édition {editingProject ? 'Dossier' : 'Procédure'}</h2>
                 {editingProcedure && <div className="px-6 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl">
@@ -3785,6 +3793,14 @@ const App: React.FC = () => {
           
           const filteredCommissionProjects = dossiers.filter(d => {
             if (d.Commission_Achat !== "Oui") return false;
+            
+            // Filtrer par montant > 1000000
+            const montant = Number(d["Montant_previsionnel_du_marche_(_HT)_"]) || 0;
+            if (montant <= 1000000) return false;
+            
+            // Exclure si NO - Statut est "3-Validé"
+            if (d["NO_-_Statut"] === "3-Validé") return false;
+            
             const dateVal = d["NO_-_Date_de_validation_du_document"];
             if (!dateVal || dateVal.trim() === "") {
               const statut = d.Statut_du_Dossier || '';
@@ -3806,6 +3822,7 @@ const App: React.FC = () => {
               case 'acheteur': aVal = a.Acheteur || ''; bVal = b.Acheteur || ''; break;
               case 'priorite': aVal = a.Priorite || ''; bVal = b.Priorite || ''; break;
               case 'montant': aVal = a["Montant_previsionnel_du_marche_(_HT)_"] || ''; bVal = b["Montant_previsionnel_du_marche_(_HT)_"] || ''; break;
+              case 'deploiement': aVal = a["Date_de_deploiement_previsionnelle_du_marche"] || ''; bVal = b["Date_de_deploiement_previsionnelle_du_marche"] || ''; break;
               case 'date': aVal = a["NO_-_Date_previsionnelle_CA_ou_Commission"] || ''; bVal = b["NO_-_Date_previsionnelle_CA_ou_Commission"] || ''; break;
             }
             
@@ -3825,10 +3842,37 @@ const App: React.FC = () => {
             </div>
 
             <div className="surface-card overflow-hidden rounded-[2rem] shadow-sm border border-gray-100">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              {/* Scroll horizontal en haut */}
+              <div className="overflow-x-auto" ref={(el) => {
+                if (el) {
+                  el.addEventListener('scroll', (e) => {
+                    const target = e.target as HTMLElement;
+                    const bottomScroll = target.parentElement?.querySelector('.overflow-x-auto:last-child') as HTMLElement;
+                    if (bottomScroll && bottomScroll !== target) {
+                      bottomScroll.scrollLeft = target.scrollLeft;
+                    }
+                  });
+                }
+              }}>
+                <div className="min-w-[1400px] h-4"></div>
+              </div>
+              <div className="overflow-x-auto" ref={(el) => {
+                if (el) {
+                  el.addEventListener('scroll', (e) => {
+                    const target = e.target as HTMLElement;
+                    const topScroll = target.parentElement?.querySelector('.overflow-x-auto:first-child') as HTMLElement;
+                    if (topScroll && topScroll !== target) {
+                      topScroll.scrollLeft = target.scrollLeft;
+                    }
+                  });
+                }
+              }}>
+                <table className="min-w-[1400px] w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
+                      <th className="px-8 py-6 text-center text-xs font-black uppercase tracking-widest text-gray-400">
+                        Action
+                      </th>
                       <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('dossier')}>
                         Dossier {commissionSortColumn === 'dossier' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
                       </th>
@@ -3844,6 +3888,9 @@ const App: React.FC = () => {
                       <th className="px-8 py-6 text-right text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('montant')}>
                         Montant prévu {commissionSortColumn === 'montant' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
                       </th>
+                      <th className="px-8 py-6 text-right text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('deploiement')}>
+                        Date déploiement {commissionSortColumn === 'deploiement' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
                       <th className="px-8 py-6 text-right text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('date')}>
                         Date limite validation {commissionSortColumn === 'date' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
                       </th>
@@ -3851,7 +3898,25 @@ const App: React.FC = () => {
                   </thead>
                   <tbody>
                     {sortedProjects.map((d, i) => (
-                        <tr key={i} className="border-b border-gray-100 hover:bg-emerald-50/30 transition-colors cursor-pointer" onClick={() => setEditingProject(d)}>
+                        <tr key={i} className="border-b border-gray-100 hover:bg-emerald-50/30 transition-colors">
+                          <td className="px-8 py-6 text-sm text-center">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviousTab({tab: 'commission'});
+                                setActiveTab('projets-achats');
+                                setActiveSubTab('opportunite');
+                                setEditingProject(d);
+                              }}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-[#004d3d] text-white rounded-lg hover:bg-[#003d2f] transition-colors text-xs font-bold"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              Voir
+                            </button>
+                          </td>
                           <td className="px-8 py-6 text-sm font-black text-[#004d3d]">{d.IDProjet}</td>
                           <td className="px-8 py-6 text-sm text-gray-700">{d.Titre_du_dossier}</td>
                           <td className="px-8 py-6 text-sm text-gray-600">{d.Acheteur}</td>
@@ -3873,6 +3938,18 @@ const App: React.FC = () => {
                               const num = parseFloat(String(montant).replace(/[^\d.]/g, ''));
                               if (isNaN(num)) return montant;
                               return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(num);
+                            })()}
+                          </td>
+                          <td className="px-8 py-6 text-sm text-gray-600 text-right">
+                            {(() => {
+                              const dateStr = d["Date_de_deploiement_previsionnelle_du_marche"];
+                              if (!dateStr) return "—";
+                              const num = Number(dateStr);
+                              if (!isNaN(num) && num > 0) {
+                                const date = new Date((num - 25569) * 86400 * 1000);
+                                return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                              }
+                              return dateStr;
                             })()}
                           </td>
                           <td className="px-8 py-6 text-sm text-gray-600 text-right">
