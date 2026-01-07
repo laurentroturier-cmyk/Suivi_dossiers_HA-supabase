@@ -109,9 +109,10 @@ const RegistreDepots: React.FC<RegistreDepotsProps> = ({ supabaseClient, onOpenP
     if (!depotsData?.procedureInfo.reference || !depotsData?.entreprises.length) return;
     
     setLoading(true);
+    const totalDepots = depotsData.stats.totalEnveloppesElectroniques + depotsData.stats.totalEnveloppesPapier;
     await updateProcedureSoumissionnaires(
       depotsData.procedureInfo.reference,
-      depotsData.entreprises.length
+      totalDepots
     );
     setLoading(false);
   };
@@ -330,7 +331,7 @@ const RegistreDepots: React.FC<RegistreDepotsProps> = ({ supabaseClient, onOpenP
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <p className="text-sm text-gray-600 mb-1">Total Dépôts</p>
-            <p className="text-3xl font-bold text-gray-900">{depotsData.entreprises.length}</p>
+            <p className="text-3xl font-bold text-gray-900">{depotsData.stats.totalEnveloppesElectroniques + depotsData.stats.totalEnveloppesPapier}</p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <p className="text-sm text-gray-600 mb-1">Enveloppes Électroniques Offre</p>

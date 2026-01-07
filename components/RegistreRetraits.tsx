@@ -109,7 +109,7 @@ const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ supabaseClient, onO
     if (!retraitsData?.procedureInfo.reference || !retraitsData?.stats) return;
     
     setLoading(true);
-    const totalRetraits = retraitsData.stats.totalTelecharges + retraitsData.stats.totalReprographies;
+    const totalRetraits = retraitsData.stats.totalTelecharges + retraitsData.stats.anonymes;
     await updateProcedureRetraits(
       retraitsData.procedureInfo.reference,
       totalRetraits
@@ -329,8 +329,8 @@ const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ supabaseClient, onO
         {/* Statistiques */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <p className="text-sm text-gray-600 mb-1">Total Entrées</p>
-            <p className="text-3xl font-bold text-gray-900">{retraitsData.entreprises.length}</p>
+            <p className="text-sm text-gray-600 mb-1">Total Retraits</p>
+            <p className="text-3xl font-bold text-gray-900">{retraitsData.stats.totalTelecharges + retraitsData.stats.anonymes}</p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <p className="text-sm text-gray-600 mb-1">DCE Électroniques</p>
