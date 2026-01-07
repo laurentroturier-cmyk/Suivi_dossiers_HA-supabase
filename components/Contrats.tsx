@@ -662,9 +662,6 @@ const Contrats: React.FC = () => {
   const stats: ContratsStats = useMemo(() => {
     const montantTotal = filteredContrats.reduce((sum, c) => sum + (c.agreement_limit || 0), 0);
     const montantConsomme = filteredContrats.reduce((sum, c) => sum + (c.blanket_header_released_amount || 0), 0);
-    const tauxConsommations = filteredContrats
-      .map(c => c.pourcentage_consomme)
-      .filter((t): t is number => t !== null);
     
     return {
       totalContrats: filteredContrats.length,
@@ -672,8 +669,8 @@ const Contrats: React.FC = () => {
       montantConsomme,
       contratsouverts: filteredContrats.filter(c => c.agreement_status_meaning === 'Open').length,
       contratsTermines: filteredContrats.filter(c => c.agreement_status_meaning !== 'Open').length,
-      tauxConsommationMoyen: tauxConsommations.length > 0 
-        ? tauxConsommations.reduce((a, b) => a + b, 0) / tauxConsommations.length 
+      tauxConsommationMoyen: montantTotal > 0 
+        ? (montantConsomme / montantTotal) * 100
         : 0,
       nombreFournisseurs: new Set(filteredContrats.map(c => c.supplier)).size,
     };
@@ -964,7 +961,7 @@ const Contrats: React.FC = () => {
           />
           <SimpleBarChart 
             data={chartDataByYear} 
-            title="Contrats par Année"
+            title="Contrats par Années d'Échéance"
             color="bg-[#005c4d]"
             onClick={(year) => setFilters(f => ({ ...f, anneeDebut: year, anneeFin: year }))}
           />
