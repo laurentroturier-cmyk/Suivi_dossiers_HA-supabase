@@ -624,7 +624,8 @@ const Contrats: React.FC = () => {
       const matchStatus = !filters.status || c.agreement_status_meaning === filters.status;
       const matchSupplier = !filters.supplier || c.supplier === filters.supplier;
       const matchClient = !filters.clientInterne || c.client_interne === filters.clientInterne;
-      const matchAcheteur = !filters.acheteur || c.full_name === filters.acheteur;
+      const matchAcheteur = !filters.acheteur || 
+        (c.full_name || '').trim().toLowerCase() === filters.acheteur.trim().toLowerCase();
       
       let matchAnnee = true;
       if (filters.anneeDebut || filters.anneeFin) {
@@ -854,7 +855,7 @@ const Contrats: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="px-8 py-4">
+        <div className="px-8 py-4 w-full">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-[#005c4d] rounded-lg flex items-center justify-center">
@@ -898,7 +899,7 @@ const Contrats: React.FC = () => {
         </div>
       </div>
 
-      <div className="p-8">
+      <div className="p-8 w-full">
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
           <KPITile 
@@ -1109,8 +1110,22 @@ const Contrats: React.FC = () => {
 
         {/* Data Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          {/* Barre de défilement en haut */}
+          <div className="overflow-x-auto border-b border-gray-200" style={{ overflowY: 'hidden' }} onScroll={(e) => {
+            const target = e.target as HTMLElement;
+            const tableContainer = target.parentElement?.querySelector('.table-scroll-container') as HTMLElement;
+            if (tableContainer) tableContainer.scrollLeft = target.scrollLeft;
+          }}>
+            <div style={{ width: '2000px', height: '1px' }}></div>
+          </div>
+          
+          {/* Tableau avec scroll */}
+          <div className="overflow-x-auto table-scroll-container" onScroll={(e) => {
+            const target = e.target as HTMLElement;
+            const topScroll = target.parentElement?.querySelector('.overflow-x-auto') as HTMLElement;
+            if (topScroll && topScroll !== target) topScroll.scrollLeft = target.scrollLeft;
+          }}>
+            <table className="w-full text-sm min-w-[2000px]">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-3 py-3 text-center text-[10px] font-semibold text-gray-600 uppercase tracking-wider w-16">Actions</th>
