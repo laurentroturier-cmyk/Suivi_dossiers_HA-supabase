@@ -44,14 +44,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
     {
       icon: PlayCircle,
       title: 'Exécution des marchés',
-      description: 'Commission, registres de retraits et dépôts, analyses AN01',
+      description: 'Commission, registres de retraits et dépôts, analyses AN01, contrats',
       color: 'bg-orange-600',
-      tabs: ['commission', 'retraits', 'depots', 'an01'],
+      tabs: ['commission', 'retraits', 'depots', 'an01', 'contrats'],
       actions: [
         { label: 'Commission HA', tab: 'commission' },
         { label: 'Retraits', tab: 'retraits' },
         { label: 'Dépôts', tab: 'depots' },
         { label: 'AN01', tab: 'an01' },
+        { label: 'Contrats', tab: 'contrats' },
       ]
     },
     {

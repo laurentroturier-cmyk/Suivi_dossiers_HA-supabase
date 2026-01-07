@@ -46,6 +46,7 @@ import { supabase } from './lib/supabase';
 // Import Registre Retraits Component
 import RegistreRetraits from './components/RegistreRetraits';
 import RegistreDepots from './components/RegistreDepots';
+import Contrats from './components/Contrats';
 import LandingPage from './components/LandingPage';
 
 type Theme = 'light' | 'dark' | 'blue' | 'green';
@@ -2322,6 +2323,12 @@ const App: React.FC = () => {
                   >
                     AN01
                   </button>
+                  <button
+                    onClick={() => { setActiveTab('contrats'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Contrats
+                  </button>
                 </div>
               )}
             </div>
@@ -3458,6 +3465,10 @@ const App: React.FC = () => {
 
         {activeTab === 'depots' && (
           <RegistreDepots />
+        )}
+
+        {activeTab === 'contrats' && (
+          <Contrats />
         )}
 
         {activeTab === 'detail' && detailData && (() => {
