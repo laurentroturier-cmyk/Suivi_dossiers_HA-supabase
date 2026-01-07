@@ -64,6 +64,28 @@ const formatDisplayDate = (dateStr: string | null): string => {
   return date.toLocaleDateString('fr-FR');
 };
 
+// Calcul du pourcentage de temps écoulé
+const calculateTempsConsomme = (dateDebut: string | null, dateFin: string | null): number | null => {
+  if (!dateDebut || !dateFin) return null;
+  
+  const debut = parseDate(dateDebut);
+  const fin = parseDate(dateFin);
+  
+  if (!debut || !fin || isNaN(debut.getTime()) || isNaN(fin.getTime())) return null;
+  
+  const now = new Date();
+  const totalDuration = fin.getTime() - debut.getTime();
+  
+  if (totalDuration <= 0) return null;
+  
+  const elapsed = now.getTime() - debut.getTime();
+  
+  if (elapsed <= 0) return 0;
+  if (elapsed >= totalDuration) return 100;
+  
+  return (elapsed / totalDuration) * 100;
+};
+
 // KPI Tile Component
 const KPITile: React.FC<{ 
   label: string; 
@@ -303,6 +325,26 @@ const ContratDetailModal: React.FC<{
                     <span className="font-bold">{contrat.pourcentage_consomme.toFixed(1)}%</span>
                   </div>
                 ) : null
+              } />
+              <DetailRow label="% Temps écoulé" value={
+                (() => {
+                  const tempsConsomme = calculateTempsConsomme(contrat.date_debut, contrat.date_fin);
+                  return tempsConsomme !== null ? (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full ${
+                            tempsConsomme >= 90 ? 'bg-red-500' :
+                            tempsConsomme >= 70 ? 'bg-orange-500' :
+                            'bg-blue-500'
+                          }`}
+                          style={{ width: `${Math.min(tempsConsomme, 100)}%` }}
+                        />
+                      </div>
+                      <span className="font-bold">{tempsConsomme.toFixed(1)}%</span>
+                    </div>
+                  ) : null;
+                })()
               } />
               <DetailRow label="Taux de Performance" value={
                 contrat.taux_performance !== null ? `${contrat.taux_performance.toFixed(1)}%` : null
@@ -689,6 +731,7 @@ const Contrats: React.FC = () => {
       'Montant Marché': c.montant_marche,
       'Montant Consommé': c.blanket_header_released_amount,
       '% Consommé': c.pourcentage_consomme,
+      '% Temps': calculateTempsConsomme(c.date_debut, c.date_fin),
       'Date Notification': c.date_notification,
       'Date Début': c.date_debut,
       'Date Fin': c.date_fin,
@@ -1082,6 +1125,7 @@ const Contrats: React.FC = () => {
                     { key: 'agreement_limit', label: 'Montant Limite' },
                     { key: 'blanket_header_released_amount', label: 'Consommé' },
                     { key: 'pourcentage_consomme', label: '% Conso' },
+                    { key: 'pourcentage_temps', label: '% Temps' },
                     { key: 'date_debut', label: 'Date Début' },
                     { key: 'date_fin', label: 'Date Fin' },
                     { key: 'full_name', label: 'Acheteur' },
@@ -1165,6 +1209,30 @@ const Contrats: React.FC = () => {
                       ) : (
                         <span className="text-xs text-gray-400">-</span>
                       )}
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      {(() => {
+                        const tempsConsomme = calculateTempsConsomme(contrat.date_debut, contrat.date_fin);
+                        return tempsConsomme !== null ? (
+                          <div className="flex items-center gap-2 justify-end">
+                            <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full ${
+                                  tempsConsomme >= 90 ? 'bg-red-500' :
+                                  tempsConsomme >= 70 ? 'bg-orange-500' :
+                                  'bg-blue-500'
+                                }`}
+                                style={{ width: `${Math.min(tempsConsomme, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium text-gray-700 w-12 text-right">
+                              {tempsConsomme.toFixed(1)}%
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        );
+                      })()}
                     </td>
                     <td className="px-3 py-3">
                       <span className="text-xs text-gray-600 whitespace-nowrap">

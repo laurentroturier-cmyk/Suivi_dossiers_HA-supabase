@@ -520,6 +520,10 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack }) => {
                   <p className="text-gray-500 text-xs">Moyenne des offres</p>
                   <p className="text-xl font-bold text-gray-700">{formatCurrency(stats.average)}</p>
                 </div>
+                <div className="text-center">
+                  <p className="text-gray-500 text-xs">Offre la plus basse</p>
+                  <p className="text-lg font-medium text-green-600">{formatCurrency(stats.min)}</p>
+                </div>
                 <div className="text-right">
                   <p className="text-gray-500 text-xs">Offre la plus haute</p>
                   <p className="text-lg font-medium text-red-500">{formatCurrency(stats.max)}</p>

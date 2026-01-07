@@ -1485,6 +1485,23 @@ const App: React.FC = () => {
           const label = fieldDef ? fieldDef.label : key.replace(/_/g, ' ');
           const val = data[key] || '';
           const isDate = isDateField(key);
+          
+          // Masquer NumProc lors de la création d'une nouvelle procédure (il sera généré automatiquement)
+          if (key === 'NumProc' && type === 'procedure' && !data?.id) {
+            return null;
+          }
+          
+          // Affichage spécial pour NumProc en mode édition (en lecture seule avec style distinct)
+          if (key === 'NumProc' && type === 'procedure' && data?.id) {
+            return (
+              <div key={key} className="flex flex-col gap-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">N° PROCÉDURE (PK)</label>
+                <div className="w-full px-5 py-4 bg-blue-50 border-2 border-blue-200 rounded-2xl text-sm font-bold text-blue-900">
+                  {val || 'Non défini'}
+                </div>
+              </div>
+            );
+          }
 
           // Recherche distante Supabase pour CPV (élargit les résultats au-delà du préchargement)
           const remoteSearchCpv = async (term: string): Promise<string[]> => {
@@ -1625,8 +1642,14 @@ const App: React.FC = () => {
           if (key === "Motivation non allotissement" && type === 'procedure') {
             const lotsRaw = String(getProp(data, 'Nombre de lots') || '').trim();
             const lotsVal = lotsRaw ? parseInt(lotsRaw.replace(/[^0-9-]/g, ''), 10) : NaN;
-            const isRequired = lotsVal === 1;
-            const selectClass = `w-full px-5 py-4 bg-gray-50 border rounded-2xl text-sm font-semibold outline-none appearance-none cursor-pointer ${isRequired && !val ? 'border-red-300 ring-2 ring-red-100' : 'border-gray-100'}`;
+            
+            // Masquer le champ si le nombre de lots n'est pas égal à 1
+            if (lotsVal !== 1) {
+              return null;
+            }
+            
+            const isRequired = true; // Toujours obligatoire quand visible (lots = 1)
+            const selectClass = `w-full px-5 py-4 bg-gray-50 border rounded-2xl text-sm font-semibold outline-none appearance-none cursor-pointer ${!val ? 'border-red-300 ring-2 ring-red-100' : 'border-gray-100'}`;
             return (
               <div key={key} className="flex flex-col gap-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
@@ -1659,6 +1682,80 @@ const App: React.FC = () => {
               return (r || []).map((x: any) => x.dna_sousfamille).filter(Boolean);
             };
             return <SearchableSelect key={key} label={label} options={refSegSousfamilles} value={val} placeholder="Sous-famille..." onChange={v => handleFieldChange(type, key, v)} onRemoteSearch={remoteSearchSeg} />;
+          }
+          
+          // Champ IDProjet avec recherche de projet (OBLIGATOIRE pour les procédures)
+          if (key === "IDProjet" && type === 'procedure') {
+            const projectOptions = dossiers.map(d => {
+              const id = getProp(d, 'IDProjet') || '';
+              const title = getProp(d, 'Titre_du_dossier') || '';
+              return `${id} - ${title}`;
+            }).filter(Boolean);
+            
+            const currentValue = val ? (() => {
+              const project = dossiers.find(d => getProp(d, 'IDProjet') === val);
+              if (project) {
+                const title = getProp(project, 'Titre_du_dossier') || '';
+                return `${val} - ${title}`;
+              }
+              return val;
+            })() : '';
+
+            const remoteSearchProjects = async (term: string): Promise<string[]> => {
+              if (!supabaseClient) return [];
+              const q = term.trim();
+              if (!q) return [];
+              const { data: r } = await supabaseClient
+                .from('dossiers')
+                .select('IDProjet, Titre_du_dossier')
+                .or(`IDProjet.ilike.%${q}%,Titre_du_dossier.ilike.%${q}%`)
+                .limit(100);
+              return (r || []).map((x: any) => `${x.IDProjet || ''} - ${x.Titre_du_dossier || ''}`).filter(Boolean);
+            };
+            
+            return (
+              <div key={key} className="flex flex-col gap-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
+                  {label} <span className="text-red-600">*</span>
+                </label>
+                <SearchableSelect 
+                  label="" 
+                  options={projectOptions} 
+                  value={currentValue} 
+                  placeholder="Rechercher un projet..." 
+                  onChange={v => {
+                    const idProjet = v.split(' - ')[0];
+                    handleFieldChange(type, key, idProjet);
+                    
+                    // Charger automatiquement l'acheteur du projet
+                    const project = dossiers.find(d => getProp(d, 'IDProjet') === idProjet);
+                    if (project) {
+                      const acheteur = getProp(project, 'Acheteur');
+                      if (acheteur && data) {
+                        handleFieldChange(type, 'Acheteur', acheteur);
+                      }
+                    }
+                    
+                    // Générer automatiquement le numéro de procédure au format {IDProjet}-P-{n}
+                    const existingForProject = procedures.filter(p => String(getProp(p, 'IDProjet')) === String(idProjet));
+                    let maxIdx = 0;
+                    existingForProject.forEach(p => {
+                      const num = String(getProp(p, 'NumProc'));
+                      if (num.includes('-P-')) {
+                        const parts = num.split('-P-');
+                        const idx = parseInt(parts[parts.length - 1]);
+                        if (!isNaN(idx) && idx > maxIdx) maxIdx = idx;
+                      }
+                    });
+                    const nextIdx = maxIdx + 1;
+                    const newProcId = `${idProjet}-P-${nextIdx}`;
+                    handleFieldChange(type, 'NumProc', newProcId);
+                  }} 
+                  onRemoteSearch={remoteSearchProjects} 
+                />
+                {!val && <p className="text-[10px] font-black text-red-500 uppercase tracking-widest px-1">Ce champ est obligatoire</p>}
+              </div>
+            );
           }
           
           if (key === "Acheteur") return (
@@ -2096,6 +2193,12 @@ const App: React.FC = () => {
       let data = type === 'project' ? editingProject : editingProcedure;
       if (type === 'procedure' && !data?.NumProc) throw new Error("Erreur : Un identifiant technique (NumProc) est nécessaire.");
       if (type === 'project' && !data?.IDProjet) throw new Error("Erreur : Un identifiant projet (IDProjet) est nécessaire.");
+      
+      // Validation obligatoire : IDProjet pour les procédures
+      if (type === 'procedure' && !data?.IDProjet) {
+        throw new Error("Le projet de rattachement est obligatoire. Veuillez sélectionner un projet.");
+      }
+      
       // Validation conditionnelle: si Nombre de lots === 1, 'Motivation non allotissement' est obligatoire
       if (type === 'procedure' && data) {
         const lotsRaw = String((data as any)["Nombre de lots"] || '').trim();
@@ -2117,7 +2220,14 @@ const App: React.FC = () => {
           const raw = String(sanitized['Code CPV Principal']);
           const m = raw.match(/\b\d{7,9}\b/);
           if (m) sanitized['Code CPV Principal'] = m[0];
+          else sanitized['Code CPV Principal'] = null; // Si pas de match, mettre null au lieu de chaîne vide
         }
+        // Convertir les chaînes vides en null pour tous les champs
+        Object.keys(sanitized).forEach(key => {
+          if (sanitized[key] === '' || sanitized[key] === undefined) {
+            sanitized[key] = null;
+          }
+        });
         data = sanitized;
       }
       const { error } = await supabaseClient.from(type === 'project' ? 'projets' : 'procédures').upsert(data);
@@ -3284,7 +3394,13 @@ const App: React.FC = () => {
           <div className="animate-in slide-in-from-bottom-8 duration-600 max-w-6xl mx-auto space-y-8">
             <div className="bg-white border border-gray-100 p-8 rounded-[2.5rem] shadow-2xl flex items-center justify-between">
               <button onClick={() => { setEditingProject(null); setEditingProcedure(null); }} className="flex items-center gap-3 text-gray-300 font-black text-[10px] uppercase tracking-widest hover:text-gray-500 transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg> Retour</button>
-              <h2 className="text-sm font-black text-gray-900 uppercase tracking-[0.3em]">Édition {editingProject ? 'Dossier' : 'Procédure'}</h2>
+              <div className="flex flex-col items-center gap-2">
+                <h2 className="text-sm font-black text-gray-900 uppercase tracking-[0.3em]">Édition {editingProject ? 'Dossier' : 'Procédure'}</h2>
+                {editingProcedure && <div className="px-6 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">N° Procédure:</span>
+                  <span className="text-sm font-black text-blue-900">{editingProcedure.NumProc || 'Non défini'}</span>
+                </div>}
+              </div>
               <div className="flex items-center gap-3">
                 <button onClick={() => save(editingProject ? 'project' : 'procedure')} disabled={isSaving} className="px-12 py-4 rounded-2xl text-white font-black text-xs uppercase tracking-widest transition-all bg-[#004d3d] hover:bg-[#006d57]">{isSaving ? 'Enregistrement...' : 'Enregistrer'}</button>
                 <button onClick={() => { setEditingProject(null); setEditingProcedure(null); }} className="px-8 py-4 rounded-2xl bg-gray-700 text-white font-black text-xs uppercase tracking-widest hover:bg-gray-600 transition-all">Quitter</button>

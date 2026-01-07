@@ -92,6 +92,7 @@ export const PROCEDURE_GROUPS: Record<string, { label: string; fields: string[] 
     label: 'Identification',
     fields: [
       'NumProc',
+      'IDProjet',
       'Acheteur',
       'Numéro de procédure (Afpa)',
       'Type de procédure',
