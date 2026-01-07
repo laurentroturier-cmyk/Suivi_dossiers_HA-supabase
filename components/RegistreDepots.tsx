@@ -2,13 +2,90 @@ import React, { useState } from 'react';
 import { Upload, FileText, Download, Filter, Search, Calendar, Building2, Mail, Phone, MapPin, Package } from 'lucide-react';
 import { DepotsData, EntrepriseDepot } from '../types/depots';
 import { parseDepotsFile } from '../utils/depotsParser';
+import { SupabaseClient } from '@supabase/supabase-js';
 
-const RegistreDepots: React.FC = () => {
+interface RegistreDepotsProps {
+  supabaseClient?: SupabaseClient | null;
+  onOpenProcedure?: (numeroAfpa: string) => void;
+  onProcedureUpdated?: () => void;
+}
+
+const RegistreDepots: React.FC<RegistreDepotsProps> = ({ supabaseClient, onOpenProcedure, onProcedureUpdated }) => {
   const [depotsData, setDepotsData] = useState<DepotsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMode, setFilterMode] = useState<string>('all');
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+
+  const updateProcedureSoumissionnaires = async (reference: string, nombreDepots: number) => {
+    if (!supabaseClient) {
+      console.warn('Supabase non disponible pour mise à jour');
+      setUpdateMessage('⚠️ Connexion Supabase non disponible');
+      return;
+    }
+
+    try {
+      // Extraire le numéro AFPA (5 chiffres au début)
+      const afpaMatch = reference.match(/^(\d{5})/);
+      if (!afpaMatch) {
+        console.warn('Numéro AFPA non trouvé dans la référence:', reference);
+        setUpdateMessage(`⚠️ Numéro AFPA non trouvé dans la référence: ${reference}`);
+        return;
+      }
+
+      const numeroAfpa = afpaMatch[1];
+      console.log('Recherche procédure avec numéro AFPA:', numeroAfpa);
+      
+      // Récupérer toutes les procédures et filtrer côté client (workaround pour les noms de colonnes avec caractères spéciaux)
+      const { data: allProcedures, error: searchError } = await supabaseClient
+        .from('procédures')
+        .select('NumProc, "Numéro de procédure (Afpa)", "Nombre de soumissionnaires"');
+
+      if (searchError) {
+        console.error('Erreur recherche procédure:', searchError);
+        setUpdateMessage(`❌ Erreur recherche: ${searchError.message}`);
+        return;
+      }
+
+      // Filtrer côté client
+      const procedures = allProcedures?.filter(p => {
+        const numAfpa = String(p['Numéro de procédure (Afpa)'] || '');
+        return numAfpa.startsWith(numeroAfpa);
+      }) || [];
+
+      if (!procedures || procedures.length === 0) {
+        setUpdateMessage(`⚠️ Aucune procédure trouvée avec le numéro AFPA ${numeroAfpa}`);
+        return;
+      }
+
+      const procedure = procedures[0];
+      console.log('Procédure trouvée:', procedure.NumProc, 'Mise à jour avec:', nombreDepots, 'soumissionnaires');
+      
+      // Mettre à jour le nombre de soumissionnaires
+      const { error: updateError } = await supabaseClient
+        .from('procédures')
+        .update({ 'Nombre de soumissionnaires': nombreDepots })
+        .eq('NumProc', procedure.NumProc);
+
+      if (updateError) {
+        console.error('Erreur mise à jour procédure:', updateError);
+        setUpdateMessage(`❌ Erreur mise à jour: ${updateError.message}`);
+        return;
+      }
+
+      setUpdateMessage(`✅ Procédure ${numeroAfpa} mise à jour : ${nombreDepots} soumissionnaire(s)`);
+      setTimeout(() => setUpdateMessage(null), 5000);
+      
+      // Recharger les procédures pour afficher les nouvelles données
+      if (onProcedureUpdated) {
+        onProcedureUpdated();
+      }
+    } catch (err) {
+      console.error('Erreur lors de la mise à jour:', err);
+      setUpdateMessage(`❌ Erreur: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+    }
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -16,6 +93,7 @@ const RegistreDepots: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setUpdateMessage(null);
 
     try {
       const data = await parseDepotsFile(file);
@@ -24,6 +102,25 @@ const RegistreDepots: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement du fichier');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCompleterProcedure = async () => {
+    if (!depotsData?.procedureInfo.reference || !depotsData?.entreprises.length) return;
+    
+    setLoading(true);
+    await updateProcedureSoumissionnaires(
+      depotsData.procedureInfo.reference,
+      depotsData.entreprises.length
+    );
+    setLoading(false);
+  };
+
+  const handleVoirProcedure = () => {
+    if (!depotsData?.procedureInfo.reference) return;
+    const afpaMatch = depotsData.procedureInfo.reference.match(/^(\d{5})/);
+    if (afpaMatch && onOpenProcedure) {
+      onOpenProcedure(afpaMatch[1]);
     }
   };
 
@@ -88,6 +185,12 @@ const RegistreDepots: React.FC = () => {
                   <p className="text-red-600">{error}</p>
                 </div>
               )}
+
+              {updateMessage && (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-blue-800 font-medium">{updateMessage}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -112,6 +215,22 @@ const RegistreDepots: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <button
+                onClick={handleVoirProcedure}
+                disabled={!depotsData?.procedureInfo.reference || !onOpenProcedure}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Voir procédure
+              </button>
+              <button
+                onClick={handleCompleterProcedure}
+                disabled={loading || !depotsData?.procedureInfo.reference || !supabaseClient}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Compléter procédure
+              </button>
+              <button
                 onClick={handleExportExcel}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#005c4d] text-white rounded-lg hover:bg-[#004a3d] transition-colors"
               >
@@ -134,6 +253,13 @@ const RegistreDepots: React.FC = () => {
       </div>
 
       <div className="p-8">
+        {/* Message de mise à jour */}
+        {updateMessage && (
+          <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl shadow-sm">
+            <p className="text-blue-900 font-semibold text-center">{updateMessage}</p>
+          </div>
+        )}
+
         {/* Informations de la procédure */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations de la Procédure</h2>

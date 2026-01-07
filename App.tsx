@@ -350,6 +350,22 @@ const App: React.FC = () => {
   
   const [editingProject, setEditingProject] = useState<Partial<DossierData> | null>(null);
   const [editingProcedure, setEditingProcedure] = useState<Partial<ProjectData> | null>(null);
+  
+  // Fonction pour ouvrir une procédure à partir d'un numéro AFPA
+  const openProcedureByAfpaNumber = (numeroAfpa: string) => {
+    const procedure = procedures.find(p => {
+      const numAfpa = String(getProp(p, 'Numéro de procédure (Afpa)') || '');
+      return numAfpa.startsWith(numeroAfpa);
+    });
+    
+    if (procedure) {
+      setEditingProcedure(procedure);
+      setActiveTab('procedures');
+      setActiveSubTab('general');
+    } else {
+      alert(`Aucune procédure trouvée avec le numéro AFPA ${numeroAfpa}`);
+    }
+  };
 
   const [files, setFiles] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -3576,11 +3592,19 @@ const App: React.FC = () => {
         )}
 
         {activeTab === 'retraits' && (
-          <RegistreRetraits />
+          <RegistreRetraits 
+            supabaseClient={supabaseClient} 
+            onOpenProcedure={openProcedureByAfpaNumber}
+            onProcedureUpdated={() => supabaseClient && fetchData(supabaseClient)}
+          />
         )}
 
         {activeTab === 'depots' && (
-          <RegistreDepots />
+          <RegistreDepots 
+            supabaseClient={supabaseClient} 
+            onOpenProcedure={openProcedureByAfpaNumber}
+            onProcedureUpdated={() => supabaseClient && fetchData(supabaseClient)}
+          />
         )}
 
         {activeTab === 'contrats' && (
