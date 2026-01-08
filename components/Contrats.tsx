@@ -998,31 +998,32 @@ const Contrats: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-300 p-5 mb-6">
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
                   type="text"
                   placeholder="Rechercher par n° contrat, description, fournisseur..."
                   value={filters.search}
                   onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#005c4d] focus:border-transparent text-sm"
+                  style={{ colorScheme: 'light' }}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border-2 border-slate-400 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-slate-900 placeholder-slate-500 shadow-sm"
                 />
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm ${
                   showFilters || hasActiveFilters 
-                    ? 'bg-[#005c4d] text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
+                    : 'bg-white text-slate-700 hover:bg-slate-50 border-2 border-slate-400'
                 }`}
               >
                 <Filter className="w-4 h-4" />
                 Filtres
                 {hasActiveFilters && (
-                  <span className="ml-1 w-5 h-5 rounded-full bg-white text-[#005c4d] text-xs flex items-center justify-center font-bold">
+                  <span className="ml-1 w-5 h-5 rounded-full bg-white text-emerald-600 text-xs flex items-center justify-center font-bold">
                     {[filters.status, filters.supplier, filters.clientInterne, filters.anneeDebut, filters.anneeFin].filter(Boolean).length}
                   </span>
                 )}
@@ -1030,7 +1031,7 @@ const Contrats: React.FC = () => {
               {hasActiveFilters && (
                 <button
                   onClick={resetFilters}
-                  className="inline-flex items-center gap-1 px-3 py-2.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  className="inline-flex items-center gap-1 px-3 py-2.5 text-sm text-slate-600 hover:text-slate-900 transition-colors font-medium"
                 >
                   <X className="w-4 h-4" />
                   Réinitialiser
@@ -1039,13 +1040,14 @@ const Contrats: React.FC = () => {
             </div>
 
             {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 pt-4 border-t border-gray-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 pt-4 border-t-2 border-slate-300">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Statut</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Statut</label>
                   <select
                     value={filters.status}
                     onChange={(e) => setFilters(f => ({ ...f, status: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#005c4d] focus:border-transparent"
+                    style={{ colorScheme: 'light' }}
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-400 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm"
                   >
                     <option value="">Tous les statuts</option>
                     {uniqueStatuses.map(s => (
@@ -1054,11 +1056,12 @@ const Contrats: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Fournisseur</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Fournisseur</label>
                   <select
                     value={filters.supplier}
                     onChange={(e) => setFilters(f => ({ ...f, supplier: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#005c4d] focus:border-transparent"
+                    style={{ colorScheme: 'light' }}
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-400 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm"
                   >
                     <option value="">Tous les fournisseurs</option>
                     {uniqueSuppliers.map(s => (
@@ -1067,11 +1070,12 @@ const Contrats: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Acheteur</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Acheteur</label>
                   <select
                     value={filters.acheteur}
                     onChange={(e) => setFilters(f => ({ ...f, acheteur: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#005c4d] focus:border-transparent"
+                    style={{ colorScheme: 'light' }}
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-400 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm"
                   >
                     <option value="">Tous les acheteurs</option>
                     {uniqueAcheteurs.map(s => (
@@ -1080,11 +1084,12 @@ const Contrats: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Interne</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Client Interne</label>
                   <select
                     value={filters.clientInterne}
                     onChange={(e) => setFilters(f => ({ ...f, clientInterne: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#005c4d] focus:border-transparent"
+                    style={{ colorScheme: 'light' }}
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-400 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm"
                   >
                     <option value="">Tous les clients</option>
                     {uniqueClientsInternes.map(s => (
@@ -1093,11 +1098,12 @@ const Contrats: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Année début (min)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Année début (min)</label>
                   <select
                     value={filters.anneeDebut}
                     onChange={(e) => setFilters(f => ({ ...f, anneeDebut: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#005c4d] focus:border-transparent"
+                    style={{ colorScheme: 'light' }}
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-400 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm"
                   >
                     <option value="">Toutes</option>
                     {uniqueYears.map(y => (
@@ -1106,11 +1112,12 @@ const Contrats: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Année début (max)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Année début (max)</label>
                   <select
                     value={filters.anneeFin}
                     onChange={(e) => setFilters(f => ({ ...f, anneeFin: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#005c4d] focus:border-transparent"
+                    style={{ colorScheme: 'light' }}
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-400 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm"
                   >
                     <option value="">Toutes</option>
                     {uniqueYears.map(y => (

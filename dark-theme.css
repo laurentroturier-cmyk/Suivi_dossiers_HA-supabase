@@ -1,0 +1,344 @@
+/* ========================================
+   BORDER RADIUS - CONTAINERS ARRONDIS
+   Override des classes Tailwind CDN
+   ======================================== */
+
+/* Override des classes Tailwind de base */
+.rounded-sm {
+  border-radius: 0.75rem !important; /* 12px au lieu de 2px */
+}
+
+.rounded {
+  border-radius: 1rem !important; /* 16px au lieu de 4px */
+}
+
+.rounded-md {
+  border-radius: 1.25rem !important; /* 20px au lieu de 6px */
+}
+
+.rounded-lg {
+  border-radius: 1.5rem !important; /* 24px au lieu de 8px */
+}
+
+.rounded-xl {
+  border-radius: 2rem !important; /* 32px au lieu de 12px */
+}
+
+.rounded-2xl {
+  border-radius: 2.5rem !important; /* 40px au lieu de 16px */
+}
+
+.rounded-3xl {
+  border-radius: 3rem !important; /* 48px au lieu de 24px */
+}
+
+/* Classes personnalisées supplémentaires */
+.rounded-ultra,
+.rounded-4xl {
+  border-radius: 2rem !important; /* 32px */
+}
+
+.rounded-extra,
+.rounded-5xl {
+  border-radius: 2.5rem !important; /* 40px */
+}
+
+.rounded-max,
+.rounded-6xl {
+  border-radius: 3rem !important; /* 48px */
+}
+
+.rounded-full {
+  border-radius: 9999px !important;
+}
+
+/* ========================================
+   SCROLLBARS - STYLES PERSONNALISÉS
+   ======================================== */
+
+/* Mode clair - Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Mode sombre - Scrollbars */
+html.dark ::-webkit-scrollbar-track {
+  background: #252f3f;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4a5568;
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #5f7185;
+}
+
+/* Firefox - Scrollbars */
+html.dark * {
+  scrollbar-color: #4a5568 #252f3f;
+  scrollbar-width: thin;
+}
+
+/* ========================================
+   THÈME SOMBRE - CLASSES UTILITAIRES
+   ======================================== */
+
+/* Appliquer les styles du mode sombre à tous les éléments pertinents */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+}
+
+html.dark .surface-card {
+  background-color: var(--surface-1);
+  border-color: var(--border-strong);
+}
+
+html.dark .surface-ghost {
+  background-color: var(--surface-2);
+  border-color: var(--border-soft);
+}
+
+html.dark .themed-input {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-primary);
+}
+
+html.dark .themed-chip {
+  background-color: var(--chip-bg);
+  border-color: var(--chip-border);
+  color: var(--chip-text);
+}
+
+html.dark .themed-table {
+  background-color: var(--surface-1);
+  color: var(--text-primary);
+}
+
+html.dark .themed-table thead {
+  background-color: var(--table-header);
+  color: var(--text-primary);
+}
+
+html.dark .themed-table tbody tr {
+  background-color: var(--table-row);
+}
+
+html.dark .themed-table tbody tr:hover {
+  background-color: var(--table-row-hover);
+}
+
+/* Boutons styles par défaut */
+html.dark .btn-default {
+  background-color: var(--surface-2);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+html.dark .btn-default:hover {
+  background-color: var(--table-row-hover);
+}
+
+/* Cartes/panneaux */
+html.dark .card,
+html.dark .panel {
+  background-color: var(--surface-1);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* Bordures discrètes */
+html.dark .border {
+  border-color: var(--border-strong);
+}
+
+html.dark .border-gray-100,
+html.dark .border-gray-200 {
+  border-color: var(--border-strong) !important;
+}
+
+html.dark .border-gray-300 {
+  border-color: var(--border-strong) !important;
+}
+
+html.dark .border-gray-50 {
+  border-color: var(--border-subtle) !important;
+}
+
+/* Texte */
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+  color: var(--text-primary) !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-gray-400 {
+  color: var(--text-secondary) !important;
+}
+
+html.dark .text-gray-300 {
+  color: var(--text-tertiary) !important;
+}
+
+/* Fonds */
+html.dark .bg-white,
+html.dark .bg-gray-50 {
+  background-color: var(--surface-1) !important;
+}
+
+html.dark .bg-gray-100 {
+  background-color: var(--surface-2) !important;
+}
+
+html.dark .bg-gray-700 {
+  background-color: var(--dark-600) !important;
+}
+
+html.dark .bg-gray-600 {
+  background-color: var(--dark-500) !important;
+}
+
+/* Accents */
+html.dark .text-\[\#004d3d\],
+html.dark .border-\[\#004d3d\] {
+  color: var(--accent-green) !important;
+  border-color: var(--accent-green) !important;
+}
+
+html.dark .bg-\[\#004d3d\],
+html.dark .bg-\[\#004d3d\]\/\[0\.2\] {
+  background-color: var(--accent-green) !important;
+  color: var(--text-on-accent) !important;
+}
+
+html.dark .bg-\[\#004d3d\]:hover {
+  background-color: var(--accent-green-hover) !important;
+}
+
+html.dark .text-blue-600,
+html.dark .text-indigo-600 {
+  color: var(--accent-blue) !important;
+}
+
+html.dark .bg-blue-600:hover,
+html.dark .bg-indigo-600:hover {
+  background-color: var(--accent-blue) !important;
+  color: var(--text-on-accent) !important;
+}
+
+/* Input dans le dark mode */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--text-primary) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+  border-color: var(--accent-blue) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 10%, transparent);
+}
+
+/* Dropdowns/listes */
+html.dark .dropdown-menu,
+html.dark .popover,
+html.dark .menu,
+html.dark .submenu {
+  background-color: var(--surface-1);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+html.dark .dropdown-menu li:hover,
+html.dark .menu li:hover,
+html.dark .submenu li:hover {
+  background-color: var(--table-row-hover);
+}
+
+/* Modaux/Dialogs */
+html.dark .modal,
+html.dark .dialog {
+  background-color: var(--surface-1);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* Tables */
+html.dark .table tbody tr:nth-child(even) {
+  background-color: var(--surface-2);
+}
+
+html.dark .table tbody tr:hover {
+  background-color: var(--table-row-hover);
+}
+
+/* Code blocks */
+html.dark code,
+html.dark pre {
+  background-color: var(--surface-2);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+/* Scrollbars pour le mode sombre */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: var(--surface-2);
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: var(--dark-600);
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--dark-500);
+}
+
+/* Transitions lisses du mode sombre */
+html,
+html.dark {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Variables pour textes secondaires */
+html.dark {
+  --text-secondary-rgb: 181, 188, 196;
+  --text-tertiary-rgb: 142, 153, 168;
+}

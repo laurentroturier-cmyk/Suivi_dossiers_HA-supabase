@@ -50,7 +50,8 @@ import RegistreDepots from './components/RegistreDepots';
 import Contrats from './components/Contrats';
 import LandingPage from './components/LandingPage';
 
-type Theme = 'light' | 'dark' | 'blue' | 'green';
+// Import Theme Toggle
+import { ThemeToggle } from './components/ThemeToggle';
 
 const BUCKET_NAME = 'Projets DNA';
 
@@ -372,13 +373,6 @@ const App: React.FC = () => {
   const [files, setFiles] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [viewingFile, setViewingFile] = useState<{ name: string, url: string } | null>(null);
-  const [theme, setTheme] = useState<Theme>(() => {
-    const initial: Theme = 'light';
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', initial);
-    }
-    return initial;
-  });
   
   // ============================================
   // AUTH STATE - Authentication & Authorization
@@ -695,10 +689,6 @@ const App: React.FC = () => {
   // All other refs and effects BEFORE conditional returns
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
   const fetchData = async (client: SupabaseClient) => {
     setIsLoading(true);
     try {
@@ -746,13 +736,27 @@ const App: React.FC = () => {
 
     top.addEventListener('scroll', syncFromTop);
     body.addEventListener('scroll', syncFromBody);
-    setTableScrollWidth(body.scrollWidth - body.clientWidth);
+    
+    // Mettre à jour la largeur du scroll pour synchronisation
+    const updateWidth = () => {
+      const table = body.querySelector('table');
+      if (table) {
+        setTableScrollWidth(table.scrollWidth);
+      }
+    };
+    
+    updateWidth();
+    const resizeObserver = new ResizeObserver(updateWidth);
+    if (body.firstChild) {
+      resizeObserver.observe(body.firstChild as Element);
+    }
 
     return () => {
       top.removeEventListener('scroll', syncFromTop);
       body.removeEventListener('scroll', syncFromBody);
+      resizeObserver.disconnect();
     };
-  }, [editingProject, editingProcedure]);
+  }, [editingProject, editingProcedure, activeTab]);
 
   // Fetch files effect
   const fetchFiles = async () => {
@@ -1967,7 +1971,7 @@ const App: React.FC = () => {
                   <input type="date" value={formatToInputDate(val)} onChange={e => handleFieldChange(type, key, inputToStoreDate(e.target.value))} className={inputClass} />
                 </div>
                 {showAlert && joursRestants !== null && (
-                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold px-1">
+                  <p className="text-xs text-red-600 font-semibold px-1">
                     ⚠️ Échéance dans {joursRestants} jour{joursRestants !== 1 ? 's' : ''} (moins de 120 jours et pas encore notifié)
                   </p>
                 )}
@@ -1981,7 +1985,7 @@ const App: React.FC = () => {
             const typeProcedure = String(getProp(data, 'Type de procédure') || '');
             
             let dureeCalculee = '';
-            let textColorClass = 'text-green-700 dark:text-green-400';
+            let textColorClass = 'text-green-700';
             
             if (dateRemiseOffres && dateLancementConsultation) {
               try {
@@ -2027,16 +2031,16 @@ const App: React.FC = () => {
                   
                   // Vérification de cohérence : la remise des offres doit être après le lancement
                   if (jours < 0) {
-                    textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                    textColorClass = 'text-red-600 font-bold';
                   } else {
                     // Déterminer la couleur selon le type de procédure et la durée
                     const dureeInt = jours;
                     if (typeProcedure === 'Demande de Devis' && dureeInt < 15) {
-                      textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                      textColorClass = 'text-red-600 font-bold';
                     } else if (['Appel d\'Offre Ouvert', 'Appel d\'Offre Restreint', 'Dialogue Compétitif', 'Procédure Avec Négociation'].includes(typeProcedure) && dureeInt < 35) {
-                      textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                      textColorClass = 'text-red-600 font-bold';
                     } else if (typeProcedure === 'Marché A Procédure Adaptée' && dureeInt < 20) {
-                      textColorClass = 'text-red-600 dark:text-red-400 font-bold';
+                      textColorClass = 'text-red-600 font-bold';
                     }
                   }
                   
@@ -2055,11 +2059,11 @@ const App: React.FC = () => {
             return (
               <div key={key} className="flex flex-col gap-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
-                <div className={`w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-semibold ${textColorClass} cursor-not-allowed`}>
+                <div className={`w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-semibold ${textColorClass} cursor-not-allowed`}>
                   {dureeCalculee ? `${dureeCalculee} jour${Math.abs(parseInt(dureeCalculee)) !== 1 ? 's' : ''}` : 'Calcul en attente...'}
                 </div>
                 {isNegative && (
-                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold px-1">
+                  <p className="text-xs text-red-600 font-semibold px-1">
                     ⚠️ Erreur : La date de remise des offres ne peut pas être antérieure à la date de lancement de la consultation
                   </p>
                 )}
@@ -2115,7 +2119,7 @@ const App: React.FC = () => {
             return (
               <div key={key} className="flex flex-col gap-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
-                <div className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-not-allowed">
+                <div className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-700 cursor-not-allowed">
                   {dateCalculee || 'Calcul en attente...'}
                 </div>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
@@ -2205,7 +2209,7 @@ const App: React.FC = () => {
                   value={isDate ? formatToInputDate(val) : val} 
                   onChange={e => handleFieldChange(type, key, isDate ? inputToStoreDate(e.target.value) : e.target.value)} 
                   disabled={isFieldReadOnly}
-                  className={`w-full ${key === "Numéro de procédure (Afpa)" ? 'pr-14' : 'px-5'} py-4 ${isFieldReadOnly ? 'bg-gray-50 dark:bg-gray-600 text-gray-700 dark:text-gray-300 cursor-not-allowed' : 'bg-gray-50'} border border-gray-100 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-[#004d3d]/5 outline-none`} 
+                  className={`w-full ${key === "Numéro de procédure (Afpa)" ? 'pr-14' : 'px-5'} py-4 ${isFieldReadOnly ? 'bg-gray-50 text-gray-700 cursor-not-allowed' : 'bg-gray-50'} border border-gray-100 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-[#004d3d]/5 outline-none`} 
                 />
                 {key === "Numéro de procédure (Afpa)" && <button onClick={generateAfpaNumber} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-[#004d3d] text-white rounded-xl shadow-lg hover:scale-105 transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></button>}
               </div>
@@ -2545,46 +2549,14 @@ const App: React.FC = () => {
               </>
             )}
           </div>
+
+          <ThemeToggle className="ml-2" />
           
-          <div className="theme-toggle flex gap-1">
-            <button
-              onClick={() => setTheme('light')}
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${theme === 'light' ? 'bg-gray-100 scale-110' : 'hover:bg-gray-50'}`}
-              title="Clair"
-              aria-pressed={theme === 'light'}
-            >
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-100 to-gray-300 border border-gray-400"></div>
-            </button>
-            <button
-              onClick={() => setTheme('green')}
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${theme === 'green' ? 'bg-emerald-100 scale-110' : 'hover:bg-gray-50'}`}
-              title="Vert"
-              aria-pressed={theme === 'green'}
-            >
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600"></div>
-            </button>
-            <button
-              onClick={() => setTheme('blue')}
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${theme === 'blue' ? 'bg-blue-100 scale-110' : 'hover:bg-gray-50'}`}
-              title="Bleu"
-              aria-pressed={theme === 'blue'}
-            >
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${theme === 'dark' ? 'bg-gray-700 scale-110' : 'hover:bg-gray-50'}`}
-              title="Sombre"
-              aria-pressed={theme === 'dark'}
-            >
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border border-gray-600"></div>
-            </button>
-          </div>
           <button 
             onClick={() => supabaseClient && fetchData(supabaseClient)} 
-            className={`w-10 h-10 flex items-center justify-center bg-white hover:bg-gray-50 border border-gray-200 rounded-full transition-all ${isLoading ? 'animate-spin' : ''}`}
+            className={`w-10 h-10 flex items-center justify-center bg-white hover:bg-gray-50 border border-gray-200 rounded-full transition-all dark:bg-dark-700 dark:hover:bg-dark-600 dark:border-dark-600 ${isLoading ? 'animate-spin' : ''}`}
           >
-            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-700 dark:text-dark-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
@@ -2660,7 +2632,7 @@ const App: React.FC = () => {
                     onToggle={toggleDossierStatus}
                   />
                   {(selectedAcheteurs.length > 0 || selectedFamilies.length > 0 || selectedProcTypes.length > 0 || selectedPriorities.length > 0 || selectedYears.length > 0 || selectedDeployYears.length > 0 || selectedStatuses.length !== DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5')).length) && (
-                    <button onClick={resetFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-xl transition-all flex items-center gap-2 h-[54px]">
+                    <button onClick={resetFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-2xl transition-all flex items-center gap-2 h-[54px]">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>Reset
                     </button>
                   )}
@@ -2671,9 +2643,9 @@ const App: React.FC = () => {
                 {(selectedAcheteurs.length > 0 || selectedPriorities.length > 0 || selectedFamilies.length > 0 || 
                   selectedProcTypes.length > 0 || selectedYears.length > 0 || selectedDeployYears.length > 0 || 
                   selectedStatuses.length > 0) && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-                    <p className="text-sm font-semibold text-blue-900 mb-2">Filtres appliqués :</p>
-                    <ul className="text-sm text-blue-800 space-y-1">
+                  <div className="bg-blue-50 border border-blue-200 rounded-3xl p-4 dark:bg-blue-900/20 dark:border-blue-800/40">
+                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">Filtres appliqués :</p>
+                    <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
                       {selectedAcheteurs.length > 0 && (
                         <li>• Acheteur : {selectedAcheteurs.join(', ')}</li>
                       )}
@@ -3324,9 +3296,9 @@ const App: React.FC = () => {
                     {activeTab === 'dossiers' ? 'Nouveau Projet' : 'Nouvelle Procédure'}
                   </button>
                 </div>
-                <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-                  <div ref={topScrollRef} className="overflow-x-auto overflow-y-hidden border-b border-gray-100" style={{ paddingBottom: 2 }}>
-                    <div style={{ width: tableScrollWidth || '100%', height: 1 }} />
+                <div className="bg-white dark:bg-dark-700 rounded-[2rem] shadow-sm border border-gray-100 dark:border-dark-600 overflow-hidden">
+                  <div ref={topScrollRef} className="overflow-x-auto overflow-y-hidden border-b border-gray-200 dark:border-dark-600 bg-gray-50 dark:bg-dark-750" style={{ height: '20px' }}>
+                    <div style={{ width: tableScrollWidth || '100%', height: '1px' }} />
                   </div>
                   <div ref={bodyScrollRef} className="overflow-x-auto overflow-y-hidden">
                     {(() => {
@@ -3367,6 +3339,7 @@ const App: React.FC = () => {
                       return (
                         <table className="themed-table min-w-full divide-y divide-gray-50">
                           <thead><tr className="bg-gray-50/50">
+                            <th className="px-8 py-5 text-left sticky left-0 bg-gray-50/50 z-10">Actions</th>
                             {fieldsForTab.map(f => (
                               <th 
                                 key={f.id} 
@@ -3376,11 +3349,13 @@ const App: React.FC = () => {
                                 {f.label} {sortColumn === f.id && (sortDirection === 'asc' ? '↑' : '↓')}
                               </th>
                             ))}
-                            <th className="px-8 py-5 text-right sticky right-0 bg-white">Actions</th>
                           </tr></thead>
                           <tbody className="divide-y divide-gray-50">
                             {rows.map((item, i) => (
                               <tr key={i} className="hover:bg-gray-50/50 group transition-colors">
+                                <td className="px-8 py-5 text-left sticky left-0 bg-white/80 group-hover:bg-gray-50/80 transition-colors backdrop-blur-sm z-10">
+                                  <button onClick={() => { if(activeTab === 'dossiers') { setEditingProject(item); setActiveSubTab('general'); } else { setEditingProcedure(item); setActiveSubTab('general'); } }} className={`p-2.5 rounded-xl transition-all ${activeTab === 'dossiers' ? 'text-emerald-700 bg-emerald-50' : 'text-blue-600 bg-blue-50'}`}><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                                </td>
                                 {fieldsForTab.map(f => {
                                   let cellValue;
                                   if (f.id === 'NumeroAfpa5Chiffres') {
@@ -3404,9 +3379,6 @@ const App: React.FC = () => {
                                     </td>
                                   );
                                 })}
-                                <td className="px-8 py-5 text-right sticky right-0 bg-white/80 transition-colors backdrop-blur-sm">
-                                  <button onClick={() => { if(activeTab === 'dossiers') { setEditingProject(item); setActiveSubTab('general'); } else { setEditingProcedure(item); setActiveSubTab('general'); } }} className={`p-2.5 rounded-xl transition-all ${activeTab === 'dossiers' ? 'text-emerald-700 bg-emerald-50' : 'text-blue-600 bg-blue-50'}`}><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                                </td>
                               </tr>
                             ))}
                           </tbody>

@@ -1,3 +1,4 @@
+/* Mode Clair (Light) */
 :root {
   --bg: #f4f7f6;
   --surface-1: #ffffff;
@@ -25,117 +26,54 @@
   --accent-warm-soft: #fff4e6;
   --text-on-accent: #ffffff;
   --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.05);
+  
+  /* Variables pour les composants */
+  --color-bg-primary: #f4f7f6;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #f2f5fa;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #4b5563;
+  --color-text-tertiary: #8b95a5;
+  --color-border: #e4e7ed;
 }
 
-[data-theme="dark"] {
-  --bg: #0d1624;
-  --surface-1: #111c2d;
-  --surface-2: #152335;
-  --border-strong: #22334b;
-  --border-soft: #1b2940;
-  --border-subtle: #1a2536;
-  --text-primary: #e7edf8;
-  --text-secondary: #b7c4d8;
-  --text-subtle: #8fa3c2;
-  --table-header: #17283d;
-  --table-row: #111c2d;
-  --table-row-hover: #1a2c44;
-  --table-divider: #24344d;
-  --input-bg: #142336;
-  --input-border: #24344d;
-  --chip-bg: #1a2c44;
-  --chip-text: #dfe7f5;
-  --chip-border: #24344d;
-  --accent-green: #4bd8ab;
-  --accent-green-hover: #5ce5bc;
-  --accent-green-soft: #173832;
-  --accent-blue: #7ab8ff;
-  --accent-blue-soft: #1f3352;
-  --accent-warm-soft: #2b2416;
-  --text-on-accent: #05101d;
-  --shadow-soft: 0 14px 50px rgba(0, 0, 0, 0.35);
-}
-
-[data-theme="blue"] {
-  --bg: #eef3fb;
-  --surface-1: #dfe8f7;
-  --surface-2: #d6e1f3;
-  --border-strong: #c7d3eb;
-  --border-soft: #d9e3f4;
-  --border-subtle: #dfe7f6;
-  --text-primary: #0f172a;
-  --text-secondary: #2f3f5f;
-  --text-subtle: #556480;
-  --table-header: #d0dbf0;
-  --table-row: #e6edf9;
-  --table-row-hover: #d9e5f7;
-  --table-divider: #c3d0ea;
-  --input-bg: #e8effb;
-  --input-border: #cdd8ef;
-  --chip-bg: #dce6f7;
-  --chip-text: #0f172a;
-  --chip-border: #c9d7f1;
-  --accent-green: #0f8669;
-  --accent-green-hover: #0b6751;
-  --accent-green-soft: #d5f2e9;
-  --accent-blue: #1f4fa3;
-  --accent-blue-soft: #dbe6f9;
-  --accent-warm-soft: #f6ecdd;
+/* Mode Sombre (Dark) */
+html.dark {
+  --bg: #1a202c;
+  --surface-1: #2d3748;
+  --surface-2: #252f3f;
+  --border-strong: #3d4454;
+  --border-soft: #34404d;
+  --border-subtle: #2f3a47;
+  --text-primary: #e8eaed;
+  --text-secondary: #b4bcc4;
+  --text-subtle: #8e99a8;
+  --table-header: #252f3f;
+  --table-row: #2d3748;
+  --table-row-hover: #3a4556;
+  --table-divider: #34404d;
+  --input-bg: #252f3f;
+  --input-border: #3d4454;
+  --chip-bg: #3a4556;
+  --chip-text: #e8eaed;
+  --chip-border: #34404d;
+  --accent-green: #34d399;
+  --accent-green-hover: #10b981;
+  --accent-green-soft: #1f4d3d;
+  --accent-blue: #60a5fa;
+  --accent-blue-soft: #1e3a5f;
+  --accent-warm-soft: #3d2d1f;
   --text-on-accent: #ffffff;
-  --shadow-soft: 0 10px 40px rgba(28, 53, 94, 0.2);
-}
-
-[data-theme="green"] {
-  /* Thème vert professionnel - Inspiration: bouton "NOUVEAU DOSSIER" (#004d3d) */
-  /* Principe: fonds neutres, vert uniquement en accent maîtrisé */
+  --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.3);
   
-  /* Fonds principaux - Neutres clairs */
-  --bg: #f5f7f6;
-  --surface-1: #ffffff;
-  --surface-2: #f8faf9;
-  
-  /* Bordures - Grises sobres */
-  --border-strong: #dfe3e1;
-  --border-soft: #e8ecea;
-  --border-subtle: #eff1f0;
-  
-  /* Textes - Gris foncés pour lisibilité optimale */
-  --text-primary: #0f1711;
-  --text-secondary: #4a5350;
-  --text-subtle: #6b7572;
-  
-  /* Tableaux - Fonds neutres, pas de vert */
-  --table-header: #f0f3f1;
-  --table-row: #ffffff;
-  --table-row-hover: #f7faf8;
-  --table-divider: #e4e8e6;
-  
-  /* Inputs - Fonds clairs neutres */
-  --input-bg: #fafbfa;
-  --input-border: #e2e6e4;
-  
-  /* Chips/Tags - Touches légères de vert */
-  --chip-bg: #e8f0ed;
-  --chip-text: #0f1711;
-  --chip-border: #d0dcd7;
-  
-  /* Accents - LE VERT PROFESSIONNEL (du bouton) */
-  --accent-green: #004d3d;
-  --accent-green-hover: #003b2e;
-  --accent-green-soft: #e6f2ef;
-  
-  /* Compatibilité accent-blue (utilise le vert) */
-  --accent-blue: #004d3d;
-  --accent-blue-soft: #e6f2ef;
-  
-  /* Autres accents */
-  --accent-warm-soft: #faf6f0;
-  
-  /* Texte sur accent */
-  --text-on-accent: #ffffff;
-  
-  /* Ombres subtiles */
-  --shadow-soft: 0 10px 40px rgba(0, 77, 61, 0.06);
+  /* Variables pour les composants */
+  --color-bg-primary: #1a202c;
+  --color-bg-secondary: #2d3748;
+  --color-bg-tertiary: #252f3f;
+  --color-text-primary: #e8eaed;
+  --color-text-secondary: #b4bcc4;
+  --color-text-tertiary: #8e99a8;
+  --color-border: #3d4454;
 }
 
 body {
@@ -156,18 +94,21 @@ body {
   border: 1px solid var(--border-strong);
   color: var(--text-primary);
   box-shadow: var(--shadow-soft);
+  border-radius: 1.5rem; /* 24px - arrondi moderne */
 }
 
 .surface-ghost {
   background-color: var(--surface-2);
   border: 1px solid var(--border-soft);
   color: var(--text-primary);
+  border-radius: 1.5rem; /* 24px - arrondi moderne */
 }
 
 .themed-input {
   background-color: var(--input-bg) !important;
   border: 1px solid var(--input-border) !important;
   color: var(--text-primary) !important;
+  border-radius: 0.75rem; /* 12px pour les inputs */
 }
 
 .themed-input::placeholder {
@@ -179,6 +120,7 @@ body {
   background-color: var(--chip-bg);
   border: 1px solid var(--chip-border);
   color: var(--chip-text);
+  border-radius: 0.5rem; /* 8px pour les chips */
 }
 
 .themed-table {
@@ -187,6 +129,8 @@ body {
   border-spacing: 0;
   background: var(--surface-1);
   color: var(--text-primary);
+  border-radius: 1rem; /* 16px pour les tableaux */
+  overflow: hidden;
 }
 
 .themed-table thead {
@@ -208,41 +152,7 @@ body {
   background: var(--table-row-hover);
 }
 
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px;
-  border-radius: 999px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-soft);
-}
-
-.theme-toggle button {
-  border: 1px solid transparent;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.theme-toggle button.is-active {
-  background: var(--accent-blue-soft);
-  color: var(--text-primary);
-  border-color: var(--accent-blue);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-blue) 40%, transparent);
-}
-
-.theme-toggle button:hover {
-  color: var(--text-primary);
-  border-color: var(--border-strong);
-}
+/* Classes theme-toggle supprimées - plus de sélecteur de thème */
 
 [data-theme] .bg-white {
   background-color: var(--surface-1) !important;
