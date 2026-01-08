@@ -12,6 +12,7 @@ import {
   Filter, 
   TrendingUp, 
   Euro, 
+  DollarSign,
   Users, 
   Calendar, 
   PieChart,
