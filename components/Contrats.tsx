@@ -34,8 +34,8 @@ const formatCurrency = (num: number): string => {
   return new Intl.NumberFormat('fr-FR', { 
     style: 'currency',
     currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(num);
 };
 
@@ -302,9 +302,6 @@ const ContratDetailModal: React.FC<{
               </h3>
               <DetailRow label="Montant Limite (Agreement Limit)" value={
                 contrat.agreement_limit ? formatCurrency(contrat.agreement_limit) : null
-              } />
-              <DetailRow label="Montant du Marché" value={
-                contrat.montant_marche ? formatCurrency(contrat.montant_marche) : null
               } />
               <DetailRow label="Montant Consommé" value={
                 contrat.blanket_header_released_amount ? formatCurrency(contrat.blanket_header_released_amount) : null
