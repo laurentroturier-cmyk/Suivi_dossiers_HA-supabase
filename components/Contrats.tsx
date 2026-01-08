@@ -1,3 +1,9 @@
+// Affiche un montant en milliers d'euros (K€)
+const formatKCurrency = (num: number): string => {
+  if (isNaN(num)) return '-';
+  const kValue = Math.round(num / 1000);
+  return `${kValue.toLocaleString('fr-FR')} K€`;
+};
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   FileText, 
@@ -5,7 +11,7 @@ import {
   Search, 
   Filter, 
   TrendingUp, 
-  DollarSign, 
+  Euro, 
   Users, 
   Calendar, 
   PieChart,
@@ -104,16 +110,14 @@ const KPITile: React.FC<{
       <p className="text-[9px] font-medium text-gray-400 uppercase tracking-[0.08em] mb-1 text-center">
         {label}
       </p>
-      <div className="flex items-baseline justify-center gap-1">
-        <p className="text-xl font-bold text-gray-900 tabular-nums">
-          {value}
-        </p>
-        {unit && (
-          <p className="text-sm font-normal text-gray-500">
-            {unit}
-          </p>
-        )}
-      </div>
+          <div className="flex items-baseline justify-center gap-1">
+            <p className="text-lg font-bold text-gray-900 tabular-nums break-words max-w-[180px] leading-tight">
+              {value}
+            </p>
+            {unit && (
+              <span className="text-xs text-gray-500 font-medium">{unit}</span>
+            )}
+          </div>
     </div>
   </div>
 );
@@ -940,14 +944,14 @@ const Contrats: React.FC = () => {
           />
           <KPITile 
             label="Montant Total" 
-            value={formatCurrency(stats.montantTotal)}
-            icon={<DollarSign className="w-5 h-5 text-white" />}
+            value={formatKCurrency(stats.montantTotal)}
+            icon={<Euro className="w-5 h-5 text-white" />}
             color="bg-purple-500"
           />
           <KPITile 
             label="Montant Consommé" 
-            value={formatCurrency(stats.montantConsomme)}
-            icon={<DollarSign className="w-5 h-5 text-white" />}
+            value={formatKCurrency(stats.montantConsomme)}
+            icon={<Euro className="w-5 h-5 text-white" />}
             color="bg-orange-500"
           />
           <KPITile 
