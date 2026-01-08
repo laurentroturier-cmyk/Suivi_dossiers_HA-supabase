@@ -783,6 +783,42 @@ const App: React.FC = () => {
     if (activeSubTab === 'documents') fetchFiles();
   }, [activeSubTab, editingProject, editingProcedure]);
 
+  // Generate fresh signed URL for document viewer
+  const generateSignedUrl = async (fileName: string): Promise<string | null> => {
+    if (!supabaseClient) return null;
+    const currentId = editingProject ? editingProject.IDProjet : editingProcedure?.NumProc;
+    if (!currentId || !fileName) return null;
+
+    const folder = editingProject ? `projets/${currentId}` : `procedures/${currentId}`;
+    const filePath = `${folder}/${fileName}`;
+    
+    try {
+      const { data, error } = await supabaseClient.storage
+        .from(BUCKET_NAME)
+        .createSignedUrl(filePath, 86400); // 24 hours validity
+      
+      if (error) {
+        console.error("Error generating signed URL:", error);
+        return null;
+      }
+      
+      return data?.signedUrl || null;
+    } catch (err) {
+      console.error("Exception generating signed URL:", err);
+      return null;
+    }
+  };
+
+  // Handle opening document viewer with fresh signed URL
+  const handleViewFile = async (file: any) => {
+    const signedUrl = await generateSignedUrl(file.name);
+    if (signedUrl) {
+      setViewingFile({ name: file.name, url: signedUrl });
+    } else {
+      console.error("Failed to generate signed URL for file:", file.name);
+    }
+  };
+
   // All useMemo calculations - MUST be before conditional returns
   const associatedProcedures = useMemo(() => {
     if (!editingProject?.IDProjet) return [];
@@ -3477,7 +3513,7 @@ const App: React.FC = () => {
                             <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">{(file.metadata?.size / 1024 / 1024).toFixed(2)} Mo</p>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => setViewingFile({ name: file.name, url: file.publicUrl })} className="p-2.5 text-blue-600 bg-blue-50 rounded-xl hover:scale-110 transition-all shadow-sm" title="Visionner">
+                            <button onClick={() => handleViewFile(file)} className="p-2.5 text-blue-600 bg-blue-50 rounded-xl hover:scale-110 transition-all shadow-sm" title="Visionner">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
