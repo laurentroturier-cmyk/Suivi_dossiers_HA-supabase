@@ -14,6 +14,7 @@ import {
   CCAG_OPTIONS,
   SUPPORT_PROCEDURE_OPTIONS,
   FINALITE_CONSULTATION_OPTIONS,
+  ORIGINE_ECONOMIE_OPTIONS,
 } from './constants';
 import { ProjectData, DossierData, TableType } from './types';
 import { supabase as initialSupabase } from './lib/supabase';
@@ -1876,6 +1877,18 @@ const App: React.FC = () => {
               <select value={val} onChange={e => handleFieldChange(type, key, e.target.value)} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-semibold outline-none appearance-none cursor-pointer text-[#004d3d]">
                 <option value="">Sélectionner...</option>
                 {DOSSIER_STATUS_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+          );
+
+          if (key === "Origine_du_montant_pour_le_calcul_de_l'economie" && type === 'project') return (
+            <div key={key} className="flex flex-col gap-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
+              <select value={val} onChange={e => handleFieldChange(type, key, e.target.value)} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-semibold outline-none appearance-none cursor-pointer text-[#004d3d]">
+                <option value="">Sélectionner...</option>
+                {ORIGINE_ECONOMIE_OPTIONS.map(opt => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </select>

@@ -302,7 +302,7 @@ const ContratDetailModal: React.FC<{
             {/* Montants */}
             <div>
               <h3 className="text-xs font-bold text-[#005c4d] uppercase tracking-wider mb-4 flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
+                <Euro className="w-4 h-4" />
                 Montants
               </h3>
               <DetailRow label="Montant Limite (Agreement Limit)" value={

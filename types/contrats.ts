@@ -44,4 +44,5 @@ export interface ContratsFilters {
   acheteur: string;
   anneeDebut: string;
   anneeFin: string;
+  origineMontantEconomie?: string;
 }

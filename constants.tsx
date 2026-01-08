@@ -39,7 +39,15 @@ export const DOSSIER_FIELDS = [
   { id: 'Date_de_lancement_de_la_consultation', label: 'Date lancement consultation' },
   { id: 'Date_de_deploiement_previsionnelle_du_marche', label: 'Date déploiement prév.' },
   { id: 'Perf_achat_previsionnelle_(en_%)', label: 'Perf. achat prév. (%)' },
-  { id: 'Origine_du_montant_pour_le_calcul_de_l\'economie', label: 'Origine montant économie' },
+  { id: 'Origine_du_montant_pour_le_calcul_de_l\'economie', label: 'Origine montant économie', type: 'select', options: 'ORIGINE_ECONOMIE_OPTIONS' },
+];
+
+// Liste déroulante pour le champ "Origine_du_montant_pour_le_calcul_de_l'economie"
+export const ORIGINE_ECONOMIE_OPTIONS = [
+  'Prix historique actualisé',
+  'Sourçage / parangonnage',
+  'Moyenne des offres',
+  'Enveloppe financière',
 ];
 
 // Liste déroulante pour le champ "Statut_du_Dossier"
