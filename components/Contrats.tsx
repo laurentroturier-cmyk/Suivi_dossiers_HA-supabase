@@ -310,21 +310,27 @@ const ContratDetailModal: React.FC<{
                 contrat.blanket_header_released_amount ? formatCurrency(contrat.blanket_header_released_amount) : null
               } />
               <DetailRow label="% Consommé" value={
-                contrat.pourcentage_consomme !== null ? (
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full ${
-                          contrat.pourcentage_consomme >= 90 ? 'bg-red-500' :
-                          contrat.pourcentage_consomme >= 70 ? 'bg-orange-500' :
-                          'bg-green-500'
-                        }`}
-                        style={{ width: `${Math.min(contrat.pourcentage_consomme, 100)}%` }}
-                      />
-                    </div>
-                    <span className="font-bold">{contrat.pourcentage_consomme.toFixed(1)}%</span>
-                  </div>
-                ) : null
+                (contrat.blanket_header_released_amount !== null && contrat.agreement_limit)
+                  ? (
+                    (() => {
+                      const percent = (contrat.blanket_header_released_amount / contrat.agreement_limit) * 100;
+                      return (
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full ${
+                                percent >= 90 ? 'bg-red-500' :
+                                percent >= 70 ? 'bg-orange-500' :
+                                'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min(percent, 100)}%` }}
+                            />
+                          </div>
+                          <span className="font-bold">{percent.toFixed(1)}%</span>
+                        </div>
+                      );
+                    })()
+                  ) : null
               } />
               <DetailRow label="% Temps écoulé" value={
                 (() => {
@@ -419,6 +425,11 @@ const Contrats: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedContrat, setSelectedContrat] = useState<Contrat | null>(null);
 
+  // Handler to open contract detail
+  const handleOpenContrat = (contrat: Contrat) => {
+    setSelectedContrat(contrat);
+  };
+
   // Parse CSV/Excel file
   const parseContratFile = (file: File): Promise<Contrat[]> => {
     return new Promise((resolve, reject) => {
@@ -460,7 +471,12 @@ const Contrats: React.FC = () => {
             date_notification: getCol(row, 'Date notification') || null,
             date_debut: getCol(row, 'Date de début', 'Date de dbut', 'Date de d') || null,
             date_fin: getCol(row, 'Date de fin') || null,
-            pourcentage_consomme: parseFloat(String(getCol(row, '% consommé', '% consomm', 'consomm') || '').replace(',', '.').replace('%', '')) || null,
+            pourcentage_consomme: (() => {
+              const val = parseFloat(String(getCol(row, '% consommé', '% consomm', 'consomm') || '').replace(',', '.').replace('%', ''));
+              if (isNaN(val)) return null;
+              if (val > 0 && val <= 1) return val * 100;
+              return val;
+            })(),
             nombre_lignes_catalogue: parseInt(getCol(row, 'Nombre de lignes de catalogue')) || null,
             client_interne: getCol(row, 'Client Interne') || null,
             supplier: getCol(row, 'Supplier') || '',
@@ -555,7 +571,12 @@ const Contrats: React.FC = () => {
         date_notification: row['Date notification'] || row.date_notification || null,
         date_debut: row['Date de début'] || row.date_debut || null,
         date_fin: row['Date de fin'] || row.date_fin || null,
-        pourcentage_consomme: parseFloat(String(row['% consommé'] || '').replace(',', '.').replace('%', '')) || null,
+        pourcentage_consomme: (() => {
+          const val = parseFloat(String(row['% consommé'] || '').replace(',', '.').replace('%', ''));
+          if (isNaN(val)) return null;
+          if (val > 0 && val <= 1) return val * 100;
+          return val;
+        })(),
         nombre_lignes_catalogue: parseInt(row['Nombre de lignes de catalogue']) || null,
         client_interne: row['Client Interne'] || row.client_interne || null,
         supplier: row['Supplier'] || row.supplier || '',
@@ -1162,7 +1183,7 @@ const Contrats: React.FC = () => {
                   <tr key={contrat.agreement_number || index} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 py-3 text-center">
                       <button
-                        onClick={() => setSelectedContrat(contrat)}
+                        onClick={() => handleOpenContrat(contrat)}
                         className="inline-flex items-center justify-center w-7 h-7 bg-[#005c4d] text-white rounded-lg hover:bg-[#004a3d] transition-colors"
                         title="Voir les détails"
                       >
@@ -1202,22 +1223,27 @@ const Contrats: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-3 py-3 text-right">
-                      {contrat.pourcentage_consomme !== null ? (
-                        <div className="flex items-center gap-2 justify-end">
-                          <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full rounded-full ${
-                                contrat.pourcentage_consomme >= 90 ? 'bg-red-500' :
-                                contrat.pourcentage_consomme >= 70 ? 'bg-orange-500' :
-                                'bg-green-500'
-                              }`}
-                              style={{ width: `${Math.min(contrat.pourcentage_consomme, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-xs font-medium text-gray-700 w-12 text-right">
-                            {contrat.pourcentage_consomme.toFixed(1)}%
-                          </span>
-                        </div>
+                      {(contrat.blanket_header_released_amount !== null && contrat.agreement_limit) ? (
+                        (() => {
+                          const percent = (contrat.blanket_header_released_amount / contrat.agreement_limit) * 100;
+                          return (
+                            <div className="flex items-center gap-2 justify-end">
+                              <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full ${
+                                    percent >= 90 ? 'bg-red-500' :
+                                    percent >= 70 ? 'bg-orange-500' :
+                                    'bg-green-500'
+                                  }`}
+                                  style={{ width: `${Math.min(percent, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-medium text-gray-700 w-12 text-right">
+                                {percent.toFixed(1)}%
+                              </span>
+                            </div>
+                          );
+                        })()
                       ) : (
                         <span className="text-xs text-gray-400">-</span>
                       )}
