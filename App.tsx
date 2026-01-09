@@ -3841,7 +3841,9 @@ const App: React.FC = () => {
           };
           
           const filteredCommissionProjects = dossiers.filter(d => {
-            if (d.Commission_Achat !== "Oui") return false;
+            // Accepter "Oui", "true", true
+            const ca = d.Commission_Achat;
+            if (ca !== "Oui" && ca !== "true" && ca !== true) return false;
             
             // Filtrer par montant > 1000000
             const montant = Number(d["Montant_previsionnel_du_marche_(_HT)_"]) || 0;
@@ -3858,6 +3860,29 @@ const App: React.FC = () => {
             const numDate = Number(dateVal);
             return !(numDate > 0 && !isNaN(numDate));
           });
+
+          // Debug Commission HA
+          console.log('🔍 ANALYSE COMMISSION HA:');
+          console.log('Total projets:', dossiers.length);
+          const rule1 = dossiers.filter(d => d.Commission_Achat === "Oui" || d.Commission_Achat === "true" || d.Commission_Achat === true);
+          const valeursCA = [...new Set(dossiers.map(d => d.Commission_Achat))];
+          console.log('✅ Commission_Achat = "Oui":', rule1.length);
+          console.log('   Valeurs Commission_Achat trouvées:', valeursCA);
+          console.log('   Types:', valeursCA.map(v => `"${v}" (${typeof v})`));
+          
+          const rule2 = rule1.filter(d => (Number(d["Montant_previsionnel_du_marche_(_HT)_"]) || 0) > 1000000);
+          console.log('💰 Montant > 1M€:', rule2.length);
+          if (rule1.length > 0) {
+            const montants = rule1.map(d => Number(d["Montant_previsionnel_du_marche_(_HT)_"]) || 0);
+            console.log('   Montants min/max:', Math.min(...montants), '/', Math.max(...montants));
+          }
+          
+          const rule3 = rule2.filter(d => d["NO_-_Statut"] !== "3-Validé");
+          console.log('📋 NO Statut ≠ "3-Validé":', rule3.length);
+          console.log('   Statuts NO:', [...new Set(rule2.map(d => d["NO_-_Statut"]))]);
+          
+          console.log('🎯 FINAL projets Commission HA:', filteredCommissionProjects.length);
+
           
           const sortedProjects = [...filteredCommissionProjects].sort((a, b) => {
             if (!commissionSortColumn) return 0;
