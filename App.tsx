@@ -3177,7 +3177,7 @@ const App: React.FC = () => {
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{acheteur}</span>
                                 <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${statutClass}`}>{statut || 'N/C'}</span>
                               </div>
-                              <div className="text-sm font-black text-gray-900 leading-snug">{titre}</div>
+                              <div className="text-base font-bold text-gray-900 leading-relaxed">{titre}</div>
                               <div className="flex items-center gap-3 mt-2">
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Target: {deployTxt}</span>
                                 <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg text-white ${prColor}`}>{priorite}</span>
@@ -3401,6 +3401,7 @@ const App: React.FC = () => {
                                 key={f.id} 
                                 className={`px-8 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest cursor-pointer hover:text-[#004d3d] transition-colors ${isNumericField(f.id) || isDateField(f.id) ? 'text-right' : 'text-left'}`}
                                 onClick={() => handleSort(f.id)}
+                                style={(f.id === 'Titre_du_dossier' || f.id === 'Nom de la procédure') ? {minWidth: '400px'} : {}}
                               >
                                 {f.label} {sortColumn === f.id && (sortDirection === 'asc' ? '↑' : '↓')}
                               </th>
@@ -3430,8 +3431,16 @@ const App: React.FC = () => {
                                   }
                                   
                                   return (
-                                    <td key={f.id} className={`px-8 py-5 text-xs text-gray-600 font-bold max-w-[200px] truncate ${isNumericField(f.id) || isDateField(f.id) ? 'text-right' : 'text-left'}`}>
-                                      {cellValue}
+                                    <td 
+                                      key={f.id} 
+                                      className={`px-8 py-5 text-xs text-gray-600 font-bold ${(f.id === 'Titre_du_dossier' || f.id === 'Nom de la procédure') ? '' : 'max-w-[200px] truncate'} ${isNumericField(f.id) || isDateField(f.id) ? 'text-right' : 'text-left'}`}
+                                      style={(f.id === 'Titre_du_dossier' || f.id === 'Nom de la procédure') ? {minWidth: '400px', maxWidth: '600px'} : {}}
+                                    >
+                                      {(f.id === 'Titre_du_dossier' || f.id === 'Nom de la procédure') ? (
+                                        <div className="line-clamp-2 leading-relaxed">{cellValue}</div>
+                                      ) : (
+                                        cellValue
+                                      )}
                                     </td>
                                   );
                                 })}
@@ -3746,7 +3755,7 @@ const App: React.FC = () => {
                         ))
                       ) : (
                         DOSSIER_FIELDS.map(field => (
-                          <th key={field.id} className={`px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
+                          <th key={field.id} className={`px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'} ${field.id === 'Titre_du_dossier' ? '' : ''}`} style={field.id === 'Titre_du_dossier' ? {minWidth: '400px'} : {}}>
                             {field.label}
                           </th>
                         ))
@@ -3805,10 +3814,16 @@ const App: React.FC = () => {
                           })
                         ) : (
                           DOSSIER_FIELDS.map(field => (
-                            <td key={field.id} className={`px-6 py-4 text-xs font-semibold text-gray-700 whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
-                              {isDateField(field.id) 
-                                ? formatDisplayDate(getProp(item, field.id)) 
-                                : (getProp(item, field.id) || '-')}
+                            <td key={field.id} className={`px-6 py-4 text-xs font-semibold text-gray-700 ${isNumericField(field.id) || isDateField(field.id) ? 'text-right whitespace-nowrap' : 'text-left'}`} style={field.id === 'Titre_du_dossier' ? {minWidth: '400px', maxWidth: '600px'} : {}}>
+                              {field.id === 'Titre_du_dossier' ? (
+                                <div className="line-clamp-2">{getProp(item, field.id) || '-'}</div>
+                              ) : (
+                                <div className="whitespace-nowrap">
+                                  {isDateField(field.id) 
+                                    ? formatDisplayDate(getProp(item, field.id)) 
+                                    : (getProp(item, field.id) || '-')}
+                                </div>
+                              )}
                             </td>
                           ))
                         )}
@@ -4000,7 +4015,7 @@ const App: React.FC = () => {
                       <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('dossier')}>
                         Dossier {commissionSortColumn === 'dossier' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
                       </th>
-                      <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('objet')}>
+                      <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('objet')} style={{minWidth: '350px'}}>
                         Objet {commissionSortColumn === 'objet' && (commissionSortDirection === 'asc' ? '↑' : '↓')}
                       </th>
                       <th className="px-8 py-6 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d] transition-colors" onClick={() => handleSort('acheteur')}>
@@ -4042,7 +4057,9 @@ const App: React.FC = () => {
                             </button>
                           </td>
                           <td className="px-8 py-6 text-sm font-black text-[#004d3d]">{d.IDProjet}</td>
-                          <td className="px-8 py-6 text-sm text-gray-700">{d.Titre_du_dossier}</td>
+                          <td className="px-8 py-6 text-sm text-gray-700" style={{minWidth: '350px', maxWidth: '500px'}}>
+                            <div className="line-clamp-2">{d.Titre_du_dossier}</div>
+                          </td>
                           <td className="px-8 py-6 text-sm text-gray-600">{d.Acheteur}</td>
                           <td className="px-8 py-6 text-sm">
                             <span className={`inline-block px-4 py-2 rounded-full text-xs font-black ${

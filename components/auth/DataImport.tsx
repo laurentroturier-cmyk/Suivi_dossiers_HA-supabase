@@ -408,30 +408,14 @@ export default function DataImport() {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Database className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Import de données</h2>
-              <p className="text-sm text-gray-600">Chargez vos données depuis Excel ou CSV</p>
-            </div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <Database className="w-6 h-6 text-blue-600" />
           </div>
-          
-          {/* Bouton de téléchargement du template */}
-          <button
-            onClick={() => downloadTemplate(selectedTable === 'projets' ? 'projets' : 'procédures')}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-          >
-            <Download className="w-4 h-4" />
-            <div className="text-left">
-              <span className="text-sm font-medium">Télécharger template {selectedTable}</span>
-              <div className="text-xs opacity-90">
-                {selectedTable === 'projets' ? '2 exemples' : '2 exemples'}
-              </div>
-            </div>
-          </button>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Import de données</h2>
+            <p className="text-sm text-gray-600">Chargez vos données depuis Excel ou CSV</p>
+          </div>
         </div>
 
         {/* Sélection de la table */}
