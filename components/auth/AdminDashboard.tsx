@@ -22,6 +22,7 @@ import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
 import { UserProfile, DataRecord, AccessRequest } from '../../types/auth';
 import { PROJECT_FIELDS, DOSSIER_FIELDS, PROCEDURE_GROUPS } from '../../constants';
+import DataImport from './DataImport';
 
 interface AdminDashboardProps {
   profile: UserProfile;
@@ -35,7 +36,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   const [error, setError] = useState<string | null>(null);
   const [rlsError, setRlsError] = useState(false);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
-  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users'>('data');
+  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import'>('data');
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -310,20 +311,32 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             </button>
 
             {profile.role === 'admin' && (
-              <button 
-                onClick={() => setActiveTab('requests')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'requests' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
-                }`}
-              >
-                <UserPlus className="w-4 h-4" />
-                Demandes d'accès
-                {accessRequests.filter(r => r.status === 'pending').length > 0 && (
-                  <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                    {accessRequests.filter(r => r.status === 'pending').length}
-                  </span>
-                )}
-              </button>
+              <>
+                <button 
+                  onClick={() => setActiveTab('requests')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'requests' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
+                  }`}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Demandes d'accès
+                  {accessRequests.filter(r => r.status === 'pending').length > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {accessRequests.filter(r => r.status === 'pending').length}
+                    </span>
+                  )}
+                </button>
+
+                <button 
+                  onClick={() => setActiveTab('import')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'import' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
+                  }`}
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  Import de données
+                </button>
+              </>
             )}
             
             {onBackToApp && (
@@ -841,6 +854,11 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
               </div>
             </div>
           </div>
+        )}
+
+        {/* Import Data Tab */}
+        {activeTab === 'import' && (
+          <DataImport />
         )}
       </main>
     </div>

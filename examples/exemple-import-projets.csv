@@ -1,0 +1,4 @@
+IDProjet,Acheteur,Famille Achat Principale,Numéro de procédure (Afpa),Statut du Dossier,Date de lancement de la consultation,Montant prévisionnel du marché (€ HT),Objet court
+PROJ001,Jean Dupont,Informatique,PROC2024-001,En cours,2024-01-15,50000,Système de gestion documentaire
+PROJ002,Marie Martin,Travaux,PROC2024-002,Planifié,2024-03-01,120000,Rénovation énergétique
+PROJ003,Pierre Durand,Services,PROC2024-003,Lancé,2024-02-10,75000,Formation professionnelle
