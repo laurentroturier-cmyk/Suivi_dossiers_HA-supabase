@@ -1193,7 +1193,7 @@ const Contrats: React.FC = () => {
                     <td className="px-3 py-3 text-center">
                       <button
                         onClick={() => handleOpenContrat(contrat)}
-                        className="inline-flex items-center justify-center w-7 h-7 bg-[#005c4d] text-white rounded-lg hover:bg-[#004a3d] transition-colors"
+                        className="contrats-view-btn inline-flex items-center justify-center w-7 h-7 bg-[#005c4d] text-white rounded-lg hover:bg-[#004a3d] transition-colors"
                         title="Voir les détails"
                       >
                         <Eye className="w-4 h-4" />

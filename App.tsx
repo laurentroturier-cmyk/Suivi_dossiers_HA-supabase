@@ -423,7 +423,7 @@ const App: React.FC = () => {
     "Projet facilitant l'accès aux TPE/PME",
   ]), []);
 
-  const themeOptions: { key: Theme; label: string }[] = [
+  const themeOptions: { key: 'light' | 'green' | 'blue' | 'dark'; label: string }[] = [
     { key: 'light', label: 'Clair' },
     { key: 'green', label: 'Vert' },
     { key: 'blue', label: 'Bleu' },
@@ -2427,7 +2427,7 @@ const App: React.FC = () => {
             <button
               onClick={() => { setActiveTab('home'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
               className={`text-[10px] font-black uppercase tracking-widest transition-all ${
-                activeTab === 'home' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+                activeTab === 'home' ? 'text-[#004d3d] dark:text-cyan-400' : 'text-gray-300 hover:text-gray-500 dark:hover:text-gray-400'
               }`}
             >
               Accueil
@@ -3394,12 +3394,12 @@ const App: React.FC = () => {
                       
                       return (
                         <table className="themed-table min-w-full divide-y divide-gray-50">
-                          <thead><tr className="bg-gray-50/50">
-                            <th className="px-8 py-5 text-left sticky left-0 bg-gray-50/50 z-10">Actions</th>
+                          <thead><tr className="bg-gray-50/50 dark:bg-[#252525]">
+                            <th className="px-8 py-5 text-left sticky left-0 bg-gray-50/50 dark:bg-[#252525] z-10">Actions</th>
                             {fieldsForTab.map(f => (
                               <th 
                                 key={f.id} 
-                                className={`px-8 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest cursor-pointer hover:text-[#004d3d] transition-colors ${isNumericField(f.id) || isDateField(f.id) ? 'text-right' : 'text-left'}`}
+                                className={`px-8 py-5 text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest cursor-pointer hover:text-[#004d3d] dark:hover:text-white transition-colors ${isNumericField(f.id) || isDateField(f.id) ? 'text-right' : 'text-left'}`}
                                 onClick={() => handleSort(f.id)}
                                 style={(f.id === 'Titre_du_dossier' || f.id === 'Nom de la procédure') ? {minWidth: '400px'} : {}}
                               >
@@ -3407,10 +3407,10 @@ const App: React.FC = () => {
                               </th>
                             ))}
                           </tr></thead>
-                          <tbody className="divide-y divide-gray-50">
+                          <tbody className="divide-y divide-gray-50 dark:divide-[#333333]">
                             {rows.map((item, i) => (
-                              <tr key={i} className="hover:bg-gray-50/50 group transition-colors">
-                                <td className="px-8 py-5 text-left sticky left-0 bg-white/80 group-hover:bg-gray-50/80 transition-colors backdrop-blur-sm z-10">
+                              <tr key={i} className="hover:bg-gray-50/50 dark:hover:bg-[#1E1E1E] group transition-colors">
+                                <td className="px-8 py-5 text-left sticky left-0 bg-white/80 group-hover:bg-gray-50/80 dark:bg-[#1E1E1E]/80 dark:group-hover:bg-[#252525]/80 transition-colors backdrop-blur-sm z-10">
                                   <button onClick={() => { if(activeTab === 'dossiers') { setEditingProject(item); setActiveSubTab('general'); } else { setEditingProcedure(item); setActiveSubTab('general'); } }} className={`p-2.5 rounded-xl transition-all ${activeTab === 'dossiers' ? 'text-emerald-700 bg-emerald-50' : 'text-blue-600 bg-blue-50'}`}><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
                                 </td>
                                 {fieldsForTab.map(f => {
@@ -3561,7 +3561,7 @@ const App: React.FC = () => {
                   <div className="space-y-6">
                     <div className="flex justify-between items-center"><h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Liste des procédures rattachées à ce projet</h4><button onClick={() => { const projId = editingProject.IDProjet; const existingForProject = procedures.filter(p => String(getProp(p, 'IDProjet')) === String(projId)); let maxIdx = 0; existingForProject.forEach(p => { const num = String(getProp(p, 'NumProc')); if (num.includes('-P-')) { const parts = num.split('-P-'); const idx = parseInt(parts[parts.length - 1]); if (!isNaN(idx) && idx > maxIdx) maxIdx = idx; } }); const nextIdx = maxIdx + 1; const newProcId = `${projId}-P-${nextIdx}`; setEditingProcedure({ IDProjet: projId, Acheteur: getProp(editingProject, 'Acheteur'), "Objet court": getProp(editingProject, 'Titre_du_dossier'), NumProc: newProcId }); setEditingProject(null); setActiveSubTab('general'); }} className="px-6 py-3 bg-[#004d3d] hover:bg-[#006d57] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-colors">+ Nouvelle Procédure</button></div>
                     <div className="overflow-x-auto rounded-2xl border border-gray-50">
-                      <table className="themed-table min-w-full divide-y divide-gray-50"><thead className="bg-gray-50/50"><tr><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">N° Afpa</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">Objet court</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">Statut</th><th className="px-6 py-4 text-right">Actions</th></tr></thead><tbody className="divide-y divide-gray-50">{associatedProcedures.length === 0 ? <tr><td colSpan={4} className="px-6 py-12 text-center text-xs font-bold text-gray-300 italic">Aucune procédure trouvée</td></tr> : associatedProcedures.map((proc, idx) => (<tr key={idx} className="hover:bg-gray-50/50"><td className="px-6 py-4 text-xs font-bold text-gray-600">{getProp(proc, 'Numéro de procédure (Afpa)') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600">{getProp(proc, 'Objet court') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600">{getProp(proc, 'Statut de la consultation') || '-'}</td><td className="px-6 py-4 text-right"><button onClick={() => { setEditingProcedure(proc); setEditingProject(null); setActiveSubTab('general'); }} className="p-2 text-blue-600 bg-blue-50 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button></td></tr>))}</tbody></table>
+                      <table className="themed-table min-w-full divide-y divide-gray-50"><thead className="bg-gray-50/50 dark:bg-[#252525]"><tr><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">N° Afpa</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Objet court</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Statut</th><th className="px-6 py-4 text-right dark:text-[#40E0D0]">Actions</th></tr></thead><tbody className="divide-y divide-gray-50 dark:divide-[#333333]">{associatedProcedures.length === 0 ? <tr><td colSpan={4} className="px-6 py-12 text-center text-xs font-bold text-gray-300 italic">Aucune procédure trouvée</td></tr> : associatedProcedures.map((proc, idx) => (<tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-[#1E1E1E]"><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Numéro de procédure (Afpa)') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Objet court') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Statut de la consultation') || '-'}</td><td className="px-6 py-4 text-right"><button onClick={() => { setEditingProcedure(proc); setEditingProject(null); setActiveSubTab('general'); }} className="p-2 text-blue-600 bg-blue-50 dark:text-[#40E0D0] dark:bg-cyan-400/10 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button></td></tr>))}</tbody></table>
                     </div>
                   </div>
                 )}
@@ -3742,30 +3742,30 @@ const App: React.FC = () => {
                 }}
               >
                 <table className="themed-table w-full">
-                  <thead className="bg-gray-50/50">
+                  <thead className="bg-gray-50/50 dark:bg-[#252525]">
                     <tr>
-                      <th className="px-4 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap text-center sticky left-0 bg-gray-50/95 z-10">
+                      <th className="px-4 py-4 text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest whitespace-nowrap text-center sticky left-0 bg-gray-50/95 dark:bg-[#252525] z-10">
                         Actions
                       </th>
                       {detailData.type === 'project' ? (
                         PROJECT_FIELDS.map(field => (
-                          <th key={field.id} className={`px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
+                          <th key={field.id} className={`px-6 py-4 text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'}`}>
                             {field.label}
                           </th>
                         ))
                       ) : (
                         DOSSIER_FIELDS.map(field => (
-                          <th key={field.id} className={`px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'} ${field.id === 'Titre_du_dossier' ? '' : ''}`} style={field.id === 'Titre_du_dossier' ? {minWidth: '400px'} : {}}>
+                          <th key={field.id} className={`px-6 py-4 text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest whitespace-nowrap ${isNumericField(field.id) || isDateField(field.id) ? 'text-right' : 'text-left'} ${field.id === 'Titre_du_dossier' ? '' : ''}`} style={field.id === 'Titre_du_dossier' ? {minWidth: '400px'} : {}}>
                             {field.label}
                           </th>
                         ))
                       )}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-50 dark:divide-[#333333]">
                     {filteredDetailData.map((item, idx) => (
                       <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-4 py-4 text-center sticky left-0 bg-white z-10">
+                        <td className="px-4 py-4 text-center sticky left-0 bg-white dark:bg-[#1E1E1E] z-10">
                           <button
                             onClick={() => {
                               if (detailData.type === 'project') {

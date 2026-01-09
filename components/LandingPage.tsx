@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Calendar, Users } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (tab: string) => void;
@@ -9,156 +9,218 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount }) => {
-  const features = [
+  // Domaines fonctionnels avec leurs actions
+  const domaines = [
     {
+      id: 'indicateurs',
+      titre: 'Indicateurs & Pilotage',
+      description: 'Tableaux de bord, analyses et visualisation Gantt pour piloter vos projets',
       icon: BarChart3,
-      title: 'Indicateurs',
-      description: 'Tableaux de bord et visualisation Gantt pour piloter vos projets',
-      color: 'bg-blue-500',
-      tabs: ['dashboard', 'gantt'],
+      iconColor: 'text-cyan-600 dark:text-cyan-400',
+      iconBg: 'bg-cyan-100 dark:bg-cyan-500/20',
+      borderColor: 'border-cyan-200 dark:border-cyan-500/40',
+      borderHover: 'hover:border-cyan-400 dark:hover:border-cyan-400',
+      btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
+      btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
-        { label: 'Tableau de bord', tab: 'dashboard' },
-        { label: 'Gantt', tab: 'gantt' },
+        { label: 'Tableau de bord', tab: 'dashboard', isAdmin: false },
+        { label: 'Planning Gantt', tab: 'gantt', isAdmin: false },
       ]
     },
     {
+      id: 'projets',
+      titre: 'Projets d\'achats',
+      description: 'Gestion complète de vos dossiers et projets d\'achats publics',
       icon: FileText,
-      title: 'Projets achats',
-      description: 'Gestion complète de vos projets et dossiers d\'achats',
-      color: 'bg-green-600',
-      tabs: ['dossiers'],
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      iconBg: 'bg-emerald-100 dark:bg-emerald-500/20',
+      borderColor: 'border-emerald-200 dark:border-emerald-500/40',
+      borderHover: 'hover:border-emerald-400 dark:hover:border-emerald-400',
+      btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
+      btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
-        { label: 'Voir les projets', tab: 'dossiers' },
+        { label: 'Tous les projets', tab: 'dossiers', isAdmin: false },
       ]
     },
     {
-      icon: ClipboardList,
-      title: 'Procédures',
+      id: 'procedures',
+      titre: 'Procédures',
       description: 'Suivi des procédures de marchés publics et appels d\'offres',
-      color: 'bg-purple-600',
-      tabs: ['procedures'],
+      icon: ClipboardList,
+      iconColor: 'text-violet-600 dark:text-violet-400',
+      iconBg: 'bg-violet-100 dark:bg-violet-500/20',
+      borderColor: 'border-violet-200 dark:border-violet-500/40',
+      borderHover: 'hover:border-violet-400 dark:hover:border-violet-400',
+      btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
+      btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
-        { label: 'Voir les procédures', tab: 'procedures' },
+        { label: 'Toutes les procédures', tab: 'procedures', isAdmin: false },
       ]
     },
     {
+      id: 'execution',
+      titre: 'Exécution des marchés',
+      description: 'Commission HA, registres, analyses techniques et contrats',
       icon: PlayCircle,
-      title: 'Exécution des marchés',
-      description: 'Commission, registres de retraits et dépôts, analyses AN01, contrats',
-      color: 'bg-orange-600',
-      tabs: ['commission', 'retraits', 'depots', 'an01', 'contrats'],
+      iconColor: 'text-orange-600 dark:text-orange-400',
+      iconBg: 'bg-orange-100 dark:bg-orange-500/20',
+      borderColor: 'border-orange-200 dark:border-orange-500/40',
+      borderHover: 'hover:border-orange-400 dark:hover:border-orange-400',
+      btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
+      btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
-        { label: 'Commission HA', tab: 'commission' },
-        { label: 'Retraits', tab: 'retraits' },
-        { label: 'Dépôts', tab: 'depots' },
-        { label: 'AN01', tab: 'an01' },
-        { label: 'Contrats', tab: 'contrats' },
+        { label: 'Commission HA', tab: 'commission', isAdmin: false },
+        { label: 'Registre des retraits', tab: 'retraits', isAdmin: false },
+        { label: 'Registre des dépôts', tab: 'depots', isAdmin: false },
+        { label: 'Analyse AN01', tab: 'an01', isAdmin: false },
+        { label: 'Contrats', tab: 'contrats', isAdmin: false },
       ]
     },
     {
+      id: 'exports',
+      titre: 'Exports & Données',
+      description: 'Exportation et import de vos données en format Excel/CSV',
       icon: Download,
-      title: 'Exports & Données',
-      description: 'Exportation et gestion de vos données en format Excel',
-      color: 'bg-indigo-600',
-      tabs: ['export'],
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      iconBg: 'bg-blue-100 dark:bg-blue-500/20',
+      borderColor: 'border-blue-200 dark:border-blue-500/40',
+      borderHover: 'hover:border-blue-400 dark:hover:border-blue-400',
+      btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
+      btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
-        { label: 'Exporter', tab: 'export' },
+        { label: 'Exporter les données', tab: 'export', isAdmin: false },
       ]
     },
     {
-      icon: Settings,
-      title: 'Administration',
+      id: 'admin',
+      titre: 'Administration',
       description: 'Gestion des utilisateurs et paramètres de l\'application',
-      color: 'bg-gray-700',
-      tabs: ['admin'],
+      icon: Settings,
+      iconColor: 'text-slate-600 dark:text-slate-400',
+      iconBg: 'bg-slate-100 dark:bg-slate-500/20',
+      borderColor: 'border-slate-200 dark:border-slate-500/40',
+      borderHover: 'hover:border-slate-400 dark:hover:border-slate-400',
+      btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
+      btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
         { label: 'Paramètres', tab: 'admin', isAdmin: true },
       ]
     },
   ];
 
-  const stats = [
-    { icon: FileText, label: 'Projets actifs', value: projectsCount, color: 'text-green-600' },
-    { icon: ClipboardList, label: 'Procédures', value: proceduresCount, color: 'text-purple-600' },
-    { icon: TrendingUp, label: 'En cours', value: Math.floor(projectsCount * 0.65), color: 'text-blue-600' },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-      {/* Hero Section */}
-      <div className="bg-blue-50 border-b border-blue-100">
-        <div className="max-w-7xl mx-auto px-8 py-16">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-100 backdrop-blur-sm rounded-3xl mb-6 shadow-2xl shadow-emerald-200/30 border-2 border-emerald-300">
-              <svg className="w-12 h-12 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    <div className="landing-page min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#0d0f12] dark:via-[#121212] dark:to-[#0d0f12]">
+      {/* Header */}
+      <div className="landing-header bg-white/80 backdrop-blur-sm border-b border-gray-200 dark:bg-[#1E1E1E]/80 dark:border-[#333333] sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#004d3d] to-[#006d57] dark:from-cyan-500 dark:to-cyan-600 flex items-center justify-center shadow-lg">
+              <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h1 className="text-5xl font-black text-emerald-600 mb-4 drop-shadow-lg">GestProjet</h1>
-            <p className="text-xl text-emerald-700 mb-2 font-medium">Plateforme de gestion des projets achats DNA</p>
+            <div className="flex-1">
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white">GestProjet</h1>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Plateforme de gestion des projets achats DNA</p>
+            </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-            {stats.map((stat, index) => (
-              <div key={index} className="bg-gradient-to-br from-white/95 to-slate-50/95 backdrop-blur-sm rounded-5xl p-6 shadow-xl border border-white/20 hover:shadow-2xl hover:scale-105 transition-all duration-300">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center ${stat.color} shadow-lg`}>
-                    <stat.icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-600 font-semibold uppercase tracking-wide">{stat.label}</p>
-                    <p className="text-3xl font-black text-slate-900">{stat.value}</p>
-                  </div>
+          {/* Stats rapides */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 dark:bg-[#252525] dark:border-[#333333]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Projets actifs</p>
+                  <p className="text-2xl font-black text-gray-900 dark:text-white">{projectsCount}</p>
                 </div>
               </div>
-            ))}
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 dark:bg-[#252525] dark:border-[#333333]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-950/30 flex items-center justify-center">
+                  <ClipboardList className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Procédures</p>
+                  <p className="text-2xl font-black text-gray-900 dark:text-white">{proceduresCount}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 dark:bg-[#252525] dark:border-[#333333]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-950/30 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">En cours</p>
+                  <p className="text-2xl font-black text-gray-900 dark:text-white">{Math.floor(projectsCount * 0.65)}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Features Grid */}
-      <div className="max-w-7xl mx-auto px-8 py-16">
-        <h2 className="text-3xl font-black text-slate-900 mb-8 text-center">Accès rapide aux fonctionnalités</h2>
-        
+      {/* Grille des domaines */}
+      <div className="landing-content-section max-w-7xl mx-auto px-6 py-10">
+        <div className="landing-section-header mb-8">
+          <h2 className="landing-title text-2xl font-black text-gray-900 dark:text-white mb-2">Domaines fonctionnels</h2>
+          <p className="landing-subtitle text-sm text-gray-600 dark:text-gray-400">Accédez rapidement aux différentes sections de l'application</p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-5xl shadow-xl border border-gray-200 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden group"
-            >
-              <div className={`${feature.color} h-1.5 shadow-lg`}></div>
-              <div className="p-8">
-                <div className={`inline-flex items-center justify-center w-14 h-14 ${feature.color} rounded-3xl mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                  <feature.icon className="w-7 h-7 text-white" />
+          {domaines.map((domaine) => {
+            const Icon = domaine.icon;
+            
+            return (
+              <div
+                key={domaine.id}
+                className={`bg-white dark:bg-[#1E1E1E] rounded-3xl border-2 ${domaine.borderColor} ${domaine.borderHover} shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 overflow-hidden`}
+              >
+                {/* Header de la carte */}
+                <div className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-14 h-14 rounded-2xl ${domaine.iconBg} flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-7 h-7 ${domaine.iconColor}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1">{domaine.titre}</h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{domaine.description}</p>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-sm text-gray-600 mb-6 leading-relaxed">{feature.description}</p>
-                
-                <div className="space-y-2">
-                  {feature.actions.map((action, actionIndex) => (
+
+                {/* Séparateur */}
+                <div className="border-t border-gray-200 dark:border-[#333333]"></div>
+
+                {/* Actions */}
+                <div className="p-6 space-y-2">
+                  {domaine.actions.map((action, idx) => (
                     <button
-                      key={actionIndex}
+                      key={idx}
                       onClick={() => action.isAdmin ? onOpenAdmin() : onNavigate(action.tab)}
-                      className="w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-2xl font-medium text-sm transition-all duration-200 flex items-center justify-between group/btn border border-gray-300 hover:border-gray-400 hover:shadow-md"
+                      className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-between group ${domaine.btnBg} ${domaine.btnText} border border-gray-200 dark:border-[#333333]`}
                     >
                       <span>{action.label}</span>
-                      <svg className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                      <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
                   ))}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Footer Info */}
-      <div className="max-w-7xl mx-auto px-8 py-8 text-center">
-        <p className="text-sm text-slate-600 font-medium">
-          <strong className="text-slate-900">GestProjet</strong> v1.0.1 • Mise à jour : 06/01/2026
+      {/* Footer */}
+      <div className="max-w-7xl mx-auto px-6 py-8 text-center">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="font-bold text-gray-700 dark:text-gray-300">GestProjet</span> v1.0.1 • Mise à jour : 06/01/2026
         </p>
       </div>
     </div>

@@ -1,51 +1,102 @@
 /* ========================================
-   BORDER RADIUS - CONTAINERS ARRONDIS
-   Override des classes Tailwind CDN
+   THÈME SOMBRE MODERNE - DASHBOARD
+   Conçu pour une interface utilisateur
+   dynamique et moderne avec hiérarchie visuelle
+   ======================================== */
+
+/* VARIABLES CSS - Palette de couleurs */
+html.dark {
+  /* Couleurs de fond */
+  --bg-primary: #121212;
+  --bg-secondary: #1E1E1E;
+  --bg-tertiary: #252525;
+  
+  /* Texte */
+  --text-primary: #E0E0E0;
+  --text-secondary: #B3B3B3;
+  --text-tertiary: #808080;
+  
+  /* Accents */
+  --accent-cyan: #40E0D0;
+  --accent-orange: #FFA500;
+  --accent-violet: #A020F0;
+  
+  /* Bordures */
+  --border-light: #333333;
+  --border-medium: #404040;
+  --border-dark: #2A2A2A;
+  
+  /* Ombres */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+  /* ========================================
+     BRIDGE VARIABLES (index.css)
+     L'app utilise aussi des variables --bg/--surface/--table-*.
+     On les aligne ici sur la palette “noir profond”.
+     ======================================== */
+
+  /* Base */
+  --bg: var(--bg-primary);
+  --surface-1: var(--bg-secondary);
+  --surface-2: var(--bg-tertiary);
+
+  --border-strong: var(--border-medium);
+  --border-soft: var(--border-light);
+  --border-subtle: var(--border-dark);
+
+  /* Texte (noms attendus par index.css) */
+  --text-subtle: var(--text-tertiary);
+
+  /* Tableaux (utilisés par .themed-table dans index.css) */
+  --table-header: var(--bg-tertiary);
+  --table-row: var(--bg-secondary);
+  --table-row-hover: var(--bg-tertiary);
+  --table-divider: var(--border-light);
+
+  /* Inputs / chips (si présents dans certaines vues) */
+  --input-bg: var(--bg-tertiary);
+  --input-border: var(--border-medium);
+  --chip-bg: color-mix(in srgb, var(--bg-tertiary) 75%, transparent);
+  --chip-border: var(--border-light);
+}
+
+/* ========================================
+   BORDER RADIUS - ARRONDIS IMPORTANTS
    ======================================== */
 
 /* Override des classes Tailwind de base */
 .rounded-sm {
-  border-radius: 0.75rem !important; /* 12px au lieu de 2px */
+  border-radius: 12px !important;
 }
 
 .rounded {
-  border-radius: 1rem !important; /* 16px au lieu de 4px */
+  border-radius: 16px !important;
 }
 
 .rounded-md {
-  border-radius: 1.25rem !important; /* 20px au lieu de 6px */
+  border-radius: 20px !important;
 }
 
 .rounded-lg {
-  border-radius: 1.5rem !important; /* 24px au lieu de 8px */
+  border-radius: 24px !important;
 }
 
 .rounded-xl {
-  border-radius: 2rem !important; /* 32px au lieu de 12px */
+  border-radius: 28px !important;
 }
 
 .rounded-2xl {
-  border-radius: 2.5rem !important; /* 40px au lieu de 16px */
+  border-radius: 32px !important;
 }
 
 .rounded-3xl {
-  border-radius: 3rem !important; /* 48px au lieu de 24px */
+  border-radius: 36px !important;
 }
 
-/* Classes personnalisées supplémentaires */
-.rounded-ultra,
 .rounded-4xl {
-  border-radius: 2rem !important; /* 32px */
-}
-
-.rounded-extra,
-.rounded-5xl {
-  border-radius: 2.5rem !important; /* 40px */
-}
-
-.rounded-max,
-.rounded-6xl {
-  border-radius: 3rem !important; /* 48px */
+  border-radius: 40px !important;
 }
 
 .rounded-full {
@@ -58,8 +109,8 @@
 
 /* Mode clair - Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -68,125 +119,433 @@
 
 ::-webkit-scrollbar-thumb {
   background: #d1d5db;
-  border-radius: 4px;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
 
-/* Mode sombre - Scrollbars */
+/* Mode sombre - Scrollbars modernes */
+html.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
 html.dark ::-webkit-scrollbar-track {
-  background: #252f3f;
+  background: var(--bg-secondary);
 }
 
 html.dark ::-webkit-scrollbar-thumb {
-  background: #4a5568;
-  border-radius: 4px;
+  background: var(--accent-cyan);
+  border-radius: 10px;
+  border: 2px solid var(--bg-secondary);
 }
 
 html.dark ::-webkit-scrollbar-thumb:hover {
-  background: #5f7185;
+  background: #20BFA0;
 }
 
 /* Firefox - Scrollbars */
 html.dark * {
-  scrollbar-color: #4a5568 #252f3f;
+  scrollbar-color: var(--accent-cyan) var(--bg-secondary);
   scrollbar-width: thin;
 }
 
 /* ========================================
-   THÈME SOMBRE - CLASSES UTILITAIRES
+   THÈME SOMBRE - STYLES GLOBAUX
    ======================================== */
 
-/* Appliquer les styles du mode sombre à tous les éléments pertinents */
+/* STYLES GLOBAUX */
 html.dark {
   color-scheme: dark;
 }
 
 html.dark body {
-  background-color: var(--bg);
+  background-color: var(--bg-primary);
   color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-html.dark .surface-card {
-  background-color: var(--surface-1);
-  border-color: var(--border-strong);
-}
+/* ========================================
+   CONTENEURS & SURFACES
+   ======================================== */
 
-html.dark .surface-ghost {
-  background-color: var(--surface-2);
-  border-color: var(--border-soft);
-}
-
-html.dark .themed-input {
-  background-color: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--text-primary);
-}
-
-html.dark .themed-chip {
-  background-color: var(--chip-bg);
-  border-color: var(--chip-border);
-  color: var(--chip-text);
-}
-
-html.dark .themed-table {
-  background-color: var(--surface-1);
-  color: var(--text-primary);
-}
-
-html.dark .themed-table thead {
-  background-color: var(--table-header);
-  color: var(--text-primary);
-}
-
-html.dark .themed-table tbody tr {
-  background-color: var(--table-row);
-}
-
-html.dark .themed-table tbody tr:hover {
-  background-color: var(--table-row-hover);
-}
-
-/* Boutons styles par défaut */
-html.dark .btn-default {
-  background-color: var(--surface-2);
-  color: var(--text-primary);
-  border-color: var(--border-strong);
-}
-
-html.dark .btn-default:hover {
-  background-color: var(--table-row-hover);
-}
-
-/* Cartes/panneaux */
+/* Cartes principales */
+html.dark .surface-card,
 html.dark .card,
-html.dark .panel {
-  background-color: var(--surface-1);
-  border-color: var(--border-strong);
+html.dark .panel,
+html.dark .component {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
   color: var(--text-primary);
+  border-radius: 24px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
 }
 
-/* Bordures discrètes */
+html.dark .surface-card:hover,
+html.dark .card:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 24px rgba(64, 224, 208, 0.15);
+}
+
+/* Surfaces secondaires */
+html.dark .surface-ghost {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  border-radius: 20px;
+}
+
+/* ========================================
+   ENTRÉES DE FORMULAIRE
+   ======================================== */
+
+html.dark .themed-input,
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: var(--bg-tertiary) !important;
+  border: 2px solid var(--border-medium) !important;
+  color: var(--text-primary) !important;
+  border-radius: 16px !important;
+  padding: 12px 16px !important;
+  transition: all 0.2s ease;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+  border-color: var(--accent-cyan) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(64, 224, 208, 0.2) !important;
+}
+
+/* ========================================
+   BOUTONS
+   ======================================== */
+
+html.dark .btn-default,
+html.dark button {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-medium);
+  border-radius: 16px;
+  padding: 10px 20px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+html.dark button:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+/* Bouton primaire (Cyan) */
+html.dark button.btn-primary,
+html.dark .btn-primary {
+  background: linear-gradient(135deg, var(--accent-cyan), #2AC9B5);
+  border-color: var(--accent-cyan);
+  color: #000;
+  font-weight: 600;
+}
+
+html.dark button.btn-primary:hover,
+html.dark .btn-primary:hover {
+  box-shadow: 0 0 20px rgba(64, 224, 208, 0.5);
+}
+
+/* Bouton secondaire (Orange) */
+html.dark button.btn-secondary,
+html.dark .btn-secondary {
+  background: linear-gradient(135deg, var(--accent-orange), #FF8C00);
+  border-color: var(--accent-orange);
+  color: #000;
+  font-weight: 600;
+}
+
+html.dark button.btn-secondary:hover,
+html.dark .btn-secondary:hover {
+  box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
+}
+
+/* Bouton tertiaire (Violet) */
+html.dark button.btn-tertiary,
+html.dark .btn-tertiary {
+  background: linear-gradient(135deg, var(--accent-violet), #8B15E0);
+  border-color: var(--accent-violet);
+  color: #FFF;
+  font-weight: 600;
+}
+
+html.dark button.btn-tertiary:hover,
+html.dark .btn-tertiary:hover {
+  box-shadow: 0 0 20px rgba(160, 32, 240, 0.5);
+}
+
+/* ========================================
+   TABLEAUX
+   ======================================== */
+
+html.dark .themed-table,
+html.dark table {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-collapse: collapse;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+html.dark .themed-table thead,
+html.dark table thead {
+  background-color: var(--bg-tertiary);
+  border-bottom: 2px solid var(--border-medium);
+}
+
+html.dark .themed-table thead th,
+html.dark table thead th {
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 16px;
+  text-align: left;
+}
+
+html.dark .themed-table tbody tr,
+html.dark table tbody tr {
+  border-bottom: 1px solid var(--border-light);
+  transition: all 0.2s ease;
+}
+
+html.dark .themed-table tbody tr:hover,
+html.dark table tbody tr:hover {
+  background-color: var(--bg-tertiary);
+  box-shadow: inset 0 0 0 2px rgba(64, 224, 208, 0.1);
+}
+
+html.dark .themed-table tbody td,
+html.dark table tbody td {
+  padding: 14px 16px;
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   BARRES DE PROGRESSION - PROGRESS BARS
+   ======================================== */
+
+html.dark .progress-bar {
+  background-color: var(--bg-tertiary);
+  border-radius: 16px;
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-medium);
+}
+
+/* Progression Cyan (Efficacité/Positif) */
+html.dark .progress-bar.progress-success,
+html.dark .progress-bar.progress-cyan {
+  background: linear-gradient(90deg, var(--accent-cyan), #2AC9B5);
+  border-radius: 16px;
+  height: 12px;
+  transition: width 0.4s ease;
+}
+
+/* Progression Orange (Coût/Moyen) */
+html.dark .progress-bar.progress-warning,
+html.dark .progress-bar.progress-orange {
+  background: linear-gradient(90deg, var(--accent-orange), #FF8C00);
+  border-radius: 16px;
+  height: 12px;
+  transition: width 0.4s ease;
+}
+
+/* Progression Violet (Complexité/Élevé) */
+html.dark .progress-bar.progress-error,
+html.dark .progress-bar.progress-violet {
+  background: linear-gradient(90deg, var(--accent-violet), #8B15E0);
+  border-radius: 16px;
+  height: 12px;
+  transition: width 0.4s ease;
+}
+
+/* Conteneur de progression avec pourcentage */
+html.dark .progress-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+html.dark .progress-bar-wrapper {
+  flex: 1;
+}
+
+html.dark .progress-percentage {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* ========================================
+   INDICATEURS & BADGES
+   ======================================== */
+
+/* Cercles de légende */
+html.dark .legend-dot,
+html.dark .indicator-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+html.dark .legend-dot.cyan,
+html.dark .indicator-dot.cyan {
+  background-color: var(--accent-cyan);
+}
+
+html.dark .legend-dot.orange,
+html.dark .indicator-dot.orange {
+  background-color: var(--accent-orange);
+}
+
+html.dark .legend-dot.violet,
+html.dark .indicator-dot.violet {
+  background-color: var(--accent-violet);
+}
+
+/* Badges/Chips */
+html.dark .themed-chip,
+html.dark .chip,
+html.dark .badge {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+html.dark .chip.chip-cyan {
+  background-color: rgba(64, 224, 208, 0.2);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+html.dark .chip.chip-orange {
+  background-color: rgba(255, 165, 0, 0.2);
+  border-color: var(--accent-orange);
+  color: var(--accent-orange);
+}
+
+html.dark .chip.chip-violet {
+  background-color: rgba(160, 32, 240, 0.2);
+  border-color: var(--accent-violet);
+  color: var(--accent-violet);
+}
+
+/* ========================================
+   TYPOGRAPHIE
+   ======================================== */
+
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+html.dark h1 {
+  font-size: 32px;
+}
+
+html.dark h2 {
+  font-size: 28px;
+}
+
+html.dark h3 {
+  font-size: 24px;
+}
+
+html.dark p,
+html.dark span,
+html.dark li {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+html.dark a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+html.dark a:hover {
+  color: #2AC9B5;
+  text-decoration: underline;
+}
+
+/* ========================================
+   BORDURES
+   ======================================== */
+
 html.dark .border {
-  border-color: var(--border-strong);
+  border-color: var(--border-medium) !important;
 }
 
 html.dark .border-gray-100,
-html.dark .border-gray-200 {
-  border-color: var(--border-strong) !important;
-}
-
+html.dark .border-gray-200,
 html.dark .border-gray-300 {
-  border-color: var(--border-strong) !important;
+  border-color: var(--border-medium) !important;
 }
 
 html.dark .border-gray-50 {
-  border-color: var(--border-subtle) !important;
+  border-color: var(--border-light) !important;
 }
 
-/* Texte */
+/* ========================================
+   FONDS
+   ======================================== */
+
+html.dark .bg-white,
+html.dark .bg-gray-50 {
+  background-color: var(--bg-secondary) !important;
+}
+
+html.dark .bg-gray-100 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+html.dark .bg-gray-200 {
+  background-color: var(--border-medium) !important;
+}
+
+html.dark .bg-gray-600,
+html.dark .bg-gray-700,
+html.dark .bg-gray-800 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+/* ========================================
+   TEXTES
+   ======================================== */
+
 html.dark .text-gray-900,
 html.dark .text-gray-800,
 html.dark .text-gray-700,
@@ -203,142 +562,229 @@ html.dark .text-gray-300 {
   color: var(--text-tertiary) !important;
 }
 
-/* Fonds */
-html.dark .bg-white,
-html.dark .bg-gray-50 {
-  background-color: var(--surface-1) !important;
+html.dark .text-gray-200 {
+  color: var(--text-secondary) !important;
 }
 
-html.dark .bg-gray-100 {
-  background-color: var(--surface-2) !important;
+/* ========================================
+   ACCENTS COLORÉS
+   ======================================== */
+
+/* Cyan/Turquoise */
+html.dark .text-cyan-500,
+html.dark .text-cyan-400 {
+  color: var(--accent-cyan) !important;
 }
 
-html.dark .bg-gray-700 {
-  background-color: var(--dark-600) !important;
+html.dark .bg-cyan-500,
+html.dark .bg-cyan-400 {
+  background-color: var(--accent-cyan) !important;
+  color: #000 !important;
 }
 
-html.dark .bg-gray-600 {
-  background-color: var(--dark-500) !important;
+/* Orange */
+html.dark .text-orange-500,
+html.dark .text-orange-400,
+html.dark .text-amber-500 {
+  color: var(--accent-orange) !important;
 }
 
-/* Accents */
-html.dark .text-\[\#004d3d\],
-html.dark .border-\[\#004d3d\] {
-  color: var(--accent-green) !important;
-  border-color: var(--accent-green) !important;
+html.dark .bg-orange-500,
+html.dark .bg-orange-400 {
+  background-color: var(--accent-orange) !important;
+  color: #000 !important;
 }
 
-html.dark .bg-\[\#004d3d\],
-html.dark .bg-\[\#004d3d\]\/\[0\.2\] {
-  background-color: var(--accent-green) !important;
-  color: var(--text-on-accent) !important;
+/* Violet */
+html.dark .text-violet-500,
+html.dark .text-purple-500,
+html.dark .text-purple-400 {
+  color: var(--accent-violet) !important;
 }
 
-html.dark .bg-\[\#004d3d\]:hover {
-  background-color: var(--accent-green-hover) !important;
+html.dark .bg-violet-500,
+html.dark .bg-purple-500 {
+  background-color: var(--accent-violet) !important;
+  color: #FFF !important;
 }
 
-html.dark .text-blue-600,
-html.dark .text-indigo-600 {
-  color: var(--accent-blue) !important;
-}
+/* ========================================
+   DROPDOWNS & MENUS
+   ======================================== */
 
-html.dark .bg-blue-600:hover,
-html.dark .bg-indigo-600:hover {
-  background-color: var(--accent-blue) !important;
-  color: var(--text-on-accent) !important;
-}
-
-/* Input dans le dark mode */
-html.dark input,
-html.dark textarea,
-html.dark select {
-  background-color: var(--input-bg) !important;
-  border-color: var(--input-border) !important;
-  color: var(--text-primary) !important;
-}
-
-html.dark input::placeholder,
-html.dark textarea::placeholder {
-  color: var(--text-tertiary) !important;
-}
-
-html.dark input:focus,
-html.dark textarea:focus,
-html.dark select:focus {
-  border-color: var(--accent-blue) !important;
-  outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 10%, transparent);
-}
-
-/* Dropdowns/listes */
 html.dark .dropdown-menu,
 html.dark .popover,
 html.dark .menu,
 html.dark .submenu {
-  background-color: var(--surface-1);
-  border-color: var(--border-strong);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: 16px;
   color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+html.dark .dropdown-menu li,
+html.dark .menu li,
+html.dark .submenu li {
+  color: var(--text-secondary);
+  padding: 12px 16px;
 }
 
 html.dark .dropdown-menu li:hover,
 html.dark .menu li:hover,
 html.dark .submenu li:hover {
-  background-color: var(--table-row-hover);
+  background-color: var(--bg-tertiary);
+  color: var(--accent-cyan);
 }
 
-/* Modaux/Dialogs */
+/* ========================================
+   MODAUX & DIALOGS
+   ======================================== */
+
 html.dark .modal,
-html.dark .dialog {
-  background-color: var(--surface-1);
-  border-color: var(--border-strong);
+html.dark .dialog,
+html.dark [role="dialog"] {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: 24px;
   color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
 }
 
-/* Tables */
-html.dark .table tbody tr:nth-child(even) {
-  background-color: var(--surface-2);
+html.dark .modal-overlay,
+html.dark .dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
-html.dark .table tbody tr:hover {
-  background-color: var(--table-row-hover);
-}
+/* ========================================
+   CODE & PRE
+   ======================================== */
 
-/* Code blocks */
 html.dark code,
 html.dark pre {
-  background-color: var(--surface-2);
-  color: var(--text-primary);
-  border-color: var(--border-strong);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  color: var(--accent-cyan);
+  border-radius: 12px;
+  padding: 12px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
-/* Scrollbars pour le mode sombre */
-html.dark ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+/* ========================================
+   TRANSITIONS & ANIMATIONS
+   ======================================== */
 
-html.dark ::-webkit-scrollbar-track {
-  background: var(--surface-2);
-}
-
-html.dark ::-webkit-scrollbar-thumb {
-  background: var(--dark-600);
-  border-radius: 4px;
-}
-
-html.dark ::-webkit-scrollbar-thumb:hover {
-  background: var(--dark-500);
-}
-
-/* Transitions lisses du mode sombre */
 html,
 html.dark {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Variables pour textes secondaires */
-html.dark {
-  --text-secondary-rgb: 181, 188, 196;
-  --text-tertiary-rgb: 142, 153, 168;
+/* ========================================
+   ÉTATS SPÉCIAUX
+   ======================================== */
+
+html.dark *:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
+
+html.dark .opacity-50 {
+  opacity: 0.5;
+}
+
+html.dark .opacity-75 {
+  opacity: 0.75;
+}
+
+/* ========================================
+   TABLEAUX - FIX COLONNE ACTIONS / HEADERS
+   (Le CDN Tailwind injecte ses styles après les CSS)
+   => on force avec !important, uniquement en dark.
+   ======================================== */
+
+/* Headers horizontaux (souvent bg-gray-50/xx) */
+html.dark .bg-gray-50\/50,
+html.dark .bg-gray-50\/80,
+html.dark .bg-gray-50\/95 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+/* Colonne sticky Actions (souvent bg-white/xx) */
+html.dark .bg-white,
+html.dark .bg-white\/80 {
+  background-color: var(--bg-secondary) !important;
+}
+
+/* Hover sur lignes (souvent hover:bg-gray-50/50) */
+html.dark .hover\:bg-gray-50\/50:hover {
+  background-color: color-mix(in srgb, var(--bg-tertiary) 85%, #000) !important;
+}
+
+/* Hover de cellule sticky via group-hover:bg-gray-50/80 */
+html.dark .group:hover .group-hover\:bg-gray-50\/80 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+/* Séparateurs/bordures trop clairs (divide/border gray-50) */
+html.dark .border-gray-50 {
+  border-color: var(--border-light) !important;
+}
+
+html.dark .divide-gray-50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-light) !important;
+}
+
+/* ========================================
+   CONTRATS - BOUTON "VOIR" (icône œil)
+   Empêche l'écrasement par `html.dark button`.
+   ======================================== */
+
+html.dark button.contrats-view-btn {
+  background-color: color-mix(in srgb, var(--accent-cyan) 18%, var(--bg-tertiary)) !important;
+  border-color: color-mix(in srgb, var(--accent-cyan) 45%, var(--border-light)) !important;
+  color: var(--accent-cyan) !important;
+  box-shadow: 0 0 0 1px rgba(64, 224, 208, 0.18), 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+html.dark button.contrats-view-btn:hover {
+  background-color: color-mix(in srgb, var(--accent-cyan) 26%, var(--bg-tertiary)) !important;
+  border-color: var(--accent-cyan) !important;
+}
+
+/* ========================================
+   LANDING PAGE - MODE SOMBRE
+   Force le fond sombre et la lisibilité
+   ======================================== */
+
+/* Conteneur principal - Force le fond sombre avec gradient */
+html.dark .landing-page {
+  background: linear-gradient(to bottom right, #0d0f12, #121212, #0d0f12) !important;
+}
+
+/* Header sticky - Force le fond sombre */
+html.dark .landing-header {
+  background-color: rgba(30, 30, 30, 0.8) !important;
+  border-bottom-color: #333333 !important;
+}
+
+/* Section contenu du milieu - Supprime tout fond blanc */
+html.dark .landing-content-section {
+  background-color: transparent !important;
+}
+
+/* Container du titre - Supprime tout fond blanc */
+html.dark .landing-section-header {
+  background-color: transparent !important;
+}
+
+/* Titre "Domaines fonctionnels" - Force blanc */
+html.dark .landing-title {
+  color: #FFFFFF !important;
+}
+
+/* Sous-titre - Force gris clair */
+html.dark .landing-subtitle {
+  color: #B0B0B0 !important;
+}
+
+
