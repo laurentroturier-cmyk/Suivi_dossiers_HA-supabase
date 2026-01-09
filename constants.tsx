@@ -145,6 +145,7 @@ export const PROCEDURE_GROUPS: Record<string, { label: string; fields: string[] 
       'RP - Date de validation du document',
       'RP -  Date validation CODIR',
       'RP - Statut',
+      'Commission_HA',
       'RP - Commentaire',
     ],
   },

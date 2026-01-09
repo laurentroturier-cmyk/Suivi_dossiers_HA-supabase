@@ -344,6 +344,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [commissionSortColumn, setCommissionSortColumn] = useState<string>('');
   const [commissionSortDirection, setCommissionSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [commissionSubTab, setCommissionSubTab] = useState<'projets' | 'procedures'>('projets');
   const [dossierSortColumn, setDossierSortColumn] = useState<string>('');
   const [dossierSortDirection, setDossierSortDirection] = useState<'asc' | 'desc'>('asc');
   const [procedureSortColumn, setProcedureSortColumn] = useState<string>('');
@@ -1597,6 +1598,25 @@ const App: React.FC = () => {
                 {RP_STATUT_OPTIONS.map(opt => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
+              </select>
+            </div>
+          );
+
+          if (key === "Commission_HA" && type === 'procedure') return (
+            <div key={key} className="flex flex-col gap-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
+              <select
+                value={val === null || val === undefined ? '' : String(val)}
+                onChange={e => {
+                  const v = e.target.value;
+                  const parsed = v === '' ? null : v === 'true';
+                  handleFieldChange(type, key, parsed);
+                }}
+                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-semibold outline-none appearance-none cursor-pointer"
+              >
+                <option value="">Sélectionner...</option>
+                <option value="true">Oui</option>
+                <option value="false">Non</option>
               </select>
             </div>
           );
@@ -3811,6 +3831,14 @@ const App: React.FC = () => {
               setCommissionSortDirection('asc');
             }
           };
+          const handleProcedureSort = (column: string) => {
+            if (procedureSortColumn === column) {
+              setProcedureSortDirection(procedureSortDirection === 'asc' ? 'desc' : 'asc');
+            } else {
+              setProcedureSortColumn(column);
+              setProcedureSortDirection('asc');
+            }
+          };
           
           const filteredCommissionProjects = dossiers.filter(d => {
             if (d.Commission_Achat !== "Oui") return false;
@@ -3850,9 +3878,59 @@ const App: React.FC = () => {
             const comparison = String(aVal).localeCompare(String(bVal), 'fr', { numeric: true });
             return commissionSortDirection === 'asc' ? comparison : -comparison;
           });
+
+          const filteredCommissionProcedures = procedures.filter(p => {
+            const val = getProp(p, 'Commission_HA');
+            return val === true || val === 'true' || val === 'Oui' || val === 'oui';
+          });
+
+          const sortedCommissionProcedures = [...filteredCommissionProcedures].sort((a, b) => {
+            if (!procedureSortColumn) return 0;
+            const getVal = (item: any) => {
+              switch (procedureSortColumn) {
+                case 'numproc': return String(getProp(item, 'NumProc') || '');
+                case 'objet': return String(getProp(item, 'Objet court') || '');
+                case 'acheteur': return String(getProp(item, 'Acheteur') || '');
+                case 'statut': return String(getProp(item, 'Statut de la consultation') || '');
+                case 'montant': return String(getProp(item, 'Montant de la procédure') || '');
+                default: return '';
+              }
+            };
+            const aVal = getVal(a);
+            const bVal = getVal(b);
+            const comparison = String(aVal).localeCompare(String(bVal), 'fr', { numeric: true });
+            return procedureSortDirection === 'asc' ? comparison : -comparison;
+          });
           
           return (
           <div className="space-y-8 animate-in fade-in duration-700">
+            {/* Sous-onglets Commission HA */}
+            <div className="flex gap-4 border-b border-gray-200">
+              <button
+                onClick={() => setCommissionSubTab('projets')}
+                className={`px-6 py-3 text-sm font-black uppercase tracking-widest transition-all ${
+                  commissionSubTab === 'projets'
+                    ? 'text-[#004d3d] border-b-2 border-[#004d3d]'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                Projets
+              </button>
+              <button
+                onClick={() => setCommissionSubTab('procedures')}
+                className={`px-6 py-3 text-sm font-black uppercase tracking-widest transition-all ${
+                  commissionSubTab === 'procedures'
+                    ? 'text-[#004d3d] border-b-2 border-[#004d3d]'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                Procédures
+              </button>
+            </div>
+
+            {/* Volet Projets */}
+            {commissionSubTab === 'projets' && (
+              <>
             <div className="grid grid-cols-1 gap-6 mb-8">
               <div className="surface-card p-10 rounded-[2rem] shadow-sm border border-gray-100">
                 <h2 className="text-xs font-black uppercase tracking-widest text-gray-300 mb-3">Projets à présenter</h2>
@@ -3991,6 +4069,83 @@ const App: React.FC = () => {
                 </table>
               </div>
             </div>
+              </>
+            )}
+
+            {/* Volet Procédures */}
+            {commissionSubTab === 'procedures' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="surface-card p-10 rounded-[2rem] shadow-sm border border-gray-100">
+                    <h2 className="text-xs font-black uppercase tracking-widest text-gray-300 mb-3">Procédures à présenter</h2>
+                    <div className="text-5xl font-black text-[#004d3d]">
+                      {filteredCommissionProcedures.length}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="surface-card overflow-hidden rounded-[2rem] shadow-sm border border-gray-100">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[1100px] w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="px-8 py-5 text-center text-xs font-black uppercase tracking-widest text-gray-400">
+                            Action
+                          </th>
+                          <th className="px-8 py-5 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d]" onClick={() => handleProcedureSort('numproc')}>
+                            N° Proc {procedureSortColumn === 'numproc' && (procedureSortDirection === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="px-8 py-5 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d]" onClick={() => handleProcedureSort('objet')}>
+                            Objet {procedureSortColumn === 'objet' && (procedureSortDirection === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="px-8 py-5 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d]" onClick={() => handleProcedureSort('acheteur')}>
+                            Acheteur {procedureSortColumn === 'acheteur' && (procedureSortDirection === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="px-8 py-5 text-left text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d]" onClick={() => handleProcedureSort('statut')}>
+                            Statut {procedureSortColumn === 'statut' && (procedureSortDirection === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="px-8 py-5 text-right text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer hover:text-[#004d3d]" onClick={() => handleProcedureSort('montant')}>
+                            Montant {procedureSortColumn === 'montant' && (procedureSortDirection === 'asc' ? '↑' : '↓')}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedCommissionProcedures.map((p, idx) => (
+                          <tr key={idx} className="border-b border-gray-100 hover:bg-emerald-50/30 transition-colors">
+                            <td className="px-8 py-5 text-sm text-center">
+                              <button
+                                onClick={() => {
+                                  setPreviousTab({ tab: 'commission' });
+                                  setActiveTab('procedures');
+                                  setActiveSubTab('general');
+                                  setEditingProcedure(p);
+                                }}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-[#004d3d] text-white rounded-lg hover:bg-[#003d2f] transition-colors text-xs font-bold"
+                              >
+                                Voir
+                              </button>
+                            </td>
+                            <td className="px-8 py-5 text-sm font-black text-[#004d3d]">{getProp(p, 'NumProc') || '—'}</td>
+                            <td className="px-8 py-5 text-sm text-gray-700">{getProp(p, 'Objet court') || getProp(p, 'Nom de la procédure') || '—'}</td>
+                            <td className="px-8 py-5 text-sm text-gray-600">{getProp(p, 'Acheteur') || '—'}</td>
+                            <td className="px-8 py-5 text-sm text-gray-600">{getProp(p, 'Statut de la consultation') || '—'}</td>
+                            <td className="px-8 py-5 text-sm text-right text-gray-700 font-semibold">
+                              {(() => {
+                                const montant = getProp(p, 'Montant de la procédure');
+                                if (!montant) return '—';
+                                const num = parseFloat(String(montant).replace(/[^\d.]/g, ''));
+                                if (isNaN(num)) return montant;
+                                return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(num);
+                              })()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           );
         })()}

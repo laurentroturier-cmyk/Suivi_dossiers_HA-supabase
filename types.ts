@@ -37,6 +37,7 @@ export interface ProjectData {
   "RP - Date de validation du document": string;
   "RP -  Date validation CODIR": string;
   "RP - Commentaire": string;
+  Commission_HA: boolean | null;
   "RP - Statut": string;
   "Motivation non allotissement": string;
   "Date limite étude stratégie avec client interne": string;
