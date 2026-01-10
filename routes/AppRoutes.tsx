@@ -9,6 +9,7 @@ import {
   RetraitsPage,
   DepotsPage,
   AdminPage,
+  ImmobilierPage,
 } from '@/pages';
 import Login from '@/components/auth/Login';
 
@@ -84,6 +85,14 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <DepotsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/immobilier"
+        element={
+          <ProtectedRoute>
+            <ImmobilierPage />
           </ProtectedRoute>
         }
       />

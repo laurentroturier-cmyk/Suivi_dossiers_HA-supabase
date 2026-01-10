@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjects, useDossiers } from '@/hooks';
-import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart, Building2 } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +39,18 @@ const HomePage: React.FC = () => {
       borderColor: 'border-blue-200 dark:border-blue-500/40',
       count: projects.length,
       action: () => navigate('/projets'),
+      subItems: [
+        {
+          id: 'immobilier',
+          titre: 'ImmoVision',
+          description: 'Gestion du portefeuille immobilier',
+          icon: Building2,
+          iconColor: 'text-amber-600 dark:text-amber-400',
+          iconBg: 'bg-amber-100 dark:bg-amber-500/20',
+          borderColor: 'border-amber-200 dark:border-amber-500/40',
+          action: () => navigate('/immobilier'),
+        },
+      ],
     },
     {
       id: 'procedures',
@@ -121,29 +133,60 @@ const HomePage: React.FC = () => {
           {domaines.map((domaine) => {
             const Icon = domaine.icon;
             return (
-              <div
-                key={domaine.id}
-                onClick={domaine.action}
-                className={`bg-white dark:bg-gray-800 rounded-2xl border-2 ${domaine.borderColor} p-6 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 ${domaine.iconBg} rounded-xl flex items-center justify-center`}>
-                    <Icon className={`w-6 h-6 ${domaine.iconColor}`} />
+              <div key={domaine.id}>
+                <div
+                  onClick={domaine.action}
+                  className={`bg-white dark:bg-gray-800 rounded-2xl border-2 ${domaine.borderColor} p-6 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`w-12 h-12 ${domaine.iconBg} rounded-xl flex items-center justify-center`}>
+                      <Icon className={`w-6 h-6 ${domaine.iconColor}`} />
+                    </div>
+                    {domaine.count !== undefined && (
+                      <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-bold text-gray-700 dark:text-gray-300">
+                        {domaine.count}
+                      </span>
+                    )}
                   </div>
-                  {domaine.count !== undefined && (
-                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-bold text-gray-700 dark:text-gray-300">
-                      {domaine.count}
-                    </span>
-                  )}
+                  
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    {domaine.titre}
+                  </h3>
+                  
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {domaine.description}
+                  </p>
                 </div>
-                
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                  {domaine.titre}
-                </h3>
-                
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {domaine.description}
-                </p>
+
+                {/* Sub-items pour projets */}
+                {domaine.subItems && (
+                  <div className="mt-3 space-y-2">
+                    {domaine.subItems.map((subItem) => {
+                      const SubIcon = subItem.icon;
+                      return (
+                        <div
+                          key={subItem.id}
+                          onClick={subItem.action}
+                          className={`bg-white dark:bg-gray-800 rounded-xl border-2 ${subItem.borderColor} p-4 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-10 h-10 ${subItem.iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                              <SubIcon className={`w-5 h-5 ${subItem.iconColor}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-base font-bold text-gray-900 dark:text-white">
+                                {subItem.titre}
+                              </h4>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">
+                                {subItem.description}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
