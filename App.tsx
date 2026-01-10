@@ -49,6 +49,7 @@ import RegistreRetraits from './components/RegistreRetraits';
 import RegistreDepots from './components/RegistreDepots';
 import Contrats from './components/Contrats';
 import LandingPage from './components/LandingPage';
+import ImmobilierPage from './pages/ImmobilierPage';
 
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
@@ -3667,6 +3668,12 @@ const App: React.FC = () => {
 
         {activeTab === 'contrats' && (
           <Contrats />
+        )}
+
+        {activeTab === 'immobilier' && (
+          <div className="animate-in fade-in duration-700">
+            <ImmobilierPage />
+          </div>
         )}
 
         {activeTab === 'detail' && detailData && (() => {
