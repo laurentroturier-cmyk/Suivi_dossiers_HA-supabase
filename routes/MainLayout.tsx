@@ -27,11 +27,15 @@ export const MainLayout: React.FC = () => {
 
   const navigation = [
     { name: 'Accueil', path: '/', icon: Home },
+    { name: 'Tableau de bord', path: '/dashboard', icon: Home },
+    { name: 'Planning Gantt', path: '/gantt', icon: Home },
     { name: 'Projets', path: '/projets', icon: FolderOpen },
     { name: 'Procédures', path: '/procedures', icon: FileText },
     { name: 'Contrats', path: '/contrats', icon: FileText },
+    { name: 'Commission', path: '/commission', icon: Shield },
     { name: 'Retraits', path: '/retraits', icon: Download },
     { name: 'Dépôts', path: '/depots', icon: Upload },
+    { name: 'AN01', path: '/an01', icon: FileText },
   ];
 
   const handleSignOut = async () => {

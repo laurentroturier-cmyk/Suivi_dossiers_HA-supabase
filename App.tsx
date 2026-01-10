@@ -11,6 +11,10 @@ import {
   RetraitsPage,
   DepotsPage,
   AdminPage,
+  DashboardPage,
+  GanttPage,
+  CommissionPage,
+  An01Page,
 } from '@/pages';
 
 /**
@@ -68,11 +72,15 @@ const App: React.FC = () => {
         {/* Routes protégées avec layout */}
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/gantt" element={<GanttPage />} />
           <Route path="/projets" element={<ProjectsPage />} />
           <Route path="/procedures" element={<DossiersPage />} />
           <Route path="/contrats" element={<ContratsPage />} />
+          <Route path="/commission" element={<CommissionPage />} />
           <Route path="/retraits" element={<RetraitsPage />} />
           <Route path="/depots" element={<DepotsPage />} />
+          <Route path="/an01" element={<An01Page />} />
           <Route path="/admin" element={<AdminPage />} />
         </Route>
 

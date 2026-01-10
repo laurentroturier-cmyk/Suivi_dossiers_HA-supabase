@@ -5,3 +5,7 @@ export { default as ContratsPage } from './ContratsPage';
 export { default as RetraitsPage } from './RetraitsPage';
 export { default as DepotsPage } from './DepotsPage';
 export { default as AdminPage } from './AdminPage';
+export { default as DashboardPage } from './DashboardPage';
+export { default as GanttPage } from './GanttPage';
+export { default as CommissionPage } from './CommissionPage';
+export { default as An01Page } from './An01Page';

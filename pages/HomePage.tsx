@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjects, useDossiers } from '@/hooks';
-import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -9,6 +9,26 @@ const HomePage: React.FC = () => {
   const { dossiers } = useDossiers();
 
   const domaines = [
+    {
+      id: 'dashboard',
+      titre: 'Tableau de bord',
+      description: 'Vue d\'ensemble et indicateurs',
+      icon: BarChart3,
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      iconBg: 'bg-indigo-100 dark:bg-indigo-500/20',
+      borderColor: 'border-indigo-200 dark:border-indigo-500/40',
+      action: () => navigate('/dashboard'),
+    },
+    {
+      id: 'gantt',
+      titre: 'Planning Gantt',
+      description: 'Planification des projets',
+      icon: Calendar,
+      iconColor: 'text-pink-600 dark:text-pink-400',
+      iconBg: 'bg-pink-100 dark:bg-pink-500/20',
+      borderColor: 'border-pink-200 dark:border-pink-500/40',
+      action: () => navigate('/gantt'),
+    },
     {
       id: 'projets',
       titre: 'Projets',
@@ -42,6 +62,16 @@ const HomePage: React.FC = () => {
       action: () => navigate('/contrats'),
     },
     {
+      id: 'commission',
+      titre: 'Commission',
+      description: 'Commission d\'appels d\'offres',
+      icon: Shield,
+      iconColor: 'text-red-600 dark:text-red-400',
+      iconBg: 'bg-red-100 dark:bg-red-500/20',
+      borderColor: 'border-red-200 dark:border-red-500/40',
+      action: () => navigate('/commission'),
+    },
+    {
       id: 'retraits',
       titre: 'Registre Retraits',
       description: 'Suivi des retraits de DCE',
@@ -62,14 +92,14 @@ const HomePage: React.FC = () => {
       action: () => navigate('/depots'),
     },
     {
-      id: 'indicateurs',
-      titre: 'Indicateurs',
-      description: 'Tableaux de bord et analyses',
-      icon: BarChart3,
-      iconColor: 'text-indigo-600 dark:text-indigo-400',
-      iconBg: 'bg-indigo-100 dark:bg-indigo-500/20',
-      borderColor: 'border-indigo-200 dark:border-indigo-500/40',
-      action: () => {}, // TODO: Implémenter les indicateurs
+      id: 'an01',
+      titre: 'AN01',
+      description: 'Analyse technique des offres',
+      icon: LineChart,
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      iconBg: 'bg-emerald-100 dark:bg-emerald-500/20',
+      borderColor: 'border-emerald-200 dark:border-emerald-500/40',
+      action: () => navigate('/an01'),
     },
   ];
 
