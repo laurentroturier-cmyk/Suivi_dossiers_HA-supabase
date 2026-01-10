@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2 } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (tab: string) => void;
@@ -40,6 +40,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
         { label: 'Tous les projets', tab: 'dossiers', isAdmin: false },
+        { label: 'ImmoVision', tab: 'immobilier', isAdmin: false, icon: Building2, color: 'text-amber-600 dark:text-amber-400' },
       ]
     },
     {
@@ -198,18 +199,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
 
                 {/* Actions */}
                 <div className="p-6 space-y-2">
-                  {domaine.actions.map((action, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => action.isAdmin ? onOpenAdmin() : onNavigate(action.tab)}
-                      className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-between group ${domaine.btnBg} ${domaine.btnText} border border-gray-200 dark:border-[#333333]`}
-                    >
-                      <span>{action.label}</span>
-                      <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  ))}
+                  {domaine.actions.map((action, idx) => {
+                    const ActionIcon = action.icon;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => action.isAdmin ? onOpenAdmin() : onNavigate(action.tab)}
+                        className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-between group ${domaine.btnBg} ${domaine.btnText} border border-gray-200 dark:border-[#333333]`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {ActionIcon && (
+                            <ActionIcon className={`w-4 h-4 ${action.color || domaine.iconColor}`} />
+                          )}
+                          <span>{action.label}</span>
+                        </div>
+                        <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             );
