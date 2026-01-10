@@ -50,6 +50,7 @@ import RegistreDepots from './components/RegistreDepots';
 import Contrats from './components/Contrats';
 import LandingPage from './components/LandingPage';
 import ImmobilierPage from './pages/ImmobilierPage';
+import { AppVersion } from './components/AppVersion';
 
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
@@ -2418,7 +2419,7 @@ const App: React.FC = () => {
             <img src="/logo.png" alt="Logo" className="h-12 object-contain" />
             <div className="flex flex-col">
               <h1 className="text-xl font-black text-[#004d3d]">GestProjet</h1>
-              <span className="text-[9px] font-bold text-gray-400 tracking-wide">v1.0.1 • Mise à jour : 06/01/2026</span>
+                  <AppVersion className="text-[9px] font-bold text-gray-400 tracking-wide" />
             </div>
           </button>
         </div>

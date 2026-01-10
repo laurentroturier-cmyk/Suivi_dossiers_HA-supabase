@@ -229,7 +229,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       {/* Footer */}
       <div className="max-w-7xl mx-auto px-6 py-8 text-center">
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          <span className="font-bold text-gray-700 dark:text-gray-300">GestProjet</span> v1.0.1 • Mise à jour : 06/01/2026
+          Afpa - Direction Nationale des Achats - {new Date().getFullYear()}
         </p>
       </div>
     </div>

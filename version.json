@@ -1,9 +1,17 @@
 {
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": "GestProjet",
   "lastUpdate": "2026-01-10",
-  "build": "2",
+  "build": "3",
   "changelog": {
+    "1.0.3": {
+      "date": "2026-01-10",
+      "type": "patch",
+      "changes": [
+        "Affichage du numéro de version en entête principal",
+        "Alignement des métadonnées avec la version 1.0.3"
+      ]
+    },
     "1.0.1": {
       "date": "2026-01-10",
       "type": "feature",
