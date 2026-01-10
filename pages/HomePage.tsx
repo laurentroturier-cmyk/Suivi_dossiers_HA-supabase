@@ -1,8 +1,165 @@
 import React from 'react';
-import LandingPage from '@/components/LandingPage';
+import { useNavigate } from 'react-router-dom';
+import { useProjects, useDossiers } from '@/hooks';
+import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp } from 'lucide-react';
 
 const HomePage: React.FC = () => {
-  return <LandingPage />;
+  const navigate = useNavigate();
+  const { projects } = useProjects();
+  const { dossiers } = useDossiers();
+
+  const domaines = [
+    {
+      id: 'projets',
+      titre: 'Projets',
+      description: 'Gestion des projets d\'achats publics',
+      icon: FileText,
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      iconBg: 'bg-blue-100 dark:bg-blue-500/20',
+      borderColor: 'border-blue-200 dark:border-blue-500/40',
+      count: projects.length,
+      action: () => navigate('/projets'),
+    },
+    {
+      id: 'procedures',
+      titre: 'Procédures',
+      description: 'Suivi des procédures d\'achats',
+      icon: ClipboardList,
+      iconColor: 'text-purple-600 dark:text-purple-400',
+      iconBg: 'bg-purple-100 dark:bg-purple-500/20',
+      borderColor: 'border-purple-200 dark:border-purple-500/40',
+      count: dossiers.length,
+      action: () => navigate('/procedures'),
+    },
+    {
+      id: 'contrats',
+      titre: 'Contrats',
+      description: 'Gestion des contrats',
+      icon: FileText,
+      iconColor: 'text-green-600 dark:text-green-400',
+      iconBg: 'bg-green-100 dark:bg-green-500/20',
+      borderColor: 'border-green-200 dark:border-green-500/40',
+      action: () => navigate('/contrats'),
+    },
+    {
+      id: 'retraits',
+      titre: 'Registre Retraits',
+      description: 'Suivi des retraits de DCE',
+      icon: Download,
+      iconColor: 'text-orange-600 dark:text-orange-400',
+      iconBg: 'bg-orange-100 dark:bg-orange-500/20',
+      borderColor: 'border-orange-200 dark:border-orange-500/40',
+      action: () => navigate('/retraits'),
+    },
+    {
+      id: 'depots',
+      titre: 'Registre Dépôts',
+      description: 'Suivi des dépôts de plis',
+      icon: Upload,
+      iconColor: 'text-cyan-600 dark:text-cyan-400',
+      iconBg: 'bg-cyan-100 dark:bg-cyan-500/20',
+      borderColor: 'border-cyan-200 dark:border-cyan-500/40',
+      action: () => navigate('/depots'),
+    },
+    {
+      id: 'indicateurs',
+      titre: 'Indicateurs',
+      description: 'Tableaux de bord et analyses',
+      icon: BarChart3,
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      iconBg: 'bg-indigo-100 dark:bg-indigo-500/20',
+      borderColor: 'border-indigo-200 dark:border-indigo-500/40',
+      action: () => {}, // TODO: Implémenter les indicateurs
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Bienvenue sur GestProjet
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300">
+            Plateforme de gestion des achats publics
+          </p>
+        </div>
+
+        {/* Domaines Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {domaines.map((domaine) => {
+            const Icon = domaine.icon;
+            return (
+              <div
+                key={domaine.id}
+                onClick={domaine.action}
+                className={`bg-white dark:bg-gray-800 rounded-2xl border-2 ${domaine.borderColor} p-6 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`w-12 h-12 ${domaine.iconBg} rounded-xl flex items-center justify-center`}>
+                    <Icon className={`w-6 h-6 ${domaine.iconColor}`} />
+                  </div>
+                  {domaine.count !== undefined && (
+                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-bold text-gray-700 dark:text-gray-300">
+                      {domaine.count}
+                    </span>
+                  )}
+                </div>
+                
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  {domaine.titre}
+                </h3>
+                
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {domaine.description}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Stats Section */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 rounded-xl flex items-center justify-center">
+                <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Projets actifs</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{projects.length}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-500/20 rounded-xl flex items-center justify-center">
+                <ClipboardList className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Procédures</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{dossiers.length}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-500/20 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Taux de succès</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">85%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default HomePage;

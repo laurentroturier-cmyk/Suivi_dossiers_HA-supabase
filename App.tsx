@@ -1,8 +1,17 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks';
-import { AppRoutes, MainLayout } from '@/routes';
+import { MainLayout } from '@/routes';
 import Login from '@/components/auth/Login';
+import {
+  HomePage,
+  ProjectsPage,
+  DossiersPage,
+  ContratsPage,
+  RetraitsPage,
+  DepotsPage,
+  AdminPage,
+} from '@/pages';
 
 /**
  * App.tsx refactorisé - Version 2.0
@@ -14,6 +23,21 @@ import Login from '@/components/auth/Login';
  * - Services Supabase pour les requêtes
  * - Hooks personnalisés pour la logique métier
  */
+
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
 const App: React.FC = () => {
   const { isAuthenticated, loading, initialize } = useAuth();
 
@@ -34,17 +58,27 @@ const App: React.FC = () => {
     );
   }
 
-  // Afficher le login si non authentifié
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
   // Application principale avec routing
   return (
     <BrowserRouter>
-      <MainLayout>
-        <AppRoutes />
-      </MainLayout>
+      <Routes>
+        {/* Route publique : Login */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Routes protégées avec layout */}
+        <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/projets" element={<ProjectsPage />} />
+          <Route path="/procedures" element={<DossiersPage />} />
+          <Route path="/contrats" element={<ContratsPage />} />
+          <Route path="/retraits" element={<RetraitsPage />} />
+          <Route path="/depots" element={<DepotsPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
+
+        {/* Catch-all : redirect vers home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 };
