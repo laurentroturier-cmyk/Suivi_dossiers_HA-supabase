@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useImmobilier } from '@/hooks';
 import { ImmobilierDashboard, ImmobilierTable, ImmobilierTableFilters, ImmobilierDetailModal, ImmobilierCharts } from '@/components/immobilier';
 import { Upload, Download, AlertCircle } from 'lucide-react';
+import { AppVersion } from '@/components/AppVersion';
 
 const ImmobilierPage: React.FC = () => {
   const { projets, loading, error, loadProjets, loadStats, setSelectedProjet, selectedProjet } = useImmobilier();
@@ -67,9 +68,12 @@ const ImmobilierPage: React.FC = () => {
         {/* En-tête */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              ImmoVision
-            </h1>
+            <div className="flex items-center gap-4 mb-2">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+                ImmoVision
+              </h1>
+              <AppVersion className="mt-2" />
+            </div>
             <p className="text-lg text-gray-600 dark:text-gray-400">
               Pilotage et analyse du portefeuille immobilier
             </p>
@@ -162,6 +166,11 @@ const ImmobilierPage: React.FC = () => {
           projet={selectedProjet}
           onClose={() => setSelectedProjet(null)}
         />
+
+        {/* Footer avec version */}
+        <footer className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <AppVersion className="text-center" />
+        </footer>
       </div>
     </div>
   );

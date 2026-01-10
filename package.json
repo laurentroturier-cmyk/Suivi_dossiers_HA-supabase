@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/bump-version.js patch --auto && vite build",
+    "build:no-bump": "vite build",
     "preview": "vite preview",
     "version:bump": "node scripts/bump-version.js",
     "version:major": "node scripts/bump-version.js major",

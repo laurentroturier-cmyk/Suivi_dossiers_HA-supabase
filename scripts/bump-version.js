@@ -41,6 +41,7 @@ const [major, minor, patch] = currentVersion.split('.').map(Number);
 
 // Déterminer le type de bump (argument ou par défaut patch)
 const bumpType = process.argv[2] || 'patch';
+const isAuto = process.argv.includes('--auto');
 let newVersion;
 
 switch (bumpType) {
@@ -66,24 +67,36 @@ log('\n🔄 Mise à jour de version...', 'bright');
 log(`   ${currentVersion} → ${newVersion}`, 'cyan');
 log(`   Build: ${versionData.build} → ${newBuild}`, 'blue');
 
-// Demander un message de changelog
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+// Mode automatique ou interactif
+if (isAuto) {
+  // Mode automatique : pas de prompt, utilise un message par défaut
+  const changesList = ['Build automatique'];
+  processVersionUpdate(changesList);
+} else {
+  // Mode interactif : demander un message de changelog
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
 
-rl.question('\n📝 Décrivez les changements (séparés par des virgules):\n> ', (changes) => {
-  rl.close();
+  rl.question('\n📝 Décrivez les changements (séparés par des virgules):\n> ', (changes) => {
+    rl.close();
 
-  const changesList = changes
-    .split(',')
-    .map(c => c.trim())
-    .filter(c => c.length > 0);
+    const changesList = changes
+      .split(',')
+      .map(c => c.trim())
+      .filter(c => c.length > 0);
 
-  if (changesList.length === 0) {
-    log('\n⚠️  Aucun changement spécifié, abandon.', 'yellow');
-    process.exit(1);
-  }
+    if (changesList.length === 0) {
+      log('\n⚠️  Aucun changement spécifié, abandon.', 'yellow');
+      process.exit(1);
+    }
+
+    processVersionUpdate(changesList);
+  });
+}
+
+function processVersionUpdate(changesList) {
 
   // Mettre à jour version.json
   versionData.version = newVersion;
@@ -127,7 +140,7 @@ rl.question('\n📝 Décrivez les changements (séparés par des virgules):\n> '
   } catch (error) {
     log('\n⚠️  Erreur Git (peut-être pas de changements à committer)', 'yellow');
   }
-});
+}
 
 function generateChangelog(versionData) {
   const changelogPath = path.join(__dirname, '../CHANGELOG.md');
