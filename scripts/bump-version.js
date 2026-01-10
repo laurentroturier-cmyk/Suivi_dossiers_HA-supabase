@@ -6,9 +6,14 @@
  * Par défaut: patch
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import readline from 'readline';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Couleurs pour le terminal
 const colors = {
@@ -62,13 +67,13 @@ log(`   ${currentVersion} → ${newVersion}`, 'cyan');
 log(`   Build: ${versionData.build} → ${newBuild}`, 'blue');
 
 // Demander un message de changelog
-const readline = require('readline').createInterface({
+const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
 
-readline.question('\n📝 Décrivez les changements (séparés par des virgules):\n> ', (changes) => {
-  readline.close();
+rl.question('\n📝 Décrivez les changements (séparés par des virgules):\n> ', (changes) => {
+  rl.close();
 
   const changesList = changes
     .split(',')
