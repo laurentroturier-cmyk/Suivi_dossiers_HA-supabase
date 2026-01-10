@@ -34,11 +34,24 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const root = document.documentElement;
     
+    // Force Edge à appliquer/retirer la classe proprement
     if (theme === 'dark') {
+      root.classList.remove('light'); // Au cas où
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
+      root.classList.add('light'); // Classe explicite pour mode clair
     }
+    
+    // Double vérification pour Edge (bug de cache)
+    requestAnimationFrame(() => {
+      if (theme === 'dark' && !root.classList.contains('dark')) {
+        root.classList.add('dark');
+      } else if (theme === 'light' && root.classList.contains('dark')) {
+        root.classList.remove('dark');
+        root.classList.add('light');
+      }
+    });
     
     localStorage.setItem('theme', theme);
   }, [theme, mounted]);
