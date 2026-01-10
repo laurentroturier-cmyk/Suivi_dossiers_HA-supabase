@@ -1,14 +1,15 @@
 import React, { useEffect } from 'react';
 import { useImmobilier } from '@/hooks';
-import { ImmobilierDashboard, ImmobilierTable, ImmobilierTableFilters } from '@/components/immobilier';
+import { ImmobilierDashboard, ImmobilierTable, ImmobilierTableFilters, ImmobilierDetailModal, ImmobilierCharts } from '@/components/immobilier';
 import { Upload, Download, AlertCircle } from 'lucide-react';
 
 const ImmobilierPage: React.FC = () => {
-  const { projets, loading, error, loadProjets, setSelectedProjet } = useImmobilier();
+  const { projets, loading, error, loadProjets, loadStats, setSelectedProjet, selectedProjet } = useImmobilier();
 
   useEffect(() => {
     console.log('[ImmobilierPage] Montage - chargement des projets');
     loadProjets();
+    loadStats();
   }, []);
 
   const handleExport = () => {
@@ -76,7 +77,7 @@ const ImmobilierPage: React.FC = () => {
           <div className="flex gap-3">
             <button
               onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#005c4d] hover:bg-[#00483f] text-white rounded-lg font-semibold transition-colors"
             >
               <Download className="w-5 h-5" />
               Exporter
@@ -119,6 +120,20 @@ const ImmobilierPage: React.FC = () => {
           <ImmobilierTableFilters />
         </section>
 
+        {/* Graphiques et analyses */}
+        <section>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Analyses et statistiques
+          </h2>
+          {loading && !projets.length ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+            </div>
+          ) : (
+            <ImmobilierCharts />
+          )}
+        </section>
+
         {/* Tableau des projets */}
         <section>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -140,6 +155,13 @@ const ImmobilierPage: React.FC = () => {
             />
           )}
         </section>
+
+        {/* Modal détail projet */}
+        <ImmobilierDetailModal
+          isOpen={!!selectedProjet}
+          projet={selectedProjet}
+          onClose={() => setSelectedProjet(null)}
+        />
       </div>
     </div>
   );

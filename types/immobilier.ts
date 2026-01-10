@@ -93,6 +93,12 @@ export interface ImmobilierFilters {
   programme?: string;
   etapeDebut?: string;
   etapeFin?: string;
+  etapeDemande?: string;
+  rpa?: string;
+  composant?: string;
+  decisionCNI?: string;
+  dateTravauxDebut?: string;
+  dateTravauxFin?: string;
 }
 
 export interface ImmobilierColumn {

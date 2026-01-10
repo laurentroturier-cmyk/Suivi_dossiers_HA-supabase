@@ -6,6 +6,7 @@ interface ImmobilierState {
   // Data
   projets: Immobilier[];
   stats: ImmobilierStats | null;
+  filters: ImmobilierFilters;
   
   // UI State
   loading: boolean;
@@ -16,6 +17,8 @@ interface ImmobilierState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setSelectedProjet: (projet: Immobilier | null) => void;
+  setFilters: (filters: ImmobilierFilters) => void;
+  updateFilters: (partial: Partial<ImmobilierFilters>) => Promise<void>;
 
   // CRUD operations
   loadProjets: () => Promise<void>;
@@ -37,10 +40,12 @@ export const useImmobilierStore = create<ImmobilierState>((set, get) => ({
   loading: false,
   error: null,
   selectedProjet: null,
+  filters: { search: '' },
 
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setSelectedProjet: (projet) => set({ selectedProjet: projet }),
+  setFilters: (filters) => set({ filters }),
 
   loadProjets: async () => {
     try {
@@ -128,9 +133,24 @@ export const useImmobilierStore = create<ImmobilierState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const projets = await immobilierService.search(filters);
-      set({ projets });
+      set({ projets, filters });
     } catch (error: any) {
       console.error('Error searching immobilier projets:', error);
+      set({ error: error.message || 'Erreur lors de la recherche' });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  updateFilters: async (partial) => {
+    const merged = { ...get().filters, ...partial } as ImmobilierFilters;
+    set({ filters: merged });
+    try {
+      set({ loading: true, error: null });
+      const projets = await immobilierService.search(merged);
+      set({ projets });
+    } catch (error: any) {
+      console.error('Error updating filters:', error);
       set({ error: error.message || 'Erreur lors de la recherche' });
     } finally {
       set({ loading: false });

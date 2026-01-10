@@ -11,6 +11,7 @@ export const useImmobilier = () => {
   const loading = useImmobilierStore((state) => state.loading);
   const error = useImmobilierStore((state) => state.error);
   const selectedProjet = useImmobilierStore((state) => state.selectedProjet);
+  const filters = useImmobilierStore((state) => state.filters);
 
   // Actions de chargement
   const loadProjets = useImmobilierStore((state) => state.loadProjets);
@@ -23,6 +24,8 @@ export const useImmobilier = () => {
 
   // Actions de recherche
   const searchProjets = useImmobilierStore((state) => state.searchProjets);
+  const setFilters = useImmobilierStore((state) => state.setFilters);
+  const updateFilters = useImmobilierStore((state) => state.updateFilters);
 
   // Actions utilitaires
   const setSelectedProjet = useImmobilierStore((state) => state.setSelectedProjet);
@@ -64,6 +67,7 @@ export const useImmobilier = () => {
     loading,
     error,
     selectedProjet,
+    filters,
 
     // Actions de chargement
     loadProjets,
@@ -76,6 +80,8 @@ export const useImmobilier = () => {
 
     // Actions de recherche
     searchProjets,
+    setFilters,
+    updateFilters,
 
     // Actions utilitaires
     setSelectedProjet,

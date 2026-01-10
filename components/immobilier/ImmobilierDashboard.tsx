@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useImmobilier } from '@/hooks';
-import { TrendingUp, Home, DollarSign, Percent } from 'lucide-react';
+import { TrendingUp, Home, Euro, Percent } from 'lucide-react';
 
 const ImmobilierDashboard: React.FC = () => {
   const { stats, loading, loadStats } = useImmobilier();
@@ -39,7 +39,7 @@ const ImmobilierDashboard: React.FC = () => {
       id: 'budget',
       titre: 'Budget Total',
       valeur: `€${(stats.budgetTotal / 1000000).toFixed(1)}M`,
-      icon: DollarSign,
+      icon: Euro,
       iconBg: 'bg-green-100 dark:bg-green-500/20',
       iconColor: 'text-green-600 dark:text-green-400',
       borderColor: 'border-green-200 dark:border-green-500/40',
