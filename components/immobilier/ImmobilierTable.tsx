@@ -26,9 +26,13 @@ const ImmobilierTable: React.FC<ImmobilierTableProps> = ({ projets, onSelectProj
 
   const renderPercentage = (value?: string | number) => {
     if (!value) return '-';
-    const numValue = typeof value === 'string' ? parseFloat(value.replace(/,/g, '.')) : value;
+    let numValue = typeof value === 'string' ? parseFloat(value.replace(/,/g, '.')) : value;
     if (isNaN(numValue)) return value;
-    return `${numValue.toFixed(1)}%`;
+    // Si la valeur est entre 0 et 1, c'est un décimal (0.6 = 60%)
+    if (numValue > 0 && numValue < 1) {
+      numValue = numValue * 100;
+    }
+    return `${Math.round(numValue)}%`;
   };
 
   if (projets.length === 0) {
@@ -122,9 +126,14 @@ const ImmobilierTable: React.FC<ImmobilierTableProps> = ({ projets, onSelectProj
                           className="h-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all"
                           style={{
                             width: `${Math.min(
-                              typeof projet['% Réalisé'] === 'string'
-                                ? parseFloat(projet['% Réalisé'].replace(/,/g, '.'))
-                                : projet['% Réalisé'] || 0,
+                              (() => {
+                                let val = typeof projet['% Réalisé'] === 'string'
+                                  ? parseFloat(projet['% Réalisé'].replace(/,/g, '.'))
+                                  : projet['% Réalisé'] || 0;
+                                // Si valeur entre 0 et 1, c'est un décimal
+                                if (val > 0 && val < 1) val = val * 100;
+                                return val;
+                              })(),
                               100
                             )}%`,
                           }}

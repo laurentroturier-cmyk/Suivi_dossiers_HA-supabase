@@ -190,11 +190,11 @@ const ImmobilierCharts: React.FC = () => {
       budgetParRegion[region] = (budgetParRegion[region] || 0) + budget;
     });
 
-    // Projets par chef de projet
-    const parChef: Record<string, number> = {};
+    // Projets par RPA
+    const parRPA: Record<string, number> = {};
     projets.forEach(p => {
-      const chef = p['Chef de Projet'] || 'Non assigné';
-      parChef[chef] = (parChef[chef] || 0) + 1;
+      const rpa = p['RPA'] || 'Non assigné';
+      parRPA[rpa] = (parRPA[rpa] || 0) + 1;
     });
 
     // Projets par priorité
@@ -204,7 +204,7 @@ const ImmobilierCharts: React.FC = () => {
       parPriorite[prio] = (parPriorite[prio] || 0) + 1;
     });
 
-    return { parRegion, parStatut, budgetParRegion, parChef, parPriorite };
+    return { parRegion, parStatut, budgetParRegion, parRPA, parPriorite };
   }, [projets]);
 
   return (
@@ -227,12 +227,12 @@ const ImmobilierCharts: React.FC = () => {
           onSegmentClick={(statut) => updateFilters({ statut: filters.statut === statut ? undefined : statut })}
         />
         <SimpleBarChart
-          title="Projets par chef de projet"
-          data={chartsData.parChef}
+          title="Projets par RPA"
+          data={chartsData.parRPA}
           color="bg-gradient-to-r from-emerald-500 to-emerald-600"
           maxItems={8}
-          activeLabel={filters.chefProjet}
-          onClick={(chef) => updateFilters({ chefProjet: filters.chefProjet === chef ? undefined : chef })}
+          activeLabel={filters.rpa}
+          onClick={(rpa) => updateFilters({ rpa: filters.rpa === rpa ? undefined : rpa })}
         />
         <SimpleBarChart
           title="Projets par priorité"
