@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useImmobilier } from '@/hooks';
 import { ImmobilierDashboard, ImmobilierTable, ImmobilierTableFilters, ImmobilierDetailModal, ImmobilierCharts } from '@/components/immobilier';
 import { Upload, Download, AlertCircle } from 'lucide-react';
 import { AppVersion } from '@/components/AppVersion';
+import * as XLSX from 'xlsx';
 
 const ImmobilierPage: React.FC = () => {
-  const { projets, loading, error, loadProjets, loadStats, setSelectedProjet, selectedProjet } = useImmobilier();
+  const { projets, loading, error, loadProjets, loadStats, setSelectedProjet, selectedProjet, filters } = useImmobilier();
 
   useEffect(() => {
     console.log('[ImmobilierPage] Montage - chargement des projets');
@@ -13,14 +14,54 @@ const ImmobilierPage: React.FC = () => {
     loadStats();
   }, []);
 
-  const handleExport = () => {
+  const handleExportExcel = () => {
     if (projets.length === 0) {
       alert('Aucun projet à exporter');
       return;
     }
 
     try {
-      // Convertir les données en CSV
+      const wb = XLSX.utils.book_new();
+
+      // Feuille 1 : Filtres actifs
+      const filtersData: any[][] = [['Filtres actifs']];
+      filtersData.push(['']); // Ligne vide
+      
+      const labelsMap: Record<string, string> = {
+        search: 'Recherche',
+        region: 'Région',
+        centre: 'Centre',
+        statut: 'Statut',
+        priorite: 'Priorité',
+        chefProjet: 'Chef de Projet',
+        programme: 'Programme',
+        etapeDemande: 'Étape demande',
+        rpa: 'RPA',
+        composant: 'Composant principal',
+        decisionCNI: 'Décision CNI',
+        dateTravauxDebut: 'Début travaux (dès le)',
+        dateTravauxFin: 'Début travaux (jusqu\'au)'
+      };
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          const label = labelsMap[key as keyof typeof labelsMap] || key;
+          let displayValue = value;
+          if (key === 'dateTravauxDebut' || key === 'dateTravauxFin') {
+            displayValue = new Date(value as string).toLocaleDateString('fr-FR');
+          }
+          filtersData.push([label, displayValue]);
+        }
+      });
+
+      if (filtersData.length === 2) {
+        filtersData.push(['Aucun filtre actif', '']);
+      }
+
+      const ws1 = XLSX.utils.aoa_to_sheet(filtersData);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Filtres');
+
+      // Feuille 2 : Tableau des projets
       const headers = [
         'Code demande',
         'Intitulé',
@@ -31,6 +72,12 @@ const ImmobilierPage: React.FC = () => {
         '% Réalisé',
         'Chef de Projet',
         'Priorité',
+        'Programme',
+        'Étape demande',
+        'RPA',
+        'Composant principal',
+        'Décision CNI',
+        'Date de démarrage travaux'
       ];
 
       const rows = projets.map(p => [
@@ -43,22 +90,37 @@ const ImmobilierPage: React.FC = () => {
         p['% Réalisé'] || '',
         p['Chef de Projet'] || '',
         p['Priorité'] || '',
+        p['Programme'] || '',
+        p['Etape demande'] || '',
+        p['RPA'] || '',
+        p['Composant principal'] || '',
+        p['Décision CNI'] || '',
+        p['Date de démarrage travaux'] ? new Date(p['Date de démarrage travaux']).toLocaleDateString('fr-FR') : ''
       ]);
 
-      const csv = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
-      ].join('\n');
+      const ws2 = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      
+      // Style de la première ligne (en-têtes)
+      const range = XLSX.utils.decode_range(ws2['!ref'] || 'A1');
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const address = XLSX.utils.encode_col(C) + '1';
+        if (!ws2[address]) continue;
+        ws2[address].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: '005c4d' } },
+          alignment: { horizontal: 'center' }
+        };
+      }
+      
+      XLSX.utils.book_append_sheet(wb, ws2, 'Projets');
 
-      // Créer et télécharger le fichier
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `immobilier_export_${new Date().toISOString().slice(0, 10)}.csv`;
-      link.click();
+      // Exporter le fichier
+      const fileName = `ImmoVision_Export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
     } catch (error) {
       console.error('Erreur lors de l\'export:', error);
-      alert('Erreur lors de l\'export');
+      alert('Erreur lors de l\'export Excel');
     }
   };
 
@@ -80,11 +142,11 @@ const ImmobilierPage: React.FC = () => {
           </div>
           <div className="flex gap-3">
             <button
-              onClick={handleExport}
+              onClick={handleExportExcel}
               className="flex items-center gap-2 px-4 py-2 bg-[#005c4d] hover:bg-[#00483f] text-white rounded-lg font-semibold transition-colors"
             >
               <Download className="w-5 h-5" />
-              Exporter
+              Exporter Excel
             </button>
           </div>
         </div>

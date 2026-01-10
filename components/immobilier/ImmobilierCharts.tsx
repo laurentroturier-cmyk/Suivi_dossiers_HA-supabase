@@ -208,7 +208,7 @@ const ImmobilierCharts: React.FC = () => {
   }, [projets]);
 
   return (
-    <div className="space-y-6">
+    <div data-export-id="charts" data-export-label="Graphiques" className="space-y-6">
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SimpleBarChart

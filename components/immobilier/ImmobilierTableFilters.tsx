@@ -140,7 +140,7 @@ const ImmobilierTableFilters: React.FC<ImmobilierFiltersProps> = ({ onSearch }) 
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 space-y-4">
+    <div data-export="filters" className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 space-y-4">
       {/* Recherche rapide */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
