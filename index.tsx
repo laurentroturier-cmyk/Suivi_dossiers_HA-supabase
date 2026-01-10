@@ -2,7 +2,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { ThemeProvider } from './contexts/ThemeContext';
+import './index.css';
+import './dark-theme.css';
+import './design-system/theme/theme.css';
+import { ThemeProvider } from './design-system/theme/ThemeProvider';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
