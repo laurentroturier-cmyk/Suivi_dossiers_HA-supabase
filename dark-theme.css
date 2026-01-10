@@ -31,35 +31,6 @@ html.dark {
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
 
-  /* ========================================
-     BRIDGE VARIABLES (index.css)
-     L'app utilise aussi des variables --bg/--surface/--table-*.
-     On les aligne ici sur la palette “noir profond”.
-     ======================================== */
-
-  /* Base */
-  --bg: var(--bg-primary);
-  --surface-1: var(--bg-secondary);
-  --surface-2: var(--bg-tertiary);
-
-  --border-strong: var(--border-medium);
-  --border-soft: var(--border-light);
-  --border-subtle: var(--border-dark);
-
-  /* Texte (noms attendus par index.css) */
-  --text-subtle: var(--text-tertiary);
-
-  /* Tableaux (utilisés par .themed-table dans index.css) */
-  --table-header: var(--bg-tertiary);
-  --table-row: var(--bg-secondary);
-  --table-row-hover: var(--bg-tertiary);
-  --table-divider: var(--border-light);
-
-  /* Inputs / chips (si présents dans certaines vues) */
-  --input-bg: var(--bg-tertiary);
-  --input-border: var(--border-medium);
-  --chip-bg: rgba(37, 37, 37, 0.75);
-  --chip-border: var(--border-light);
 }
 
 /* ========================================
