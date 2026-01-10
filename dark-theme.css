@@ -58,7 +58,7 @@ html.dark {
   /* Inputs / chips (si présents dans certaines vues) */
   --input-bg: var(--bg-tertiary);
   --input-border: var(--border-medium);
-  --chip-bg: color-mix(in srgb, var(--bg-tertiary) 75%, transparent);
+  --chip-bg: rgba(37, 37, 37, 0.75);
   --chip-border: var(--border-light);
 }
 
