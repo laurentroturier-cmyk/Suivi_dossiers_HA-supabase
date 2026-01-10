@@ -1,0 +1,30 @@
+{
+  "version": "1.0.1",
+  "name": "GestProjet",
+  "lastUpdate": "2026-01-10",
+  "build": "1",
+  "changelog": {
+    "1.0.1": {
+      "date": "2026-01-10",
+      "type": "feature",
+      "changes": [
+        "Implémentation complète du Design System",
+        "ThemeProvider amélioré avec support Edge/Chrome",
+        "Composants Button, Card, Input, Modal",
+        "Variables CSS adaptatives",
+        "Documentation complète"
+      ]
+    },
+    "1.0.0": {
+      "date": "2026-01-09",
+      "type": "initial",
+      "changes": [
+        "Version initiale de l'application",
+        "Authentification Supabase",
+        "Gestion des contrats",
+        "Registre dépôts/retraits",
+        "Module AN01"
+      ]
+    }
+  }
+}
