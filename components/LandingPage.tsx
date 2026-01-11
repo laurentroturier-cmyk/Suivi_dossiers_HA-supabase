@@ -93,7 +93,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
     {
       id: 'execution',
       titre: 'Exécution des marchés',
-      description: 'Commission HA et gestion des contrats',
+      description: 'Gestion des contrats',
       icon: PlayCircle,
       iconColor: 'text-orange-600 dark:text-orange-400',
       iconBg: 'bg-orange-100 dark:bg-orange-500/20',
@@ -102,7 +102,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
       btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
-        { label: 'Commission HA', tab: 'commission', isAdmin: false },
         { label: 'Contrats', tab: 'contrats', isAdmin: false },
       ]
     },

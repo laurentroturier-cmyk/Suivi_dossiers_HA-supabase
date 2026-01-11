@@ -34,7 +34,6 @@ export const MainLayout: React.FC = () => {
     { name: 'Projets', path: '/projets', icon: FolderOpen },
     { name: 'Procédures', path: '/procedures', icon: FileText },
     { name: 'Contrats', path: '/contrats', icon: FileText },
-    { name: 'Commission', path: '/commission', icon: Shield },
   ];
 
   const handleSignOut = async () => {

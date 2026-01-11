@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjects, useDossiers } from '@/hooks';
-import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart, Building2, Edit3 } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart, Building2, Edit3, PlayCircle } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -64,24 +64,25 @@ const HomePage: React.FC = () => {
       action: () => navigate('/procedures'),
     },
     {
-      id: 'contrats',
-      titre: 'Contrats',
+      id: 'execution',
+      titre: 'Exécution des marchés',
       description: 'Gestion des contrats',
-      icon: FileText,
-      iconColor: 'text-green-600 dark:text-green-400',
-      iconBg: 'bg-green-100 dark:bg-green-500/20',
-      borderColor: 'border-green-200 dark:border-green-500/40',
-      action: () => navigate('/contrats'),
-    },
-    {
-      id: 'commission',
-      titre: 'Commission',
-      description: 'Commission d\'appels d\'offres',
-      icon: Shield,
-      iconColor: 'text-red-600 dark:text-red-400',
-      iconBg: 'bg-red-100 dark:bg-red-500/20',
-      borderColor: 'border-red-200 dark:border-red-500/40',
-      action: () => navigate('/commission'),
+      icon: PlayCircle,
+      iconColor: 'text-orange-600 dark:text-orange-400',
+      iconBg: 'bg-orange-100 dark:bg-orange-500/20',
+      borderColor: 'border-orange-200 dark:border-orange-500/40',
+      subItems: [
+        {
+          id: 'contrats',
+          titre: 'Contrats',
+          description: 'Gestion des contrats',
+          icon: FileText,
+          iconColor: 'text-green-600 dark:text-green-400',
+          iconBg: 'bg-green-100 dark:bg-green-500/20',
+          borderColor: 'border-green-200 dark:border-green-500/40',
+          action: () => navigate('/contrats'),
+        },
+      ],
     },
     {
       id: 'analyse',

@@ -7,6 +7,5 @@ export { default as DepotsPage } from './DepotsPage';
 export { default as AdminPage } from './AdminPage';
 export { default as DashboardPage } from './DashboardPage';
 export { default as GanttPage } from './GanttPage';
-export { default as CommissionPage } from './CommissionPage';
 export { default as An01Page } from './An01Page';
 export { default as ImmobilierPage } from './ImmobilierPage';
