@@ -102,4 +102,4 @@ export interface SegmentationRow {
   dna_sousfamille: string;
 }
 
-export type TableType = 'home' | 'procedures' | 'dossiers' | 'dashboard' | 'ai' | 'export' | 'gantt' | 'an01' | 'commission' | 'detail' | 'retraits' | 'depots';
+export type TableType = 'home' | 'procedures' | 'dossiers' | 'dashboard' | 'ai' | 'export' | 'gantt' | 'an01' | 'commission' | 'detail' | 'retraits' | 'depots' | 'analyse' | 'redaction';

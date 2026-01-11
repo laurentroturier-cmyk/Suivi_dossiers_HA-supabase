@@ -51,6 +51,9 @@ import Contrats from './components/Contrats';
 import LandingPage from './components/LandingPage';
 import ImmobilierPage from './pages/ImmobilierPage';
 import { AppVersion } from './components/AppVersion';
+import AnalyseOverview from './components/an01/AnalyseOverview';
+import RedactionPlaceholder from './components/redaction/RedactionPlaceholder';
+import RedactionOverview from './components/redaction/RedactionOverview';
 
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
@@ -314,6 +317,7 @@ const App: React.FC = () => {
   const [an01Error, setAn01Error] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TableType>('home');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [redactionSection, setRedactionSection] = useState<'DCE' | 'NOTI' | 'EXE' | 'Avenants' | 'Courriers' | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'general' | 'opportunite' | 'procedures_liees' | 'documents' | 'publication' | 'offres' | 'rapport' | 'attribution' | 'marche' | 'strategie'>('general');
   const [previousTab, setPreviousTab] = useState<{tab: TableType, subTab?: string} | null>(null);
   const [detailData, setDetailData] = useState<{ type: 'project' | 'procedure', data: any[], title: string, filterField?: string, filterValue?: string | null } | null>(null);
@@ -1552,7 +1556,7 @@ const App: React.FC = () => {
             return null;
           }
           
-          // Affichage spécial pour NumProc en mode édition (en lecture seule avec style distinct)
+          // Affichage spécial pour NumProc en mode édition (lecture seule avec style distinct)
           if (key === 'NumProc' && type === 'procedure' && data?.id) {
             return (
               <div key={key} className="flex flex-col gap-2">
@@ -2486,27 +2490,84 @@ const App: React.FC = () => {
               Procédures
             </button>
 
-            {/* Exécution des marchés */}
-            <div className="relative">
+            {/* Rédaction */}
+            <div className="relative flex items-center">
               <button
-                onClick={() => setOpenMenu(openMenu === 'execution' ? null : 'execution')}
-                className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1 ${
-                  activeTab === 'commission' || activeTab === 'retraits' || activeTab === 'depots' || activeTab === 'an01' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+                onClick={() => { setActiveTab('redaction'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); setRedactionSection(null); }}
+                className={`text-[10px] font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'redaction' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
                 }`}
               >
-                Exécution
+                Rédaction
+              </button>
+              <button
+                onClick={() => setOpenMenu(openMenu === 'redaction' ? null : 'redaction')}
+                className="ml-1 text-gray-300 hover:text-gray-500"
+                aria-label="Ouvrir sous-menu Rédaction"
+                title="Ouvrir sous-menu Rédaction"
+              >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              {openMenu === 'execution' && (
-                <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[160px] z-50">
+              {openMenu === 'redaction' && (
+                <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[180px] z-50">
                   <button
-                    onClick={() => { setActiveTab('commission'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => { setActiveTab('redaction'); setRedactionSection('DCE'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
-                    Commission HA
+                    DCE
                   </button>
+                  <button
+                    onClick={() => { setActiveTab('redaction'); setRedactionSection('NOTI'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    NOTI
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('redaction'); setRedactionSection('EXE'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    EXE
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('redaction'); setRedactionSection('Avenants'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Avenants
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('redaction'); setRedactionSection('Courriers'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Courriers
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Analyse */}
+            <div className="relative flex items-center">
+              <button
+                onClick={() => { setActiveTab('analyse'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                className={`text-[10px] font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'analyse' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+                }`}
+              >
+                Analyse
+              </button>
+              <button
+                onClick={() => setOpenMenu(openMenu === 'analyse' ? null : 'analyse')}
+                className="ml-1 text-gray-300 hover:text-gray-500"
+                aria-label="Ouvrir sous-menu Analyse"
+                title="Ouvrir sous-menu Analyse"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {openMenu === 'analyse' && (
+                <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[180px] z-50">
                   <button
                     onClick={() => { setActiveTab('retraits'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
@@ -2524,6 +2585,31 @@ const App: React.FC = () => {
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     AN01
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Exécution des marchés */}
+            <div className="relative">
+              <button
+                onClick={() => setOpenMenu(openMenu === 'execution' ? null : 'execution')}
+                className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1 ${
+                  activeTab === 'commission' || activeTab === 'contrats' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+                }`}
+              >
+                Exécution
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {openMenu === 'execution' && (
+                <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[160px] z-50">
+                  <button
+                    onClick={() => { setActiveTab('commission'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Commission HA
                   </button>
                   <button
                     onClick={() => { setActiveTab('contrats'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
@@ -2873,6 +2959,18 @@ const App: React.FC = () => {
                   </div>
                 </div>
               </div>
+            )}
+
+            {activeTab === 'analyse' && (
+              <AnalyseOverview onNavigate={(tab) => setActiveTab(tab as any)} />
+            )}
+
+            {activeTab === 'redaction' && redactionSection === null && (
+              <RedactionOverview onNavigate={(section) => setRedactionSection(section)} />
+            )}
+
+            {activeTab === 'redaction' && redactionSection !== null && (
+              <RedactionPlaceholder selectedSection={redactionSection} />
             )}
             {activeTab === 'export' && (
               <div className="max-w-2xl mx-auto py-12 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">

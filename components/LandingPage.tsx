@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2 } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3 } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (tab: string) => void;
@@ -59,9 +59,41 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       ]
     },
     {
+      id: 'redaction',
+      titre: 'Rédaction',
+      description: 'Rédaction des documents et DCE (en construction)',
+      icon: Edit3,
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      iconBg: 'bg-amber-100 dark:bg-amber-500/20',
+      borderColor: 'border-amber-200 dark:border-amber-500/40',
+      borderHover: 'hover:border-amber-400 dark:hover:border-amber-400',
+      btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
+      btnText: 'text-gray-700 dark:text-gray-200',
+      actions: [
+        { label: 'Ouvrir (En construction)', tab: 'redaction', isAdmin: false, icon: Edit3, color: 'text-amber-600 dark:text-amber-400' },
+      ]
+    },
+    {
+      id: 'analyse',
+      titre: 'Analyse',
+      description: 'Registres Retraits/Dépôts et analyse technique AN01',
+      icon: LineChart,
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      iconBg: 'bg-emerald-100 dark:bg-emerald-500/20',
+      borderColor: 'border-emerald-200 dark:border-emerald-500/40',
+      borderHover: 'hover:border-emerald-400 dark:hover:border-emerald-400',
+      btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
+      btnText: 'text-gray-700 dark:text-gray-200',
+      actions: [
+        { label: 'Registre des retraits', tab: 'retraits', isAdmin: false, icon: Download, color: 'text-orange-600 dark:text-orange-400' },
+        { label: 'Registre des dépôts', tab: 'depots', isAdmin: false, icon: Upload, color: 'text-cyan-600 dark:text-cyan-400' },
+        { label: 'Analyse AN01', tab: 'an01', isAdmin: false, icon: LineChart, color: 'text-emerald-600 dark:text-emerald-400' },
+      ]
+    },
+    {
       id: 'execution',
       titre: 'Exécution des marchés',
-      description: 'Commission HA, registres, analyses techniques et contrats',
+      description: 'Commission HA et gestion des contrats',
       icon: PlayCircle,
       iconColor: 'text-orange-600 dark:text-orange-400',
       iconBg: 'bg-orange-100 dark:bg-orange-500/20',
@@ -71,9 +103,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
         { label: 'Commission HA', tab: 'commission', isAdmin: false },
-        { label: 'Registre des retraits', tab: 'retraits', isAdmin: false },
-        { label: 'Registre des dépôts', tab: 'depots', isAdmin: false },
-        { label: 'Analyse AN01', tab: 'an01', isAdmin: false },
         { label: 'Contrats', tab: 'contrats', isAdmin: false },
       ]
     },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjects, useDossiers } from '@/hooks';
-import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart, Building2 } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart, Building2, Edit3 } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -84,34 +84,56 @@ const HomePage: React.FC = () => {
       action: () => navigate('/commission'),
     },
     {
-      id: 'retraits',
-      titre: 'Registre Retraits',
-      description: 'Suivi des retraits de DCE',
-      icon: Download,
-      iconColor: 'text-orange-600 dark:text-orange-400',
-      iconBg: 'bg-orange-100 dark:bg-orange-500/20',
-      borderColor: 'border-orange-200 dark:border-orange-500/40',
-      action: () => navigate('/retraits'),
-    },
-    {
-      id: 'depots',
-      titre: 'Registre Dépôts',
-      description: 'Suivi des dépôts de plis',
-      icon: Upload,
-      iconColor: 'text-cyan-600 dark:text-cyan-400',
-      iconBg: 'bg-cyan-100 dark:bg-cyan-500/20',
-      borderColor: 'border-cyan-200 dark:border-cyan-500/40',
-      action: () => navigate('/depots'),
-    },
-    {
-      id: 'an01',
-      titre: 'AN01',
-      description: 'Analyse technique des offres',
+      id: 'analyse',
+      titre: 'Analyse',
+      description: 'Analyses et registres des offres',
       icon: LineChart,
       iconColor: 'text-emerald-600 dark:text-emerald-400',
       iconBg: 'bg-emerald-100 dark:bg-emerald-500/20',
       borderColor: 'border-emerald-200 dark:border-emerald-500/40',
-      action: () => navigate('/an01'),
+      action: () => setTimeout(() => {}, 0),
+      subItems: [
+        {
+          id: 'analyse-retraits',
+          titre: 'Registre Retraits',
+          description: 'Suivi des retraits de DCE',
+          icon: Download,
+          iconColor: 'text-orange-600 dark:text-orange-400',
+          iconBg: 'bg-orange-100 dark:bg-orange-500/20',
+          borderColor: 'border-orange-200 dark:border-orange-500/40',
+          action: () => navigate('/retraits'),
+        },
+        {
+          id: 'analyse-depots',
+          titre: 'Registre Dépôts',
+          description: 'Suivi des dépôts de plis',
+          icon: Upload,
+          iconColor: 'text-cyan-600 dark:text-cyan-400',
+          iconBg: 'bg-cyan-100 dark:bg-cyan-500/20',
+          borderColor: 'border-cyan-200 dark:border-cyan-500/40',
+          action: () => navigate('/depots'),
+        },
+        {
+          id: 'analyse-an01',
+          titre: 'AN01',
+          description: 'Analyse technique des offres',
+          icon: LineChart,
+          iconColor: 'text-emerald-600 dark:text-emerald-400',
+          iconBg: 'bg-emerald-100 dark:bg-emerald-500/20',
+          borderColor: 'border-emerald-200 dark:border-emerald-500/40',
+          action: () => navigate('/an01'),
+        },
+      ],
+    },
+    {
+      id: 'redaction',
+      titre: 'Rédaction',
+      description: 'Rédaction des documents et DCE (en construction)',
+      icon: Edit3,
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      iconBg: 'bg-amber-100 dark:bg-amber-500/20',
+      borderColor: 'border-amber-200 dark:border-amber-500/40',
+      action: () => setTimeout(() => {}, 0),
     },
   ];
 
@@ -158,7 +180,7 @@ const HomePage: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Sub-items pour projets */}
+                {/* Sub-items pour projets / analyse */}
                 {domaine.subItems && (
                   <div className="mt-3 space-y-2">
                     {domaine.subItems.map((subItem) => {

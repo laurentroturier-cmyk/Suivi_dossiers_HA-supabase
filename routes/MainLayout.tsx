@@ -12,7 +12,8 @@ import {
   Shield,
   LogOut,
   Menu,
-  X
+  X,
+  LineChart
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -24,6 +25,7 @@ export const MainLayout: React.FC = () => {
   const location = useLocation();
   const { user, profile, signOut, isAdmin } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAnalyseOpen, setIsAnalyseOpen] = useState(false);
 
   const navigation = [
     { name: 'Accueil', path: '/', icon: Home },
@@ -33,9 +35,6 @@ export const MainLayout: React.FC = () => {
     { name: 'Procédures', path: '/procedures', icon: FileText },
     { name: 'Contrats', path: '/contrats', icon: FileText },
     { name: 'Commission', path: '/commission', icon: Shield },
-    { name: 'Retraits', path: '/retraits', icon: Download },
-    { name: 'Dépôts', path: '/depots', icon: Upload },
-    { name: 'AN01', path: '/an01', icon: FileText },
   ];
 
   const handleSignOut = async () => {
@@ -71,7 +70,7 @@ export const MainLayout: React.FC = () => {
             </div>
 
             {/* Navigation Desktop */}
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1 relative">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -89,6 +88,53 @@ export const MainLayout: React.FC = () => {
                   </button>
                 );
               })}
+
+              {/* Onglet Analyse avec menu déroulant */}
+              <div className="ml-1">
+                <button
+                  onClick={() => setIsAnalyseOpen((v) => !v)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                    ['/retraits', '/depots', '/an01'].includes(location.pathname)
+                      ? 'bg-primary-50 text-primary-700'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <LineChart className="w-4 h-4" />
+                  Analyse
+                </button>
+
+                {isAnalyseOpen && (
+                  <div className="absolute mt-2 bg-white border border-gray-200 rounded-lg shadow-lg w-56 p-2">
+                    <button
+                      onClick={() => { navigate('/retraits'); setIsAnalyseOpen(false); }}
+                      className={`flex w-full items-center gap-2 px-3 py-2 rounded-md text-sm ${
+                        isActive('/retraits') ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Download className="w-4 h-4" />
+                      Retraits
+                    </button>
+                    <button
+                      onClick={() => { navigate('/depots'); setIsAnalyseOpen(false); }}
+                      className={`flex w-full items-center gap-2 px-3 py-2 rounded-md text-sm ${
+                        isActive('/depots') ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Upload className="w-4 h-4" />
+                      Dépôts
+                    </button>
+                    <button
+                      onClick={() => { navigate('/an01'); setIsAnalyseOpen(false); }}
+                      className={`flex w-full items-center gap-2 px-3 py-2 rounded-md text-sm ${
+                        isActive('/an01') ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <FileText className="w-4 h-4" />
+                      AN01
+                    </button>
+                  </div>
+                )}
+              </div>
             </nav>
 
             {/* User Menu */}
@@ -155,6 +201,38 @@ export const MainLayout: React.FC = () => {
                     </button>
                   );
                 })}
+
+                {/* Groupe Analyse en mobile */}
+                <div className="mt-2">
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500">Analyse</div>
+                  <button
+                    onClick={() => { navigate('/retraits'); setIsMobileMenuOpen(false); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+                      isActive('/retraits') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Download className="w-5 h-5" />
+                    Retraits
+                  </button>
+                  <button
+                    onClick={() => { navigate('/depots'); setIsMobileMenuOpen(false); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+                      isActive('/depots') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Upload className="w-5 h-5" />
+                    Dépôts
+                  </button>
+                  <button
+                    onClick={() => { navigate('/an01'); setIsMobileMenuOpen(false); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+                      isActive('/an01') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <FileText className="w-5 h-5" />
+                    AN01
+                  </button>
+                </div>
               </div>
             </nav>
           )}
