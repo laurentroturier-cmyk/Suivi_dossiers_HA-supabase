@@ -58,6 +58,10 @@ import RedactionOverview from './components/redaction/RedactionOverview';
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
 
+// Import Navigation System
+import { useNavigationHistory, NavigationState } from './hooks';
+import NavigationControls from './components/NavigationControls';
+
 const BUCKET_NAME = 'Projets DNA';
 
 const getProp = (obj: any, key: string) => {
@@ -318,6 +322,54 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TableType>('home');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [redactionSection, setRedactionSection] = useState<'DCE' | 'NOTI' | 'EXE' | 'Avenants' | 'Courriers' | null>(null);
+
+  // ============================================
+  // NAVIGATION SYSTEM - Système de navigation interne
+  // ============================================
+  const {
+    currentState: navState,
+    canGoBack,
+    isHome: isOnHomePage,
+    pushNavigation,
+    goBack: handleGoBack,
+    goToHome: handleGoToHome,
+    getBreadcrumb,
+  } = useNavigationHistory({
+    homePage: 'home',
+    homeTitle: 'Accueil',
+    maxHistorySize: 50,
+    onNavigate: (state: NavigationState) => {
+      // Synchroniser avec les états existants
+      setActiveTab(state.tab);
+      if (state.subTab) {
+        setActiveSubTab(state.subTab);
+      }
+      if (state.section) {
+        setRedactionSection(state.section as any);
+      }
+    },
+  });
+
+  // Fonction de navigation mise à jour qui utilise le système de navigation
+  const navigateTo = React.useCallback((
+    tab: TableType,
+    title: string,
+    subTab?: string,
+    section?: string
+  ) => {
+    pushNavigation(tab, title, subTab, section);
+    setOpenMenu(null);
+    setEditingProject(null);
+    setEditingProcedure(null);
+  }, [pushNavigation]);
+
+  // Helper pour naviguer vers le détail depuis un graphique
+  const navigateToDetail = React.useCallback((
+    detailInfo: { type: string; data: any[]; title: string; filterField: string; filterValue: string }
+  ) => {
+    setDetailData(detailInfo);
+    navigateTo('detail', `Détail - ${detailInfo.title}`);
+  }, [navigateTo]);
   const [activeSubTab, setActiveSubTab] = useState<'general' | 'opportunite' | 'procedures_liees' | 'documents' | 'publication' | 'offres' | 'rapport' | 'attribution' | 'marche' | 'strategie'>('general');
   const [previousTab, setPreviousTab] = useState<{tab: TableType, subTab?: string} | null>(null);
   const [detailData, setDetailData] = useState<{ type: 'project' | 'procedure', data: any[], title: string, filterField?: string, filterValue?: string | null } | null>(null);
@@ -367,7 +419,7 @@ const App: React.FC = () => {
     
     if (procedure) {
       setEditingProcedure(procedure);
-      setActiveTab('procedures');
+      navigateTo('procedures', 'Procédures - Édition');
       setActiveSubTab('general');
     } else {
       alert(`Aucune procédure trouvée avec le numéro AFPA ${numeroAfpa}`);
@@ -2384,7 +2436,7 @@ const App: React.FC = () => {
         <div className="flex items-center gap-4">
           <button 
             type="button"
-            onClick={() => { setActiveTab('home'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+            onClick={() => handleGoToHome()}
             className="flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer"
           >
             <img src="/logo.png" alt="Logo" className="h-12 object-contain" />
@@ -2398,7 +2450,7 @@ const App: React.FC = () => {
           <nav className="flex gap-6">
             {/* Accueil */}
             <button
-              onClick={() => { setActiveTab('home'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
+              onClick={() => handleGoToHome()}
               className={`text-[10px] font-black uppercase tracking-widest transition-all ${
                 activeTab === 'home' ? 'text-[#004d3d] dark:text-cyan-400' : 'text-gray-300 hover:text-gray-500 dark:hover:text-gray-400'
               }`}
@@ -2422,13 +2474,13 @@ const App: React.FC = () => {
               {openMenu === 'indicateurs' && (
                 <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[160px] z-50">
                   <button
-                    onClick={() => { setActiveTab('dashboard'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('dashboard', 'Tableau de bord')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     Tableau de bord
                   </button>
                   <button
-                    onClick={() => { setActiveTab('gantt'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('gantt', 'Planning Gantt')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     Gantt
@@ -2439,7 +2491,7 @@ const App: React.FC = () => {
 
             {/* Projets achats */}
             <button
-              onClick={() => { setActiveTab('dossiers'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
+              onClick={() => navigateTo('dossiers', 'Projets achats')}
               className={`text-[10px] font-black uppercase tracking-widest transition-all ${
                 activeTab === 'dossiers' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
               }`}
@@ -2449,7 +2501,7 @@ const App: React.FC = () => {
 
             {/* Procédures */}
             <button
-              onClick={() => { setActiveTab('procedures'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
+              onClick={() => navigateTo('procedures', 'Procédures')}
               className={`text-[10px] font-black uppercase tracking-widest transition-all ${
                 activeTab === 'procedures' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
               }`}
@@ -2460,7 +2512,7 @@ const App: React.FC = () => {
             {/* Rédaction */}
             <div className="relative flex items-center">
               <button
-                onClick={() => { setActiveTab('redaction'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); setRedactionSection(null); }}
+                onClick={() => navigateTo('redaction', 'Rédaction')}
                 className={`text-[10px] font-black uppercase tracking-widest transition-all ${
                   activeTab === 'redaction' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
                 }`}
@@ -2480,31 +2532,31 @@ const App: React.FC = () => {
               {openMenu === 'redaction' && (
                 <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[180px] z-50">
                   <button
-                    onClick={() => { setActiveTab('redaction'); setRedactionSection('DCE'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('redaction', 'Rédaction - DCE', undefined, 'DCE')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     DCE
                   </button>
                   <button
-                    onClick={() => { setActiveTab('redaction'); setRedactionSection('NOTI'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('redaction', 'Rédaction - NOTI', undefined, 'NOTI')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     NOTI
                   </button>
                   <button
-                    onClick={() => { setActiveTab('redaction'); setRedactionSection('EXE'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('redaction', 'Rédaction - EXE', undefined, 'EXE')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     EXE
                   </button>
                   <button
-                    onClick={() => { setActiveTab('redaction'); setRedactionSection('Avenants'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('redaction', 'Rédaction - Avenants', undefined, 'Avenants')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     Avenants
                   </button>
                   <button
-                    onClick={() => { setActiveTab('redaction'); setRedactionSection('Courriers'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('redaction', 'Rédaction - Courriers', undefined, 'Courriers')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     Courriers
@@ -2516,7 +2568,7 @@ const App: React.FC = () => {
             {/* Analyse */}
             <div className="relative flex items-center">
               <button
-                onClick={() => { setActiveTab('analyse'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                onClick={() => navigateTo('analyse', 'Analyse')}
                 className={`text-[10px] font-black uppercase tracking-widest transition-all ${
                   activeTab === 'analyse' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
                 }`}
@@ -2536,19 +2588,19 @@ const App: React.FC = () => {
               {openMenu === 'analyse' && (
                 <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[180px] z-50">
                   <button
-                    onClick={() => { setActiveTab('retraits'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('retraits', 'Registre Retraits')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     Registre Retraits
                   </button>
                   <button
-                    onClick={() => { setActiveTab('depots'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('depots', 'Registre Dépôts')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     Registre Dépôts
                   </button>
                   <button
-                    onClick={() => { setActiveTab('an01'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('an01', 'AN01')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     AN01
@@ -2573,7 +2625,7 @@ const App: React.FC = () => {
               {openMenu === 'execution' && (
                 <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[160px] z-50">
                   <button
-                    onClick={() => { setActiveTab('contrats'); setOpenMenu(null); setEditingProject(null); setEditingProcedure(null); }}
+                    onClick={() => navigateTo('contrats', 'Contrats')}
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     Contrats
@@ -2584,7 +2636,7 @@ const App: React.FC = () => {
 
             {/* Exports & données */}
             <button
-              onClick={() => { setActiveTab('export'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
+              onClick={() => navigateTo('export', 'Exports & données')}
               className={`text-[10px] font-black uppercase tracking-widest transition-all ${
                 activeTab === 'export' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
               }`}
@@ -2595,7 +2647,7 @@ const App: React.FC = () => {
             {/* Détail (conditionnel) */}
             {detailData && (
               <button
-                onClick={() => { setActiveTab('detail'); setEditingProject(null); setEditingProcedure(null); setOpenMenu(null); }}
+                onClick={() => navigateTo('detail', 'Détail')}
                 className={`text-[10px] font-black uppercase tracking-widest transition-all ${
                   activeTab === 'detail' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
                 }`}
@@ -2668,12 +2720,46 @@ const App: React.FC = () => {
         </div>
       </header>
 
+      {/* Navigation Controls */}
+      {!isOnHomePage && (
+        <div className="max-w-7xl mx-auto px-6 mt-6">
+          <NavigationControls
+            onBack={handleGoBack}
+            onHome={handleGoToHome}
+            canGoBack={canGoBack}
+            isHome={isOnHomePage}
+            currentPageTitle={navState?.title || ''}
+            mode="full"
+            showBreadcrumb={true}
+            breadcrumb={getBreadcrumb()}
+          />
+        </div>
+      )}
+
       <main className="max-w-7xl mx-auto px-6 mt-10">
         {!editingProject && !editingProcedure && (
           <>
             {activeTab === 'home' && (
               <LandingPage 
-                onNavigate={(tab) => setActiveTab(tab as TableType)}
+                onNavigate={(tab) => {
+                  const titles: Record<string, string> = {
+                    'home': 'Accueil',
+                    'dashboard': 'Tableau de bord',
+                    'gantt': 'Planning Gantt',
+                    'dossiers': 'Projets achats',
+                    'procedures': 'Procédures',
+                    'redaction': 'Rédaction',
+                    'analyse': 'Analyse',
+                    'retraits': 'Registre Retraits',
+                    'depots': 'Registre Dépôts',
+                    'an01': 'AN01',
+                    'contrats': 'Contrats',
+                    'export': 'Exports & données',
+                    'detail': 'Détail',
+                    'immobilier': 'Immobilier',
+                  };
+                  navigateTo(tab as TableType, titles[tab] || tab);
+                }}
                 onOpenAdmin={() => setShowAdminDashboard(true)}
                 projectsCount={dossiers.length}
                 proceduresCount={procedures.length}
@@ -2803,8 +2889,7 @@ const App: React.FC = () => {
                       title={selectedAcheteurs.length > 0 ? "Répartition Projets Filtrés" : "Top Acheteurs (Projets)"} 
                       color="bg-[#004d3d]" 
                       onClick={(label) => {
-                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Acheteur', filterField: 'Acheteur', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Acheteur', filterField: 'Acheteur', filterValue: label });
                       }}
                     />
                     <SimpleBarChart 
@@ -2812,8 +2897,7 @@ const App: React.FC = () => {
                       title="Projets par Priorité" 
                       color="bg-teal-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Priorité', filterField: 'Priorite', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Priorité', filterField: 'Priorite', filterValue: label });
                       }}
                     />
                     <SimpleBarChart 
@@ -2821,8 +2905,7 @@ const App: React.FC = () => {
                       title="Projets par Statut" 
                       color="bg-emerald-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Statut', filterField: 'StatutDossier', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Statut', filterField: 'StatutDossier', filterValue: label });
                       }}
                     />
                     <SimpleBarChart 
@@ -2830,8 +2913,7 @@ const App: React.FC = () => {
                       title="Projets par Client Interne" 
                       color="bg-violet-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Client Interne', filterField: 'ClientInterne', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Client Interne', filterField: 'ClientInterne', filterValue: label });
                       }}
                     />
                   </div>
@@ -2850,8 +2932,7 @@ const App: React.FC = () => {
                       title={selectedAcheteurs.length > 0 ? "Répartition Procédures Filtrées" : "Top Acheteurs (Procédures)"} 
                       color="bg-indigo-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Acheteur', filterField: 'Acheteur', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Acheteur', filterField: 'Acheteur', filterValue: label });
                       }}
                     />
                     <SimpleBarChart 
@@ -2859,8 +2940,7 @@ const App: React.FC = () => {
                       title="Procédures par Type" 
                       color="bg-orange-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Type', filterField: 'Type de procédure', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Type', filterField: 'Type de procédure', filterValue: label });
                       }}
                     />
                     <SimpleBarChart 
@@ -2868,8 +2948,7 @@ const App: React.FC = () => {
                       title="Procédures par Statut" 
                       color="bg-blue-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Statut', filterField: 'Statut de la consultation', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Statut', filterField: 'Statut de la consultation', filterValue: label });
                       }}
                     />
                     <SimpleBarChart 
@@ -2877,8 +2956,7 @@ const App: React.FC = () => {
                       title="Montant Moyen par Type (€)" 
                       color="bg-rose-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Montant Moyen par Type', filterField: 'Type de procédure', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Montant Moyen par Type', filterField: 'Type de procédure', filterValue: label });
                       }}
                     />
                     <SimpleBarChart 
@@ -2886,8 +2964,7 @@ const App: React.FC = () => {
                       title="Dispositions Environnementales" 
                       color="bg-green-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Environnementales', filterField: 'Dispo environnementales', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Environnementales', filterField: 'Dispo environnementales', filterValue: label });
                       }}
                     />
                     <SimpleBarChart 
@@ -2895,8 +2972,7 @@ const App: React.FC = () => {
                       title="Dispositions Sociales" 
                       color="bg-purple-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Sociales', filterField: 'Dispo sociales', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Sociales', filterField: 'Dispo sociales', filterValue: label });
                       }}
                     />
                     <SimpleBarChart 
@@ -2904,8 +2980,7 @@ const App: React.FC = () => {
                       title="Projets Innovants" 
                       color="bg-cyan-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Projets Innovants', filterField: 'Projet ouvert à l\'acquisition de solutions innovantes', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Projets Innovants', filterField: 'Projet ouvert à l\'acquisition de solutions innovantes', filterValue: label });
                       }}
                     />
                     <SimpleBarChart 
@@ -2913,8 +2988,7 @@ const App: React.FC = () => {
                       title="Projets TPE/PME" 
                       color="bg-amber-600" 
                       onClick={(label) => {
-                        setDetailData({ type: 'project', data: kpis.filteredProcedures, title: 'Projets TPE/PME', filterField: 'Projet facilitant l\'accès aux TPE/PME', filterValue: label });
-                        setActiveTab('detail');
+                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Projets TPE/PME', filterField: 'Projet facilitant l\'accès aux TPE/PME', filterValue: label });
                       }}
                     />
                   </div>
@@ -2923,7 +2997,14 @@ const App: React.FC = () => {
             )}
 
             {activeTab === 'analyse' && (
-              <AnalyseOverview onNavigate={(tab) => setActiveTab(tab as any)} />
+              <AnalyseOverview onNavigate={(tab) => {
+                const titles: Record<string, string> = {
+                  'retraits': 'Registre Retraits',
+                  'depots': 'Registre Dépôts',
+                  'an01': 'AN01',
+                };
+                navigateTo(tab as any, titles[tab] || tab);
+              }} />
             )}
 
             {activeTab === 'redaction' && redactionSection === null && (
@@ -3295,7 +3376,7 @@ const App: React.FC = () => {
                         onClick={() => {
                           setEditingProject(null);
                           setEditingProcedure(null);
-                          setActiveTab('detail');
+                          navigateTo('detail', `Détail - ${detailData.title}`);
                         }}
                         className="px-4 py-2 bg-[#004d3d] text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-[#003d2d] transition-all flex items-center gap-2"
                       >
@@ -3525,8 +3606,11 @@ const App: React.FC = () => {
                 setEditingProject(null); 
                 setEditingProcedure(null); 
                 if (previousTab) {
-                  setActiveTab(previousTab.tab);
+                  // Utiliser goBack au lieu de setActiveTab pour respecter l'historique
+                  handleGoBack();
                   setPreviousTab(null);
+                } else {
+                  handleGoBack();
                 }
               }} className="flex items-center gap-3 text-gray-300 font-black text-[10px] uppercase tracking-widest hover:text-gray-500 transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg> Retour</button>
               <div className="flex flex-col items-center gap-2">
@@ -3776,7 +3860,7 @@ const App: React.FC = () => {
                 </div>
                 <button 
                   onClick={() => {
-                    setActiveTab('dashboard');
+                    navigateTo('dashboard', 'Tableau de bord');
                     setDetailData(null);
                   }}
                   className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center gap-2"
@@ -3838,11 +3922,11 @@ const App: React.FC = () => {
                               if (detailData.type === 'project') {
                                 // Ouvrir la procédure en modification
                                 setEditingProject(item);
-                                setActiveTab('procedures');
+                                navigateTo('procedures', 'Procédures - Édition');
                               } else {
                                 // Ouvrir le dossier en modification
                                 setEditingProcedure(item);
-                                setActiveTab('dossiers');
+                                navigateTo('dossiers', 'Projets achats - Édition');
                               }
                               // On garde detailData pour pouvoir revenir
                             }}
