@@ -54,6 +54,8 @@ import { AppVersion } from './components/AppVersion';
 import AnalyseOverview from './components/an01/AnalyseOverview';
 import RedactionPlaceholder from './components/redaction/RedactionPlaceholder';
 import RedactionOverview from './components/redaction/RedactionOverview';
+import DCESection from './components/redaction/DCESection';
+import QuestionnaireTechnique from './components/redaction/questionnaire/QuestionnaireTechnique';
 
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
@@ -322,6 +324,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TableType>('home');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [redactionSection, setRedactionSection] = useState<'DCE' | 'NOTI' | 'EXE' | 'Avenants' | 'Courriers' | null>(null);
+  const [dceSubsection, setDceSubsection] = useState<'questionnaire-technique' | 'cctp' | 'bpu' | null>(null);
 
   // ============================================
   // NAVIGATION SYSTEM - Système de navigation interne
@@ -3011,7 +3014,19 @@ const App: React.FC = () => {
               <RedactionOverview onNavigate={(section) => setRedactionSection(section)} />
             )}
 
-            {activeTab === 'redaction' && redactionSection !== null && (
+            {activeTab === 'redaction' && redactionSection === 'DCE' && dceSubsection === null && (
+              <DCESection onNavigate={(subsection) => setDceSubsection(subsection)} />
+            )}
+
+            {activeTab === 'redaction' && redactionSection === 'DCE' && dceSubsection === 'questionnaire-technique' && (
+              <QuestionnaireTechnique />
+            )}
+
+            {activeTab === 'redaction' && redactionSection === 'DCE' && dceSubsection !== null && dceSubsection !== 'questionnaire-technique' && (
+              <RedactionPlaceholder selectedSection={'DCE'} />
+            )}
+
+            {activeTab === 'redaction' && redactionSection !== null && redactionSection !== 'DCE' && (
               <RedactionPlaceholder selectedSection={redactionSection} />
             )}
             {activeTab === 'export' && (
