@@ -3,6 +3,7 @@ import { Upload, FileText, Download, Filter, Search, Calendar, Building2, Mail, 
 import { DepotsData, EntrepriseDepot } from '../types/depots';
 import { parseDepotsFile } from '../utils/depotsParser';
 import { SupabaseClient } from '@supabase/supabase-js';
+import * as XLSX from 'xlsx';
 
 interface RegistreDepotsProps {
   supabaseClient?: SupabaseClient | null;
@@ -127,7 +128,102 @@ const RegistreDepots: React.FC<RegistreDepotsProps> = ({ supabaseClient, onOpenP
 
   const handleExportExcel = () => {
     if (!depotsData) return;
-    console.log('Export Excel');
+    
+    try {
+      // Créer les données pour l'export
+      const exportData = filteredEntreprises.map((entreprise, index) => ({
+        'Ordre': index + 1,
+        'Contact': entreprise.contact,
+        'Société': entreprise.societe,
+        'SIRET': entreprise.siret,
+        'Email': entreprise.email,
+        'Adresse': entreprise.adresse,
+        'Code Postal': entreprise.codePostal,
+        'Ville': entreprise.ville,
+        'Téléphone': entreprise.telephone,
+        'Fax': entreprise.fax,
+        'Date de réception': entreprise.dateReception,
+        'Heure de réception': entreprise.heureReception,
+        'Mode de réception': entreprise.modeReception,
+        'Nature du pli': entreprise.naturePli,
+        'Nom du fichier': entreprise.nomFichier,
+        'Taille du fichier': entreprise.tailleFichier,
+        'Lot': entreprise.lot,
+        'Observations': entreprise.observations,
+        'Hors délai': entreprise.horsDelai ? 'Oui' : 'Non'
+      }));
+
+      // Créer le workbook
+      const wb = XLSX.utils.book_new();
+      
+      // Ajouter une feuille avec les informations de la procédure
+      const infoProcedure = [
+        ['INFORMATIONS DE LA PROCÉDURE'],
+        [],
+        ['Auteur', depotsData.procedureInfo.auteur],
+        ['Objet du marché', depotsData.procedureInfo.objet],
+        ['Référence', depotsData.procedureInfo.reference],
+        ['Date de publication', depotsData.procedureInfo.datePublication],
+        ['Date de candidature', depotsData.procedureInfo.dateCandidature],
+        ['Date d\'offre', depotsData.procedureInfo.dateOffre],
+        ['Date d\'export', depotsData.procedureInfo.dateExport],
+        [],
+        ['STATISTIQUES'],
+        [],
+        ['Total dépôts', filteredEntreprises.length],
+        ['Enveloppes électroniques', depotsData.stats.totalEnveloppesElectroniques],
+        ['Enveloppes papier', depotsData.stats.totalEnveloppesPapier]
+      ];
+      
+      const wsInfo = XLSX.utils.aoa_to_sheet(infoProcedure);
+      
+      // Définir les largeurs de colonnes
+      wsInfo['!cols'] = [
+        { wch: 25 },
+        { wch: 80 }
+      ];
+      
+      XLSX.utils.book_append_sheet(wb, wsInfo, 'Informations');
+      
+      // Ajouter la feuille avec les données des entreprises
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // Définir les largeurs de colonnes
+      ws['!cols'] = [
+        { wch: 8 },  // Ordre
+        { wch: 25 }, // Contact
+        { wch: 30 }, // Société
+        { wch: 15 }, // SIRET
+        { wch: 30 }, // Email
+        { wch: 35 }, // Adresse
+        { wch: 12 }, // CP
+        { wch: 25 }, // Ville
+        { wch: 15 }, // Téléphone
+        { wch: 15 }, // Fax
+        { wch: 12 }, // Date réception
+        { wch: 12 }, // Heure réception
+        { wch: 15 }, // Mode réception
+        { wch: 10 }, // Nature
+        { wch: 40 }, // Fichier
+        { wch: 10 }, // Taille
+        { wch: 40 }, // Lot
+        { wch: 20 }, // Observations
+        { wch: 10 }  // Hors délai
+      ];
+      
+      XLSX.utils.book_append_sheet(wb, ws, 'Liste des dépôts');
+      
+      // Générer le nom du fichier
+      const fileName = `Registre_Depots_${depotsData.procedureInfo.reference || 'export'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      // Télécharger le fichier
+      XLSX.writeFile(wb, fileName);
+      
+      console.log('Export Excel réussi:', fileName);
+    } catch (error) {
+      console.error('Erreur lors de l\'export Excel:', error);
+      setError('Erreur lors de l\'export Excel');
+    }
   };
 
   // Filtrer les entreprises

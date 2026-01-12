@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronRight, Save, AlertCircle, Search, X } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronRight, Save, AlertCircle, Search, X, FileSpreadsheet } from 'lucide-react';
 import { Critere, SousCritere, Question, QuestionnaireState, Procedure } from './types';
 import { supabase } from '@/lib/supabase';
+import * as XLSX from 'xlsx';
 
 const QuestionnaireTechnique: React.FC = () => {
   const [state, setState] = useState<QuestionnaireState>({
@@ -92,37 +93,63 @@ const QuestionnaireTechnique: React.FC = () => {
     setError('');
     
     try {
-      console.log('🔍 Chargement du questionnaire pour NumProc:', numProc);
+      console.log('🔍 Chargement du questionnaire pour NumProc:', numProc, 'Lot:', state.numeroLot);
       
+      // Si pas de numéro de lot, on ne peut pas charger
+      if (!state.numeroLot) {
+        console.log('ℹ️ Pas de numéro de lot défini, chargement annulé');
+        setHasExistingQuestionnaire(false);
+        setIsLoadingFromDb(false);
+        return;
+      }
+
+      // Charger depuis la nouvelle table questionnaires_techniques
       const { data, error: fetchError } = await supabase
-        .from('procédures')
-        .select('QT')
-        .eq('NumProc', numProc)
+        .from('questionnaires_techniques')
+        .select('qt_data, updated_at')
+        .eq('num_proc', numProc)
+        .eq('numero_lot', state.numeroLot)
         .single();
 
       if (fetchError) {
+        // Si erreur PGRST116 (pas de ligne trouvée), c'est normal
+        if (fetchError.code === 'PGRST116') {
+          console.log('ℹ️ Aucun questionnaire sauvegardé pour ce lot, réinitialisation');
+          setHasExistingQuestionnaire(false);
+          // Réinitialiser les critères pour ce nouveau lot
+          setState(prev => ({
+            ...prev,
+            criteres: []
+          }));
+          setIsLoadingFromDb(false);
+          return;
+        }
         console.error('❌ Erreur lors du chargement:', fetchError);
         throw fetchError;
       }
 
-      console.log('📦 Données reçues depuis QT:', data);
+      console.log('📦 Données reçues depuis questionnaires_techniques:', data);
 
-      if (data?.QT) {
-        console.log('✅ Questionnaire trouvé dans QT:', data.QT);
+      if (data?.qt_data) {
+        console.log('✅ Questionnaire trouvé, dernière MAJ:', data.updated_at);
         setHasExistingQuestionnaire(true);
         
         // Charger automatiquement le questionnaire
-        const savedData = data.QT;
+        const savedData = data.qt_data;
         setState(prev => ({
           ...prev,
-          criteres: savedData.criteres || [],
-          numeroLot: savedData.numeroLot
+          criteres: savedData.criteres || []
         }));
         
-        console.log('✅ Questionnaire chargé avec succès depuis QT');
+        console.log('✅ Questionnaire chargé avec succès depuis la base');
       } else {
-        console.log('ℹ️ Aucun questionnaire sauvegardé dans QT pour cette procédure');
+        console.log('ℹ️ Aucun questionnaire sauvegardé pour cette procédure/lot, réinitialisation');
         setHasExistingQuestionnaire(false);
+        // Réinitialiser les critères
+        setState(prev => ({
+          ...prev,
+          criteres: []
+        }));
       }
     } catch (err: any) {
       console.error('❌ Erreur chargement questionnaire:', err);
@@ -140,6 +167,11 @@ const QuestionnaireTechnique: React.FC = () => {
       return;
     }
 
+    if (!state.numeroLot) {
+      setError('Veuillez sélectionner un numéro de lot');
+      return;
+    }
+
     setIsSavingToDb(true);
     setError('');
     setSaveSuccess(false);
@@ -148,27 +180,31 @@ const QuestionnaireTechnique: React.FC = () => {
       // Préparer les données à sauvegarder
       const questionnaireData = {
         criteres: state.criteres,
-        numeroLot: state.numeroLot,
         savedAt: new Date().toISOString(),
         version: '1.0'
       };
 
-      console.log('💾 Sauvegarde du questionnaire pour NumProc:', state.procedure.NumProc);
-      console.log('📝 Données à sauvegarder dans QT:', questionnaireData);
+      console.log('💾 Sauvegarde du questionnaire pour NumProc:', state.procedure.NumProc, 'Lot:', state.numeroLot);
+      console.log('📝 Données à sauvegarder:', questionnaireData);
 
-      // Enregistrer dans la colonne JSONB QT de la table procédures
-      const { data, error: updateError } = await supabase
-        .from('procédures')
-        .update({ QT: questionnaireData })
-        .eq('NumProc', state.procedure.NumProc)
+      // Upsert dans la table questionnaires_techniques
+      const { data, error: upsertError } = await supabase
+        .from('questionnaires_techniques')
+        .upsert({
+          num_proc: state.procedure.NumProc,
+          numero_lot: state.numeroLot,
+          qt_data: questionnaireData
+        }, {
+          onConflict: 'num_proc,numero_lot' // Clé unique
+        })
         .select();
 
-      if (updateError) {
-        console.error('❌ Erreur lors de la sauvegarde dans QT:', updateError);
-        throw updateError;
+      if (upsertError) {
+        console.error('❌ Erreur lors de la sauvegarde:', upsertError);
+        throw upsertError;
       }
 
-      console.log('✅ Questionnaire sauvegardé avec succès dans QT:', data);
+      console.log('✅ Questionnaire sauvegardé avec succès:', data);
       setHasExistingQuestionnaire(true);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -178,12 +214,6 @@ const QuestionnaireTechnique: React.FC = () => {
     } finally {
       setIsSavingToDb(false);
     }
-  };
-
-  // Sauvegarder localement
-  const saveToLocalStorage = () => {
-    localStorage.setItem('questionnaire_technique', JSON.stringify(state));
-    alert('Questionnaire sauvegardé localement !');
   };
 
   // Calcul du total des points d'un critère
@@ -357,22 +387,225 @@ const QuestionnaireTechnique: React.FC = () => {
     }
   };
 
-  // Sauvegarde locale automatique
-  useEffect(() => {
-    localStorage.setItem('questionnaire_technique', JSON.stringify(state));
-  }, [state]);
+  // Export Excel du questionnaire
+  const exportQuestionnaireToExcel = () => {
+    try {
+      // Créer le workbook
+      const wb = XLSX.utils.book_new();
 
-  // Chargement initial
-  useEffect(() => {
-    const saved = localStorage.getItem('questionnaire_technique');
-    if (saved) {
-      try {
-        setState(JSON.parse(saved));
-      } catch (e) {
-        console.error('Erreur chargement questionnaire', e);
+      // FEUILLE 1: Vue détaillée avec structure hiérarchique
+      const detailData: any[][] = [];
+      
+      // En-tête du fichier
+      detailData.push(['QUESTIONNAIRE TECHNIQUE - CONFIGURATION DÉTAILLÉE']);
+      detailData.push([]);
+      detailData.push(['Procédure:', state.procedure?.['Numéro de procédure (Afpa)'] || 'Non définie']);
+      detailData.push(['Nom:', state.procedure?.nom_procedure || '']);
+      detailData.push(['Lot:', state.numeroLot || 'N/A']);
+      detailData.push(['Date d\'export:', new Date().toLocaleString('fr-FR')]);
+      detailData.push([]);
+      
+      // Calculer les totaux
+      const totalCriteres = state.criteres.length;
+      const totalSousCriteres = state.criteres.reduce((sum, c) => sum + c.sousCriteres.length, 0);
+      const totalQuestions = state.criteres.reduce((sum, c) => 
+        sum + c.sousCriteres.reduce((s, sc) => s + sc.questions.length, 0), 0
+      );
+      const totalPointsMax = state.criteres.reduce((sum, c) => 
+        sum + c.sousCriteres.reduce((s, sc) => 
+          s + sc.questions.reduce((q, quest) => q + (quest.pointsMax || 0), 0), 0
+        ), 0
+      );
+      
+      detailData.push(['TOTAUX:', `${totalCriteres} critères`, `${totalSousCriteres} sous-critères`, `${totalQuestions} questions`, `${totalPointsMax} points max`]);
+      detailData.push([]);
+      detailData.push([]);
+
+      // Structure détaillée
+      state.criteres.forEach((critere, critereIndex) => {
+        // Ligne CRITERE (niveau 1)
+        detailData.push([
+          `CRITÈRE ${critereIndex + 1}`,
+          critere.nom,
+          `Pondération: ${critere.ponderation}%`,
+          `${critere.sousCriteres.length} sous-critère(s)`,
+          ''
+        ]);
+        detailData.push([]);
+
+        critere.sousCriteres.forEach((sousCritere, sousCritereIndex) => {
+          // Ligne SOUS-CRITERE (niveau 2)
+          detailData.push([
+            '',
+          `  ├─ SOUS-CRITÈRE ${critereIndex + 1}.${sousCritereIndex + 1}`,
+            sousCritere.nom,
+            `Pondération: ${sousCritere.ponderation}%`,
+            `${sousCritere.questions.length} question(s)`
+          ]);
+          
+          // En-tête des questions
+          if (sousCritere.questions.length > 0) {
+            detailData.push([
+              '',
+              '',
+              'N°',
+              'Question',
+              'Points Max',
+              'Type',
+              'Obligatoire',
+              'Description/Attente',
+              'Évaluateurs'
+            ]);
+
+            // Lignes QUESTIONS (niveau 3)
+            sousCritere.questions.forEach((question, questionIndex) => {
+              const numeroQuestion = `${critereIndex + 1}.${sousCritereIndex + 1}.${questionIndex + 1}`;
+              detailData.push([
+                '',
+                '',
+                numeroQuestion,
+                question.intitule || '-',
+                question.pointsMax || 0,
+                'Texte libre',
+                'Non',
+                question.description || '-',
+                question.evaluateurs || '-'
+              ]);
+            });
+          }
+          
+          detailData.push([]); // Ligne vide entre sous-critères
+        });
+
+        detailData.push([]); // Ligne vide entre critères
+        detailData.push([]); // Ligne vide supplémentaire
+      });
+
+      // Créer la feuille avec les données
+      const wsDetail = XLSX.utils.aoa_to_sheet(detailData);
+      
+      // Définir les largeurs de colonnes
+      wsDetail['!cols'] = [
+        { wch: 18 },  // Niveau critère
+        { wch: 35 },  // Niveau sous-critère
+        { wch: 8 },   // N°
+        { wch: 70 },  // Question (plus large)
+        { wch: 12 },  // Points Max
+        { wch: 18 },  // Type
+        { wch: 12 },  // Obligatoire
+        { wch: 60 },  // Description/Attente
+        { wch: 40 }   // Évaluateurs
+      ];
+
+      XLSX.utils.book_append_sheet(wb, wsDetail, 'Structure détaillée');
+
+      // FEUILLE 2: Vue Synthèse par critère
+      const syntheseData: any[] = [];
+      state.criteres.forEach((critere, idx) => {
+        const nbSousCriteres = critere.sousCriteres.length;
+        const nbQuestions = critere.sousCriteres.reduce((sum, sc) => sum + sc.questions.length, 0);
+        const pointsMax = critere.sousCriteres.reduce((sum, sc) => 
+          sum + sc.questions.reduce((s, q) => s + (q.pointsMax || 0), 0), 0
+        );
+        
+        syntheseData.push({
+          'N°': idx + 1,
+          'Critère': critere.nom,
+          'Pondération (%)': critere.ponderation,
+          'Nb Sous-critères': nbSousCriteres,
+          'Nb Questions': nbQuestions,
+          'Points Max Total': pointsMax,
+          'Points moyens/question': nbQuestions > 0 ? (pointsMax / nbQuestions).toFixed(1) : 0
+        });
+      });
+
+      if (syntheseData.length > 0) {
+        const wsSynthese = XLSX.utils.json_to_sheet(syntheseData);
+        wsSynthese['!cols'] = [
+          { wch: 8 },   // N°
+          { wch: 40 },  // Critère
+          { wch: 18 },  // Pondération
+          { wch: 18 },  // Nb Sous-critères
+          { wch: 15 },  // Nb Questions
+          { wch: 18 },  // Points Max
+          { wch: 22 }   // Moyenne
+        ];
+        XLSX.utils.book_append_sheet(wb, wsSynthese, 'Synthèse critères');
       }
+
+      // FEUILLE 3: Liste complète des questions (tableau plat pour analyse)
+      const questionsData: any[] = [];
+      let numQuestion = 1;
+      
+      state.criteres.forEach((critere, critereIdx) => {
+        critere.sousCriteres.forEach((sousCritere, scIdx) => {
+          sousCritere.questions.forEach((question, qIdx) => {
+            const numeroComplet = `${critereIdx + 1}.${scIdx + 1}.${qIdx + 1}`;
+            questionsData.push({
+              'N° Global': numQuestion++,
+              'N° Hiérarchique': numeroComplet,
+              'Critère N°': critereIdx + 1,
+              'Critère': critere.nom,
+              'Pond. Critère (%)': critere.ponderation,
+              'Sous-critère N°': `${critereIdx + 1}.${scIdx + 1}`,
+              'Sous-critère': sousCritere.nom,
+              'Pond. S-C (%)': sousCritere.ponderation,
+              'N° Question': qIdx + 1,
+              'Question': question.intitule || '-',
+              'Points Max': question.pointsMax || 0,
+              'Type Réponse': 'Texte libre',
+              'Obligatoire': 'Non',
+              'Description/Attente': question.description || '-',
+              'Évaluateurs': question.evaluateurs || '-'
+            });
+          });
+        });
+      });
+
+      if (questionsData.length > 0) {
+        const wsQuestions = XLSX.utils.json_to_sheet(questionsData);
+        wsQuestions['!cols'] = [
+          { wch: 12 },  // N° Global
+          { wch: 16 },  // N° Hiérarchique (1.1.1)
+          { wch: 12 },  // Critère N°
+          { wch: 30 },  // Critère
+          { wch: 16 },  // Pond. Critère
+          { wch: 16 },  // Sous-critère N°
+          { wch: 30 },  // Sous-critère
+          { wch: 14 },  // Pond. S-C
+          { wch: 12 },  // N° Question
+          { wch: 70 },  // Question (texte complet)
+          { wch: 12 },  // Points Max
+          { wch: 18 },  // Type
+          { wch: 12 },  // Obligatoire
+          { wch: 60 },  // Description/Attente
+          { wch: 40 }   // Évaluateurs
+        ];
+        XLSX.utils.book_append_sheet(wb, wsQuestions, 'Toutes les questions');
+      }
+
+      // Générer le nom du fichier
+      const procedureRef = state.procedure?.['Numéro de procédure (Afpa)'] || 'questionnaire';
+      const lotSuffix = state.numeroLot ? `_lot${state.numeroLot}` : '';
+      const fileName = `QT_${procedureRef}${lotSuffix}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+      // Télécharger
+      XLSX.writeFile(wb, fileName);
+      
+      console.log('✅ Export Excel réussi:', fileName);
+    } catch (error) {
+      console.error('❌ Erreur export Excel:', error);
+      setError('Erreur lors de l\'export Excel');
     }
-  }, []);
+  };
+
+  // Recharger le questionnaire quand le numéro de lot change
+  useEffect(() => {
+    if (state.procedure?.NumProc && state.numeroLot) {
+      console.log('🔄 Changement de lot détecté, rechargement du QT...');
+      loadQuestionnaireFromDatabase(state.procedure.NumProc);
+    }
+  }, [state.numeroLot]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -384,13 +617,24 @@ const QuestionnaireTechnique: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configuration du Questionnaire</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">Structure hiérarchique d'évaluation</p>
             </div>
-            <button
-              onClick={ajouterCritere}
-              className="flex items-center gap-2 bg-teal-700 hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600 text-white px-6 py-2.5 rounded-full font-medium transition shadow-md"
-            >
-              <Plus className="w-4 h-4" />
-              Ajouter un critère
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={exportQuestionnaireToExcel}
+                disabled={state.criteres.length === 0}
+                className="flex items-center gap-2 bg-green-700 hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-full font-medium transition shadow-md"
+                title="Exporter la configuration en Excel"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Exporter Excel
+              </button>
+              <button
+                onClick={ajouterCritere}
+                className="flex items-center gap-2 bg-teal-700 hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600 text-white px-6 py-2.5 rounded-full font-medium transition shadow-md"
+              >
+                <Plus className="w-4 h-4" />
+                Ajouter un critère
+              </button>
+            </div>
           </div>
 
           {/* Section Procédure */}
@@ -718,14 +962,6 @@ const QuestionnaireTechnique: React.FC = () => {
         {state.criteres.length > 0 && (
           <div className="mt-8 space-y-4">
             <div className="flex justify-center gap-4">
-              <button
-                onClick={saveToLocalStorage}
-                className="px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded-lg transition-colors flex items-center gap-2 font-medium shadow-sm"
-              >
-                <Save className="w-5 h-5" />
-                Sauvegarder localement
-              </button>
-
               {state.procedure && (
                 <button
                   onClick={saveQuestionnaireToDatabase}
