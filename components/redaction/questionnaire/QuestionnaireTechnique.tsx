@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronRight, Save, AlertCircle, Search, X, FileSpreadsheet } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronRight, Save, AlertCircle, Search, X, FileSpreadsheet, Copy } from 'lucide-react';
 import { Critere, SousCritere, Question, QuestionnaireState, Procedure } from './types';
 import { supabase } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
@@ -18,6 +18,9 @@ const QuestionnaireTechnique: React.FC = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
   const [hasExistingQuestionnaire, setHasExistingQuestionnaire] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [selectedLotsForDuplication, setSelectedLotsForDuplication] = useState<number[]>([]);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   // Génération d'ID unique
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -214,6 +217,90 @@ const QuestionnaireTechnique: React.FC = () => {
     } finally {
       setIsSavingToDb(false);
     }
+  };
+
+  // Dupliquer le questionnaire vers d'autres lots
+  const duplicateQuestionnaireToLots = async () => {
+    if (!state.procedure?.NumProc || !state.numeroLot || selectedLotsForDuplication.length === 0) {
+      setError('Veuillez sélectionner au moins un lot de destination');
+      return;
+    }
+
+    if (state.criteres.length === 0) {
+      setError('Le questionnaire actuel est vide, rien à dupliquer');
+      return;
+    }
+
+    setIsDuplicating(true);
+    setError('');
+
+    try {
+      // Préparer les données à dupliquer
+      const questionnaireData = {
+        criteres: state.criteres,
+        savedAt: new Date().toISOString(),
+        version: '1.0',
+        duplicatedFrom: state.numeroLot
+      };
+
+      // Créer un tableau de promesses pour insérer dans tous les lots sélectionnés
+      const upsertPromises = selectedLotsForDuplication.map(lotNumber =>
+        supabase
+          .from('questionnaires_techniques')
+          .upsert({
+            num_proc: state.procedure!.NumProc,
+            numero_lot: lotNumber,
+            qt_data: questionnaireData
+          }, {
+            onConflict: 'num_proc,numero_lot'
+          })
+      );
+
+      // Exécuter toutes les insertions en parallèle
+      const results = await Promise.all(upsertPromises);
+
+      // Vérifier les erreurs
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        console.error('❌ Erreurs lors de la duplication:', errors);
+        throw new Error(`Erreur lors de la duplication vers ${errors.length} lot(s)`);
+      }
+
+      console.log(`✅ Questionnaire dupliqué avec succès vers ${selectedLotsForDuplication.length} lot(s)`);
+      alert(`✅ Questionnaire dupliqué avec succès vers les lots : ${selectedLotsForDuplication.join(', ')}`);
+      
+      // Fermer la modal et réinitialiser
+      setShowDuplicateModal(false);
+      setSelectedLotsForDuplication([]);
+    } catch (err: any) {
+      console.error('❌ Erreur duplication questionnaire:', err);
+      setError(err.message || 'Erreur lors de la duplication');
+    } finally {
+      setIsDuplicating(false);
+    }
+  };
+
+  // Ouvrir la modal de duplication
+  const openDuplicateModal = () => {
+    if (!state.procedure || !state.numeroLot) {
+      setError('Veuillez sélectionner une procédure et un lot');
+      return;
+    }
+    if (state.criteres.length === 0) {
+      setError('Le questionnaire actuel est vide, rien à dupliquer');
+      return;
+    }
+    setShowDuplicateModal(true);
+    setSelectedLotsForDuplication([]);
+  };
+
+  // Gérer la sélection/désélection d'un lot
+  const toggleLotSelection = (lotNumber: number) => {
+    setSelectedLotsForDuplication(prev => 
+      prev.includes(lotNumber)
+        ? prev.filter(n => n !== lotNumber)
+        : [...prev, lotNumber]
+    );
   };
 
   // Calcul du total des points d'un critère
@@ -788,6 +875,55 @@ const QuestionnaireTechnique: React.FC = () => {
                   <X className="w-4 h-4" />
                   Changer de procédure
                 </button>
+
+                {/* Boutons d'action */}
+                {state.criteres.length > 0 && (
+                  <div className="mt-6 space-y-4">
+                    <div className="flex justify-center gap-4">
+                      <button
+                        onClick={saveQuestionnaireToDatabase}
+                        disabled={isSavingToDb}
+                        className={`px-6 py-3 rounded-lg transition-colors flex items-center gap-2 font-medium shadow-sm ${
+                          saveSuccess
+                            ? 'bg-green-600 text-white'
+                            : 'bg-teal-800 hover:bg-teal-900 text-white'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {isSavingToDb ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Enregistrement...
+                          </>
+                        ) : saveSuccess ? (
+                          <>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Enregistré dans la procédure !
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-5 h-5" />
+                            Enregistrer dans la procédure {state.procedure.NumProc}
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={openDuplicateModal}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 font-medium shadow-sm"
+                      >
+                        <Copy className="w-5 h-5" />
+                        Dupliquer vers d'autres lots
+                      </button>
+                    </div>
+                    
+                    <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>Les modifications sont enregistrées par lot</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -959,44 +1095,85 @@ const QuestionnaireTechnique: React.FC = () => {
         </div>
 
         {/* Footer avec boutons de sauvegarde */}
-        {state.criteres.length > 0 && (
-          <div className="mt-8 space-y-4">
-            <div className="flex justify-center gap-4">
-              {state.procedure && (
-                <button
-                  onClick={saveQuestionnaireToDatabase}
-                  disabled={isSavingToDb}
-                  className={`px-6 py-3 rounded-lg transition-colors flex items-center gap-2 font-medium shadow-sm ${
-                    saveSuccess
-                      ? 'bg-green-600 text-white'
-                      : 'bg-teal-800 hover:bg-teal-900 text-white'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isSavingToDb ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Enregistrement...
-                    </>
-                  ) : saveSuccess ? (
-                    <>
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Enregistré dans la procédure !
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      Enregistrer dans la procédure {state.procedure.NumProc}
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-            
-            <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <AlertCircle className="w-3 h-3" />
-              <span>Sauvegarde automatique locale active</span>
+
+
+        {/* Modal de duplication */}
+        {showDuplicateModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Copy className="w-5 h-5 text-blue-600" />
+                    Dupliquer le questionnaire
+                  </h3>
+                  <button
+                    onClick={() => setShowDuplicateModal(false)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                  Dupliquer le questionnaire du <strong>Lot {state.numeroLot}</strong> vers :
+                </p>
+
+                <div className="space-y-2 mb-6 max-h-60 overflow-y-auto">
+                  {state.procedure?.nombre_lots && Array.from({ length: state.procedure.nombre_lots }, (_, i) => i + 1)
+                    .filter(lotNum => lotNum !== state.numeroLot) // Exclure le lot actuel
+                    .map(lotNum => (
+                      <label
+                        key={lotNum}
+                        className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedLotsForDuplication.includes(lotNum)}
+                          onChange={() => toggleLotSelection(lotNum)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          Lot {lotNum}
+                        </span>
+                      </label>
+                    ))}
+                </div>
+
+                {selectedLotsForDuplication.length > 0 && (
+                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      <strong>{selectedLotsForDuplication.length}</strong> lot(s) sélectionné(s) : {selectedLotsForDuplication.join(', ')}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDuplicateModal(false)}
+                    className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={duplicateQuestionnaireToLots}
+                    disabled={isDuplicating || selectedLotsForDuplication.length === 0}
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDuplicating ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Duplication...
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Dupliquer
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
