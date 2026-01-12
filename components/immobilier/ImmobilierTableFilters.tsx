@@ -35,7 +35,12 @@ const ImmobilierTableFilters: React.FC<ImmobilierFiltersProps> = ({ onSearch }) 
       if (filters.chefProjet && projet['Chef de Projet'] !== filters.chefProjet) return false;
       if (filters.programme && projet['Programme'] !== filters.programme) return false;
       if (filters.etapeDemande && projet['Etape demande'] !== filters.etapeDemande) return false;
-      if (filters.rpa && projet['RPA'] !== filters.rpa) return false;
+      if (filters.rpa) {
+        // Gestion spéciale pour "Non assigné" qui correspond aux projets sans RPA (null/vide)
+        if (filters.rpa === 'Non assigné') {
+          if (projet['RPA'] && projet['RPA'].trim() !== '') return false;
+        } else if (projet['RPA'] !== filters.rpa) return false;
+      }
       if (filters.composant && projet['Composant principal'] !== filters.composant) return false;
       if (filters.decisionCNI && projet['Décision CNI'] !== filters.decisionCNI) return false;
 
@@ -63,7 +68,16 @@ const ImmobilierTableFilters: React.FC<ImmobilierFiltersProps> = ({ onSearch }) 
   const chefs = useMemo(() => [...new Set(filteredProjets.map(p => p['Chef de Projet']).filter(Boolean))].sort(), [filteredProjets]);
   const programmes = useMemo(() => [...new Set(filteredProjets.map(p => p['Programme']).filter(Boolean))].sort(), [filteredProjets]);
   const etapeDemandes = useMemo(() => [...new Set(filteredProjets.map(p => p['Etape demande']).filter(Boolean))].sort(), [filteredProjets]);
-  const rpas = useMemo(() => [...new Set(filteredProjets.map(p => p['RPA']).filter(Boolean))].sort(), [filteredProjets]);
+  const rpas = useMemo(() => {
+    const rpaSet = new Set(filteredProjets.map(p => p['RPA']).filter(Boolean));
+    const rpaArray = [...rpaSet].sort();
+    // Ajouter "Non assigné" si au moins un projet n'a pas de RPA
+    const hasNonAssigned = filteredProjets.some(p => !p['RPA'] || p['RPA'].trim() === '');
+    if (hasNonAssigned) {
+      rpaArray.unshift('Non assigné');
+    }
+    return rpaArray;
+  }, [filteredProjets]);
   const composants = useMemo(() => [...new Set(filteredProjets.map(p => p['Composant principal']).filter(Boolean))].sort(), [filteredProjets]);
   const decisionsCNI = useMemo(() => [...new Set(filteredProjets.map(p => p['Décision CNI']).filter(Boolean))].sort(), [filteredProjets]);
 

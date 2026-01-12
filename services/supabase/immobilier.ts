@@ -163,7 +163,12 @@ export const immobilierService = {
     }
 
     if (filters.rpa) {
-      query = query.eq('RPA', filters.rpa);
+      // Gestion spéciale pour "Non assigné" qui correspond aux projets sans RPA (null/vide)
+      if (filters.rpa === 'Non assigné') {
+        query = query.or('RPA.is.null,RPA.eq.');
+      } else {
+        query = query.eq('RPA', filters.rpa);
+      }
     }
 
     if (filters.composant) {
@@ -209,7 +214,12 @@ export const immobilierService = {
       if (f.chefProjet && projet['Chef de Projet'] !== f.chefProjet) return false;
       if (f.programme && projet['Programme'] !== f.programme) return false;
       if (f.etapeDemande && projet['Etape demande'] !== f.etapeDemande) return false;
-      if (f.rpa && projet['RPA'] !== f.rpa) return false;
+      if (f.rpa) {
+        // Gestion spéciale pour "Non assigné" qui correspond aux projets sans RPA (null/vide)
+        if (f.rpa === 'Non assigné') {
+          if (projet['RPA'] && projet['RPA'].trim() !== '') return false;
+        } else if (projet['RPA'] !== f.rpa) return false;
+      }
       if (f.composant && projet['Composant principal'] !== f.composant) return false;
       if (f.decisionCNI && projet['Décision CNI'] !== f.decisionCNI) return false;
       if (f.dateTravauxDebut || f.dateTravauxFin) {

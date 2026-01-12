@@ -232,7 +232,10 @@ const ImmobilierCharts: React.FC = () => {
           color="bg-gradient-to-r from-emerald-500 to-emerald-600"
           maxItems={8}
           activeLabel={filters.rpa}
-          onClick={(rpa) => updateFilters({ rpa: filters.rpa === rpa ? undefined : rpa })}
+          onClick={(rpa) => {
+            // Le graphique affiche "Non assigné" mais on garde cette valeur telle quelle pour le filtre
+            updateFilters({ rpa: filters.rpa === rpa ? undefined : rpa });
+          }}
         />
         <SimpleBarChart
           title="Projets par priorité"
