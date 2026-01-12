@@ -76,7 +76,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
     {
       id: 'analyse',
       titre: 'Analyse',
-      description: 'Registres Retraits/Dépôts et analyse technique AN01',
+      description: 'Registres Retraits/Dépôts et analyse des offres AN01',
       icon: LineChart,
       iconColor: 'text-emerald-600 dark:text-emerald-400',
       iconBg: 'bg-emerald-100 dark:bg-emerald-500/20',

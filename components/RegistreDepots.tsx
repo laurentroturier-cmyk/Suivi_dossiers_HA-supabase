@@ -157,15 +157,15 @@ const RegistreDepots: React.FC<RegistreDepotsProps> = ({ supabaseClient, onOpenP
                 Registre des Dépôts
               </h1>
               <p className="text-gray-600 mb-8">
-                Chargez un fichier PDF pour visualiser les dépôts d'offres
+                Chargez un fichier PDF ou Excel (XLS/XLSX) pour visualiser les dépôts d'offres
               </p>
 
               <label className="inline-flex items-center gap-3 px-8 py-4 bg-[#005c4d] text-white rounded-xl font-medium hover:bg-[#004a3d] transition-colors cursor-pointer shadow-lg hover:shadow-xl">
                 <Upload className="w-5 h-5" />
-                Charger un fichier PDF
+                Charger un fichier (PDF ou Excel)
                 <input
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,.xls,.xlsx"
                   onChange={handleFileUpload}
                   className="hidden"
                   disabled={loading}
@@ -240,10 +240,10 @@ const RegistreDepots: React.FC<RegistreDepotsProps> = ({ supabaseClient, onOpenP
               </button>
               <label className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                 <Upload className="w-4 h-4" />
-                Nouveau PDF
+                Nouveau fichier
                 <input
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,.xls,.xlsx"
                   onChange={handleFileUpload}
                   className="hidden"
                 />

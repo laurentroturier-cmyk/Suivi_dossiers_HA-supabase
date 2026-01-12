@@ -1,4 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
+import * as XLSX from 'xlsx';
 import { DepotsData, EntrepriseDepot, DepotsProcedureInfo, DepotsStats } from '../types/depots';
 
 // Configuration du worker PDF.js
@@ -8,6 +9,316 @@ if (typeof window !== 'undefined') {
     import.meta.url
   ).toString();
 }
+
+/**
+ * Parse un fichier Excel de registre des dépôts
+ */
+export const parseExcelDepots = async (file: File): Promise<DepotsData> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    
+    // Prendre la première feuille
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    
+    // Convertir en JSON avec les cellules brutes
+    const rawData: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    
+    // Variables pour les informations de procédure (en-tête)
+    let auteur = '';
+    let prenom = '';
+    let nom = '';
+    let objet = '';
+    let reference = '';
+    let datePublication = '';
+    let dateCandidature = '';
+    let dateOffre = '';
+    let dateExport = '';
+    
+    // Extraire les informations d'en-tête (premières lignes avant le tableau)
+    // Format attendu : "Label : Valeur" ou ligne avec 2 colonnes ["Label", "Valeur"]
+    for (let i = 0; i < Math.min(15, rawData.length); i++) {
+      const row = rawData[i];
+      if (!row || row.length === 0) continue;
+      
+      // Cas 1: Ligne avec une seule cellule contenant "Label : Valeur"
+      if (row.length === 1 || (row.length > 1 && !row[1])) {
+        const cellContent = String(row[0] || '').trim();
+        if (cellContent.includes(':')) {
+          const [label, ...valueParts] = cellContent.split(':');
+          const labelLower = label.trim().toLowerCase();
+          const value = valueParts.join(':').trim();
+          
+          if (labelLower.includes('prenom') || labelLower.includes('prénom')) {
+            prenom = value;
+          } else if (labelLower === 'nom') {
+            nom = value;
+          } else if (labelLower.includes('objet')) {
+            objet = value;
+          } else if (labelLower.includes('référence') || labelLower.includes('reference')) {
+            reference = value;
+          } else if (labelLower.includes('date de publication')) {
+            datePublication = value;
+          } else if (labelLower.includes('date de candidature')) {
+            dateCandidature = value;
+          } else if (labelLower.includes('date offre') || labelLower.includes("date d'offre")) {
+            dateOffre = value;
+          } else if (labelLower.includes('date export')) {
+            dateExport = value;
+          }
+        }
+        continue;
+      }
+      
+      // Cas 2: Ligne avec 2 colonnes ou plus ["Label", "Valeur"]
+      const firstCell = String(row[0] || '').trim();
+      const secondCell = String(row[1] || '').trim();
+      
+      if (!firstCell) continue;
+      
+      // Nettoyer le label (enlever les : en fin)
+      const labelClean = firstCell.replace(/\s*:\s*$/, '').toLowerCase();
+      
+      if (labelClean.includes('prenom') || labelClean.includes('prénom')) {
+        prenom = secondCell;
+      } else if (labelClean === 'nom') {
+        nom = secondCell;
+      } else if (labelClean.includes('objet')) {
+        objet = secondCell;
+      } else if (labelClean.includes('référence') || labelClean.includes('reference') || labelClean.includes('réf')) {
+        reference = secondCell;
+      } else if (labelClean.includes('date de publication')) {
+        datePublication = secondCell;
+      } else if (labelClean.includes('date de candidature')) {
+        dateCandidature = secondCell;
+      } else if (labelClean.includes('date offre') || labelClean.includes("date d'offre") || labelClean.includes('date de remise')) {
+        dateOffre = secondCell;
+      } else if (labelClean.includes('date export')) {
+        dateExport = secondCell;
+      }
+    }
+    
+    // Construire le nom de l'auteur
+    if (prenom && nom) {
+      auteur = `${prenom} ${nom}`;
+    } else if (nom) {
+      auteur = nom;
+    } else if (prenom) {
+      auteur = prenom;
+    }
+    
+    // Trouver l'index de la ligne d'en-tête du tableau (avec les colonnes)
+    // Chercher la ligne qui contient "Prénom" ENTRE GUILLEMETS ou comme première cellule d'un tableau
+    let headerIndex = -1;
+    for (let i = 0; i < rawData.length; i++) {
+      const row = rawData[i];
+      if (row && row.length > 5) {
+        // Chercher si la ligne contient les en-têtes typiques entre guillemets
+        const firstCellStr = String(row[0] || '').trim();
+        const secondCellStr = String(row[1] || '').trim();
+        
+        console.log(`Ligne ${i}: [0]="${firstCellStr}" [1]="${secondCellStr}"`);
+        
+        // Cas 1: "Prénom" ou Prénom (avec ou sans guillemets)
+        if (firstCellStr.toLowerCase().replace(/["']/g, '') === 'prénom' || 
+            firstCellStr.toLowerCase().replace(/["']/g, '') === 'prenom') {
+          headerIndex = i;
+          console.log(`Header trouvé à la ligne ${i}`);
+          break;
+        }
+      }
+    }
+    
+    if (headerIndex === -1) {
+      throw new Error('En-tête du tableau non trouvée dans le fichier Excel');
+    }
+    
+    // Extraire les colonnes
+    const headers = rawData[headerIndex].map((h: any) => String(h || '').trim());
+    
+    // Debug: vérifier les en-têtes
+    console.log('Headers bruts:', headers);
+    
+    // Nettoyer les en-têtes (enlever guillemets, accents)
+    const cleanHeaders = headers.map(h => 
+      h.replace(/^["']|["']$/g, '') // Enlever guillemets au début/fin
+       .normalize('NFD')
+       .replace(/[\u0300-\u036f]/g, '') // Enlever accents
+       .toLowerCase()
+       .trim()
+    );
+    
+    console.log('Headers nettoyés:', cleanHeaders);
+    
+    // Mapper les index des colonnes - ordre standard des exports e-marchespublics
+    const colIndexes = {
+      prenom: 0,
+      nom: 1,
+      societe: 2,
+      siret: 3,
+      email: 4,
+      adresse: 5,
+      cp: 6,
+      ville: 7,
+      telephone: 8,
+      fax: 9,
+      dateReception: 10,
+      modeReception: 11,
+      naturePli: 12,
+      nomFichier: 13,
+      taille: 14,
+      lot: 15,
+      observations: 16,
+      horsDelai: 18, // Index 17 est "Copie de sauvegarde", 18 est "Hors délai"
+    };
+    
+    console.log('Column indexes (positions fixes):', colIndexes);
+    
+    // Parser les entreprises
+    const entreprises: EntrepriseDepot[] = [];
+    let totalEnveloppesElectroniques = 0;
+    let totalEnveloppesPapier = 0;
+    
+    for (let i = headerIndex + 1; i < rawData.length; i++) {
+      const row = rawData[i];
+      if (!row || row.length < 3) continue;
+      
+      // Fonction utilitaire pour récupérer la valeur d'une cellule
+      const getCell = (index: number): string => {
+        if (index < 0 || index >= row.length) return '';
+        const val = row[index];
+        if (val === null || val === undefined) return '';
+        return String(val).trim();
+      };
+      
+      // Récupérer les champs principaux
+      const prenomVal = getCell(colIndexes.prenom);
+      const nomVal = getCell(colIndexes.nom);
+      const societeVal = getCell(colIndexes.societe);
+      
+      // Debug première ligne seulement
+      if (i === headerIndex + 1) {
+        console.log('Première ligne de données:');
+        console.log('  Prénom (index', colIndexes.prenom, '):', prenomVal);
+        console.log('  Nom (index', colIndexes.nom, '):', nomVal);
+        console.log('  Société (index', colIndexes.societe, '):', societeVal);
+      }
+      
+      // Vérifier si la ligne contient des données valides
+      if (!prenomVal && !nomVal && !societeVal) continue;
+      
+      // Construire le contact
+      const contact = [prenomVal, nomVal].filter(Boolean).join(' ');
+      
+      // Récupérer tous les autres champs
+      const siret = getCell(colIndexes.siret);
+      const email = getCell(colIndexes.email).toLowerCase();
+      const adresse = getCell(colIndexes.adresse);
+      const codePostal = getCell(colIndexes.cp);
+      const ville = getCell(colIndexes.ville);
+      const telephoneRaw = getCell(colIndexes.telephone);
+      const faxRaw = getCell(colIndexes.fax);
+      let dateReceptionRaw = getCell(colIndexes.dateReception);
+      const modeReception = getCell(colIndexes.modeReception);
+      const naturePli = getCell(colIndexes.naturePli);
+      const nomFichier = getCell(colIndexes.nomFichier);
+      let taille = getCell(colIndexes.taille);
+      const lot = getCell(colIndexes.lot);
+      const observations = getCell(colIndexes.observations);
+      const horsDelaiStr = getCell(colIndexes.horsDelai).toLowerCase();
+      
+      // Nettoyer les téléphones
+      const telephone = telephoneRaw.replace(/[\s.]/g, '');
+      const fax = faxRaw.replace(/[\s.]/g, '');
+      
+      // Extraire date et heure de réception
+      let dateReception = dateReceptionRaw;
+      let heureReception = '';
+      
+      if (dateReceptionRaw.includes('à')) {
+        const parts = dateReceptionRaw.split('à');
+        dateReception = parts[0].trim();
+        heureReception = parts.slice(1).join('à').trim();
+      } else if (dateReceptionRaw.includes(' ')) {
+        // Format alternatif : "19/09/2025 15h51"
+        const parts = dateReceptionRaw.split(' ');
+        if (parts.length >= 2 && /\d+h\d+/.test(parts[1])) {
+          dateReception = parts[0].trim();
+          heureReception = parts.slice(1).join(' ').trim();
+        }
+      }
+      
+      // Formater la taille si besoin
+      if (taille && !taille.toLowerCase().includes('ko') && !taille.toLowerCase().includes('mo')) {
+        const tailleNum = parseFloat(taille.replace(',', '.'));
+        if (!isNaN(tailleNum)) {
+          taille = `${Math.round(tailleNum)}Ko`;
+        }
+      }
+      
+      // Créer l'objet entreprise
+      const entreprise: EntrepriseDepot = {
+        contact: contact || 'Non renseigné',
+        societe: societeVal || 'Non renseigné',
+        siret,
+        email,
+        adresse,
+        codePostal,
+        ville,
+        telephone,
+        fax,
+        dateReception,
+        heureReception,
+        modeReception: modeReception || 'Électronique',
+        naturePli: naturePli || 'Offre',
+        nomFichier,
+        tailleFichier: taille,
+        lot: lot || 'Lot unique',
+        observations,
+        horsDelai: horsDelaiStr === 'oui' || horsDelaiStr === 'true' || horsDelaiStr === '1',
+      };
+      
+      // Compter les enveloppes selon le mode de réception
+      const modeLower = modeReception.toLowerCase();
+      if (modeLower.includes('électronique') || modeLower.includes('electronique') || modeLower === 'electronique') {
+        totalEnveloppesElectroniques++;
+      } else if (modeLower.includes('papier')) {
+        totalEnveloppesPapier++;
+      } else {
+        // Par défaut, considérer comme électronique
+        totalEnveloppesElectroniques++;
+      }
+      
+      entreprises.push(entreprise);
+    }
+    
+    const procedureInfo: DepotsProcedureInfo = {
+      auteur,
+      objet,
+      datePublication,
+      dateCandidature,
+      dateOffre,
+      reference,
+      idEmp: '',
+      dateExport,
+    };
+    
+    const stats: DepotsStats = {
+      totalEnveloppesElectroniques,
+      totalEnveloppesPapier,
+    };
+    
+    return {
+      procedureInfo,
+      stats,
+      entreprises,
+    };
+  } catch (error) {
+    console.error('Erreur parsing Excel dépôts:', error);
+    throw new Error('Erreur lors du parsing du fichier Excel des dépôts: ' + (error instanceof Error ? error.message : 'Erreur inconnue'));
+  }
+};
 
 /**
  * Parse un fichier PDF de registre des dépôts
@@ -319,5 +630,9 @@ export const parseDepotsFile = async (file: File): Promise<DepotsData> => {
     return parsePdfDepots(file);
   }
   
-  throw new Error('Format de fichier non supporté. Veuillez fournir un fichier PDF.');
+  if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+    return parseExcelDepots(file);
+  }
+  
+  throw new Error('Format de fichier non supporté. Veuillez fournir un fichier PDF, XLS ou XLSX.');
 };
