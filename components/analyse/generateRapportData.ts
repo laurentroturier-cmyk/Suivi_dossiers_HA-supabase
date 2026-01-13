@@ -37,6 +37,7 @@ function generateContexte(sources: RapportSources): Section1Contexte {
 // ===== SECTION 2 : DÉROULEMENT DE LA PROCÉDURE =====
 function generateDeroulement(sources: RapportSources): Section2Deroulement {
   const procedure = sources.procedure || {};
+  const dossier = sources.dossier || {};
   const retraits = sources.retraits as RetraitsData;
   const depots = sources.depots as DepotsData;
   
@@ -48,8 +49,17 @@ function generateDeroulement(sources: RapportSources): Section2Deroulement {
     ? (depots.stats.totalEnveloppesElectroniques + depots.stats.totalEnveloppesPapier) 
     : 0;
   
+  // Récupérer la date de publication (Date de lancement de la consultation)
+  // Priorité : 1) date_de_lancement_de_la_consultation de la procédure
+  //            2) Date_de_lancement_de_la_consultation du dossier
+  //            3) datePublication du registre retraits (fallback)
+  const datePublication = procedure['date_de_lancement_de_la_consultation'] 
+    || dossier['Date_de_lancement_de_la_consultation']
+    || retraits?.procedureInfo?.datePublication 
+    || '';
+  
   return {
-    datePublication: retraits?.procedureInfo?.datePublication || '',
+    datePublication,
     nombreRetraits,
     dateReceptionOffres: procedure['Date de remise des offres'] || '',
     nombrePlisRecus,
@@ -179,13 +189,38 @@ function generateValeurOffres(sources: RapportSources): Section7ValeurOffres {
     montantTTC: offer.amountTTC,
   }));
   
-  // Calcul du montant estimé (depuis dossier) + TVA
-  const montantHT = parseFloat(dossier['Montant_previsionnel_du_marche_(_HT)_']?.replace(',', '.')) || 0;
+  // Calcul du montant estimé (depuis dossier ou procédure) + TVA
+  const procedure = sources.procedure || {};
+  
+  // Récupérer la valeur brute - PRIORITÉ À LA PROCÉDURE
+  let montantHTString = procedure['Montant de la procédure']
+    || dossier['Montant_previsionnel_du_marche_(_HT)_'];
+  
+  // Nettoyer la valeur : enlever espaces, vérifier qu'elle n'est pas vide
+  if (montantHTString) {
+    montantHTString = String(montantHTString).trim();
+  }
+  
+  // Vérifier que la valeur n'est pas vide, null, undefined, "0", ou "0,00"
+  let montantHT = 0;
+  if (montantHTString && montantHTString !== '' && montantHTString !== '0' && montantHTString !== '0,00') {
+    const parsed = parseFloat(montantHTString.replace(',', '.').replace(/\s/g, ''));
+    montantHT = (!isNaN(parsed) && parsed > 0) ? parsed : 0;
+  }
+  
   const tva = parseFloat(an01Data.metadata?.tva) || 20;
-  const montantEstime = montantHT * (1 + tva / 100);
+  const montantEstime = montantHT > 0 ? montantHT * (1 + tva / 100) : 0;
+  
+  console.log('🔍 DEBUG MONTANT ESTIMÉ:');
+  console.log('  - Procédure [Montant de la procédure]:', procedure['Montant de la procédure'], '← PRIORITÉ');
+  console.log('  - Dossier [Montant_previsionnel_du_marche_(_HT)_]:', dossier['Montant_previsionnel_du_marche_(_HT)_']);
+  console.log('  - montantHTString (valeur sélectionnée):', montantHTString);
+  console.log('  - montantHT (après parsing):', montantHT);
+  console.log('  - TVA:', tva);
+  console.log('  - montantEstime (final TTC):', montantEstime);
   
   const montantAttributaire = an01Data.stats?.winner?.amountTTC || 0;
-  const ecartAbsolu = montantEstime - montantAttributaire;
+  const ecartAbsolu = montantEstime > 0 ? montantEstime - montantAttributaire : 0;
   const ecartPourcent = montantEstime > 0 ? (ecartAbsolu / montantEstime) * 100 : 0;
   
   return {

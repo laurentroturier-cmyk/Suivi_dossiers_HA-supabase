@@ -297,19 +297,33 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               spacing: { before: 200, after: 100 },
             }),
             
-            new Paragraph({
-              children: [
-                new TextRun({ text: `Pour rappel, le montant estimé dans la note d'opportunité était de ` }),
-                new TextRun({ text: formatCurrency(state.rapportGenere.section7_valeurOffres.montantEstime) }),
-                new TextRun({ text: `, soit un écart de ` }),
-                new TextRun({ 
-                  text: `${formatCurrency(state.rapportGenere.section7_valeurOffres.ecartAbsolu)} (${state.rapportGenere.section7_valeurOffres.ecartPourcent.toFixed(2)}%)`, 
-                  bold: true 
-                }),
-                new TextRun({ text: `.` }),
-              ],
-              spacing: { after: 200 },
-            }),
+            // Comparaison avec Note d'Opportunité (seulement si montant estimé existe)
+            ...(state.rapportGenere.section7_valeurOffres.montantEstime > 0 ? [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: `Pour rappel, le montant estimé dans la note d'opportunité était de ` }),
+                  new TextRun({ text: `${formatCurrency(state.rapportGenere.section7_valeurOffres.montantEstime)} TTC`, bold: true }),
+                  new TextRun({ text: `, soit un écart de ` }),
+                  new TextRun({ 
+                    text: `${formatCurrency(state.rapportGenere.section7_valeurOffres.ecartAbsolu)} (${state.rapportGenere.section7_valeurOffres.ecartPourcent.toFixed(2)}%)`, 
+                    bold: true 
+                  }),
+                  new TextRun({ text: `.` }),
+                ],
+                spacing: { after: 200 },
+              })
+            ] : [
+              new Paragraph({
+                children: [
+                  new TextRun({ 
+                    text: `⚠️ Le montant estimé dans la note d'opportunité n'est pas renseigné dans le dossier.`, 
+                    italics: true,
+                    color: "FF8800"
+                  }),
+                ],
+                spacing: { after: 200 },
+              })
+            ]),
             
             // Section 8 : Performance
             new Paragraph({
