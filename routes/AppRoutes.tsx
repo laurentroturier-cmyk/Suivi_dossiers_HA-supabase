@@ -31,6 +31,31 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 /**
+ * Route protégée Admin - nécessite rôle admin
+ */
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+/**
  * Configuration des routes de l'application
  */
 export const AppRoutes: React.FC = () => {
@@ -102,6 +127,25 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <AdminPage />
           </ProtectedRoute>
+        }
+      />
+      
+      {/* Route admin uniquement : Rédaction */}
+      <Route
+        path="/redaction"
+        element={
+          <AdminRoute>
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+              <div className="max-w-7xl mx-auto">
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                  Module Rédaction
+                </h1>
+                <p className="text-xl text-gray-600 dark:text-gray-300">
+                  Module en cours de développement...
+                </p>
+              </div>
+            </div>
+          </AdminRoute>
         }
       />
 

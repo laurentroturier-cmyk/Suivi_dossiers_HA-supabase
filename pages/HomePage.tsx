@@ -7,7 +7,7 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { projects } = useProjects();
   const { dossiers } = useDossiers();
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const [showDevModal, setShowDevModal] = useState(false);
 
   const domaines = [
@@ -138,7 +138,7 @@ const HomePage: React.FC = () => {
       borderColor: 'border-amber-200 dark:border-amber-500/40',
       adminOnly: true,
       action: () => {
-        if (profile?.role === 'admin') {
+        if (isAdmin) {
           navigate('/redaction');
         } else {
           setShowDevModal(true);
@@ -168,12 +168,12 @@ const HomePage: React.FC = () => {
               <div key={domaine.id}>
                 <div
                   onClick={domaine.action}
-                  className={`bg-white dark:bg-gray-800 rounded-2xl border-2 ${domaine.borderColor} p-6 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 ${domaine.adminOnly && profile?.role !== 'admin' ? 'opacity-75' : ''}`}
+                  className={`bg-white dark:bg-gray-800 rounded-2xl border-2 ${domaine.borderColor} p-6 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 ${domaine.adminOnly && !isAdmin ? 'opacity-75' : ''}`}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className={`w-12 h-12 ${domaine.iconBg} rounded-xl flex items-center justify-center relative`}>
                       <Icon className={`w-6 h-6 ${domaine.iconColor}`} />
-                      {domaine.adminOnly && profile?.role !== 'admin' && (
+                      {domaine.adminOnly && !isAdmin && (
                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
                           <Lock className="w-3 h-3 text-white" />
                         </div>
