@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useDossiers } from '@/hooks';
 import { DossierData } from '@/types';
-import { Download, Upload, Plus, Search, Filter, Loader2 } from 'lucide-react';
+import { Download, Upload, Plus, Search, Filter, Loader2, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { PROCEDURE_STATUS_OPTIONS } from '@/constants';
 
 const DossiersPage: React.FC = () => {
   const { dossiers, loading, searchDossiers, createDossier, updateDossier, deleteDossier } = useDossiers();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatut, setSelectedStatut] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -17,11 +20,24 @@ const DossiersPage: React.FC = () => {
   };
 
   const handleExport = () => {
-    const ws = XLSX.utils.json_to_sheet(dossiers);
+    const ws = XLSX.utils.json_to_sheet(filteredDossiers);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Dossiers');
     XLSX.writeFile(wb, `dossiers_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
+
+  const handleResetFilters = () => {
+    setSelectedStatut('');
+    setSearchTerm('');
+  };
+
+  // Filtrer les dossiers
+  const filteredDossiers = dossiers.filter((dossier) => {
+    if (selectedStatut && dossier.Statut_du_Dossier !== selectedStatut) {
+      return false;
+    }
+    return true;
+  });
 
   if (loading && dossiers.length === 0) {
     return (
@@ -60,6 +76,22 @@ const DossiersPage: React.FC = () => {
             {/* Actions */}
             <div className="flex gap-2">
               <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-colors ${
+                  showFilters || selectedStatut
+                    ? 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Filter className="w-4 h-4" />
+                Filtres
+                {selectedStatut && (
+                  <span className="ml-1 px-2 py-0.5 bg-primary-500 text-white text-xs rounded-full">
+                    1
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={handleExport}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium text-sm transition-colors"
               >
@@ -68,6 +100,45 @@ const DossiersPage: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Filtres */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Filtre Statut */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Statut de la consultation
+                  </label>
+                  <select
+                    value={selectedStatut}
+                    onChange={(e) => setSelectedStatut(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  >
+                    <option value="">Tous les statuts</option>
+                    {PROCEDURE_STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Bouton Réinitialiser */}
+              {selectedStatut && (
+                <div className="mt-3 flex justify-end">
+                  <button
+                    onClick={handleResetFilters}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Réinitialiser les filtres
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Table */}
@@ -94,7 +165,7 @@ const DossiersPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {dossiers.map((dossier) => (
+                {filteredDossiers.map((dossier) => (
                   <tr key={dossier.IDProjet} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {dossier.IDProjet}
@@ -121,7 +192,7 @@ const DossiersPage: React.FC = () => {
             </table>
           </div>
 
-          {dossiers.length === 0 && (
+          {filteredDossiers.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500">Aucune procédure trouvée</p>
             </div>

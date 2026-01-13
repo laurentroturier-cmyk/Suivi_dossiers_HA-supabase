@@ -39,7 +39,7 @@ const QuestionnaireTechnique: React.FC = () => {
     try {
       const { data, error: err } = await supabase
         .from('procédures')
-        .select('NumProc, "Numéro de procédure (Afpa)", "Nom de la procédure", "Nombre de lots"')
+        .select('NumProc, "numero court procédure afpa", "Numéro de procédure (Afpa)", "Nom de la procédure", "Nombre de lots"')
         .ilike('numero court procédure afpa', `%${query}%`)
         .limit(10);
 
@@ -758,11 +758,9 @@ const QuestionnaireTechnique: React.FC = () => {
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
                       {searchResults.map((proc) => {
                         const numero =
-                          proc.numero_court_procedure_afpa ||
                           proc["numero court procédure afpa"] ||
-                          proc.numero_procedure_afpa ||
-                          proc.numero_procedure ||
-                          'Numéro inconnu';
+                          proc['Numéro de procédure (Afpa)'] ||
+                          'Numéro de procédure non renseigné';
                         return (
                         <button
                           key={proc.id}

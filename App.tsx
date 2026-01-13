@@ -394,6 +394,7 @@ const App: React.FC = () => {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
     return DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5'));
   });
+  const [selectedProcedureStatuses, setSelectedProcedureStatuses] = useState<string[]>([]);
   const [selectedClientsInternes, setSelectedClientsInternes] = useState<string[]>([]);
   const [selectedCcags, setSelectedCcags] = useState<string[]>([]);
   const [launchFrom, setLaunchFrom] = useState<string>('');
@@ -412,6 +413,7 @@ const App: React.FC = () => {
   
   const [editingProject, setEditingProject] = useState<Partial<DossierData> | null>(null);
   const [editingProcedure, setEditingProcedure] = useState<Partial<ProjectData> | null>(null);
+  const [showProjectPreview, setShowProjectPreview] = useState(false);
   
   // Fonction pour ouvrir une procédure à partir d'un numéro AFPA
   const openProcedureByAfpaNumber = (numeroAfpa: string) => {
@@ -1133,9 +1135,14 @@ const App: React.FC = () => {
     };
 
     return procedures
-      .filter(p => (selectedAcheteurs.length === 0 || selectedAcheteurs.includes(getProp(p, 'Acheteur'))) && matchesProcedureSearch(p))
+      .filter(p => {
+        const matchesAcheteur = selectedAcheteurs.length === 0 || selectedAcheteurs.includes(getProp(p, 'Acheteur'));
+        const matchesSearch = matchesProcedureSearch(p);
+        const matchesStatus = selectedProcedureStatuses.length === 0 || selectedProcedureStatuses.includes(getProp(p, 'Statut de la consultation'));
+        return matchesAcheteur && matchesSearch && matchesStatus;
+      })
       .sort((a, b) => (parseFloat(String(getProp(b, 'NumProc'))) || 0) - (parseFloat(String(getProp(a, 'NumProc'))) || 0));
-  }, [procedures, selectedAcheteurs, procedureSearch]);
+  }, [procedures, selectedAcheteurs, procedureSearch, selectedProcedureStatuses]);
 
   // ============================================
   // AUTH HANDLERS & RENDERING
@@ -1406,6 +1413,7 @@ const App: React.FC = () => {
     setSelectedDeployYears([]);
     // Réinitialiser avec les 6 statuts par défaut (exclure "4 - Terminé" et "5 - Abandonné")
     setSelectedStatuses(DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5')));
+    setSelectedProcedureStatuses([]);
     setSelectedClientsInternes([]);
     setSelectedCcags([]);
     setLaunchFrom('');
@@ -3460,7 +3468,16 @@ const App: React.FC = () => {
                       onToggle={togglePriority}
                     />
                   )}
-                  {(selectedAcheteurs.length > 0 || selectedPriorities.length > 0 || projectSearch || procedureSearch) && (
+                  {activeTab === 'procedures' && (
+                    <FilterDropdown 
+                      id="list-procedure-status"
+                      label="Statut"
+                      options={PROCEDURE_STATUS_OPTIONS}
+                      selected={selectedProcedureStatuses}
+                      onToggle={(status) => setSelectedProcedureStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status])}
+                    />
+                  )}
+                  {(selectedAcheteurs.length > 0 || selectedPriorities.length > 0 || selectedProcedureStatuses.length > 0 || projectSearch || procedureSearch) && (
                     <button onClick={resetFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-xl transition-all flex items-center gap-2 h-[54px]">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>Reset
                     </button>
@@ -3634,6 +3651,40 @@ const App: React.FC = () => {
                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">N° Procédure:</span>
                   <span className="text-sm font-black text-blue-900">{editingProcedure.NumProc || 'Non défini'}</span>
                 </div>}
+                {editingProcedure && editingProcedure.IDProjet && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-2 border-amber-200 rounded-xl">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Projet rattaché:</span>
+                    <span className="text-sm font-bold text-amber-900">{editingProcedure.IDProjet}</span>
+                    <button
+                      onClick={() => setShowProjectPreview(true)}
+                      className="ml-2 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1"
+                      title="Visualiser le projet"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      Voir
+                    </button>
+                    <button
+                      onClick={() => {
+                        const project = dossiers.find(d => d.IDProjet === editingProcedure.IDProjet);
+                        if (project) {
+                          setEditingProcedure(null);
+                          setEditingProject(project);
+                          setActiveSubTab('general');
+                        }
+                      }}
+                      className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1"
+                      title="Ouvrir le projet"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Ouvrir
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <button onClick={() => save(editingProject ? 'project' : 'procedure')} disabled={isSaving} className="px-12 py-4 rounded-2xl text-white font-black text-xs uppercase tracking-widest transition-all bg-[#004d3d] hover:bg-[#006d57]">{isSaving ? 'Enregistrement...' : 'Enregistrer'}</button>
@@ -3721,7 +3772,7 @@ const App: React.FC = () => {
                   <div className="space-y-6">
                     <div className="flex justify-between items-center"><h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Liste des procédures rattachées à ce projet</h4><button onClick={() => { const projId = editingProject.IDProjet; const existingForProject = procedures.filter(p => String(getProp(p, 'IDProjet')) === String(projId)); let maxIdx = 0; existingForProject.forEach(p => { const num = String(getProp(p, 'NumProc')); if (num.includes('-P-')) { const parts = num.split('-P-'); const idx = parseInt(parts[parts.length - 1]); if (!isNaN(idx) && idx > maxIdx) maxIdx = idx; } }); const nextIdx = maxIdx + 1; const newProcId = `${projId}-P-${nextIdx}`; setEditingProcedure({ IDProjet: projId, Acheteur: getProp(editingProject, 'Acheteur'), "Objet court": getProp(editingProject, 'Titre_du_dossier'), NumProc: newProcId }); setEditingProject(null); setActiveSubTab('general'); }} className="px-6 py-3 bg-[#004d3d] hover:bg-[#006d57] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-colors">+ Nouvelle Procédure</button></div>
                     <div className="overflow-x-auto rounded-2xl border border-gray-50">
-                      <table className="themed-table min-w-full divide-y divide-gray-50"><thead className="bg-gray-50/50 dark:bg-[#252525]"><tr><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">N° Afpa</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Objet court</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Statut</th><th className="px-6 py-4 text-right dark:text-[#40E0D0]">Actions</th></tr></thead><tbody className="divide-y divide-gray-50 dark:divide-[#333333]">{associatedProcedures.length === 0 ? <tr><td colSpan={4} className="px-6 py-12 text-center text-xs font-bold text-gray-300 italic">Aucune procédure trouvée</td></tr> : associatedProcedures.map((proc, idx) => (<tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-[#1E1E1E]"><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Numéro de procédure (Afpa)') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Objet court') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Statut de la consultation') || '-'}</td><td className="px-6 py-4 text-right"><button onClick={() => { setEditingProcedure(proc); setEditingProject(null); setActiveSubTab('general'); }} className="p-2 text-blue-600 bg-blue-50 dark:text-[#40E0D0] dark:bg-cyan-400/10 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button></td></tr>))}</tbody></table>
+                      <table className="themed-table min-w-full divide-y divide-gray-50"><thead className="bg-gray-50/50 dark:bg-[#252525]"><tr><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">N° Afpa</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Nom Procédure</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Statut</th><th className="px-6 py-4 text-right dark:text-[#40E0D0]">Actions</th></tr></thead><tbody className="divide-y divide-gray-50 dark:divide-[#333333]">{associatedProcedures.length === 0 ? <tr><td colSpan={4} className="px-6 py-12 text-center text-xs font-bold text-gray-300 italic">Aucune procédure trouvée</td></tr> : associatedProcedures.map((proc, idx) => (<tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-[#1E1E1E]"><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Numéro de procédure (Afpa)') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Objet court') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Statut de la consultation') || '-'}</td><td className="px-6 py-4 text-right"><button onClick={() => { setEditingProcedure(proc); setEditingProject(null); setActiveSubTab('general'); }} className="p-2 text-blue-600 bg-blue-50 dark:text-[#40E0D0] dark:bg-cyan-400/10 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button></td></tr>))}</tbody></table>
                     </div>
                   </div>
                 )}
@@ -4004,6 +4055,86 @@ const App: React.FC = () => {
         })()}
 
       </main>
+
+      {/* Modal de prévisualisation du projet rattaché */}
+      {showProjectPreview && editingProcedure && editingProcedure.IDProjet && (() => {
+        const project = dossiers.find(d => d.IDProjet === editingProcedure.IDProjet);
+        if (!project) return null;
+        
+        return (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowProjectPreview(false)}>
+            <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-wider">Projet de rattachement</h3>
+                    <p className="text-amber-100 text-sm font-bold">ID: {project.IDProjet}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowProjectPreview(false)}
+                  className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center transition-colors"
+                >
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+                <div className="grid grid-cols-2 gap-4">
+                  {DOSSIER_FIELDS.filter(f => f.id !== 'CodesCPVDAE' && f.id !== 'Renouvellement_de_marche' && f.id !== 'NO_-_Type_de_validation').map(field => {
+                    const value = getProp(project, field.id);
+                    if (!value && value !== 0) return null;
+                    
+                    return (
+                      <div key={field.id} className="bg-gray-50 p-4 rounded-xl">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                          {field.label}
+                        </div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          {isDateField(field.id) ? formatDisplayDate(value) : value}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-gray-100 p-6 flex items-center justify-between bg-gray-50">
+                <button
+                  onClick={() => setShowProjectPreview(false)}
+                  className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold text-sm uppercase tracking-wider transition-colors"
+                >
+                  Fermer
+                </button>
+                <button
+                  onClick={() => {
+                    setShowProjectPreview(false);
+                    setEditingProcedure(null);
+                    setEditingProject(project);
+                    setActiveSubTab('general');
+                  }}
+                  className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm uppercase tracking-wider transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Ouvrir le projet complet
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
