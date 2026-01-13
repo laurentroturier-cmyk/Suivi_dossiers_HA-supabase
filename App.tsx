@@ -2024,7 +2024,7 @@ const App: React.FC = () => {
             </div>
           );
 
-          if (key === "Date d'échéance du marché" && type === 'procedure') {
+          if (key === "Date d'échéance du marché précédent" && type === 'procedure') {
             const dateNotification = getProp(data, 'Date de Notification');
             let inputClass = `w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-[#004d3d]/5 outline-none`;
             let joursRestants: number | null = null;

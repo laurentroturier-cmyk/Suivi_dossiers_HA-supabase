@@ -19,7 +19,7 @@ export const PROJECT_FIELDS = [
   { id: 'Code CPV Principal', label: 'Code CPV Principal' },
   { id: 'Numéro de procédure (Afpa)', label: 'N° Afpa' },
   { id: 'Statut de la consultation', label: 'Statut' },
-  { id: 'Montant de la procédure', label: 'Montant' },
+  { id: 'Montant de la procédure', label: 'Montant de la procédure' },
   { id: 'Date_limite_validite_offres calculee', label: 'Date limite validité offres' },
 ];
 
@@ -161,7 +161,7 @@ export const PROCEDURE_GROUPS: Record<string, { label: string; fields: string[] 
     fields: [
       'Forme du marché',
       'CCAG',
-      'Date d\'échéance du marché',
+      'Date d\'échéance du marché précédent',
       'Montant de la procédure',
     ],
   },
