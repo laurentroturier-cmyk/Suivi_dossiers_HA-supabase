@@ -1810,7 +1810,16 @@ const App: React.FC = () => {
           }
           
           // Champ IDProjet avec recherche de projet (OBLIGATOIRE pour les procédures)
+          // N'afficher ce champ QUE lors de la création d'une nouvelle procédure
           if (key === "IDProjet" && type === 'procedure') {
+            // Vérifier si c'est une nouvelle procédure (pas encore dans la base)
+            const isNewProcedure = !procedures.some(p => getProp(p, 'NumProc') === data?.NumProc);
+            
+            // Ne pas afficher le champ si la procédure existe déjà
+            if (!isNewProcedure) {
+              return null;
+            }
+            
             const projectOptions = dossiers.map(d => {
               const id = getProp(d, 'IDProjet') || '';
               const title = getProp(d, 'Titre_du_dossier') || '';
