@@ -18,6 +18,8 @@ export interface Question {
   id: string;
   intitule: string;
   pointsMax: number;
+  type?: string;
+  obligatoire?: boolean;
   description?: string;
   evaluateurs?: string;
 }

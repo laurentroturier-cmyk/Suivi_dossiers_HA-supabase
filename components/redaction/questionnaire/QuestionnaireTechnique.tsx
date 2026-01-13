@@ -553,8 +553,8 @@ const QuestionnaireTechnique: React.FC = () => {
                 numeroQuestion,
                 question.intitule || '-',
                 question.pointsMax || 0,
-                'Texte libre',
-                'Non',
+                question.type || 'Texte libre',
+                question.obligatoire ? 'Oui' : 'Non',
                 question.description || '-',
                 question.evaluateurs || '-'
               ]);
@@ -1061,6 +1061,32 @@ const QuestionnaireTechnique: React.FC = () => {
 
                               {/* Champs optionnels */}
                               <div className="space-y-2 ml-8">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <select
+                                    value={question.type || 'Texte libre'}
+                                    onChange={(e) =>
+                                      modifierQuestion(critere.id, sousCritere.id, question.id, 'type', e.target.value)
+                                    }
+                                    className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                  >
+                                    <option value="Texte libre">Texte libre</option>
+                                    <option value="Oui/Non">Oui/Non</option>
+                                    <option value="Choix multiple">Choix multiple</option>
+                                    <option value="Numérique">Numérique</option>
+                                    <option value="Document">Document</option>
+                                  </select>
+                                  <label className="flex items-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={question.obligatoire || false}
+                                      onChange={(e) =>
+                                        modifierQuestion(critere.id, sousCritere.id, question.id, 'obligatoire', e.target.checked)
+                                      }
+                                      className="w-4 h-4 text-teal-600 focus:ring-2 focus:ring-teal-500 rounded"
+                                    />
+                                    <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">Obligatoire</span>
+                                  </label>
+                                </div>
                                 <textarea
                                   value={question.description || ''}
                                   onChange={(e) =>

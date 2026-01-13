@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProjects, useDossiers } from '@/hooks';
-import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart, Building2, Edit3, PlayCircle } from 'lucide-react';
+import { useProjects, useDossiers, useAuth } from '@/hooks';
+import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart, Building2, Edit3, PlayCircle, Lock } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { projects } = useProjects();
   const { dossiers } = useDossiers();
+  const { profile } = useAuth();
+  const [showDevModal, setShowDevModal] = useState(false);
 
   const domaines = [
     {
@@ -134,7 +136,14 @@ const HomePage: React.FC = () => {
       iconColor: 'text-amber-600 dark:text-amber-400',
       iconBg: 'bg-amber-100 dark:bg-amber-500/20',
       borderColor: 'border-amber-200 dark:border-amber-500/40',
-      action: () => setTimeout(() => {}, 0),
+      adminOnly: true,
+      action: () => {
+        if (profile?.role === 'admin') {
+          navigate('/redaction');
+        } else {
+          setShowDevModal(true);
+        }
+      },
     },
   ];
 
@@ -159,11 +168,16 @@ const HomePage: React.FC = () => {
               <div key={domaine.id}>
                 <div
                   onClick={domaine.action}
-                  className={`bg-white dark:bg-gray-800 rounded-2xl border-2 ${domaine.borderColor} p-6 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1`}
+                  className={`bg-white dark:bg-gray-800 rounded-2xl border-2 ${domaine.borderColor} p-6 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 ${domaine.adminOnly && profile?.role !== 'admin' ? 'opacity-75' : ''}`}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className={`w-12 h-12 ${domaine.iconBg} rounded-xl flex items-center justify-center`}>
+                    <div className={`w-12 h-12 ${domaine.iconBg} rounded-xl flex items-center justify-center relative`}>
                       <Icon className={`w-6 h-6 ${domaine.iconColor}`} />
+                      {domaine.adminOnly && profile?.role !== 'admin' && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
+                          <Lock className="w-3 h-3 text-white" />
+                        </div>
+                      )}
                     </div>
                     {domaine.count !== undefined && (
                       <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-bold text-gray-700 dark:text-gray-300">
@@ -254,6 +268,31 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal En cours de développement */}
+      {showDevModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDevModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-8" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-amber-100 dark:bg-amber-500/20 rounded-full flex items-center justify-center mb-4">
+                <Edit3 className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                En cours de développement
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Le module Rédaction est actuellement en cours de développement.
+              </p>
+              <button
+                onClick={() => setShowDevModal(false)}
+                className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-colors"
+              >
+                Compris
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
