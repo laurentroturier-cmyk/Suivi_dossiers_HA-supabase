@@ -2357,10 +2357,41 @@ const App: React.FC = () => {
           if (m) sanitized['Code CPV Principal'] = m[0];
           else sanitized['Code CPV Principal'] = null; // Si pas de match, mettre null au lieu de chaîne vide
         }
-        // Convertir les chaînes vides en null pour tous les champs
+        // Convertir les chaînes vides en null pour tous les champs ET convertir les dates au format ISO
         Object.keys(sanitized).forEach(key => {
           if (sanitized[key] === '' || sanitized[key] === undefined) {
             sanitized[key] = null;
+          } else if (isDateField(key) && sanitized[key]) {
+            // Convertir les dates DD/MM/YYYY vers ISO YYYY-MM-DD pour PostgreSQL
+            const dateStr = String(sanitized[key]);
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+              const [day, month, year] = dateStr.split('/');
+              sanitized[key] = `${year}-${month}-${day}`;
+            } else if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+              // Si ce n'est ni DD/MM/YYYY ni YYYY-MM-DD, mettre null
+              sanitized[key] = null;
+            }
+          }
+        });
+        data = sanitized;
+      }
+      
+      // Pour les projets aussi, convertir les dates
+      if (type === 'project' && data) {
+        const sanitized: any = { ...data };
+        Object.keys(sanitized).forEach(key => {
+          if (sanitized[key] === '' || sanitized[key] === undefined) {
+            sanitized[key] = null;
+          } else if (isDateField(key) && sanitized[key]) {
+            // Convertir les dates DD/MM/YYYY vers ISO YYYY-MM-DD pour PostgreSQL
+            const dateStr = String(sanitized[key]);
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+              const [day, month, year] = dateStr.split('/');
+              sanitized[key] = `${year}-${month}-${day}`;
+            } else if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+              // Si ce n'est ni DD/MM/YYYY ni YYYY-MM-DD, mettre null
+              sanitized[key] = null;
+            }
           }
         });
         data = sanitized;
