@@ -50,6 +50,7 @@ import RegistreDepots from './components/RegistreDepots';
 import Contrats from './components/Contrats';
 import LandingPage from './components/LandingPage';
 import ImmobilierPage from './pages/ImmobilierPage';
+import RapportPresentation from './components/analyse/RapportPresentation';
 import { AppVersion } from './components/AppVersion';
 import AnalyseOverview from './components/an01/AnalyseOverview';
 import RedactionPlaceholder from './components/redaction/RedactionPlaceholder';
@@ -2804,6 +2805,7 @@ const App: React.FC = () => {
                     'retraits': 'Registre Retraits',
                     'depots': 'Registre Dépôts',
                     'an01': 'AN01',
+                    'rapport-presentation': 'Rapport de Présentation',
                     'contrats': 'Contrats',
                     'export': 'Exports & données',
                     'detail': 'Détail',
@@ -3914,6 +3916,14 @@ const App: React.FC = () => {
             onOpenProcedure={openProcedureByAfpaNumber}
             onProcedureUpdated={() => supabaseClient && fetchData(supabaseClient)}
           />
+        )}
+        {activeTab === 'rapport-presentation' && (
+          <div className="animate-in fade-in duration-700">
+            <RapportPresentation 
+              procedures={procedures}
+              dossiers={dossiers}
+            />
+          </div>
         )}
 
         {activeTab === 'contrats' && (

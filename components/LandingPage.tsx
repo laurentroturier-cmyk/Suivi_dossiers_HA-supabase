@@ -88,6 +88,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
         { label: 'Registre des retraits', tab: 'retraits', isAdmin: false, icon: Download, color: 'text-orange-600 dark:text-orange-400' },
         { label: 'Registre des dépôts', tab: 'depots', isAdmin: false, icon: Upload, color: 'text-cyan-600 dark:text-cyan-400' },
         { label: 'Analyse AN01', tab: 'an01', isAdmin: false, icon: LineChart, color: 'text-emerald-600 dark:text-emerald-400' },
+        { label: 'Rapport de Présentation', tab: 'rapport-presentation', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
       ]
     },
     {

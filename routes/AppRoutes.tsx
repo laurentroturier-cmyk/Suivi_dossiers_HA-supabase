@@ -11,6 +11,7 @@ import {
   AdminPage,
   ImmobilierPage,
 } from '@/pages';
+import RapportPresentationPage from '@/pages/RapportPresentationPage';
 import Login from '@/components/auth/Login';
 
 /**
@@ -126,6 +127,14 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/rapport-presentation"
+        element={
+          <ProtectedRoute>
+            <RapportPresentationPage />
           </ProtectedRoute>
         }
       />

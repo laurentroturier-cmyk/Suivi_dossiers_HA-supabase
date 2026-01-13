@@ -126,6 +126,16 @@ const HomePage: React.FC = () => {
           borderColor: 'border-emerald-200 dark:border-emerald-500/40',
           action: () => navigate('/an01'),
         },
+        {
+          id: 'analyse-rapport',
+          titre: 'Rapport de Présentation',
+          description: 'Génération automatique du rapport',
+          icon: FileText,
+          iconColor: 'text-blue-600 dark:text-blue-400',
+          iconBg: 'bg-blue-100 dark:bg-blue-500/20',
+          borderColor: 'border-blue-200 dark:border-blue-500/40',
+          action: () => navigate('/rapport-presentation'),
+        },
       ],
     },
     {
