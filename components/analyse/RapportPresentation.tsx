@@ -567,7 +567,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             new Paragraph({
               children: [
                 createBodyText(`• Critère technique : `),
-                createBodyText(`${state.rapportGenere.section6_methodologie?.ponderationTechnique || an01Data?.metadata?.poidsTechnique || 30}%`, true),
+                createBodyText(`${state.rapportGenere.section6_methodologie?.ponderationTechnique || 30}%`, true),
               ],
               spacing: { after: 100 },
             }),
@@ -575,7 +575,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             new Paragraph({
               children: [
                 createBodyText(`• Critère financier : `),
-                createBodyText(`${state.rapportGenere.section6_methodologie?.ponderationFinancier || an01Data?.metadata?.poidsFinancier || 70}%`, true),
+                createBodyText(`${state.rapportGenere.section6_methodologie?.ponderationFinancier || 70}%`, true),
               ],
               spacing: { after: 200 },
             }),
@@ -589,14 +589,14 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             
             new Paragraph({
               children: [
-                createBodyText(`• Note technique sur ${state.rapportGenere.section6_methodologie?.ponderationTechnique || an01Data?.metadata?.poidsTechnique || 30} points`),
+                createBodyText(`• Note technique sur ${state.rapportGenere.section6_methodologie?.ponderationTechnique || 30} points`),
               ],
               spacing: { after: 100 },
             }),
             
             new Paragraph({
               children: [
-                createBodyText(`• Note financière sur ${state.rapportGenere.section6_methodologie?.ponderationFinancier || an01Data?.metadata?.poidsFinancier || 70} points`),
+                createBodyText(`• Note financière sur ${state.rapportGenere.section6_methodologie?.ponderationFinancier || 70} points`),
               ],
               spacing: { after: 100 },
             }),
@@ -643,8 +643,8 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               // Sinon : afficher le tableau de classement classique
               createOffersTable(
                 state.rapportGenere.section7_valeurOffres.tableau,
-                an01Data?.metadata?.poidsTechnique || 30,
-                an01Data?.metadata?.poidsFinancier || 70
+                state.rapportGenere.section6_methodologie?.ponderationTechnique || 30,
+                state.rapportGenere.section6_methodologie?.ponderationFinancier || 70
               ),
               
               new Paragraph({
@@ -1620,12 +1620,12 @@ function createOffersTable(offers: any[], poidsTechnique: number = 30, poidsFina
     // Données
     ...offers.map(o => new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.raisonSociale, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(o.rangFinal), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.noteFinaleSur100.toFixed(2), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.noteFinanciere.toFixed(2), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.noteTechnique.toFixed(2), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(o.montantTTC), font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.raisonSociale || '', font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(o.rangFinal || 0), font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (o.noteFinaleSur100 || 0).toFixed(2), font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((o.noteFinanciere !== undefined ? o.noteFinanciere : o.noteFinanciereSur60) || 0).toFixed(2), font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((o.noteTechnique !== undefined ? o.noteTechnique : o.noteTechniqueSur40) || 0).toFixed(2), font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(o.montantTTC || 0), font: "Aptos", size: 22 })] })] }),
       ],
     })),
   ];
@@ -1642,6 +1642,20 @@ function createOffersTable(offers: any[], poidsTechnique: number = 30, poidsFina
 function createPerformanceDetailTable(tableauDetaille: any[]): Table {
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+  
+  // Vérifier que tableauDetaille n'est pas vide
+  if (!tableauDetaille || tableauDetaille.length === 0) {
+    return new Table({
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Aucune donnée disponible", font: "Aptos", size: 20 })] })] }),
+          ],
+        }),
+      ],
+      width: { size: 100, type: WidthType.PERCENTAGE },
+    });
+  }
   
   const rows = [
     // En-tête
@@ -1660,14 +1674,14 @@ function createPerformanceDetailTable(tableauDetaille: any[]): Table {
     // Données
     ...tableauDetaille.map(lot => new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lot.nomLot, font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.moyenneHT), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.moyenneTTC), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.offreRetenueHT), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.offreRetenueTTC), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.gainsHT), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.gainsTTC), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${lot.gainsPourcent.toFixed(1)}%`, font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lot.nomLot || '', font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.moyenneHT || 0), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.moyenneTTC || 0), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.offreRetenueHT || 0), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.offreRetenueTTC || 0), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.gainsHT || 0), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.gainsTTC || 0), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${(lot.gainsPourcent || 0).toFixed(1)}%`, font: "Aptos", size: 20 })] })] }),
       ],
     })),
   ];
