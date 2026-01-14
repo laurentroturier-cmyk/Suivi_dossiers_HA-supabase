@@ -66,6 +66,10 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [titreRapport, setTitreRapport] = useState('');
   const [notesRapport, setNotesRapport] = useState('');
+  
+  // Mode édition des chapitres
+  const [modeEdition, setModeEdition] = useState(false);
+  const [rapportEditable, setRapportEditable] = useState<any>(null);
 
   const procedureSelectionnee = procedures.find(p => p.NumProc === state.procedureSelectionnee);
   const dossierRattache = dossiers.find(d => d.IDProjet === procedureSelectionnee?.IDProjet);
@@ -1036,7 +1040,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             }),
             new Paragraph({
               children: [
-                createBodyText((an01Data?.metadata?.buyer || state.rapportGenere.section8_performance ? (an01GlobalData?.lots[0]?.metadata?.buyer || an01Data?.metadata?.buyer) : "") || "RPA responsable", true),
+                createBodyText(procedureSelectionnee?.Acheteur || "RPA responsable", true),
               ],
               alignment: AlignmentType.RIGHT,
               spacing: { after: 100 },
@@ -1322,10 +1326,41 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               </p>
             </div>
             <div className="flex gap-2">
+              {/* Bouton Mode édition */}
+              {state.rapportGenere && (
+                <button
+                  onClick={() => {
+                    if (!modeEdition) {
+                      setRapportEditable(JSON.parse(JSON.stringify(state.rapportGenere)));
+                    }
+                    setModeEdition(!modeEdition);
+                  }}
+                  className={`py-2 px-4 ${modeEdition ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'} text-white font-semibold rounded-lg flex items-center gap-2`}
+                >
+                  <Edit2 className="w-4 h-4" />
+                  {modeEdition ? 'Quitter l\'édition' : 'Modifier'}
+                </button>
+              )}
+              
+              {/* Bouton Valider les modifications */}
+              {modeEdition && (
+                <button
+                  onClick={() => {
+                    setState(prev => ({ ...prev, rapportGenere: rapportEditable }));
+                    setModeEdition(false);
+                    alert('Modifications enregistrées dans le rapport');
+                  }}
+                  className="py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  Valider les modifications
+                </button>
+              )}
+              
               {/* Bouton Sauvegarder */}
               <button
                 onClick={() => setShowSaveDialog(true)}
-                disabled={!state.rapportGenere}
+                disabled={!state.rapportGenere || modeEdition}
                 className="py-2 px-4 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <Save className="w-4 h-4" />
@@ -1375,10 +1410,39 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               icon="📋"
             >
               {state.rapportGenere ? (
-                <>
-                  <p><strong>Objet du marché :</strong> {state.rapportGenere.section1_contexte.objetMarche}</p>
-                  <p><strong>Durée du marché :</strong> {state.rapportGenere.section1_contexte.dureeMarche} mois</p>
-                </>
+                modeEdition && rapportEditable ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Objet du marché</label>
+                      <textarea
+                        value={rapportEditable.section1_contexte.objetMarche}
+                        onChange={(e) => setRapportEditable({
+                          ...rapportEditable,
+                          section1_contexte: { ...rapportEditable.section1_contexte, objetMarche: e.target.value }
+                        })}
+                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Durée du marché (mois)</label>
+                      <input
+                        type="number"
+                        value={rapportEditable.section1_contexte.dureeMarche}
+                        onChange={(e) => setRapportEditable({
+                          ...rapportEditable,
+                          section1_contexte: { ...rapportEditable.section1_contexte, dureeMarche: parseInt(e.target.value) || 0 }
+                        })}
+                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p><strong>Objet du marché :</strong> {state.rapportGenere.section1_contexte.objetMarche}</p>
+                    <p><strong>Durée du marché :</strong> {state.rapportGenere.section1_contexte.dureeMarche} mois</p>
+                  </>
+                )
               ) : (
                 <>
                   <p className="text-gray-500 italic">• Objet du marché (extrait du dossier)</p>
@@ -1397,22 +1461,85 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               icon="📅"
             >
               {state.rapportGenere ? (
-                <>
-                  <p><strong>Support :</strong> {state.rapportGenere.section2_deroulement.supportProcedure}</p>
-                  <p><strong>Date de publication :</strong> {state.rapportGenere.section2_deroulement.datePublication}</p>
-                  <p><strong>Nombre de retraits :</strong> {state.rapportGenere.section2_deroulement.nombreRetraits}</p>
-                  <p><strong>Date de réception :</strong> {state.rapportGenere.section2_deroulement.dateReceptionOffres}</p>
-                  <p><strong>Nombre de plis reçus :</strong> {state.rapportGenere.section2_deroulement.nombrePlisRecus}</p>
-                  <p><strong>Date d'ouverture :</strong> {state.rapportGenere.section2_deroulement.dateOuverturePlis}</p>
-                </>
+                modeEdition && rapportEditable ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Support de procédure</label>
+                      <input
+                        type="text"
+                        value={rapportEditable.section2_deroulement.supportProcedure}
+                        onChange={(e) => setRapportEditable({
+                          ...rapportEditable,
+                          section2_deroulement: { ...rapportEditable.section2_deroulement, supportProcedure: e.target.value }
+                        })}
+                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date de publication</label>
+                      <input
+                        type="text"
+                        value={rapportEditable.section2_deroulement.datePublication}
+                        onChange={(e) => setRapportEditable({
+                          ...rapportEditable,
+                          section2_deroulement: { ...rapportEditable.section2_deroulement, datePublication: e.target.value }
+                        })}
+                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de retraits</label>
+                      <input
+                        type="number"
+                        value={rapportEditable.section2_deroulement.nombreRetraits}
+                        onChange={(e) => setRapportEditable({
+                          ...rapportEditable,
+                          section2_deroulement: { ...rapportEditable.section2_deroulement, nombreRetraits: parseInt(e.target.value) || 0 }
+                        })}
+                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date de réception des offres</label>
+                      <input
+                        type="text"
+                        value={rapportEditable.section2_deroulement.dateReceptionOffres}
+                        onChange={(e) => setRapportEditable({
+                          ...rapportEditable,
+                          section2_deroulement: { ...rapportEditable.section2_deroulement, dateReceptionOffres: e.target.value }
+                        })}
+                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de plis reçus</label>
+                      <input
+                        type="number"
+                        value={rapportEditable.section2_deroulement.nombrePlisRecus}
+                        onChange={(e) => setRapportEditable({
+                          ...rapportEditable,
+                          section2_deroulement: { ...rapportEditable.section2_deroulement, nombrePlisRecus: parseInt(e.target.value) || 0 }
+                        })}
+                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p><strong>Support :</strong> {state.rapportGenere.section2_deroulement.supportProcedure}</p>
+                    <p><strong>Date de publication :</strong> {state.rapportGenere.section2_deroulement.datePublication}</p>
+                    <p><strong>Nombre de retraits :</strong> {state.rapportGenere.section2_deroulement.nombreRetraits}</p>
+                    <p><strong>Date de réception :</strong> {state.rapportGenere.section2_deroulement.dateReceptionOffres}</p>
+                    <p><strong>Nombre de plis reçus :</strong> {state.rapportGenere.section2_deroulement.nombrePlisRecus}</p>
+                  </>
+                )
               ) : (
                 <>
-                  <p className="text-gray-500 italic">• Plateforme de publication (ex: AWS, BOAMP...)</p>
-                  <p className="text-gray-500 italic">• Date de publication de l'avis</p>
-                  <p className="text-gray-500 italic">• Nombre de dossiers retirés (depuis registre Retraits)</p>
-                  <p className="text-gray-500 italic">• Date limite de réception des offres</p>
-                  <p className="text-gray-500 italic">• Nombre de plis reçus (depuis registre Dépôts)</p>
-                  <p className="text-gray-500 italic">• Date d'ouverture des plis</p>
+                  <p className="text-gray-500 italic">• Support de procédure (e-marchespublics, etc.)</p>
+                  <p className="text-gray-500 italic">• Date de publication</p>
+                  <p className="text-gray-500 italic">• Nombre de retraits du DCE</p>
+                  <p className="text-gray-500 italic">• Date de réception des offres</p>
+                  <p className="text-gray-500 italic">• Nombre de plis reçus</p>
                 </>
               )}
             </ChapterPreview>
@@ -1466,13 +1593,44 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               hasData={true}
               icon="👥"
             >
-              <p className="text-gray-800">
-                L'analyse des capacités juridiques, techniques et financières a été réalisée à partir de la 
-                recevabilité des documents administratifs demandés dans chacune de nos procédures.
-              </p>
-              <p className="text-gray-800 mt-2">
-                L'analyse des candidatures est disponible en annexe.
-              </p>
+              {modeEdition && rapportEditable ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Texte principal</label>
+                    <textarea
+                      value={rapportEditable.section5_proposition?.texteAnalyse || "L'analyse des capacités juridiques, techniques et financières a été réalisée à partir de la recevabilité des documents administratifs demandés dans chacune de nos procédures."}
+                      onChange={(e) => setRapportEditable({
+                        ...rapportEditable,
+                        section5_proposition: { ...rapportEditable.section5_proposition, texteAnalyse: e.target.value }
+                      })}
+                      className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Note complémentaire</label>
+                    <input
+                      type="text"
+                      value={rapportEditable.section5_proposition?.noteAnnexe || "L'analyse des candidatures est disponible en annexe."}
+                      onChange={(e) => setRapportEditable({
+                        ...rapportEditable,
+                        section5_proposition: { ...rapportEditable.section5_proposition, noteAnnexe: e.target.value }
+                      })}
+                      className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-gray-800">
+                    L'analyse des capacités juridiques, techniques et financières a été réalisée à partir de la 
+                    recevabilité des documents administratifs demandés dans chacune de nos procédures.
+                  </p>
+                  <p className="text-gray-800 mt-2">
+                    L'analyse des candidatures est disponible en annexe.
+                  </p>
+                </>
+              )}
             </ChapterPreview>
 
             {/* Chapitre 6 : Méthodologie d'analyse */}
@@ -1483,15 +1641,44 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               icon="⚖️"
             >
               {state.rapportGenere ? (
-                <>
-                  <p><strong>Critères d'attribution :</strong></p>
-                  <p className="ml-4">• Critère technique : {an01Data?.metadata?.poidsTechnique || state.rapportGenere.section6_methodologie?.ponderationTechnique || 30}%</p>
-                  <p className="ml-4">• Critère financier : {an01Data?.metadata?.poidsFinancier || state.rapportGenere.section6_methodologie?.ponderationFinancier || 70}%</p>
-                  <p className="mt-2"><strong>Méthode de notation :</strong></p>
-                  <p className="ml-4 text-sm">• Note technique sur {an01Data?.metadata?.poidsTechnique || 30} points</p>
-                  <p className="ml-4 text-sm">• Note financière sur {an01Data?.metadata?.poidsFinancier || 70} points</p>
-                  <p className="ml-4 text-sm">• Note finale sur 100 points</p>
-                </>
+                modeEdition && rapportEditable ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Pondération technique (%)</label>
+                      <input
+                        type="number"
+                        value={rapportEditable.section6_methodologie?.ponderationTechnique || 30}
+                        onChange={(e) => setRapportEditable({
+                          ...rapportEditable,
+                          section6_methodologie: { ...rapportEditable.section6_methodologie, ponderationTechnique: parseInt(e.target.value) || 0 }
+                        })}
+                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Pondération financière (%)</label>
+                      <input
+                        type="number"
+                        value={rapportEditable.section6_methodologie?.ponderationFinancier || 70}
+                        onChange={(e) => setRapportEditable({
+                          ...rapportEditable,
+                          section6_methodologie: { ...rapportEditable.section6_methodologie, ponderationFinancier: parseInt(e.target.value) || 0 }
+                        })}
+                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p><strong>Critères d'attribution :</strong></p>
+                    <p className="ml-4">• Critère technique : {an01Data?.metadata?.poidsTechnique || state.rapportGenere.section6_methodologie?.ponderationTechnique || 30}%</p>
+                    <p className="ml-4">• Critère financier : {an01Data?.metadata?.poidsFinancier || state.rapportGenere.section6_methodologie?.ponderationFinancier || 70}%</p>
+                    <p className="mt-2"><strong>Méthode de notation :</strong></p>
+                    <p className="ml-4 text-sm">• Note technique sur {an01Data?.metadata?.poidsTechnique || 30} points</p>
+                    <p className="ml-4 text-sm">• Note financière sur {an01Data?.metadata?.poidsFinancier || 70} points</p>
+                    <p className="ml-4 text-sm">• Note finale sur 100 points</p>
+                  </>
+                )
               ) : (
                 <>
                   <p className="text-gray-500 italic">• Critères d'attribution et pondérations</p>
