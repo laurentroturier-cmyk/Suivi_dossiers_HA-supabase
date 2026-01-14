@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Download, Filter, Search, Calendar, Building2, Mail, Phone, MapPin } from 'lucide-react';
+import { Upload, FileText, Download, Filter, Search, Calendar, Building2, Mail, Phone, MapPin, Save } from 'lucide-react';
 import { RetraitsData, EntrepriseRetrait } from '../types/retraits';
 import { parseRetraitsFile } from '../utils/retraitsParser';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -117,6 +117,81 @@ const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ supabaseClient, onO
     setLoading(false);
   };
 
+  const handleEnregistrerRetraits = async () => {
+    if (!retraitsData?.procedureInfo.reference || !supabaseClient) {
+      setUpdateMessage('❌ Aucune donnée à enregistrer ou connexion Supabase manquante');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Extraire le numéro AFPA (5 chiffres au début)
+      const afpaMatch = retraitsData.procedureInfo.reference.match(/^(\d{5})/);
+      if (!afpaMatch) {
+        setUpdateMessage(`⚠️ Numéro AFPA non trouvé dans la référence: ${retraitsData.procedureInfo.reference}`);
+        setLoading(false);
+        return;
+      }
+
+      const numeroAfpa = afpaMatch[1];
+      console.log('Enregistrement données retraits pour procédure:', numeroAfpa);
+      
+      // Récupérer la procédure
+      const { data: allProcedures, error: searchError } = await supabaseClient
+        .from('procédures')
+        .select('NumProc, "Numéro de procédure (Afpa)"');
+
+      if (searchError) {
+        console.error('Erreur recherche procédure:', searchError);
+        setUpdateMessage(`❌ Erreur recherche: ${searchError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      // Filtrer côté client
+      const procedures = allProcedures?.filter(p => {
+        const numAfpa = String(p['Numéro de procédure (Afpa)'] || '');
+        return numAfpa.startsWith(numeroAfpa);
+      }) || [];
+
+      if (!procedures || procedures.length === 0) {
+        setUpdateMessage(`⚠️ Aucune procédure trouvée avec le numéro AFPA ${numeroAfpa}`);
+        setLoading(false);
+        return;
+      }
+
+      const procedure = procedures[0];
+      
+      // Enregistrer les données complètes des retraits en JSONB
+      const { error: updateError } = await supabaseClient
+        .from('procédures')
+        .update({ 
+          retraits: retraitsData // Stocke tout l'objet RetraitsData en JSONB
+        })
+        .eq('NumProc', procedure.NumProc);
+
+      if (updateError) {
+        console.error('Erreur enregistrement retraits:', updateError);
+        setUpdateMessage(`❌ Erreur enregistrement: ${updateError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      setUpdateMessage(`✅ Données retraits enregistrées pour la procédure ${numeroAfpa}`);
+      setTimeout(() => setUpdateMessage(null), 5000);
+      
+      // Recharger les procédures
+      if (onProcedureUpdated) {
+        onProcedureUpdated();
+      }
+    } catch (err) {
+      console.error('Erreur lors de l\'enregistrement:', err);
+      setUpdateMessage(`❌ Erreur: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleVoirProcedure = () => {
     if (!retraitsData?.procedureInfo.reference) return;
     const afpaMatch = retraitsData.procedureInfo.reference.match(/^(\d{5})/);
@@ -224,6 +299,14 @@ const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ supabaseClient, onO
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Voir procédure
+              </button>
+              <button
+                onClick={handleEnregistrerRetraits}
+                disabled={loading || !retraitsData?.procedureInfo.reference || !supabaseClient}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                <Save className="w-4 h-4" />
+                Enregistrer retraits
               </button>
               <button
                 onClick={handleCompleterProcedure}
