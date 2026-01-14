@@ -1,5 +1,5 @@
-import { RapportSources, RapportContent, Section1Contexte, Section2Deroulement, Section3DossierConsultation, Section4QuestionsReponses, Section5AnalyseCandidatures, Section6Methodologie, Section7ValeurOffres, Section8Performance, Section9Attribution, Section10Calendrier, DocumentConsultation, CritereAnalyse, OffreClassement } from './types';
-import { AnalysisData } from '../an01/types';
+import { RapportSources, RapportContent, Section1Contexte, Section2Deroulement, Section3DossierConsultation, Section4QuestionsReponses, Section5AnalyseCandidatures, Section6Methodologie, Section7ValeurOffres, Section8Performance, Section9Attribution, Section10Calendrier, DocumentConsultation, CritereAnalyse, OffreClassement, LotPerformanceDetail } from './types';
+import { AnalysisData, Metadata } from '../../an01-utils/types';
 import { DepotsData } from '../../types/depots';
 import { RetraitsData } from '../../types/retraits';
 
@@ -28,7 +28,6 @@ export function generateRapportData(sources: RapportSources): RapportContent {
     section3_dossierConsultation: generateDossierConsultation(sources),
     section4_questionsReponses: generateQuestionsReponses(sources),
     section5_analyseCandidatures: generateAnalyseCandidatures({ ...sources, an01Data: primaryLotData }),
-    section5_criteres: generateMethodologie({ ...sources, an01Data: primaryLotData }),
     section6_methodologie: generateMethodologie({ ...sources, an01Data: primaryLotData }),
     section7_valeurOffres: generateValeurOffres({ ...sources, an01Data: primaryLotData }),
     section7_2_syntheseLots: allLotsData ? generateSyntheseLots(allLotsData, sources) : null,
@@ -151,20 +150,18 @@ function generateMethodologie(sources: RapportSources): Section6Methodologie {
     return {
       criteres: [],
       criteresDetails: [],
+      ponderationTechnique: 30,
+      ponderationFinancier: 70,
     };
   }
   
-  // Calculer les pondérations à partir des scores max
-  const maxFinancial = Math.max(...an01Data.offers.map((o: any) => o.scoreFinancial || 0));
-  const maxTechnical = Math.max(...an01Data.offers.map((o: any) => o.scoreTechnical || 0));
-  const totalMax = maxFinancial + maxTechnical;
-  
-  const ponderationEco = totalMax > 0 ? Math.round((maxFinancial / totalMax) * 100) : 60;
-  const ponderationTech = totalMax > 0 ? Math.round((maxTechnical / totalMax) * 100) : 40;
+  // Récupérer les pondérations depuis les métadonnées AN01 ou calculer
+  const poidsTechnique = (an01Data.metadata as Metadata)?.poidsTechnique || 30;
+  const poidsFinancier = (an01Data.metadata as Metadata)?.poidsFinancier || 70;
   
   const criteres: CritereAnalyse[] = [
-    { nom: 'Valeur économique de l\'offre', ponderation: ponderationEco },
-    { nom: 'Valeur technique de l\'offre', ponderation: ponderationTech },
+    { nom: 'Valeur économique de l\'offre', ponderation: poidsFinancier },
+    { nom: 'Valeur technique de l\'offre', ponderation: poidsTechnique },
   ];
   
   // Extraire les critères techniques depuis technicalAnalysis
@@ -176,6 +173,8 @@ function generateMethodologie(sources: RapportSources): Section6Methodologie {
   return {
     criteres,
     criteresDetails,
+    ponderationTechnique: poidsTechnique,
+    ponderationFinancier: poidsFinancier,
   };
 }
 
@@ -288,6 +287,28 @@ function generatePerformanceFromMultiLots(allLots: AnalysisData[], sources: Rapp
   const tva = parseFloat(allLots[0]?.metadata?.tva) || 20;
   const totalAttributaireHT = totalAttributaireTTC / (1 + tva / 100);
   
+  // Générer le tableau détaillé pour chaque lot
+  const tableauDetaille = allLots.map(lot => {
+    const moyenneTTC = lot.stats?.average || 0;
+    const moyenneHT = moyenneTTC / (1 + tva / 100);
+    const offreRetenueTTC = lot.stats?.winner?.amountTTC || 0;
+    const offreRetenueHT = offreRetenueTTC / (1 + tva / 100);
+    const gainsTTC = offreRetenueTTC - moyenneTTC; // Négatif = économie
+    const gainsHT = offreRetenueHT - moyenneHT;
+    const gainsPourcent = moyenneTTC > 0 ? (gainsTTC / moyenneTTC) * 100 : 0;
+    
+    return {
+      nomLot: lot.lotName || 'Lot',
+      moyenneHT,
+      moyenneTTC,
+      offreRetenueHT,
+      offreRetenueTTC,
+      gainsHT,
+      gainsTTC,
+      gainsPourcent,
+    };
+  });
+  
   return {
     valeurReference: totalAverage,
     performanceAchatPourcent: performanceGlobale,
@@ -295,6 +316,7 @@ function generatePerformanceFromMultiLots(allLots: AnalysisData[], sources: Rapp
     impactBudgetaireHT: totalSavings / (1 + tva / 100),
     montantAttributaireTTC: totalAttributaireTTC,
     montantAttributaireHT: totalAttributaireHT,
+    tableauDetaille,
   };
 }
 
@@ -311,13 +333,31 @@ function generateAttribution(sources: RapportSources): Section9Attribution {
 function generateSyntheseLots(allLots: AnalysisData[], sources: RapportSources): any {
   return {
     nombreLots: allLots.length,
-    lots: allLots.map((lot, index) => ({
-      numero: index + 1,
-      nom: lot.lotName || `Lot ${index + 1}`,
-      montantAttributaire: lot.stats?.winner?.amountTTC || 0,
-      attributaire: lot.stats?.winner?.name || '',
-      nombreOffres: lot.offers?.length || 0,
-    })),
+    lots: allLots.map((lot, index) => {
+      // Génération du tableau des offres pour ce lot
+      const tableau = lot.offers?.map(offer => ({
+        raisonSociale: offer.name,
+        rangFinal: offer.rankFinal,
+        noteFinaleSur100: offer.scoreFinal,
+        rangFinancier: offer.rankFinancial,
+        noteFinanciere: offer.scoreFinancial, // Note brute (pas forcément sur 60)
+        rangTechnique: offer.rankTechnical,
+        noteTechnique: offer.scoreTechnical, // Note brute (pas forcément sur 40)
+        montantTTC: offer.amountTTC,
+      })) || [];
+      
+      return {
+        numero: index + 1,
+        nomLot: lot.lotName || `Lot ${index + 1}`,
+        nom: lot.lotName || `Lot ${index + 1}`, // Pour compatibilité
+        montantAttributaire: lot.stats?.winner?.amountTTC || 0,
+        attributaire: lot.stats?.winner?.name || '',
+        nombreOffres: lot.offers?.length || 0,
+        tableau: tableau,
+        poidsTechnique: (lot.metadata as Metadata)?.poidsTechnique || 30,
+        poidsFinancier: (lot.metadata as Metadata)?.poidsFinancier || 70,
+      };
+    }),
     montantTotalTTC: allLots.reduce((sum, lot) => sum + (lot.stats?.winner?.amountTTC || 0), 0),
   };
 }

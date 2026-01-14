@@ -17,6 +17,8 @@ export interface Metadata {
   buyer: string;
   requester: string;
   tva: string;
+  poidsTechnique?: number;  // Poids du critère technique (ex: 30)
+  poidsFinancier?: number;  // Poids du critère financier (ex: 70)
 }
 
 export interface Stats {

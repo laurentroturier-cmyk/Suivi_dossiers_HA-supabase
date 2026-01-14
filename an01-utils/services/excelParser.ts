@@ -150,7 +150,9 @@ const extractMetadata = (rows: any[]): Metadata => {
     description: "-",
     buyer: "-",
     requester: "-",
-    tva: "20%"
+    tva: "20%",
+    poidsTechnique: 30,  // Valeur par défaut
+    poidsFinancier: 70   // Valeur par défaut
   };
 
   const limit = Math.min(rows.length, 25);
@@ -165,6 +167,24 @@ const extractMetadata = (rows: any[]): Metadata => {
     if (rowStr.includes("DESCRIPTION")) meta.description = findValueInRow(row, "DESCRIPTION") || meta.description;
     if (rowStr.includes("ACHETEUR")) meta.buyer = findValueInRow(row, "ACHETEUR") || meta.buyer;
     if (rowStr.includes("DEMANDEUR")) meta.requester = findValueInRow(row, "DEMANDEUR") || meta.requester;
+    
+    // Extraction du poids technique
+    if (rowStr.includes("POIDS") && rowStr.includes("TECHNIQUE")) {
+      row.forEach((cell: any) => {
+        if (typeof cell === 'number' && cell > 0 && cell <= 100) {
+          meta.poidsTechnique = cell;
+        }
+      });
+    }
+    
+    // Extraction du poids financier
+    if (rowStr.includes("POIDS") && rowStr.includes("FINANCIER")) {
+      row.forEach((cell: any) => {
+        if (typeof cell === 'number' && cell > 0 && cell <= 100) {
+          meta.poidsFinancier = cell;
+        }
+      });
+    }
     
     if (rowStr.includes("TVA")) {
       row.forEach((cell: any) => {

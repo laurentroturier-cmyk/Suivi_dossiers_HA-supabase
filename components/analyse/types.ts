@@ -24,7 +24,9 @@ export interface RapportContent {
   section5_analyseCandidatures: Section5AnalyseCandidatures;
   section6_methodologie: Section6Methodologie;
   section7_valeurOffres: Section7ValeurOffres;
+  section7_2_syntheseLots?: any; // Synthèse multi-lots (optionnel)
   section8_performance: Section8Performance;
+  section8_1_synthesePerformance?: any; // Synthèse performance multi-lots (optionnel)
   section9_attribution: Section9Attribution;
   section10_calendrier: Section10Calendrier;
 }
@@ -83,6 +85,8 @@ export interface MotifsRejet {
 export interface Section6Methodologie {
   criteres: CritereAnalyse[];
   criteresDetails: CritereDetail[];
+  ponderationTechnique?: number; // Pondération technique (ex: 30)
+  ponderationFinancier?: number; // Pondération financier (ex: 70)
 }
 
 export interface CritereAnalyse {
@@ -123,6 +127,18 @@ export interface Section8Performance {
   impactBudgetaireHT: number;
   montantAttributaireTTC: number;
   montantAttributaireHT: number;
+  tableauDetaille?: LotPerformanceDetail[]; // Tableau détaillé par lot
+}
+
+export interface LotPerformanceDetail {
+  nomLot: string;
+  moyenneHT: number;
+  moyenneTTC: number;
+  offreRetenueHT: number;
+  offreRetenueTTC: number;
+  gainsHT: number;
+  gainsTTC: number;
+  gainsPourcent: number;
 }
 
 // Section 9 : Proposition d'attribution

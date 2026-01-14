@@ -568,7 +568,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             
             new Paragraph({
               children: [
-                createBodyText("Les offres ont été analysées selon les critères suivants :"),
+                createBodyText("Critères d'attribution :", true),
               ],
               spacing: { after: 100 },
             }),
@@ -576,7 +576,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             new Paragraph({
               children: [
                 createBodyText(`• Critère technique : `),
-                createBodyText(`${state.rapportGenere.section5_criteres?.ponderationTechnique || 40}%`, true),
+                createBodyText(`${state.rapportGenere.section6_methodologie?.ponderationTechnique || an01Data?.metadata?.poidsTechnique || 30}%`, true),
               ],
               spacing: { after: 100 },
             }),
@@ -584,7 +584,35 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             new Paragraph({
               children: [
                 createBodyText(`• Critère financier : `),
-                createBodyText(`${state.rapportGenere.section5_criteres?.ponderationFinancier || 60}%`, true),
+                createBodyText(`${state.rapportGenere.section6_methodologie?.ponderationFinancier || an01Data?.metadata?.poidsFinancier || 70}%`, true),
+              ],
+              spacing: { after: 200 },
+            }),
+            
+            new Paragraph({
+              children: [
+                createBodyText("Méthode de notation :", true),
+              ],
+              spacing: { after: 100 },
+            }),
+            
+            new Paragraph({
+              children: [
+                createBodyText(`• Note technique sur ${state.rapportGenere.section6_methodologie?.ponderationTechnique || an01Data?.metadata?.poidsTechnique || 30} points`),
+              ],
+              spacing: { after: 100 },
+            }),
+            
+            new Paragraph({
+              children: [
+                createBodyText(`• Note financière sur ${state.rapportGenere.section6_methodologie?.ponderationFinancier || an01Data?.metadata?.poidsFinancier || 70} points`),
+              ],
+              spacing: { after: 100 },
+            }),
+            
+            new Paragraph({
+              children: [
+                createBodyText(`• Note finale sur 100 points`),
               ],
               spacing: { after: 200 },
             }),
@@ -596,27 +624,37 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               spacing: { before: 400, after: 200 },
             }),
             
-            // Si multi-lots : afficher le tableau de synthèse
-            ...(state.rapportGenere.section7_2_syntheseLots ? [
-              new Paragraph({
-                children: [
-                  createBodyText(`Le marché comporte ${state.rapportGenere.section7_2_syntheseLots.nombreLots} lots distincts. Voici la synthèse des attributaires pressenti pour chaque lot :`),
-                ],
-                spacing: { after: 200 },
-              }),
-              
-              createLotsTable(state.rapportGenere.section7_2_syntheseLots.lots),
-              
-              new Paragraph({
-                children: [
-                  createBodyText(`Montant total TTC tous lots confondus : `),
-                  createBodyText(formatCurrency(state.rapportGenere.section7_2_syntheseLots.montantTotalTTC), true),
-                ],
-                spacing: { before: 200, after: 100 },
-              }),
-            ] : [
+            new Paragraph({
+              children: [createBodyText("L'analyse économique et technique dans son détail est jointe au présent document en annexe.")],
+              spacing: { after: 200 },
+            }),
+            
+            new Paragraph({
+              children: [createBodyText("Le classement final des offres est le suivant.")],
+              spacing: { after: 200 },
+            }),
+            
+            // Si multi-lots : afficher un titre + tableau par lot
+            ...(state.rapportGenere.section7_2_syntheseLots ? 
+              state.rapportGenere.section7_2_syntheseLots.lots.flatMap((lot: any, index: number) => [
+                new Paragraph({
+                  children: [createBodyText(lot.nomLot, true)],
+                  heading: HeadingLevel.HEADING_3,
+                  spacing: { before: 300, after: 150 },
+                }),
+                createOffersTable(
+                  lot.tableau, 
+                  lot.poidsTechnique || 30, 
+                  lot.poidsFinancier || 70
+                ),
+                new Paragraph({ text: "", spacing: { after: 200 } }),
+              ]) : [
               // Sinon : afficher le tableau de classement classique
-              createOffersTable(state.rapportGenere.section7_valeurOffres.tableau),
+              createOffersTable(
+                state.rapportGenere.section7_valeurOffres.tableau,
+                an01Data?.metadata?.poidsTechnique || 30,
+                an01Data?.metadata?.poidsFinancier || 70
+              ),
               
               new Paragraph({
                 children: [
@@ -649,8 +687,38 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               spacing: { before: 400, after: 200 },
             }),
             
-            // Si multi-lots : afficher la performance globale + tableau par lot
-            ...(state.rapportGenere.section8_1_synthesePerformance ? [
+            // Si multi-lots ET tableau détaillé disponible : afficher le tableau détaillé
+            ...(state.rapportGenere.section8_performance?.tableauDetaille ? [
+              new Paragraph({
+                children: [
+                  createBodyText(`Le tableau ci-dessous présente la performance achat détaillée pour chaque lot :`),
+                ],
+                spacing: { after: 200 },
+              }),
+              
+              createPerformanceDetailTable(state.rapportGenere.section8_performance.tableauDetaille),
+              
+              new Paragraph({
+                children: [
+                  createBodyText(`Au global, la performance achat tous lots confondus est de `),
+                  createBodyText(`${state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%`, true),
+                  createBodyText(`.`),
+                ],
+                spacing: { before: 200, after: 100 },
+              }),
+              
+              new Paragraph({
+                children: [
+                  createBodyText(`L'impact budgétaire total estimé est de `),
+                  createBodyText(formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireTTC), true),
+                  createBodyText(` TTC (soit `),
+                  createBodyText(formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireHT)),
+                  createBodyText(` HT).`),
+                ],
+                spacing: { after: 200 },
+              }),
+            ] : state.rapportGenere.section8_1_synthesePerformance ? [
+              // Ancien format si pas de tableau détaillé mais multi-lots
               new Paragraph({
                 children: [
                   createBodyText(`Au global, la performance achat tous lots confondus est de `),
@@ -1188,11 +1256,11 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               {state.rapportGenere ? (
                 <>
                   <p><strong>Critères d'attribution :</strong></p>
-                  <p className="ml-4">• Critère technique : {state.rapportGenere.section5_criteres?.ponderationTechnique || 40}%</p>
-                  <p className="ml-4">• Critère financier : {state.rapportGenere.section5_criteres?.ponderationFinancier || 60}%</p>
+                  <p className="ml-4">• Critère technique : {an01Data?.metadata?.poidsTechnique || state.rapportGenere.section6_methodologie?.ponderationTechnique || 30}%</p>
+                  <p className="ml-4">• Critère financier : {an01Data?.metadata?.poidsFinancier || state.rapportGenere.section6_methodologie?.ponderationFinancier || 70}%</p>
                   <p className="mt-2"><strong>Méthode de notation :</strong></p>
-                  <p className="ml-4 text-sm">• Note technique sur 40 points</p>
-                  <p className="ml-4 text-sm">• Note financière sur 60 points</p>
+                  <p className="ml-4 text-sm">• Note technique sur {an01Data?.metadata?.poidsTechnique || 30} points</p>
+                  <p className="ml-4 text-sm">• Note financière sur {an01Data?.metadata?.poidsFinancier || 70} points</p>
                   <p className="ml-4 text-sm">• Note finale sur 100 points</p>
                 </>
               ) : (
@@ -1216,40 +1284,41 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               {state.rapportGenere ? (
                 <>
                   {state.rapportGenere.section7_2_syntheseLots ? (
-                    // Mode multi-lots : afficher le tableau de synthèse de TOUS les lots
+                    // Mode multi-lots : afficher UN TABLEAU PAR LOT avec titre
                     <>
-                      <p className="font-semibold mb-2 text-blue-700">📊 Synthèse de tous les lots</p>
-                      <div className="mt-2 overflow-x-auto">
-                        <table className="min-w-full text-xs border border-gray-200">
-                          <thead className="bg-gray-100">
-                            <tr>
-                              <th className="px-2 py-1 text-left border-b">Lot</th>
-                              <th className="px-2 py-1 text-left border-b">Nom du lot</th>
-                              <th className="px-2 py-1 text-right border-b">Montant TTC</th>
-                              <th className="px-2 py-1 text-left border-b">Attributaire pressenti</th>
-                              <th className="px-2 py-1 text-right border-b">Nb offres</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {state.rapportGenere.section7_2_syntheseLots.lots.map((lot: any, idx: number) => (
-                              <tr key={idx} className={idx === 0 ? 'bg-green-50' : ''}>
-                                <td className="px-2 py-1 border-b font-semibold">{lot.numero}</td>
-                                <td className="px-2 py-1 border-b">{lot.nom}</td>
-                                <td className="px-2 py-1 border-b text-right font-semibold">{formatCurrency(lot.montantAttributaire)}</td>
-                                <td className="px-2 py-1 border-b">{lot.attributaire}</td>
-                                <td className="px-2 py-1 border-b text-right">{lot.nombreOffres}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                          <tfoot className="bg-gray-50 font-bold">
-                            <tr>
-                              <td colSpan={2} className="px-2 py-1 border-t">TOTAL TOUS LOTS</td>
-                              <td className="px-2 py-1 border-t text-right">{formatCurrency(state.rapportGenere.section7_2_syntheseLots.montantTotalTTC)}</td>
-                              <td colSpan={2} className="px-2 py-1 border-t"></td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
+                      {state.rapportGenere.section7_2_syntheseLots.lots.map((lot: any, idx: number) => (
+                        <div key={idx} className="mb-6">
+                          <p className="font-bold mb-2 text-green-700 bg-green-50 px-2 py-1 rounded inline-block">
+                            {lot.nomLot}
+                          </p>
+                          <div className="mt-2 overflow-x-auto">
+                            <table className="min-w-full text-xs border border-gray-200">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="px-2 py-1 text-left border-b">Raison sociale</th>
+                                  <th className="px-2 py-1 text-center border-b">Rang</th>
+                                  <th className="px-2 py-1 text-center border-b">Note /100</th>
+                                  <th className="px-2 py-1 text-center border-b">Note Fin. /{lot.poidsFinancier}</th>
+                                  <th className="px-2 py-1 text-center border-b">Note Tech. /{lot.poidsTechnique}</th>
+                                  <th className="px-2 py-1 text-right border-b">Montant TTC</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {lot.tableau.map((offre: any, offreIdx: number) => (
+                                  <tr key={offreIdx} className={offreIdx === 0 ? 'bg-green-50 font-semibold' : ''}>
+                                    <td className="px-2 py-1 border-b">{offre.raisonSociale}</td>
+                                    <td className="px-2 py-1 border-b text-center">{offre.rangFinal}</td>
+                                    <td className="px-2 py-1 border-b text-center">{offre.noteFinaleSur100.toFixed(2)}</td>
+                                    <td className="px-2 py-1 border-b text-center">{offre.noteFinanciere.toFixed(2)}</td>
+                                    <td className="px-2 py-1 border-b text-center">{offre.noteTechnique.toFixed(2)}</td>
+                                    <td className="px-2 py-1 border-b text-right">{formatCurrency(offre.montantTTC)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ))}
                     </>
                   ) : (
                     // Mode lot unique
@@ -1261,8 +1330,8 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                             <tr>
                               <th className="px-3 py-2 text-left border-b">Rang</th>
                               <th className="px-3 py-2 text-left border-b">Entreprise</th>
-                              <th className="px-3 py-2 text-right border-b">Note Tech. /40</th>
-                              <th className="px-3 py-2 text-right border-b">Note Fin. /60</th>
+                              <th className="px-3 py-2 text-right border-b">Note Tech. /{an01Data?.metadata?.poidsTechnique || 30}</th>
+                              <th className="px-3 py-2 text-right border-b">Note Fin. /{an01Data?.metadata?.poidsFinancier || 70}</th>
                               <th className="px-3 py-2 text-right border-b">Note Totale /100</th>
                               <th className="px-3 py-2 text-right border-b">Montant TTC</th>
                             </tr>
@@ -1272,8 +1341,8 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                               <tr key={idx} className={idx === 0 ? 'bg-green-50 font-semibold' : ''}>
                                 <td className="px-3 py-2 border-b">#{offre.rangFinal}</td>
                                 <td className="px-3 py-2 border-b">{offre.raisonSociale}</td>
-                                <td className="px-3 py-2 border-b text-right">{offre.noteTechniqueSur40.toFixed(2)}</td>
-                                <td className="px-3 py-2 border-b text-right">{offre.noteFinanciereSur60.toFixed(2)}</td>
+                                <td className="px-3 py-2 border-b text-right">{offre.noteTechnique?.toFixed(2) || offre.noteTechniqueSur40?.toFixed(2)}</td>
+                                <td className="px-3 py-2 border-b text-right">{offre.noteFinanciere?.toFixed(2) || offre.noteFinanciereSur60?.toFixed(2)}</td>
                                 <td className="px-3 py-2 border-b text-right">{offre.noteFinaleSur100.toFixed(2)}</td>
                                 <td className="px-3 py-2 border-b text-right">{formatCurrency(offre.montantTTC)}</td>
                               </tr>
@@ -1311,8 +1380,52 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             >
               {state.rapportGenere ? (
                 <>
-                  {state.rapportGenere.section8_1_synthesePerformance ? (
-                    // Mode multi-lots : afficher la performance des lots sélectionnés
+                  {state.rapportGenere.section8_performance?.tableauDetaille ? (
+                    // Mode multi-lots avec tableau détaillé
+                    <>
+                      <p className="font-semibold mb-3 text-blue-700">📊 Performance détaillée par lot</p>
+                      <div className="overflow-x-auto mb-3">
+                        <table className="min-w-full text-xs border border-gray-200">
+                          <thead className="bg-blue-100">
+                            <tr>
+                              <th className="px-2 py-1 text-left border-b">Lot</th>
+                              <th className="px-2 py-1 text-right border-b">Moy. HT</th>
+                              <th className="px-2 py-1 text-right border-b">Moy. TTC</th>
+                              <th className="px-2 py-1 text-right border-b">Retenue HT</th>
+                              <th className="px-2 py-1 text-right border-b">Retenue TTC</th>
+                              <th className="px-2 py-1 text-right border-b">Gains HT</th>
+                              <th className="px-2 py-1 text-right border-b">Gains TTC</th>
+                              <th className="px-2 py-1 text-right border-b">Gains %</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {state.rapportGenere.section8_performance.tableauDetaille.map((lot: any, idx: number) => (
+                              <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                <td className="px-2 py-1 border-b font-semibold">{lot.nomLot}</td>
+                                <td className="px-2 py-1 border-b text-right">{formatCurrency(lot.moyenneHT)}</td>
+                                <td className="px-2 py-1 border-b text-right">{formatCurrency(lot.moyenneTTC)}</td>
+                                <td className="px-2 py-1 border-b text-right">{formatCurrency(lot.offreRetenueHT)}</td>
+                                <td className="px-2 py-1 border-b text-right">{formatCurrency(lot.offreRetenueTTC)}</td>
+                                <td className={`px-2 py-1 border-b text-right font-semibold ${lot.gainsHT < 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {formatCurrency(lot.gainsHT)}
+                                </td>
+                                <td className={`px-2 py-1 border-b text-right font-semibold ${lot.gainsTTC < 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {formatCurrency(lot.gainsTTC)}
+                                </td>
+                                <td className={`px-2 py-1 border-b text-right font-bold ${lot.gainsPourcent < 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {lot.gainsPourcent.toFixed(1)}%
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="text-sm mt-3"><strong>Performance globale :</strong> {state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%</p>
+                      <p className="text-sm"><strong>Impact budgétaire total :</strong> {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireTTC)} TTC 
+                        (soit {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireHT)} HT)</p>
+                    </>
+                  ) : state.rapportGenere.section8_1_synthesePerformance ? (
+                    // Mode multi-lots : afficher la performance des lots sélectionnés (ancien format)
                     <>
                       <p className="font-semibold mb-2 text-blue-700">📊 Performance tous lots confondus</p>
                       <p className="text-sm mb-2"><strong>Performance globale :</strong> {state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%</p>
@@ -1500,7 +1613,7 @@ const ChapterPreview: React.FC<{
 );
 
 // Fonction pour créer le tableau des offres
-function createOffersTable(offers: any[]): Table {
+function createOffersTable(offers: any[], poidsTechnique: number = 30, poidsFinancier: number = 70): Table {
   const rows = [
     // En-tête
     new TableRow({
@@ -1508,8 +1621,8 @@ function createOffersTable(offers: any[]): Table {
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Raison sociale", bold: true, font: "Aptos", size: 22 })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Rang", bold: true, font: "Aptos", size: 22 })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Note /100", bold: true, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Note Fin. /60", bold: true, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Note Tech. /40", bold: true, font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Note Fin. /${poidsFinancier}`, bold: true, font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Note Tech. /${poidsTechnique}`, bold: true, font: "Aptos", size: 22 })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Montant TTC", bold: true, font: "Aptos", size: 22 })] })] }),
       ],
     }),
@@ -1519,8 +1632,8 @@ function createOffersTable(offers: any[]): Table {
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.raisonSociale, font: "Aptos", size: 22 })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(o.rangFinal), font: "Aptos", size: 22 })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.noteFinaleSur100.toFixed(2), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.noteFinanciereSur60.toFixed(2), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.noteTechniqueSur40.toFixed(2), font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.noteFinanciere.toFixed(2), font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.noteTechnique.toFixed(2), font: "Aptos", size: 22 })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(o.montantTTC), font: "Aptos", size: 22 })] })] }),
       ],
     })),
@@ -1534,6 +1647,46 @@ function createOffersTable(offers: any[]): Table {
 
 // Fonction pour créer le tableau de synthèse des lots
 // Fonction pour créer le tableau de performance par lot (section 8)
+// Fonction pour créer le tableau détaillé de performance (chapitre 8)
+function createPerformanceDetailTable(tableauDetaille: any[]): Table {
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+  
+  const rows = [
+    // En-tête
+    new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Lot", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Moyennes des offres HT", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Moyennes des offres TTC", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Offre retenue HT", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Offre retenue TTC", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Gains € HT", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Gains € TTC", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Gains en %", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
+      ],
+    }),
+    // Données
+    ...tableauDetaille.map(lot => new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lot.nomLot, font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.moyenneHT), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.moyenneTTC), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.offreRetenueHT), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.offreRetenueTTC), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.gainsHT), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.gainsTTC), font: "Aptos", size: 20 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${lot.gainsPourcent.toFixed(1)}%`, font: "Aptos", size: 20 })] })] }),
+      ],
+    })),
+  ];
+  
+  return new Table({
+    rows,
+    width: { size: 100, type: WidthType.PERCENTAGE },
+  });
+}
+
 function createPerformanceLotsTable(lotsDetails: any[]): Table {
   const rows = [
     // En-tête
