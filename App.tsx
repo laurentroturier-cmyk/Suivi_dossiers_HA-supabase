@@ -3055,8 +3055,11 @@ const App: React.FC = () => {
                   'retraits': 'Registre Retraits',
                   'depots': 'Registre Dépôts',
                   'an01': 'AN01',
+                  'rapport': 'Rapport de Présentation',
                 };
-                navigateTo(tab as any, titles[tab] || tab);
+                // Si c'est rapport, naviguer vers rapport-presentation
+                const actualTab = tab === 'rapport' ? 'rapport-presentation' : tab;
+                navigateTo(actualTab as any, titles[tab] || tab);
               }} />
             )}
 

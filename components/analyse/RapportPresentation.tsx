@@ -1609,23 +1609,23 @@ function createOffersTable(offers: any[], poidsTechnique: number = 30, poidsFina
     // En-tête
     new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Raison sociale", bold: true, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Rang", bold: true, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Note /100", bold: true, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Note Fin. /${poidsFinancier}`, bold: true, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Note Tech. /${poidsTechnique}`, bold: true, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Montant TTC", bold: true, font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Raison sociale", bold: true, font: "Aptos", size: 20 })], alignment: AlignmentType.LEFT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Rang", bold: true, font: "Aptos", size: 20 })], alignment: AlignmentType.CENTER })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Note /100", bold: true, font: "Aptos", size: 20 })], alignment: AlignmentType.RIGHT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Note Fin. /${poidsFinancier}`, bold: true, font: "Aptos", size: 20 })], alignment: AlignmentType.RIGHT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Note Tech. /${poidsTechnique}`, bold: true, font: "Aptos", size: 20 })], alignment: AlignmentType.RIGHT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Montant TTC", bold: true, font: "Aptos", size: 20 })], alignment: AlignmentType.RIGHT })] }),
       ],
     }),
     // Données
     ...offers.map(o => new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.raisonSociale || '', font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(o.rangFinal || 0), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (o.noteFinaleSur100 || 0).toFixed(2), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((o.noteFinanciere !== undefined ? o.noteFinanciere : o.noteFinanciereSur60) || 0).toFixed(2), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((o.noteTechnique !== undefined ? o.noteTechnique : o.noteTechniqueSur40) || 0).toFixed(2), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(o.montantTTC || 0), font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: o.raisonSociale || '', font: "Aptos", size: 20 })], alignment: AlignmentType.LEFT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(o.rangFinal || 0), font: "Aptos", size: 20 })], alignment: AlignmentType.CENTER })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (o.noteFinaleSur100 || 0).toFixed(2), font: "Aptos", size: 20 })], alignment: AlignmentType.RIGHT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((o.noteFinanciere !== undefined ? o.noteFinanciere : o.noteFinanciereSur60) || 0).toFixed(2), font: "Aptos", size: 20 })], alignment: AlignmentType.RIGHT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((o.noteTechnique !== undefined ? o.noteTechnique : o.noteTechniqueSur40) || 0).toFixed(2), font: "Aptos", size: 20 })], alignment: AlignmentType.RIGHT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(o.montantTTC || 0), font: "Aptos", size: 20 })], alignment: AlignmentType.RIGHT })] }),
       ],
     })),
   ];
@@ -1661,29 +1661,74 @@ function createPerformanceDetailTable(tableauDetaille: any[]): Table {
     // En-tête
     new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Lot", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Moyennes des offres HT", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Moyennes des offres TTC", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Offre retenue HT", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Offre retenue TTC", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Gains € HT", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Gains € TTC", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Gains en %", bold: true, font: "Aptos", size: 20 })] })], shading: { fill: "D0E0E3" } }),
+        new TableCell({ 
+          children: [new Paragraph({ children: [new TextRun({ text: "Lot", bold: true, font: "Aptos", size: 18 })], alignment: AlignmentType.LEFT })], 
+          shading: { fill: "D0E0E3" } 
+        }),
+        new TableCell({ 
+          children: [new Paragraph({ children: [new TextRun({ text: "Moy. HT", bold: true, font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })], 
+          shading: { fill: "D0E0E3" } 
+        }),
+        new TableCell({ 
+          children: [new Paragraph({ children: [new TextRun({ text: "Moy. TTC", bold: true, font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })], 
+          shading: { fill: "D0E0E3" } 
+        }),
+        new TableCell({ 
+          children: [new Paragraph({ children: [new TextRun({ text: "Retenue HT", bold: true, font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })], 
+          shading: { fill: "D0E0E3" } 
+        }),
+        new TableCell({ 
+          children: [new Paragraph({ children: [new TextRun({ text: "Retenue TTC", bold: true, font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })], 
+          shading: { fill: "D0E0E3" } 
+        }),
+        new TableCell({ 
+          children: [new Paragraph({ children: [new TextRun({ text: "Gains HT", bold: true, font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })], 
+          shading: { fill: "D0E0E3" } 
+        }),
+        new TableCell({ 
+          children: [new Paragraph({ children: [new TextRun({ text: "Gains TTC", bold: true, font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })], 
+          shading: { fill: "D0E0E3" } 
+        }),
+        new TableCell({ 
+          children: [new Paragraph({ children: [new TextRun({ text: "Gains %", bold: true, font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })], 
+          shading: { fill: "D0E0E3" } 
+        }),
       ],
     }),
     // Données
-    ...tableauDetaille.map(lot => new TableRow({
-      children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lot.nomLot || '', font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.moyenneHT || 0), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.moyenneTTC || 0), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.offreRetenueHT || 0), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.offreRetenueTTC || 0), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.gainsHT || 0), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.gainsTTC || 0), font: "Aptos", size: 20 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${(lot.gainsPourcent || 0).toFixed(1)}%`, font: "Aptos", size: 20 })] })] }),
-      ],
-    })),
+    ...tableauDetaille.map(lot => {
+      // Couleur pour les gains : vert si négatif (économie), rouge si positif (surcoût)
+      const gainsColor = (lot.gainsPourcent || 0) < 0 ? "00B050" : (lot.gainsPourcent || 0) > 0 ? "FF0000" : "000000";
+      
+      return new TableRow({
+        children: [
+          new TableCell({ 
+            children: [new Paragraph({ children: [new TextRun({ text: lot.nomLot || '', font: "Aptos", size: 18 })], alignment: AlignmentType.LEFT })] 
+          }),
+          new TableCell({ 
+            children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.moyenneHT || 0), font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })] 
+          }),
+          new TableCell({ 
+            children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.moyenneTTC || 0), font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })] 
+          }),
+          new TableCell({ 
+            children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.offreRetenueHT || 0), font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })] 
+          }),
+          new TableCell({ 
+            children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.offreRetenueTTC || 0), font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })] 
+          }),
+          new TableCell({ 
+            children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.gainsHT || 0), font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })] 
+          }),
+          new TableCell({ 
+            children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(lot.gainsTTC || 0), font: "Aptos", size: 18 })], alignment: AlignmentType.RIGHT })] 
+          }),
+          new TableCell({ 
+            children: [new Paragraph({ children: [new TextRun({ text: `${(lot.gainsPourcent || 0).toFixed(1)}%`, font: "Aptos", size: 18, bold: true, color: gainsColor })], alignment: AlignmentType.RIGHT })] 
+          }),
+        ],
+      });
+    }),
   ];
   
   return new Table({
@@ -1726,19 +1771,19 @@ function createAttributairesTable(lots: any[]): Table {
     // En-tête
     new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Lot", bold: true, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Nom du lot", bold: true, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Attributaire pressenti", bold: true, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Montant TTC", bold: true, font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Lot", bold: true, font: "Aptos", size: 20 })], alignment: AlignmentType.LEFT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Nom du lot", bold: true, font: "Aptos", size: 20 })], alignment: AlignmentType.LEFT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Attributaire pressenti", bold: true, font: "Aptos", size: 20 })], alignment: AlignmentType.LEFT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Montant TTC", bold: true, font: "Aptos", size: 20 })], alignment: AlignmentType.RIGHT })] }),
       ],
     }),
     // Données
     ...lots.map(lot => new TableRow({
       children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(lot.numero), font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lot.nom, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lot.attributaire, font: "Aptos", size: 22 })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(lot.montantAttributaire), font: "Aptos", size: 22 })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(lot.numero), font: "Aptos", size: 20 })], alignment: AlignmentType.LEFT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lot.nom, font: "Aptos", size: 20 })], alignment: AlignmentType.LEFT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lot.attributaire, font: "Aptos", size: 20 })], alignment: AlignmentType.LEFT })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(lot.montantAttributaire), font: "Aptos", size: 20 })], alignment: AlignmentType.RIGHT })] }),
       ],
     })),
   ];

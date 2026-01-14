@@ -1,8 +1,8 @@
 import React from 'react';
-import { Download, Upload, LineChart, Info } from 'lucide-react';
+import { Download, Upload, LineChart, Info, FileText } from 'lucide-react';
 
 interface AnalyseOverviewProps {
-  onNavigate: (tab: 'retraits' | 'depots' | 'an01') => void;
+  onNavigate: (tab: 'retraits' | 'depots' | 'an01' | 'rapport') => void;
 }
 
 const AnalyseOverview: React.FC<AnalyseOverviewProps> = ({ onNavigate }) => {
@@ -36,6 +36,16 @@ const AnalyseOverview: React.FC<AnalyseOverviewProps> = ({ onNavigate }) => {
       iconBg: 'bg-emerald-100 dark:bg-emerald-500/20',
       borderColor: 'border-emerald-200 dark:border-emerald-500/40',
       action: () => onNavigate('an01'),
+    },
+    {
+      id: 'rapport',
+      title: 'Rapport de Présentation',
+      description: "Génération automatique du rapport de présentation Word",
+      icon: FileText,
+      iconColor: 'text-purple-600 dark:text-purple-400',
+      iconBg: 'bg-purple-100 dark:bg-purple-500/20',
+      borderColor: 'border-purple-200 dark:border-purple-500/40',
+      action: () => onNavigate('rapport'),
     },
   ];
 
