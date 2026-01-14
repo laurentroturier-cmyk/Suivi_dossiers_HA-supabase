@@ -49,18 +49,7 @@ export async function exportRapportDOCX(options: ExportRapportOptions): Promise<
               ],
               alignment: AlignmentType.LEFT,
             }),
-            new Paragraph({
-              children: [
-                new ImageRun({
-                  data: imageBuffer,
-                  transformation: {
-                    width: 103,
-                    height: 50,
-                  },
-                }),
-              ],
-              alignment: AlignmentType.RIGHT,
-            }),
+            // Logo supprimé temporairement (problème de compatibilité ImageRun)
           ],
         }),
       },

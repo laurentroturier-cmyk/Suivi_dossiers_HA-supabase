@@ -194,13 +194,15 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
       let dataToUse;
       
       // Déterminer les données à utiliser selon la sélection
-      if (selectedLots.length === 0) {
-        // Aucun lot sélectionné : erreur ou utiliser toutes les données
+      const isMultiLot = an01GlobalData && an01GlobalData.lots && an01GlobalData.lots.length > 1;
+      
+      if (isMultiLot && selectedLots.length === 0) {
+        // Multi-lots MAIS aucun lot sélectionné : erreur
         alert('Veuillez sélectionner au moins un lot');
         setIsGenerating(false);
         return;
-      } else if (selectedLots.length === 1) {
-        // Un seul lot sélectionné : utiliser an01Data (lot unique)
+      } else if (!isMultiLot || selectedLots.length === 1) {
+        // Mono-lot OU un seul lot sélectionné : utiliser an01Data (lot unique)
         dataToUse = an01Data;
       } else {
         // Plusieurs lots sélectionnés : créer une structure avec les lots sélectionnés
@@ -305,18 +307,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   ],
                   alignment: AlignmentType.LEFT,
                 }),
-                new Paragraph({
-                  children: [
-                    new ImageRun({
-                      data: imageBuffer,
-                      transformation: {
-                        width: 103, // 2.72 cm
-                        height: 50, // 1.32 cm
-                      },
-                    }),
-                  ],
-                  alignment: AlignmentType.RIGHT,
-                }),
+                // Logo supprimé temporairement (problème de compatibilité ImageRun)
               ],
             }),
           },
