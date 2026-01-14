@@ -17,6 +17,11 @@ export function generateRapportData(sources: RapportSources): RapportContent {
   const primaryLotData = isMultiLot ? (an01Input as any).allLots[0] : an01Input;
   const allLotsData = isMultiLot ? (an01Input as any).allLots : null;
   
+  // Pour la section 8 (performance), utiliser la synthèse multi-lots si applicable
+  const performanceData = allLotsData 
+    ? generatePerformanceFromMultiLots(allLotsData, sources)
+    : generatePerformance({ ...sources, an01Data: primaryLotData });
+  
   return {
     section1_contexte: generateContexte(sources),
     section2_deroulement: generateDeroulement(sources),
@@ -27,7 +32,7 @@ export function generateRapportData(sources: RapportSources): RapportContent {
     section6_methodologie: generateMethodologie({ ...sources, an01Data: primaryLotData }),
     section7_valeurOffres: generateValeurOffres({ ...sources, an01Data: primaryLotData }),
     section7_2_syntheseLots: allLotsData ? generateSyntheseLots(allLotsData, sources) : null,
-    section8_performance: generatePerformance({ ...sources, an01Data: primaryLotData }),
+    section8_performance: performanceData,
     section8_1_synthesePerformance: allLotsData ? generateSynthesePerformanceLots(allLotsData, sources) : null,
     section9_attribution: generateAttribution({ ...sources, an01Data: primaryLotData }),
     section10_calendrier: generateCalendrier(sources),
@@ -270,6 +275,26 @@ function generatePerformance(sources: RapportSources): Section8Performance {
     impactBudgetaireHT: an01Data.stats.savingAmount / (1 + tva / 100),
     montantAttributaireTTC,
     montantAttributaireHT,
+  };
+}
+
+// ===== SECTION 8 : PERFORMANCE CALCULÉE DEPUIS MULTI-LOTS =====
+function generatePerformanceFromMultiLots(allLots: AnalysisData[], sources: RapportSources): Section8Performance {
+  const totalSavings = allLots.reduce((sum, lot) => sum + (lot.stats?.savingAmount || 0), 0);
+  const totalAverage = allLots.reduce((sum, lot) => sum + (lot.stats?.average || 0), 0);
+  const totalAttributaireTTC = allLots.reduce((sum, lot) => sum + (lot.stats?.winner?.amountTTC || 0), 0);
+  const performanceGlobale = totalAverage > 0 ? (totalSavings / totalAverage) * 100 : 0;
+  
+  const tva = parseFloat(allLots[0]?.metadata?.tva) || 20;
+  const totalAttributaireHT = totalAttributaireTTC / (1 + tva / 100);
+  
+  return {
+    valeurReference: totalAverage,
+    performanceAchatPourcent: performanceGlobale,
+    impactBudgetaireTTC: totalSavings,
+    impactBudgetaireHT: totalSavings / (1 + tva / 100),
+    montantAttributaireTTC: totalAttributaireTTC,
+    montantAttributaireHT: totalAttributaireHT,
   };
 }
 

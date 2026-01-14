@@ -8,7 +8,7 @@ import { parseExcelFile } from '../../an01-utils/services/excelParser';
 import { DepotsData } from '../../types/depots';
 import { RetraitsData } from '../../types/retraits';
 import { AnalysisData } from '../an01/types';
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, HeadingLevel, AlignmentType, Footer, Header, PageNumber, NumberFormat, ImageRun } from "docx";
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, HeadingLevel, AlignmentType, Footer, Header, PageNumber, NumberFormat, ImageRun, TableOfContents } from "docx";
 
 interface Props {
   procedures: any[]; // Liste des procédures disponibles
@@ -32,7 +32,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   const [an01Data, setAn01Data] = useState<AnalysisData | null>(null);
   const [an01GlobalData, setAn01GlobalData] = useState<any | null>(null); // GlobalAnalysisResult
   const [selectedLotIndex, setSelectedLotIndex] = useState<number>(0);
+  const [selectedLots, setSelectedLots] = useState<number[]>([]); // Sélection multiple des lots
   const [numeroAfpa, setNumeroAfpa] = useState('');
+  
+  // Contenu des chapitres à compléter manuellement
+  const [contenuChapitre3, setContenuChapitre3] = useState('');
+  const [contenuChapitre4, setContenuChapitre4] = useState('');
+  const [contenuChapitre10, setContenuChapitre10] = useState('');
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -57,6 +63,9 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     setAn01Data(null);
     setAn01GlobalData(null);
     setSelectedLotIndex(0);
+    setContenuChapitre3('');
+    setContenuChapitre4('');
+    setContenuChapitre10('');
     setNumeroAfpa('');
   };
 
@@ -182,10 +191,31 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     setIsGenerating(true);
     
     try {
-      // Si "Ensemble des lots" est sélectionné, passer tous les lots
-      const dataToUse = selectedLotIndex === -1 && an01GlobalData 
-        ? { allLots: an01GlobalData.lots, globalMetadata: an01GlobalData.globalMetadata }
-        : an01Data;
+      let dataToUse;
+      
+      // Déterminer les données à utiliser selon la sélection
+      if (selectedLots.length === 0) {
+        // Aucun lot sélectionné : erreur ou utiliser toutes les données
+        alert('Veuillez sélectionner au moins un lot');
+        setIsGenerating(false);
+        return;
+      } else if (selectedLots.length === 1) {
+        // Un seul lot sélectionné : utiliser an01Data (lot unique)
+        dataToUse = an01Data;
+      } else {
+        // Plusieurs lots sélectionnés : créer une structure avec les lots sélectionnés
+        if (an01GlobalData) {
+          const selectedLotsData = an01GlobalData.lots.filter((_, index) => 
+            selectedLots.includes(index)
+          );
+          dataToUse = { 
+            allLots: selectedLotsData, 
+            globalMetadata: an01GlobalData.globalMetadata 
+          };
+        } else {
+          dataToUse = an01Data;
+        }
+      }
       
       const rapportContent = generateRapportData({
         procedure: procedureSelectionnee,
@@ -338,7 +368,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             }),
           },
           children: [
-            // En-tête
+            // En-tête (sans HeadingLevel pour ne pas apparaître dans le sommaire)
             new Paragraph({
               children: [
                 new TextRun({
@@ -349,7 +379,6 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   color: "56BAA2",
                 }),
               ],
-              heading: HeadingLevel.HEADING_1,
               alignment: AlignmentType.CENTER,
               spacing: { after: 400 },
             }),
@@ -364,9 +393,32 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   color: "56BAA2",
                 }),
               ],
-              heading: HeadingLevel.HEADING_2,
               alignment: AlignmentType.CENTER,
               spacing: { after: 600 },
+            }),
+            
+            // Sommaire
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "SOMMAIRE",
+                  font: "Rockwell",
+                  size: 28, // 14pt
+                  bold: true,
+                  color: "56BAA2",
+                }),
+              ],
+              alignment: AlignmentType.LEFT,
+              spacing: { before: 400, after: 200 },
+            }),
+            new TableOfContents("Sommaire", {
+              hyperlink: true,
+              headingStyleRange: "1-2",
+            }),
+            new Paragraph({
+              text: "",
+              spacing: { after: 400 },
+              pageBreakBefore: true,
             }),
             
             // Section 1 : Contexte
@@ -463,7 +515,9 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             
             new Paragraph({
               children: [
-                new TextRun({ text: "[À compléter : Description du DCE et des documents fournis]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
+                contenuChapitre3 
+                  ? createBodyText(contenuChapitre3)
+                  : new TextRun({ text: "[À compléter : Description du DCE et des documents fournis]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
               ],
               spacing: { after: 200 },
             }),
@@ -477,7 +531,9 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             
             new Paragraph({
               children: [
-                new TextRun({ text: "[À compléter : Questions posées et réponses apportées]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
+                contenuChapitre4
+                  ? createBodyText(contenuChapitre4)
+                  : new TextRun({ text: "[À compléter : Questions posées et réponses apportées]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
               ],
               spacing: { after: 200 },
             }),
@@ -692,8 +748,30 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             
             new Paragraph({
               children: [
-                new TextRun({ text: "[À compléter : Date de notification, démarrage et planning prévisionnel]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
+                contenuChapitre10
+                  ? createBodyText(contenuChapitre10)
+                  : new TextRun({ text: "[À compléter : Date de notification, démarrage et planning prévisionnel]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
               ],
+              spacing: { after: 200 },
+            }),
+            
+            // Bloc de signature
+            new Paragraph({
+              text: "",
+              spacing: { before: 600 },
+            }),
+            new Paragraph({
+              children: [
+                createBodyText((an01Data?.metadata?.buyer || state.rapportGenere.section8_performance ? (an01GlobalData?.lots[0]?.metadata?.buyer || an01Data?.metadata?.buyer) : "") || "RPA responsable", true),
+              ],
+              alignment: AlignmentType.RIGHT,
+              spacing: { after: 100 },
+            }),
+            new Paragraph({
+              children: [
+                createBodyText(`Fait à Montreuil, le ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}`),
+              ],
+              alignment: AlignmentType.RIGHT,
               spacing: { after: 200 },
             }),
           ],
@@ -850,38 +928,68 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   </div>
                 </label>
                 
-                {/* Sélection du lot si plusieurs lots */}
+                {/* Sélection des lots si plusieurs lots */}
                 {an01GlobalData && an01GlobalData.lots && an01GlobalData.lots.length > 1 && (
                   <div className="mt-3 pt-3 border-t border-gray-200">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Sélectionner le lot à analyser :
-                    </label>
-                    <select
-                      value={selectedLotIndex}
-                      onChange={(e) => {
-                        const index = parseInt(e.target.value);
-                        setSelectedLotIndex(index);
-                        if (index === -1) {
-                          // Option "Ensemble des lots" : on pourrait créer une synthèse
-                          setAn01Data(an01GlobalData.lots[0]); // Temporairement on garde le premier lot
-                        } else {
-                          setAn01Data(an01GlobalData.lots[index]);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value={-1}>📊 Ensemble des lots (synthèse globale)</option>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Sélectionner le(s) lot(s) à inclure dans le rapport :
+                      </label>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedLots(an01GlobalData.lots.map((_: any, i: number) => i))}
+                          className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded"
+                        >
+                          Tous
+                        </button>
+                        <button
+                          onClick={() => setSelectedLots([])}
+                          className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded"
+                        >
+                          Aucun
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
                       {an01GlobalData.lots.map((lot: any, index: number) => (
-                        <option key={index} value={index}>
-                          {lot.lotName || `Lot ${index + 1}`} {lot.metadata?.description ? `- ${lot.metadata.description}` : ''}
-                        </option>
+                        <label key={index} className="flex items-center gap-2 p-2 hover:bg-white rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedLots.includes(index)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedLots([...selectedLots, index]);
+                              } else {
+                                setSelectedLots(selectedLots.filter(i => i !== index));
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">
+                            {lot.lotName || `Lot ${index + 1}`}
+                          </span>
+                          {lot.metadata?.description && (
+                            <span className="text-xs text-gray-500">- {lot.metadata.description}</span>
+                          )}
+                        </label>
                       ))}
-                    </select>
-                    {selectedLotIndex === -1 && (
-                      <p className="mt-2 text-xs text-blue-600">
-                        ℹ️ Le rapport inclura les sections 7.2 et 8.1 avec la synthèse de tous les lots
-                      </p>
-                    )}
+                    </div>
+                    
+                    <div className="mt-2 flex items-center gap-2 text-xs">
+                      {selectedLots.length === 0 && (
+                        <p className="text-orange-600">⚠️ Aucun lot sélectionné</p>
+                      )}
+                      {selectedLots.length === 1 && (
+                        <p className="text-blue-600">📊 1 lot sélectionné</p>
+                      )}
+                      {selectedLots.length > 1 && selectedLots.length < an01GlobalData.lots.length && (
+                        <p className="text-green-600">📊 {selectedLots.length} lots sélectionnés (synthèse multi-lots)</p>
+                      )}
+                      {selectedLots.length === an01GlobalData.lots.length && (
+                        <p className="text-purple-600">📊 Tous les lots sélectionnés (synthèse globale)</p>
+                      )}
+                    </div>
                   </div>
                 )}
                 
@@ -906,7 +1014,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         )}
 
         {/* Bouton de génération */}
-        {tousLesFileursCharges && !state.rapportGenere && (
+        {tousLesFileursCharges && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <button
               onClick={handleGenererRapport}
@@ -921,7 +1029,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               ) : (
                 <>
                   <FileText className="w-5 h-5" />
-                  Générer le Rapport de Présentation
+                  {state.rapportGenere ? 'Regénérer le Rapport de Présentation' : 'Générer le Rapport de Présentation'}
                 </>
               )}
             </button>
@@ -1016,26 +1124,42 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             <ChapterPreview 
               number={3} 
               title="DOSSIER DE CONSULTATION" 
-              hasData={false}
+              hasData={!!contenuChapitre3}
               icon="📁"
             >
-              <p className="text-gray-500 italic">• Composition du DCE (Dossier de Consultation des Entreprises)</p>
-              <p className="text-gray-500 italic">• Documents fournis aux candidats</p>
-              <p className="text-gray-500 italic">• Pièces constitutives du marché</p>
-              <p className="text-sm text-orange-600 mt-2">⚠️ Section à renseigner manuellement</p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-700 font-medium">✏️ Saisissez ou collez le contenu ci-dessous :</p>
+                <textarea
+                  value={contenuChapitre3}
+                  onChange={(e) => setContenuChapitre3(e.target.value)}
+                  placeholder="Description du DCE et des documents fournis...\n\nExemple :\n- Acte d'engagement\n- CCAP\n- CCTP\n- BPU\n- etc."
+                  className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {contenuChapitre3 && (
+                  <p className="text-xs text-green-600">✓ {contenuChapitre3.length} caractères saisis</p>
+                )}
+              </div>
             </ChapterPreview>
 
             {/* Chapitre 4 : Questions-Réponses */}
             <ChapterPreview 
               number={4} 
               title="QUESTIONS - RÉPONSES" 
-              hasData={false}
+              hasData={!!contenuChapitre4}
               icon="💬"
             >
-              <p className="text-gray-500 italic">• Questions posées par les candidats</p>
-              <p className="text-gray-500 italic">• Réponses apportées par l'acheteur</p>
-              <p className="text-gray-500 italic">• Modifications éventuelles du DCE</p>
-              <p className="text-sm text-orange-600 mt-2">⚠️ À compléter depuis la plateforme de dématérialisation</p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-700 font-medium">✏️ Saisissez ou collez le contenu ci-dessous :</p>
+                <textarea
+                  value={contenuChapitre4}
+                  onChange={(e) => setContenuChapitre4(e.target.value)}
+                  placeholder="Questions posées et réponses apportées...\n\nExemple :\nQ1: [Question du candidat]\nR1: [Réponse apportée]\n\nQ2: ..."
+                  className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {contenuChapitre4 && (
+                  <p className="text-xs text-green-600">✓ {contenuChapitre4.length} caractères saisis</p>
+                )}
+              </div>
             </ChapterPreview>
 
             {/* Chapitre 5 : Analyse des candidatures */}
@@ -1091,7 +1215,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             >
               {state.rapportGenere ? (
                 <>
-                  {selectedLotIndex === -1 && state.rapportGenere.section7_2_syntheseLots ? (
+                  {state.rapportGenere.section7_2_syntheseLots ? (
                     // Mode multi-lots : afficher le tableau de synthèse de TOUS les lots
                     <>
                       <p className="font-semibold mb-2 text-blue-700">📊 Synthèse de tous les lots</p>
@@ -1187,13 +1311,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             >
               {state.rapportGenere ? (
                 <>
-                  {selectedLotIndex === -1 && state.rapportGenere.section8_1_synthesePerformance ? (
-                    // Mode multi-lots : afficher la performance de TOUS les lots
+                  {state.rapportGenere.section8_1_synthesePerformance ? (
+                    // Mode multi-lots : afficher la performance des lots sélectionnés
                     <>
                       <p className="font-semibold mb-2 text-blue-700">📊 Performance tous lots confondus</p>
-                      <p className="text-sm mb-2"><strong>Performance globale :</strong> {state.rapportGenere.section8_1_synthesePerformance.performanceGlobalePourcent.toFixed(1)}%</p>
-                      <p className="text-sm mb-3"><strong>Impact budgétaire total :</strong> {formatCurrency(state.rapportGenere.section8_1_synthesePerformance.impactBudgetaireTotalTTC)} TTC 
-                        (soit {formatCurrency(state.rapportGenere.section8_1_synthesePerformance.impactBudgetaireTotalHT)} HT)</p>
+                      <p className="text-sm mb-2"><strong>Performance globale :</strong> {state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%</p>
+                      <p className="text-sm mb-3"><strong>Impact budgétaire total :</strong> {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireTTC)} TTC 
+                        (soit {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireHT)} HT)</p>
                       
                       <p className="font-semibold mb-2 text-sm">Détail par lot :</p>
                       <div className="overflow-x-auto">
@@ -1247,7 +1371,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             >
               {state.rapportGenere ? (
                 <>
-                  {selectedLotIndex === -1 && state.rapportGenere.section7_2_syntheseLots ? (
+                  {state.rapportGenere.section7_2_syntheseLots ? (
                     // Mode multi-lots : tableau de tous les attributaires
                     <>
                       <p className="font-semibold mb-2 text-blue-700">📊 Proposition d'attribution pour tous les lots</p>
@@ -1312,14 +1436,21 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             <ChapterPreview 
               number={10} 
               title="PROPOSITION DE CALENDRIER DE MISE EN ŒUVRE" 
-              hasData={false}
+              hasData={!!contenuChapitre10}
               icon="📆"
             >
-              <p className="text-gray-500 italic">• Date de notification envisagée</p>
-              <p className="text-gray-500 italic">• Date de démarrage du marché</p>
-              <p className="text-gray-500 italic">• Étapes clés du déploiement</p>
-              <p className="text-gray-500 italic">• Planning prévisionnel d'exécution</p>
-              <p className="text-sm text-orange-600 mt-2">⚠️ Section à renseigner manuellement</p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-700 font-medium">✏️ Saisissez ou collez le contenu ci-dessous :</p>
+                <textarea
+                  value={contenuChapitre10}
+                  onChange={(e) => setContenuChapitre10(e.target.value)}
+                  placeholder="Date de notification, démarrage et planning prévisionnel...&#10;&#10;Exemple :&#10;- Notification : [date]&#10;- Démarrage : [date]&#10;- Durée : [X] mois&#10;- Étapes clés : ..."
+                  className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {contenuChapitre10 && (
+                  <p className="text-xs text-green-600">✓ {contenuChapitre10.length} caractères saisis</p>
+                )}
+              </div>
             </ChapterPreview>
           </div>
         </div>
