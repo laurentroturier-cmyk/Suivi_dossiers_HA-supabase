@@ -48,6 +48,7 @@ import { supabase } from './lib/supabase';
 import RegistreRetraits from './components/RegistreRetraits';
 import RegistreDepots from './components/RegistreDepots';
 import Contrats from './components/Contrats';
+import OuverturePlis from './components/analyse/OuverturePlis';
 import LandingPage from './components/LandingPage';
 import ImmobilierPage from './pages/ImmobilierPage';
 import RapportPresentation from './components/analyse/RapportPresentation';
@@ -2805,6 +2806,7 @@ const App: React.FC = () => {
                     'retraits': 'Registre Retraits',
                     'depots': 'Registre Dépôts',
                     'an01': 'AN01',
+                    'ouverture-plis': 'Ouverture des plis',
                     'rapport-presentation': 'Rapport de Présentation',
                     'contrats': 'Contrats',
                     'export': 'Exports & données',
@@ -3923,6 +3925,16 @@ const App: React.FC = () => {
         {activeTab === 'rapport-presentation' && (
           <div className="animate-in fade-in duration-700">
             <RapportPresentation 
+              procedures={procedures}
+              dossiers={dossiers}
+            />
+          </div>
+        )}
+
+        {activeTab === 'ouverture-plis' && (
+          <div className="animate-in fade-in duration-700">
+            <OuverturePlis 
+              onBack={() => navigateTo('home', 'Accueil')}
               procedures={procedures}
               dossiers={dossiers}
             />

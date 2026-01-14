@@ -1,5 +1,5 @@
-import React from 'react';
-import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3 } from 'lucide-react';
+import React, { useState } from 'react';
+import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (tab: string) => void;
@@ -9,6 +9,9 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount }) => {
+  // État pour gérer l'expansion de la section Registres dans Analyse
+  const [registresExpanded, setRegistresExpanded] = useState(false);
+  
   // Domaines fonctionnels avec leurs actions
   const domaines = [
     {
@@ -85,8 +88,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
       btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
-        { label: 'Registre des retraits', tab: 'retraits', isAdmin: false, icon: Download, color: 'text-orange-600 dark:text-orange-400' },
-        { label: 'Registre des dépôts', tab: 'depots', isAdmin: false, icon: Upload, color: 'text-cyan-600 dark:text-cyan-400' },
+        { 
+          label: 'Registres', 
+          isGroup: true,
+          icon: BookOpen, 
+          color: 'text-indigo-600 dark:text-indigo-400',
+          subActions: [
+            { label: 'Registre des retraits', tab: 'retraits', isAdmin: false, icon: Download, color: 'text-orange-600 dark:text-orange-400' },
+            { label: 'Registre des dépôts', tab: 'depots', isAdmin: false, icon: Upload, color: 'text-cyan-600 dark:text-cyan-400' },
+          ]
+        },
+        { label: 'Ouverture des plis', tab: 'ouverture-plis', isAdmin: false, icon: PackageOpen, color: 'text-purple-600 dark:text-purple-400' },
         { label: 'Analyse AN01', tab: 'an01', isAdmin: false, icon: LineChart, color: 'text-emerald-600 dark:text-emerald-400' },
         { label: 'Rapport de Présentation', tab: 'rapport-presentation', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
       ]
@@ -230,6 +242,59 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
                 <div className="p-6 space-y-2">
                   {domaine.actions.map((action, idx) => {
                     const ActionIcon = action.icon;
+                    
+                    // Si c'est un groupe (ex: Registres)
+                    if (action.isGroup && action.subActions) {
+                      const isExpanded = domaine.id === 'analyse' && registresExpanded;
+                      return (
+                        <div key={idx}>
+                          <button
+                            onClick={() => domaine.id === 'analyse' && setRegistresExpanded(!registresExpanded)}
+                            className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-between group ${domaine.btnBg} ${domaine.btnText} border border-gray-200 dark:border-[#333333]`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {ActionIcon && (
+                                <ActionIcon className={`w-4 h-4 ${action.color || domaine.iconColor}`} />
+                              )}
+                              <span>{action.label}</span>
+                            </div>
+                            {isExpanded ? (
+                              <ChevronDown className="w-4 h-4 transition-transform" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 transition-transform" />
+                            )}
+                          </button>
+                          
+                          {/* Sous-actions */}
+                          {isExpanded && (
+                            <div className="mt-2 ml-4 space-y-2">
+                              {action.subActions.map((subAction, subIdx) => {
+                                const SubIcon = subAction.icon;
+                                return (
+                                  <button
+                                    key={subIdx}
+                                    onClick={() => subAction.isAdmin ? onOpenAdmin() : onNavigate(subAction.tab)}
+                                    className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-between group ${domaine.btnBg} ${domaine.btnText} border border-gray-200 dark:border-[#333333]`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {SubIcon && (
+                                        <SubIcon className={`w-4 h-4 ${subAction.color || domaine.iconColor}`} />
+                                      )}
+                                      <span>{subAction.label}</span>
+                                    </div>
+                                    <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    
+                    // Action normale
                     return (
                       <button
                         key={idx}
