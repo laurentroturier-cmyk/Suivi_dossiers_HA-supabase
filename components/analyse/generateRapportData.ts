@@ -8,16 +8,28 @@ import { RetraitsData } from '../../types/retraits';
  * à partir des sources de données disponibles
  */
 export function generateRapportData(sources: RapportSources): RapportContent {
+  // Détection si an01Data contient tous les lots ou un seul lot
+  const an01Input = sources.an01Data;
+  const isMultiLot = an01Input && typeof an01Input === 'object' && 'allLots' in an01Input;
+  
+  // Si multi-lot, utiliser le premier lot pour les données de base
+  // et garder la référence à tous les lots pour les sections 7.2 et 8.1
+  const primaryLotData = isMultiLot ? (an01Input as any).allLots[0] : an01Input;
+  const allLotsData = isMultiLot ? (an01Input as any).allLots : null;
+  
   return {
     section1_contexte: generateContexte(sources),
     section2_deroulement: generateDeroulement(sources),
     section3_dossierConsultation: generateDossierConsultation(sources),
     section4_questionsReponses: generateQuestionsReponses(sources),
-    section5_analyseCandidatures: generateAnalyseCandidatures(sources),
-    section6_methodologie: generateMethodologie(sources),
-    section7_valeurOffres: generateValeurOffres(sources),
-    section8_performance: generatePerformance(sources),
-    section9_attribution: generateAttribution(sources),
+    section5_analyseCandidatures: generateAnalyseCandidatures({ ...sources, an01Data: primaryLotData }),
+    section5_criteres: generateMethodologie({ ...sources, an01Data: primaryLotData }),
+    section6_methodologie: generateMethodologie({ ...sources, an01Data: primaryLotData }),
+    section7_valeurOffres: generateValeurOffres({ ...sources, an01Data: primaryLotData }),
+    section7_2_syntheseLots: allLotsData ? generateSyntheseLots(allLotsData, sources) : null,
+    section8_performance: generatePerformance({ ...sources, an01Data: primaryLotData }),
+    section8_1_synthesePerformance: allLotsData ? generateSynthesePerformanceLots(allLotsData, sources) : null,
+    section9_attribution: generateAttribution({ ...sources, an01Data: primaryLotData }),
     section10_calendrier: generateCalendrier(sources),
   };
 }
@@ -267,6 +279,42 @@ function generateAttribution(sources: RapportSources): Section9Attribution {
   
   return {
     attributairePressenti: an01Data?.stats?.winner?.name || '',
+  };
+}
+
+// ===== SECTION 7.2 : SYNTHÈSE DES LOTS =====
+function generateSyntheseLots(allLots: AnalysisData[], sources: RapportSources): any {
+  return {
+    nombreLots: allLots.length,
+    lots: allLots.map((lot, index) => ({
+      numero: index + 1,
+      nom: lot.lotName || `Lot ${index + 1}`,
+      montantAttributaire: lot.stats?.winner?.amountTTC || 0,
+      attributaire: lot.stats?.winner?.name || '',
+      nombreOffres: lot.offers?.length || 0,
+    })),
+    montantTotalTTC: allLots.reduce((sum, lot) => sum + (lot.stats?.winner?.amountTTC || 0), 0),
+  };
+}
+
+// ===== SECTION 8.1 : SYNTHÈSE PERFORMANCE MULTI-LOTS =====
+function generateSynthesePerformanceLots(allLots: AnalysisData[], sources: RapportSources): any {
+  const totalSavings = allLots.reduce((sum, lot) => sum + (lot.stats?.savingAmount || 0), 0);
+  const totalBudget = allLots.reduce((sum, lot) => sum + (lot.stats?.average || 0), 0);
+  const performanceGlobale = totalBudget > 0 ? (totalSavings / totalBudget) * 100 : 0;
+  
+  const tva = parseFloat(allLots[0]?.metadata?.tva) || 20;
+  
+  return {
+    performanceGlobalePourcent: performanceGlobale,
+    impactBudgetaireTotalTTC: totalSavings,
+    impactBudgetaireTotalHT: totalSavings / (1 + tva / 100),
+    lotsDetails: allLots.map((lot, index) => ({
+      numero: index + 1,
+      nom: lot.lotName || `Lot ${index + 1}`,
+      performancePourcent: lot.stats?.savingPercent || 0,
+      impactTTC: lot.stats?.savingAmount || 0,
+    })),
   };
 }
 
