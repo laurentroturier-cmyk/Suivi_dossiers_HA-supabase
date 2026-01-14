@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Upload, Check, X, FileSpreadsheet, FileCog, Download, Edit2, Eye, AlertCircle } from 'lucide-react';
+import { FileText, Upload, Check, X, FileSpreadsheet, FileCog, Download, Edit2, Eye, AlertCircle, Save, FolderOpen, Clock } from 'lucide-react';
 import { RapportContent, RapportState } from './types';
 import { generateRapportData } from './generateRapportData';
 import { parseDepotsFile } from '../../utils/depotsParser';
@@ -9,10 +9,25 @@ import { DepotsData } from '../../types/depots';
 import { RetraitsData } from '../../types/retraits';
 import { AnalysisData } from '../an01/types';
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, HeadingLevel, AlignmentType, Footer, Header, PageNumber, NumberFormat, ImageRun, TableOfContents } from "docx";
+import { supabase } from '../../lib/supabase';
 
 interface Props {
   procedures: any[]; // Liste des procédures disponibles
   dossiers: any[]; // Liste des dossiers disponibles
+}
+
+interface RapportSauvegarde {
+  id: string;
+  num_proc: string;
+  titre: string;
+  auteur: string;
+  date_creation: string;
+  date_modification: string;
+  statut: string;
+  version: number;
+  rapport_data: any;
+  fichiers_sources: any;
+  notes: string;
 }
 
 const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
@@ -42,9 +57,209 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Gestion des rapports sauvegardés
+  const [rapportsSauvegardes, setRapportsSauvegardes] = useState<RapportSauvegarde[]>([]);
+  const [rapportActuelId, setRapportActuelId] = useState<string | null>(null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [titreRapport, setTitreRapport] = useState('');
+  const [notesRapport, setNotesRapport] = useState('');
 
   const procedureSelectionnee = procedures.find(p => p.NumProc === state.procedureSelectionnee);
   const dossierRattache = dossiers.find(d => d.IDProjet === procedureSelectionnee?.IDProjet);
+
+  // Charger la liste des rapports sauvegardés pour la procédure sélectionnée
+  useEffect(() => {
+    if (procedureSelectionnee?.NumProc) {
+      loadRapportsList();
+    }
+  }, [procedureSelectionnee?.NumProc]);
+
+  // Charger la liste des rapports sauvegardés
+  const loadRapportsList = async () => {
+    if (!procedureSelectionnee?.NumProc) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('rapports_presentation')
+        .select('*')
+        .eq('num_proc', procedureSelectionnee.NumProc)
+        .order('date_creation', { ascending: false });
+
+      if (error) throw error;
+      setRapportsSauvegardes(data || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des rapports:', error);
+    }
+  };
+
+  // Sauvegarder le rapport actuel
+  const handleSaveRapport = async () => {
+    if (!procedureSelectionnee?.NumProc) {
+      alert('Aucune procédure sélectionnée');
+      return;
+    }
+
+    if (!titreRapport.trim()) {
+      alert('Veuillez saisir un titre pour le rapport');
+      return;
+    }
+
+    try {
+      setSaveMessage(null);
+
+      // Préparer les données du rapport
+      const rapportData = {
+        ...state.rapportGenere,
+        contenuChapitre3,
+        contenuChapitre4,
+        contenuChapitre10,
+      };
+
+      // Préparer les métadonnées des fichiers sources
+      const fichiersSources = {
+        depots: state.fichiersCharges.depots,
+        retraits: state.fichiersCharges.retraits,
+        an01: state.fichiersCharges.an01,
+      };
+
+      if (rapportActuelId) {
+        // Mise à jour d'un rapport existant
+        const { error } = await supabase
+          .from('rapports_presentation')
+          .update({
+            titre: titreRapport,
+            rapport_data: rapportData,
+            fichiers_sources: fichiersSources,
+            notes: notesRapport,
+            date_modification: new Date().toISOString(),
+          })
+          .eq('id', rapportActuelId);
+
+        if (error) throw error;
+        setSaveMessage('Rapport mis à jour avec succès');
+      } else {
+        // Création d'un nouveau rapport
+        // Déterminer le numéro de version
+        const maxVersion = rapportsSauvegardes.length > 0
+          ? Math.max(...rapportsSauvegardes.map(r => r.version))
+          : 0;
+
+        const { error } = await supabase
+          .from('rapports_presentation')
+          .insert({
+            num_proc: procedureSelectionnee.NumProc,
+            titre: titreRapport,
+            rapport_data: rapportData,
+            fichiers_sources: fichiersSources,
+            notes: notesRapport,
+            version: maxVersion + 1,
+            statut: 'brouillon',
+          });
+
+        if (error) throw error;
+        setSaveMessage('Rapport enregistré avec succès');
+      }
+
+      // Recharger la liste des rapports
+      await loadRapportsList();
+      
+      // Fermer le dialogue après 2 secondes
+      setTimeout(() => {
+        setShowSaveDialog(false);
+        setSaveMessage(null);
+      }, 2000);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      setSaveMessage('Erreur lors de la sauvegarde du rapport');
+    }
+  };
+
+  // Charger un rapport sauvegardé
+  const handleLoadRapport = async (rapportId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('rapports_presentation')
+        .select('*')
+        .eq('id', rapportId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        // Charger les données du rapport dans l'état
+        const rapport = data.rapport_data;
+        
+        setState(prev => ({
+          ...prev,
+          rapportGenere: rapport,
+          fichiersCharges: data.fichiers_sources || prev.fichiersCharges,
+        }));
+
+        setContenuChapitre3(rapport.contenuChapitre3 || '');
+        setContenuChapitre4(rapport.contenuChapitre4 || '');
+        setContenuChapitre10(rapport.contenuChapitre10 || '');
+        setRapportActuelId(rapportId);
+        setTitreRapport(data.titre);
+        setNotesRapport(data.notes || '');
+        setShowLoadDialog(false);
+
+        alert(`Rapport "${data.titre}" chargé avec succès`);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement du rapport:', error);
+      alert('Erreur lors du chargement du rapport');
+    }
+  };
+
+  // Supprimer un rapport sauvegardé
+  const deleteRapport = async (rapportId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce rapport ?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('rapports_presentation')
+        .delete()
+        .eq('id', rapportId);
+
+      if (error) throw error;
+
+      // Recharger la liste
+      await loadRapportsList();
+      
+      // Si c'est le rapport actuel, réinitialiser
+      if (rapportActuelId === rapportId) {
+        setRapportActuelId(null);
+        setTitreRapport('');
+        setNotesRapport('');
+      }
+
+      alert('Rapport supprimé avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression du rapport');
+    }
+  };
+
+  // Changer le statut d'un rapport
+  const changeStatut = async (rapportId: string, newStatut: string) => {
+    try {
+      const { error } = await supabase
+        .from('rapports_presentation')
+        .update({ statut: newStatut })
+        .eq('id', rapportId);
+
+      if (error) throw error;
+      
+      await loadRapportsList();
+      alert('Statut mis à jour avec succès');
+    } catch (error) {
+      console.error('Erreur lors du changement de statut:', error);
+      alert('Erreur lors du changement de statut');
+    }
+  };
 
   // Handler pour la remise à zéro
   const handleReset = () => {
@@ -1106,25 +1321,48 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   : "Aperçu de la structure - Les données seront remplies après génération"}
               </p>
             </div>
-            {state.rapportGenere && (
+            <div className="flex gap-2">
+              {/* Bouton Sauvegarder */}
               <button
-                onClick={handleExportDOCX}
-                disabled={isExporting}
-                className="py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                onClick={() => setShowSaveDialog(true)}
+                disabled={!state.rapportGenere}
+                className="py-2 px-4 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {isExporting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Export...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    Exporter en DOCX
-                  </>
-                )}
+                <Save className="w-4 h-4" />
+                Sauvegarder
               </button>
-            )}
+              
+              {/* Bouton Charger */}
+              <button
+                onClick={() => setShowLoadDialog(true)}
+                disabled={rapportsSauvegardes.length === 0}
+                className="py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <FolderOpen className="w-4 h-4" />
+                Charger ({rapportsSauvegardes.length})
+              </button>
+
+              {/* Bouton Exporter */}
+              {state.rapportGenere && (
+                <button
+                  onClick={handleExportDOCX}
+                  disabled={isExporting}
+                  className="py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isExporting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Export...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Exporter en DOCX
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
           
           {/* Chapitres du rapport */}
@@ -1559,6 +1797,194 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
           </div>
         </div>
       </div>
+
+      {/* Dialogue Sauvegarder */}
+      {showSaveDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Sauvegarder le rapport</h3>
+              <button
+                onClick={() => setShowSaveDialog(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Titre du rapport *
+                </label>
+                <input
+                  type="text"
+                  value={titreRapport}
+                  onChange={(e) => setTitreRapport(e.target.value)}
+                  placeholder="Ex: Rapport de présentation - Version initiale"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes (optionnel)
+                </label>
+                <textarea
+                  value={notesRapport}
+                  onChange={(e) => setNotesRapport(e.target.value)}
+                  placeholder="Ajoutez des notes ou commentaires..."
+                  rows={3}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+
+              {saveMessage && (
+                <div className={`p-3 rounded-lg ${saveMessage.includes('succès') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {saveMessage}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={handleSaveRapport}
+                  className="flex-1 py-2 px-4 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  {rapportActuelId ? 'Mettre à jour' : 'Enregistrer'}
+                </button>
+                <button
+                  onClick={() => setShowSaveDialog(false)}
+                  className="py-2 px-4 border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialogue Charger */}
+      {showLoadDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Charger un rapport sauvegardé</h3>
+              <button
+                onClick={() => setShowLoadDialog(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {rapportsSauvegardes.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <FolderOpen className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                <p>Aucun rapport sauvegardé pour cette procédure</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {rapportsSauvegardes.map((rapport) => (
+                  <div
+                    key={rapport.id}
+                    className={`border rounded-lg p-4 hover:border-purple-500 transition-colors ${rapportActuelId === rapport.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-semibold text-gray-900">{rapport.titre}</h4>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            rapport.statut === 'brouillon' ? 'bg-gray-200 text-gray-700' :
+                            rapport.statut === 'en_revision' ? 'bg-blue-200 text-blue-700' :
+                            rapport.statut === 'valide' ? 'bg-green-200 text-green-700' :
+                            'bg-purple-200 text-purple-700'
+                          }`}>
+                            {rapport.statut === 'brouillon' ? 'Brouillon' :
+                             rapport.statut === 'en_revision' ? 'En révision' :
+                             rapport.statut === 'valide' ? 'Validé' : 'Publié'}
+                          </span>
+                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                            v{rapport.version}
+                          </span>
+                        </div>
+                        
+                        <div className="text-xs text-gray-500 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-3 h-3" />
+                            <span>Créé le {new Date(rapport.date_creation).toLocaleDateString('fr-FR', { 
+                              day: '2-digit', 
+                              month: '2-digit', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}</span>
+                          </div>
+                          {rapport.date_modification && (
+                            <div className="flex items-center gap-2">
+                              <Edit2 className="w-3 h-3" />
+                              <span>Modifié le {new Date(rapport.date_modification).toLocaleDateString('fr-FR', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {rapport.notes && (
+                          <p className="text-sm text-gray-600 mt-2 italic">"{rapport.notes}"</p>
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 ml-4">
+                        <button
+                          onClick={() => handleLoadRapport(rapport.id)}
+                          className="py-1 px-3 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded flex items-center gap-1"
+                        >
+                          <FolderOpen className="w-3 h-3" />
+                          Charger
+                        </button>
+                        
+                        <select
+                          value={rapport.statut}
+                          onChange={(e) => changeStatut(rapport.id, e.target.value)}
+                          className="text-xs border border-gray-300 rounded px-2 py-1"
+                        >
+                          <option value="brouillon">Brouillon</option>
+                          <option value="en_revision">En révision</option>
+                          <option value="valide">Validé</option>
+                          <option value="publie">Publié</option>
+                        </select>
+                        
+                        <button
+                          onClick={() => deleteRapport(rapport.id)}
+                          className="py-1 px-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded flex items-center gap-1"
+                        >
+                          <X className="w-3 h-3" />
+                          Suppr.
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 pt-4 border-t flex justify-end">
+              <button
+                onClick={() => setShowLoadDialog(false)}
+                className="py-2 px-4 border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
