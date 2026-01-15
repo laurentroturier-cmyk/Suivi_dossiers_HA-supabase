@@ -2191,7 +2191,8 @@ const App: React.FC = () => {
                 if (typeof dateRemise === 'string' && dateRemise.includes('/')) {
                   const parts = dateRemise.split('/');
                   if (parts.length === 3) {
-                    dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                    // Utiliser UTC pour éviter les problèmes de fuseau horaire
+                    dateObj = new Date(Date.UTC(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 12, 0, 0));
                   }
                 } else {
                   dateObj = new Date(dateRemise);
@@ -2205,11 +2206,17 @@ const App: React.FC = () => {
                 
                 if (dateObj && !isNaN(dateObj.getTime())) {
                   const jours = parseInt(String(duree).replace(/[^0-9]/g, ''), 10) || 0;
-                  dateObj.setDate(dateObj.getDate() + jours);
-                  dateCalculee = formatDisplayDate(dateObj.toISOString().split('T')[0]);
+                  // Utiliser UTC pour l'addition de jours
+                  dateObj = new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate() + jours, 12, 0, 0));
+                  
+                  const year = dateObj.getUTCFullYear();
+                  const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                  const day = String(dateObj.getUTCDate()).padStart(2, '0');
+                  const dateToStore = `${year}-${month}-${day}`;
+                  
+                  dateCalculee = formatDisplayDate(dateToStore);
                   
                   // Mettre à jour le champ avec la date calculée
-                  const dateToStore = dateObj.toISOString().split('T')[0];
                   if (val !== dateToStore) {
                     handleFieldChange(type, key, dateToStore);
                   }
@@ -2248,8 +2255,8 @@ const App: React.FC = () => {
                 if (typeof dateRemise === 'string' && dateRemise.includes('/')) {
                   const parts = dateRemise.split('/');
                   if (parts.length === 3) {
-                    // Convertir dd/mm/yyyy en yyyy-mm-dd
-                    dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                    // Convertir dd/mm/yyyy en Date UTC
+                    dateObj = new Date(Date.UTC(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 12, 0, 0));
                   }
                 } else {
                   // Sinon essayer de parser directement
@@ -2265,19 +2272,26 @@ const App: React.FC = () => {
                 
                 if (dateObj && !isNaN(dateObj.getTime())) {
                   const jours = parseInt(String(duree).replace(/[^0-9]/g, ''), 10) || 0;
-                  dateObj.setDate(dateObj.getDate() + jours);
-                  dateCalculee = formatDisplayDate(dateObj.toISOString().split('T')[0]);
+                  // Utiliser UTC pour l'addition de jours
+                  dateObj = new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate() + jours, 12, 0, 0));
                   
-                  // Calculer le nombre de jours restants par rapport à aujourd'hui
+                  const year = dateObj.getUTCFullYear();
+                  const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                  const day = String(dateObj.getUTCDate()).padStart(2, '0');
+                  const dateToStore = `${year}-${month}-${day}`;
+                  
+                  dateCalculee = formatDisplayDate(dateToStore);
+                  
+                  // Calculer le nombre de jours restants par rapport à aujourd'hui (UTC)
                   const maintenant = new Date();
-                  joursRestants = Math.ceil((dateObj.getTime() - maintenant.getTime()) / (1000 * 60 * 60 * 24));
+                  const maintenantUTC = Date.UTC(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate());
+                  joursRestants = Math.ceil((dateObj.getTime() - maintenantUTC) / (1000 * 60 * 60 * 24));
                   
                   if (joursRestants > 90) colorClass = 'text-emerald-700 font-bold';
                   else if (joursRestants < 30) colorClass = 'text-red-600 font-bold';
                   else colorClass = 'text-orange-600 font-bold';
                   
                   // Mettre à jour le champ avec la date calculée
-                  const dateToStore = dateObj.toISOString().split('T')[0];
                   if (val !== dateToStore) {
                     handleFieldChange(type, key, dateToStore);
                   }
