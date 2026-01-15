@@ -479,6 +479,38 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     });
   };
 
+  // Fonction pour convertir un texte avec retours à la ligne en paragraphes
+  const createParagraphsFromText = (text: string): Paragraph[] => {
+    if (!text) return [];
+    
+    // Séparer par les retours à la ligne
+    const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+    
+    return lines.map(line => {
+      const trimmedLine = line.trim();
+      
+      // Détecter si c'est un élément de liste (commence par -, •, *, ou un chiffre suivi de .)
+      const isBullet = /^[-•*]\s/.test(trimmedLine);
+      const isNumbered = /^\d+\.\s/.test(trimmedLine);
+      
+      if (isBullet || isNumbered) {
+        // Retirer le marqueur de liste du texte
+        const textWithoutMarker = trimmedLine.replace(/^[-•*]\s/, '').replace(/^\d+\.\s/, '');
+        return new Paragraph({
+          children: [createBodyText(textWithoutMarker)],
+          bullet: { level: 0 },
+          spacing: { after: 100 },
+        });
+      } else {
+        // Paragraphe normal
+        return new Paragraph({
+          children: [createBodyText(trimmedLine)],
+          spacing: { after: 100 },
+        });
+      }
+    });
+  };
+
   // Helper pour créer des cellules de tableau avec police
   const createTableCell = (text: string, bold: boolean = false): TableCell => {
     return new TableCell({ 
@@ -646,13 +678,21 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               spacing: { before: 400, after: 200 },
             }),
             
+            // Introduction de l'objet du marché
             new Paragraph({
               children: [
-                new TextRun({
-                  text: `Le présent marché a pour objet ${state.rapportGenere.section1_contexte.objetMarche} pour une durée totale de ${state.rapportGenere.section1_contexte.dureeMarche} mois.`,
-                  font: "Aptos",
-                  size: 22, // 11pt
-                }),
+                createBodyText("Le présent marché a pour objet :"),
+              ],
+              spacing: { after: 100 },
+            }),
+            
+            // Traiter l'objet du marché avec support des listes à puces
+            ...createParagraphsFromText(state.rapportGenere.section1_contexte.objetMarche),
+            
+            // Durée du marché
+            new Paragraph({
+              children: [
+                createBodyText(`Pour une durée totale de ${state.rapportGenere.section1_contexte.dureeMarche} mois.`),
               ],
               spacing: { after: 200 },
             }),
@@ -683,36 +723,41 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             
             new Paragraph({
               children: [
-                new TextRun({ text: `• Date de publication : ${state.rapportGenere.section2_deroulement.datePublication}`, font: "Aptos", size: 22 }),
+                new TextRun({ text: `Date de publication : ${state.rapportGenere.section2_deroulement.datePublication}`, font: "Aptos", size: 22 }),
               ],
+              bullet: { level: 0 },
               spacing: { after: 100 },
             }),
             
             new Paragraph({
               children: [
-                createBodyText(`• Nombre de dossiers retirés : ${state.rapportGenere.section2_deroulement.nombreRetraits}`),
+                createBodyText(`Nombre de dossiers retirés : ${state.rapportGenere.section2_deroulement.nombreRetraits}`),
               ],
+              bullet: { level: 0 },
               spacing: { after: 100 },
             }),
             
             new Paragraph({
               children: [
-                createBodyText(`• Date de réception des offres : ${state.rapportGenere.section2_deroulement.dateReceptionOffres}`),
+                createBodyText(`Date de réception des offres : ${state.rapportGenere.section2_deroulement.dateReceptionOffres}`),
               ],
+              bullet: { level: 0 },
               spacing: { after: 100 },
             }),
             
             new Paragraph({
               children: [
-                createBodyText(`• Nombre de plis reçus : ${state.rapportGenere.section2_deroulement.nombrePlisRecus}`),
+                createBodyText(`Nombre de plis reçus : ${state.rapportGenere.section2_deroulement.nombrePlisRecus}`),
               ],
+              bullet: { level: 0 },
               spacing: { after: 100 },
             }),
             
             new Paragraph({
               children: [
-                createBodyText(`• Date d'ouverture des plis : ${state.rapportGenere.section2_deroulement.dateOuverturePlis}`),
+                createBodyText(`Date d'ouverture des plis : ${state.rapportGenere.section2_deroulement.dateOuverturePlis}`),
               ],
+              bullet: { level: 0 },
               spacing: { after: 200 },
             }),
             
@@ -723,14 +768,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               spacing: { before: 400, after: 200 },
             }),
             
-            new Paragraph({
-              children: [
-                contenuChapitre3 
-                  ? createBodyText(contenuChapitre3)
-                  : new TextRun({ text: "[À compléter : Description du DCE et des documents fournis]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
-              ],
-              spacing: { after: 200 },
-            }),
+            ...(contenuChapitre3 
+              ? createParagraphsFromText(contenuChapitre3)
+              : [new Paragraph({
+                  children: [new TextRun({ text: "[À compléter : Description du DCE et des documents fournis]", italics: true, color: "FF8800", font: "Aptos", size: 22 })],
+                  spacing: { after: 200 },
+                })]
+            ),
             
             // Section 4 : Questions-Réponses
             new Paragraph({
@@ -739,14 +783,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               spacing: { before: 400, after: 200 },
             }),
             
-            new Paragraph({
-              children: [
-                contenuChapitre4
-                  ? createBodyText(contenuChapitre4)
-                  : new TextRun({ text: "[À compléter : Questions posées et réponses apportées]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
-              ],
-              spacing: { after: 200 },
-            }),
+            ...(contenuChapitre4
+              ? createParagraphsFromText(contenuChapitre4)
+              : [new Paragraph({
+                  children: [new TextRun({ text: "[À compléter : Questions posées et réponses apportées]", italics: true, color: "FF8800", font: "Aptos", size: 22 })],
+                  spacing: { after: 200 },
+                })]
+            ),
             
             // Section 5 : Analyse des candidatures
             new Paragraph({
@@ -785,17 +828,19 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             
             new Paragraph({
               children: [
-                createBodyText(`• Critère technique : `),
+                createBodyText(`Critère technique : `),
                 createBodyText(`${state.rapportGenere.section6_methodologie?.ponderationTechnique || 30}%`, true),
               ],
+              bullet: { level: 0 },
               spacing: { after: 100 },
             }),
             
             new Paragraph({
               children: [
-                createBodyText(`• Critère financier : `),
+                createBodyText(`Critère financier : `),
                 createBodyText(`${state.rapportGenere.section6_methodologie?.ponderationFinancier || 70}%`, true),
               ],
+              bullet: { level: 0 },
               spacing: { after: 200 },
             }),
             
@@ -808,22 +853,25 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             
             new Paragraph({
               children: [
-                createBodyText(`• Note technique sur ${state.rapportGenere.section6_methodologie?.ponderationTechnique || 30} points`),
+                createBodyText(`Note technique sur ${state.rapportGenere.section6_methodologie?.ponderationTechnique || 30} points`),
               ],
+              bullet: { level: 0 },
               spacing: { after: 100 },
             }),
             
             new Paragraph({
               children: [
-                createBodyText(`• Note financière sur ${state.rapportGenere.section6_methodologie?.ponderationFinancier || 70} points`),
+                createBodyText(`Note financière sur ${state.rapportGenere.section6_methodologie?.ponderationFinancier || 70} points`),
               ],
+              bullet: { level: 0 },
               spacing: { after: 100 },
             }),
             
             new Paragraph({
               children: [
-                createBodyText(`• Note finale sur 100 points`),
+                createBodyText(`Note finale sur 100 points`),
               ],
+              bullet: { level: 0 },
               spacing: { after: 200 },
             }),
             
@@ -1024,14 +1072,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               spacing: { before: 400, after: 200 },
             }),
             
-            new Paragraph({
-              children: [
-                contenuChapitre10
-                  ? createBodyText(contenuChapitre10)
-                  : new TextRun({ text: "[À compléter : Date de notification, démarrage et planning prévisionnel]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
-              ],
-              spacing: { after: 200 },
-            }),
+            ...(contenuChapitre10
+              ? createParagraphsFromText(contenuChapitre10)
+              : [new Paragraph({
+                  children: [new TextRun({ text: "[À compléter : Date de notification, démarrage et planning prévisionnel]", italics: true, color: "FF8800", font: "Aptos", size: 22 })],
+                  spacing: { after: 200 },
+                })]
+            ),
             
             // Bloc de signature
             new Paragraph({
