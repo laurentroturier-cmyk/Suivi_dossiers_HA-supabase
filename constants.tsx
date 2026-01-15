@@ -150,6 +150,7 @@ export const PROCEDURE_GROUPS: Record<string, { label: string; fields: string[] 
   attribution: {
     label: 'Attribution',
     fields: [
+      'Date des Rejets',
       'Avis d\'attribution',
       'Date de Notification',
       'Données essentielles',
