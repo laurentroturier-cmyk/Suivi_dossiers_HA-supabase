@@ -16,7 +16,8 @@ import {
   Clock,
   UserCheck,
   UserX,
-  Mail
+  Mail,
+  Zap
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
@@ -41,6 +42,8 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [showUserManagement, setShowUserManagement] = useState(true);
+  const [powerAutomateLoading, setPowerAutomateLoading] = useState(false);
+  const [powerAutomateResult, setPowerAutomateResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -164,6 +167,63 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
     } catch (err: any) {
       console.error('Erreur lors de la mise à jour du rôle:', err);
       alert('Erreur: ' + err.message);
+    }
+  };
+
+  const testPowerAutomate = async () => {
+    try {
+      setPowerAutomateLoading(true);
+      setPowerAutomateResult(null);
+
+      console.log('🚀 Envoi de la requête Power Automate...');
+      
+      const payload = {
+        Qui: 'Appli gestion de projet',
+        Quoi: 'Demande de signature RP',
+        Contenu: '649-1'
+      };
+      
+      console.log('📦 Payload:', payload);
+
+      const response = await fetch('https://defaultaab83e7456b04278b32c502d1f8f5b.3e.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/10a7d190b4aa4de985011f0db576e813/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=lSnRxNNfZ2Mbq04okg0qZpa8rztjM1LLWxyMydrK7CU', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      console.log('📨 Réponse reçue:', response);
+      console.log('Status:', response.status);
+      console.log('Type:', response.type);
+
+      if (response.status === 404) {
+        setPowerAutomateResult({
+          success: false,
+          message: `Erreur 404 : L'endpoint Power Automate n'existe pas ou l'URL est incorrecte. Vérifiez l'URL fournie.`
+        });
+      } else if (response.ok) {
+        const result = await response.text();
+        console.log('📄 Contenu:', result);
+        setPowerAutomateResult({
+          success: true,
+          message: `Succès ! Réponse: ${result || 'OK'}`
+        });
+      } else {
+        const errorText = await response.text().catch(() => 'Pas de détails');
+        setPowerAutomateResult({
+          success: false,
+          message: `Erreur HTTP ${response.status}: ${response.statusText} - ${errorText}`
+        });
+      }
+    } catch (err: any) {
+      console.error('❌ Erreur lors du test Power Automate:', err);
+      setPowerAutomateResult({
+        success: false,
+        message: `Erreur réseau ou CORS: ${err.message || 'Erreur inconnue'}. Vérifiez que l'URL Power Automate est correcte et autorise les requêtes cross-origin.`
+      });
+    } finally {
+      setPowerAutomateLoading(false);
     }
   };
 
@@ -336,6 +396,19 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                   <FileSpreadsheet className="w-4 h-4" />
                   Import de données
                 </button>
+
+                <button 
+                  onClick={testPowerAutomate}
+                  disabled={powerAutomateLoading}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-emerald-100 rounded-lg text-sm font-medium hover:bg-[#003329]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-emerald-500/30"
+                >
+                  {powerAutomateLoading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Zap className="w-4 h-4" />
+                  )}
+                  Test Power Automate
+                </button>
               </>
             )}
             
@@ -393,12 +466,48 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-500">Rôle</span>
-              <Shield className="w-5 h-5 text-[#004d3d]" />
+              <span className="text-sm font-medium text-gray-500">Statut</span>
+              <Shield className="w-5 h-5 text-green-500" />
             </div>
-            <p className="text-lg font-semibold text-gray-900 capitalize">{profile.role}</p>
+            <p className="text-sm font-semibold text-green-600">Connecté</p>
+            <p className="text-xs text-gray-500 mt-1">Rôle: {profile.role}</p>
           </div>
         </div>
+
+        {/* Power Automate Result */}
+        {powerAutomateResult && profile.role === 'admin' && (
+          <div className={`mb-8 p-6 rounded-2xl border ${
+            powerAutomateResult.success 
+              ? 'bg-green-50 border-green-200' 
+              : 'bg-red-50 border-red-200'
+          }`}>
+            <div className="flex items-start gap-3">
+              {powerAutomateResult.success ? (
+                <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />
+              ) : (
+                <XCircle className="w-6 h-6 text-red-600 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <h3 className={`font-semibold mb-1 ${
+                  powerAutomateResult.success ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  Test Power Automate
+                </h3>
+                <p className={`text-sm ${
+                  powerAutomateResult.success ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {powerAutomateResult.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setPowerAutomateResult(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {activeTab === 'data' && (
           <>
