@@ -161,7 +161,7 @@ export const PROCEDURE_GROUPS: Record<string, { label: string; fields: string[] 
     fields: [
       'Forme du marché',
       'CCAG',
-      'Date d\'échéance du marché précédent',
+      'Date d\'échéance du marché',
       'Montant de la procédure',
     ],
   },
