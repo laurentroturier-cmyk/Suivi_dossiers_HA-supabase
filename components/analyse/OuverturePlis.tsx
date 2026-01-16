@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, PackageOpen, UserCheck, FileCheck, Building2, Mail, Phone, MapPin, Calendar, Clock, Pencil, Save, X } from 'lucide-react';
+import { ArrowLeft, Search, PackageOpen, UserCheck, FileCheck, Building2, Mail, Phone, MapPin, Calendar, Clock, Pencil, Save, X, Cloud, CloudOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { DepotsData } from '../../types/depots';
 import RecevabiliteOffres from './RecevabiliteOffres';
+import { useOuverturePlis } from '../../hooks/useOuverturePlis';
 
 interface OuverturePlisProps {
   onBack: () => void;
@@ -89,6 +90,10 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
   // Déclaration d'infructuosité
   const [lotsInfructueux, setLotsInfructueux] = useState<{lot: string; statut: string}[]>([]);
   const [raisonInfructuosite, setRaisonInfructuosite] = useState('');
+  
+  // Hook de sauvegarde
+  const { saving, lastSaved, saveData, loadData, autoSave, error } = useOuverturePlis(searchNumero);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   
   // Données des dépôts depuis la procédure
   const depotsData: DepotsData | null = selectedProcedure?.depots || null;
@@ -225,6 +230,45 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
     setActiveTab('info');
   };
 
+  // Fonction de sauvegarde manuelle
+  const handleSaveCandidature = async () => {
+    if (!selectedProcedure) return;
+
+    const result = await saveData({
+      num_proc: searchNumero,
+      reference_proc: selectedProcedure['Référence procédure (plateforme)'],
+      nom_proc: selectedProcedure['Nom de la procédure'],
+      id_projet: selectedProcedure['IDProjet'],
+      msa,
+      valideur_technique: valideurTechnique,
+      demandeur,
+      type_analyse: 'candidature',
+      statut: 'en_cours',
+      candidats,
+    });
+
+    if (result.success) {
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 3000);
+    }
+  };
+
+  // Charger les données sauvegardées au chargement de la procédure
+  useEffect(() => {
+    if (selectedProcedure && ongletActif === 'candidature') {
+      loadData('candidature').then((savedData) => {
+        if (savedData) {
+          setMsa(savedData.msa || '');
+          setValideurTechnique(savedData.valideur_technique || '');
+          setDemandeur(savedData.demandeur || '');
+          if (savedData.candidats && savedData.candidats.length > 0) {
+            setCandidats(savedData.candidats);
+          }
+        }
+      });
+    }
+  }, [selectedProcedure, ongletActif]);
+
   // Vue tableau candidature
   if (ongletActif === 'candidature' && selectedProcedure) {
     return (
@@ -249,6 +293,44 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                     <p className="text-sm text-gray-600 dark:text-gray-400">Procédure : {selectedProcedure?.['Référence procédure (plateforme)']}</p>
                   </div>
                 </div>
+              </div>
+
+              {/* Bouton de sauvegarde et indicateurs */}
+              <div className="flex items-center gap-4">
+                {/* Erreur */}
+                {error && (
+                  <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {/* Bouton de sauvegarde manuelle */}
+                <button
+                  onClick={handleSaveCandidature}
+                  disabled={saving || !candidats.length}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-xl transition-colors flex items-center gap-2 font-medium"
+                >
+                  {saving ? (
+                    <>
+                      <Cloud className="w-4 h-4 animate-spin" />
+                      <span>Sauvegarde...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Cloud className="w-4 h-4" />
+                      <span>Sauvegarder</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Message de succès */}
+                {showSaveSuccess && (
+                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium animate-fade-in">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Sauvegardé avec succès !</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

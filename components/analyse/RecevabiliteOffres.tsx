@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, FileCheck, Building2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, FileCheck, Building2, Plus, Trash2, Cloud, CheckCircle2, AlertCircle } from 'lucide-react';
 import { DepotsData } from '../../types/depots';
+import { useOuverturePlis } from '../../hooks/useOuverturePlis';
 
 interface RecevabiliteOffresProps {
   onBack: () => void;
@@ -33,6 +34,12 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
   const [candidats, setCandidats] = useState<CandidatRecevabilite[]>([]);
   const [raisonInfructuosite, setRaisonInfructuosite] = useState('');
   const [lotsInfructueux, setLotsInfructueux] = useState<{id: number; lot: string; statut: string}[]>([]);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
+  // Hook de sauvegarde
+  const refProc = procedure?.['Référence procédure (plateforme)'];
+  const numProc = typeof refProc === 'string' ? refProc.split(' ')[0] : (refProc || '');
+  const { loadData, saveData, autoSave, loading, saving, error, lastSaved } = useOuverturePlis(numProc);
 
   // Charger les candidats depuis les dépôts
   useEffect(() => {
@@ -48,6 +55,56 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
       setCandidats(candidatsInitiaux);
     }
   }, [depotsData]);
+
+  // Charger les données sauvegardées
+  useEffect(() => {
+    if (procedure) {
+      loadData('recevabilite').then((savedData) => {
+        if (savedData && savedData.recevabilite) {
+          const recevabiliteData = savedData.recevabilite as any;
+          if (recevabiliteData.candidats) {
+            setCandidats(recevabiliteData.candidats);
+          }
+          if (recevabiliteData.raison_infructuosite) {
+            setRaisonInfructuosite(recevabiliteData.raison_infructuosite);
+          }
+          if (recevabiliteData.lots_infructueux) {
+            setLotsInfructueux(recevabiliteData.lots_infructueux);
+          }
+        }
+      });
+    }
+  }, [procedure]);
+
+  // Fonction de sauvegarde manuelle
+  const handleSaveRecevabilite = async () => {
+    if (!procedure) return;
+
+    const refProc = procedure['Référence procédure (plateforme)'];
+    const procNumero = typeof refProc === 'string' ? refProc.split(' ')[0] : String(refProc || '');
+
+    const result = await saveData({
+      num_proc: procNumero,
+      reference_proc: String(refProc || ''),
+      nom_proc: procedure['Nom de la procédure'],
+      id_projet: procedure['IDProjet'],
+      msa,
+      valideur_technique: valideurTechnique,
+      demandeur,
+      type_analyse: 'recevabilite',
+      statut: 'en_cours',
+      recevabilite: {
+        candidats,
+        raison_infructuosite: raisonInfructuosite,
+        lots_infructueux: lotsInfructueux,
+      },
+    });
+
+    if (result.success) {
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 3000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#0d0f12] dark:via-[#121212] dark:to-[#0d0f12]">
@@ -73,6 +130,44 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Bouton de sauvegarde et indicateurs */}
+            <div className="flex items-center gap-4">
+              {/* Erreur */}
+              {error && (
+                <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {/* Bouton de sauvegarde manuelle */}
+              <button
+                onClick={handleSaveRecevabilite}
+                disabled={saving || !candidats.length}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-xl transition-colors flex items-center gap-2 font-medium"
+              >
+                {saving ? (
+                  <>
+                    <Cloud className="w-4 h-4 animate-spin" />
+                    <span>Sauvegarde...</span>
+                  </>
+                ) : (
+                  <>
+                    <Cloud className="w-4 h-4" />
+                    <span>Sauvegarder</span>
+                  </>
+                )}
+              </button>
+
+              {/* Message de succès */}
+              {showSaveSuccess && (
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium animate-fade-in">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Sauvegardé avec succès !</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
