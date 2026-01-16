@@ -371,17 +371,35 @@ export default function ReglementConsultation() {
                   {/* Chapitre 2 */}
                   <div className="mb-6 not-prose">
                     <h2 className="text-lg font-bold bg-[#5DBDB4] text-black p-2 mb-4">2  PRESENTATION DU POUVOIR ADJUDICATEUR</h2>
-                    <p className="mb-4">L'Agence Nationale pour la Formation Professionnelle des Adultes (ci-après Afpa) est un établissement public à caractère industriel et commercial (EPIC) d'Etat, créé le 1er janvier 2017...</p>
-                    <p className="mb-2">L'Afpa a depuis lors pour principales missions et spécialités définies au Code du Travail (articles L5315-1 à L5315-10) :</p>
-                    <ul className="list-none ml-4 mb-4 space-y-1">
-                      <li>• De participer à la formation et à la qualification des personnes...</li>
-                      <li>• De contribuer à la politique de certification du ministère de l'Emploi</li>
-                      <li>• De contribuer à l'égal accès des hommes et femmes à la formation professionnelle...</li>
-                      <li>• De contribuer à l'égal accès sur tout le territoire...</li>
-                      <li>• De contribuer à l'émergence et à l'organisation de nouveaux métiers...</li>
-                      <li>• De contribuer à la politique de certification de l'Etat...</li>
-                      <li>• De participer à la formation des personnes en recherche d'emploi...</li>
+                    
+                    {/* Bloc institutionnel */}
+                    <p className="mb-3 text-sm">L'Agence Nationale pour la Formation Professionnelle des Adultes (ci-après Afpa) est un établissement public à caractère industriel et commercial (EPIC) d'Etat, créé le 1er janvier 2017 à la suite de la restructuration de l'Association nationale pour la formation professionnelle des adultes, par les articles 8 et 9 de l'ordonnance n°2015-968 du 31 juillet 2015.</p>
+                    <p className="mb-2 text-sm">L'Afpa a depuis lors pour principales missions et spécialités définies au Code du Travail (articles L5315-1 à L5315-10) :</p>
+                    <ul className="list-none ml-4 mb-3 space-y-1 text-sm">
+                      <li>• De participer à la formation et à la qualification des personnes en recherche d'emploi, des salariés, et notamment des salariés dont le contrat de travail est rompu ;</li>
+                      <li>• De contribuer à la politique de certification du ministère de l'Emploi ;</li>
+                      <li>• De contribuer à l'égal accès des hommes et femmes à la formation professionnelle et au développement de la mixité des métiers ;</li>
+                      <li>• De contribuer à l'égal accès sur tout le territoire, en priorité dans les zones urbaines sensibles et les bassins d'emploi à redynamiser ;</li>
+                      <li>• De contribuer à l'émergence et à l'organisation de nouveaux métiers en lien avec l'évolution du monde économique et social et des compétences attendues par les employeurs ;</li>
+                      <li>• De contribuer à la politique de certification de l'Etat par son offre de formation et la délivrance d'un titre du ministère chargé de l'Emploi ;</li>
+                      <li>• De participer à la formation des personnes en recherche d'emploi et à la formation des personnes en situation d'emploi par l'intermédiaire de ses filiales, les Sociétés par actions simplifiées et à actionnaire unique, respectivement à ce jour « Afpa Accès à l'Emploi », et « Afpa Entreprises ».</li>
                     </ul>
+                    <p className="mb-2 text-sm">A ces fins, le groupe Afpa se caractérise par un maillage territorial complet, proches des milieux professionnels, des collectivités territoriales, et des organismes déconcentrés de l'Etat, avec pour chacune des trois entités du groupe :</p>
+                    <ul className="list-none ml-4 mb-4 space-y-1 text-sm">
+                      <li>• Un Siège, situé à Montreuil ;</li>
+                      <li>• 13 Directions régionales, une par Région administrative ;</li>
+                      <li>• 126 sites, rattachés aux Directions régionales</li>
+                    </ul>
+                    
+                    <h3 className="font-bold mt-4 mb-2">2.1 Nom et adresse</h3>
+                    <p className="text-sm mb-1">Agence nationale pour la formation professionnelle des adultes (Afpa)</p>
+                    <p className="text-sm mb-1">36-38 rue Léon Morane, 93200 Saint-Denis</p>
+                    <p className="text-sm mb-4">SIRET : 130 006 869 00015</p>
+                    
+                    <h3 className="font-bold mt-4 mb-2">2.2 Communication</h3>
+                    <p className="text-sm mb-2">Les documents du marché sont disponibles gratuitement en accès direct non restreint et complet, à l'adresse : <span className="text-orange-600 underline">http://afpa.e-marchespublics.com</span></p>
+                    <p className="text-sm mb-2">Adresse à laquelle des informations complémentaires peuvent être obtenues : <span className="text-orange-600 underline">http://afpa.e-marchespublics.com</span></p>
+                    <p className="text-sm">Les offres ou les demandes de participation doivent être envoyées par voie électronique via : <span className="text-orange-600 underline">http://afpa.e-marchespublics.com</span></p>
                   </div>
 
                   {/* Chapitre 3 */}
@@ -403,11 +421,23 @@ export default function ReglementConsultation() {
                   {/* Chapitre 5 */}
                   <div className="mb-6 not-prose">
                     <h2 className="text-lg font-bold bg-[#5DBDB4] text-black p-2 mb-4">5  TYPE DE MARCHE</h2>
+                    
+                    <h3 className="font-bold mt-4 mb-2">5.1 Type et forme du marché</h3>
                     <p className="mb-2"><strong>Forme :</strong> <input type="text" value={formData.typeMarche.forme} onChange={(e) => updateField('typeMarche', 'forme', e.target.value)} className="border-b border-gray-300 outline-none" /></p>
+                    
+                    <h3 className="font-bold mt-4 mb-2">5.2 Durée du marché</h3>
                     <p className="mb-2"><strong>Durée initiale :</strong> <input type="text" value={formData.typeMarche.dureeInitiale} onChange={(e) => updateField('typeMarche', 'dureeInitiale', e.target.value)} className="border-b border-gray-300 outline-none w-20" /> mois</p>
                     <p className="mb-2"><strong>Nombre de reconductions :</strong> <input type="text" value={formData.typeMarche.nbReconductions} onChange={(e) => updateField('typeMarche', 'nbReconductions', e.target.value)} className="border-b border-gray-300 outline-none w-20" /></p>
-                    <p className="mb-2"><strong>Durée maximale :</strong> <input type="text" value={formData.typeMarche.dureeMax} onChange={(e) => updateField('typeMarche', 'dureeMax', e.target.value)} className="border-b border-gray-300 outline-none w-20" /> mois</p>
-                    <p className="mb-2"><strong>Lieu d'exécution :</strong> <input type="text" value={formData.typeMarche.lieuExecution} onChange={(e) => updateField('typeMarche', 'lieuExecution', e.target.value)} className="border-b border-gray-300 outline-none flex-1" /></p>
+                    <p className="mb-2"><strong>Durée de reconduction :</strong> <input type="text" value={formData.typeMarche.dureeReconduction} onChange={(e) => updateField('typeMarche', 'dureeReconduction', e.target.value)} className="border-b border-gray-300 outline-none w-20" /> mois</p>
+                    <p className="mb-4"><strong>Durée maximale :</strong> <input type="text" value={formData.typeMarche.dureeMax} onChange={(e) => updateField('typeMarche', 'dureeMax', e.target.value)} className="border-b border-gray-300 outline-none w-20" /> mois</p>
+                    
+                    <h3 className="font-bold mt-4 mb-2">5.3 Sous-traitance</h3>
+                    <p className="mb-2 text-sm">Les candidats sont tenus d'indiquer dans l'acte d'engagement, la nature et le montant des prestations qu'ils envisagent de faire exécuter par des sous-traitants, ainsi que le nom de ces sous-traitants, afin de les présenter à l'acceptation et à l'agrément de l'Afpa.</p>
+                    <p className="mb-2 text-sm">La sous-traitance de la totalité de l'accord-cadre est interdite.</p>
+                    <p className="mb-4 text-sm">Le candidat devra pour cela se conformer notamment aux dispositions des articles R.2193-1 à R.2193-22 du Code de la commande publique relatifs à la sous-traitance dans les marchés publics.</p>
+                    
+                    <h3 className="font-bold mt-4 mb-2">5.4 Lieu d'exécution</h3>
+                    <p className="mb-2"><input type="text" value={formData.typeMarche.lieuExecution} onChange={(e) => updateField('typeMarche', 'lieuExecution', e.target.value)} className="w-full border-b border-gray-300 outline-none" placeholder="À préciser" /></p>
                   </div>
 
                   {/* Chapitre 6 */}
@@ -424,15 +454,116 @@ export default function ReglementConsultation() {
 
                   {/* Chapitre 7 */}
                   <div className="mb-6 not-prose">
-                    <h2 className="text-lg font-bold bg-[#5DBDB4] text-black p-2 mb-4">7  CONDITIONS DE REMISE</h2>
+                    <h2 className="text-lg font-bold bg-[#5DBDB4] text-black p-2 mb-4">7  CONDITIONS DE REMISE DES CANDIDATURES ET DES OFFRES</h2>
+                    
+                    {/* AVERTISSEMENT - Encart vert */}
+                    <div className="bg-[#EAF6E0] border border-black p-4 mb-4">
+                      <h3 className="text-center font-bold text-lg mb-3">AVERTISSEMENT</h3>
+                      <p className="mb-2">Il est de la responsabilité du candidat de s'assurer de la compatibilité de ses outils informatiques, avec la plateforme de dématérialisation.</p>
+                      <p className="mb-2">L'attention du candidat est attirée sur la durée d'acheminement des plis électroniques volumineux.</p>
+                      <p className="mb-2">Il appartient à chaque candidat de tenir compte de la durée du téléchargement qui est fonction du débit d'accès internet dont il dispose et de la taille des documents qu'il transmet.</p>
+                      <p className="mb-2">Seules la date et l'heure de la fin d'acheminement font foi pour déterminer le caractère recevable ou hors délai d'une offre transmise par voie dématérialisée. Ainsi les offres qui seraient réceptionnées par le serveur après l'heure limite (même si le début de la transmission a été effectué avant cette heure) ne seront pas examinées et seront considérées comme « hors délai ».</p>
+                      <p>En cas d'envois successifs, seule sera retenue la dernière réponse déposée avant la date limite de remise des plis.</p>
+                    </div>
+
+                    <p className="mb-4"><strong>Chaque candidat produit un dossier complet comprenant les pièces suivantes :</strong></p>
+                    <p className="mb-2"><strong>D'une part, les documents relatifs à la candidature :</strong></p>
+                    <ul className="list-disc ml-6 mb-4 text-sm">
+                      <li>Le Document Unique de Marché Européen (DUME) ou les formulaires DC1 et DC2</li>
+                      <li>Le numéro INSEE ou extrait K/Kbis (moins de 6 mois)</li>
+                      <li>Documents relatifs aux pouvoirs de la personne habilitée</li>
+                      <li>Attestation d'assurance responsabilité civile professionnelle</li>
+                    </ul>
+                    
+                    <p className="mb-2"><strong>D'autre part, les documents relatifs à l'offre.</strong></p>
+                    
+                    <h3 className="font-bold mt-4 mb-2">7.2 Format des documents à remettre</h3>
+                    <p className="mb-2 text-sm">Les réponses devront être déposées en version dématérialisée sur le site Dematis à l'adresse <span className="text-orange-600 underline">http://afpa.e-marchespublics.com</span></p>
+                    <p className="mb-2 text-sm">Les documents seront fournis dans l'un des formats suivants :</p>
+                    <ul className="list-disc ml-6 mb-2 text-sm">
+                      <li>Bureautique : norme Office Open XML (2008) - .docx, .xlsx, .pptx</li>
+                      <li>PDF : norme ISO 3200-1 (2008)</li>
+                    </ul>
+                    <p className="mb-2 text-sm italic">NOTA : Le Bordereau de Prix Unitaires, le DQE et le Questionnaire Technique doivent être déposés en format Excel.</p>
+                    
+                    <h3 className="font-bold mt-4 mb-2">7.3 Langue et devise</h3>
+                    <p className="mb-2 text-sm">Tous les documents doivent être rédigés en français. Les indications monétaires seront établies en Euros.</p>
+                    
+                    <h3 className="font-bold mt-4 mb-2">7.4 Copie de Sauvegarde</h3>
+                    <p className="mb-2 text-sm">Le candidat peut adresser une copie de sauvegarde sur support physique (Clé USB) ou papier à l'adresse :</p>
+                    <div className="ml-6 text-sm mb-2">
+                      <p>Accueil Afpa - Direction Nationale des Achats</p>
+                      <p>Tour Cityscope - 3 rue Franklin</p>
+                      <p>93100 MONTREUIL</p>
+                    </div>
+                    
                     <p className="mb-2"><strong>Délai de validité des offres :</strong> <input type="text" value={formData.remise.delaiValiditeOffres} onChange={(e) => updateField('remise', 'delaiValiditeOffres', e.target.value)} className="border-b border-gray-300 outline-none w-20" /> jours</p>
                   </div>
 
                   {/* Chapitre 8 */}
                   <div className="mb-6 not-prose">
-                    <h2 className="text-lg font-bold bg-[#5DBDB4] text-black p-2 mb-4">8  JUGEMENT DES OFFRES</h2>
+                    <h2 className="text-lg font-bold bg-[#5DBDB4] text-black p-2 mb-4">8  SÉLECTION DES CANDIDATURES ET JUGEMENT DES OFFRES</h2>
+                    
+                    <h3 className="font-bold mt-4 mb-2">8.1 Examen des candidatures</h3>
+                    <p className="mb-2 text-sm">Avant de procéder à l'examen des candidatures, s'il apparaît que des pièces du dossier de candidature sont manquantes ou incomplètes, le Pouvoir Adjudicateur peut décider de demander à tous les candidats concernés de produire ou compléter ces pièces dans un délai maximum de cinq (5) jours.</p>
+                    <p className="mb-2 text-sm">Les candidatures conformes et recevables seront examinées à partir des seuls renseignements et documents exigés dans le cadre de cette consultation, pour évaluer leur situation juridique ainsi que leurs capacités professionnelles, techniques et financières.</p>
+                    <p className="mb-2 text-sm">La sélection des candidatures sera effectuée dans les conditions prévues aux articles R.2144-1 à R2144-7 du Code de la commande publique.</p>
+                    <p className="mb-2 text-sm"><strong>Les critères de sélection des candidatures sont :</strong></p>
+                    <ul className="list-disc ml-6 mb-4 text-sm">
+                      <li>Dossier administratif complet</li>
+                      <li>Adéquation des capacités économiques, financières, techniques et professionnelles avec l'objet du marché</li>
+                    </ul>
+                    
+                    <h3 className="font-bold mt-4 mb-2">8.2 Jugement des offres</h3>
+                    <p className="mb-2 text-sm">La méthode de notation financière utilisée est celle recommandée par le Ministère de l'Economie et des Finances : la formule linéaire GRAMP.</p>
+                    <p className="mb-2 text-sm">Concernant les prix, en cas de discordance constatée dans une offre, les montants portés dans le Bordereau des prix par le candidat prévaudront sur toutes autres indications de l'offre et le montant du détail quantitatif estimatif sera recalculé en conséquence.</p>
+                    <p className="mb-2 text-sm">Le jugement des offres sera effectué dans les conditions prévues aux articles R.2152-1 et suivants du code de la commande publique et donnera lieu à un classement des offres.</p>
+                    <p className="mb-2 text-sm">L'attention des candidats est attirée sur le fait que toute offre irrégulière pourra faire l'objet d'une demande de régularisation, à condition qu'elle ne soit pas anormalement basse. En revanche, toute offre inacceptable ou inappropriée sera éliminée.</p>
+                    <p className="mb-4 text-sm">Le jugement des offres sera effectué dans le respect des principes fondamentaux de la commande publique et donnera lieu à un classement en fonction de la pondération suivante :</p>
+                    
                     <p className="mb-2"><strong>Critère financier :</strong> <input type="text" value={formData.jugement.critereFinancier} onChange={(e) => updateField('jugement', 'critereFinancier', e.target.value)} className="border-b border-gray-300 outline-none w-20" /> %</p>
                     <p className="mb-2"><strong>Critère technique :</strong> <input type="text" value={formData.jugement.critereTechnique} onChange={(e) => updateField('jugement', 'critereTechnique', e.target.value)} className="border-b border-gray-300 outline-none w-20" /> %</p>
+                    
+                    <p className="mb-2 mt-4 text-sm"><strong>L'échelle de notation utilisée pour chaque question est la suivante :</strong></p>
+                    <table className="w-full border-collapse border border-gray-300 text-xs mb-4">
+                      <thead className="bg-[#EAF6E0]">
+                        <tr>
+                          <th className="border border-gray-300 p-2 font-bold">Notations des questions</th>
+                          <th className="border border-gray-300 p-2 font-bold" colSpan={2}>Définitions</th>
+                          <th className="border border-gray-300 p-2 font-bold">Pondération rapportée à la valeur de la question</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td className="border border-gray-300 p-2 text-center">0</td><td className="border border-gray-300 p-2">0- Ne répond pas</td><td className="border border-gray-300 p-2">Pas de réponse</td><td className="border border-gray-300 p-2 text-center">0</td></tr>
+                        <tr><td className="border border-gray-300 p-2 text-center">1</td><td className="border border-gray-300 p-2">1- Très insuffisant</td><td className="border border-gray-300 p-2">Répond de manière très insuffisante à la question et/ou au besoin exprimé</td><td className="border border-gray-300 p-2 text-center">0.25</td></tr>
+                        <tr><td className="border border-gray-300 p-2 text-center">2</td><td className="border border-gray-300 p-2">2- Moyen</td><td className="border border-gray-300 p-2">Répond moyennement à la question et/ou au besoin exprimé</td><td className="border border-gray-300 p-2 text-center">0.5</td></tr>
+                        <tr><td className="border border-gray-300 p-2 text-center">3</td><td className="border border-gray-300 p-2">3- bon et adapté</td><td className="border border-gray-300 p-2">Apporte une réponse bonne et adaptée à la question et/ou au besoin exprimé</td><td className="border border-gray-300 p-2 text-center">0.75</td></tr>
+                        <tr><td className="border border-gray-300 p-2 text-center">4</td><td className="border border-gray-300 p-2">4- Au-delà du besoin</td><td className="border border-gray-300 p-2">Apporte une réponse au-delà de la demande et/ou au besoin exprimé</td><td className="border border-gray-300 p-2 text-center">1</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {/* Chapitre 9 */}
+                  <div className="mb-6 not-prose">
+                    <h2 className="text-lg font-bold bg-[#5DBDB4] text-black p-2 mb-4">9  CONDITION DE VALIDITÉ DE L'ATTRIBUTAIRE PRESSENTI</h2>
+                    <p className="mb-2 text-sm">En application de l'article R.2144-4 du Code de la commande publique, le marché est définitivement attribué au candidat retenu sous réserve que celui-ci produise, dans les dix (10) jours suivants la notification d'attribution, les documents détaillés ci-dessous :</p>
+                    <ul className="list-disc ml-6 mb-4 text-sm">
+                      <li>Une déclaration sur l'honneur attestant qu'il ne se trouve pas dans un cas d'interdiction de soumissionner</li>
+                      <li>Les certificats sociaux : attestation URSSAF/AGEFIPH ou RSI, versement régulier des cotisations de congés payés et de chômage intempéries</li>
+                      <li>Les certificats fiscaux : impôt sur le revenu, impôt sur les sociétés, impôt sur la valeur ajoutée</li>
+                      <li>Le cas échéant, en cas de redressement judiciaire la copie du ou des jugements prononcés</li>
+                      <li>Le cas échéant, les pièces prévues aux articles R. 1263-12, D. 8222-5 ou D. 8222-7 ou D. 8254-2 à D. 8254-5 du code du travail sur le travail dissimulé</li>
+                    </ul>
+                    <p className="mb-2 text-sm">Bien que les documents précités ne soient exigibles qu'auprès de l'attributaire du marché public, il est fortement conseillé aux candidats de se doter de ces documents dès qu'ils soumissionnent à un marché public.</p>
+                    <p className="mb-2 text-sm">En cas de cotraitance ou sous-traitance, ces éléments seront à fournir par chaque cotraitant et sous-traitant.</p>
+                    <p className="mb-2 text-sm">Le non-respect de ces formalités relatives aux attestations et certificats dans un délai maximum de dix (10) jours à compter de la demande du pouvoir adjudicateur entraîne le rejet de l'offre. La même demande est alors faite au candidat suivant dans le classement des offres.</p>
+                    <p className="text-sm">Pour rappel, le candidat retenu est informé que les documents mentionnés aux articles D. 8222-5 ou D. 8222-7 ou D. 8254-2 à D. 8254-5 du code du travail, seront à remettre à l'acheteur tous les 6 mois jusqu'à la fin de l'exécution de son marché, ainsi qu'une attestation d'assurance responsabilité civile en cours de validité (chaque année).</p>
+                  </div>
+                  
+                  {/* Chapitre 10 */}
+                  <div className="mb-6 not-prose">
+                    <h2 className="text-lg font-bold bg-[#5DBDB4] text-black p-2 mb-4">10  NÉGOCIATION</h2>
+                    <p className="text-sm">La procédure ne comporte pas de phase de négociation conformément aux articles R.2124-2 et R.2161-2 du Code de la commande publique.</p>
                   </div>
 
                   {/* Chapitre 11 */}
