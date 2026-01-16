@@ -248,13 +248,13 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                 <thead>
                   <tr>
                     <th className="bg-gray-200 dark:bg-gray-700 px-2 py-3"></th>
-                    <th colSpan={10} className="bg-yellow-500 dark:bg-yellow-600 px-4 py-3 text-center text-sm font-black text-gray-900 dark:text-white border-r-2 border-white">
+                    <th colSpan={7} className="bg-yellow-500 dark:bg-yellow-600 px-4 py-3 text-center text-sm font-black text-gray-900 dark:text-white border-r-2 border-white">
                       Candidat
                     </th>
-                    <th colSpan={2} className="bg-blue-500 dark:bg-blue-600 px-4 py-3 text-center text-sm font-black text-white border-r-2 border-white">
+                    <th colSpan={1} className="bg-blue-500 dark:bg-blue-600 px-4 py-3 text-center text-sm font-black text-white border-r-2 border-white">
                       Dépôt
                     </th>
-                    <th colSpan={2} className="bg-green-500 dark:bg-green-600 px-4 py-3 text-center text-sm font-black text-white">
+                    <th colSpan={1} className="bg-green-500 dark:bg-green-600 px-4 py-3 text-center text-sm font-black text-white">
                       Admission
                     </th>
                   </tr>
@@ -266,17 +266,12 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                     <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Nom</th>
                     <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Société</th>
                     <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">N° Siret/Siren</th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Email</th>
                     <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Adresse</th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Code Postal</th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Ville</th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r-4 border-blue-500">Téléphone</th>
+                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r-4 border-blue-500">Ville</th>
                     
-                    <th className="bg-blue-100 dark:bg-blue-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Lot</th>
-                    <th className="bg-blue-100 dark:bg-blue-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r-4 border-green-500">Hors Délai</th>
+                    <th className="bg-blue-100 dark:bg-blue-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r-4 border-green-500">Lot</th>
                     
-                    <th className="bg-green-100 dark:bg-green-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Admis / Rejeté</th>
-                    <th className="bg-green-100 dark:bg-green-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white">Si rejet : motif</th>
+                    <th className="bg-green-100 dark:bg-green-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white">Admis / Rejeté</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-[#1E1E1E]">
@@ -314,46 +309,21 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                       </td>
                       <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r border-gray-200">
                         <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">{candidat.email || '-'}</option>
-                        </select>
-                      </td>
-                      <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r border-gray-200">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
                           <option value="">{candidat.adresse || '-'}</option>
-                        </select>
-                      </td>
-                      <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r border-gray-200">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">{candidat.codePostal || '-'}</option>
-                        </select>
-                      </td>
-                      <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r border-gray-200">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">{candidat.ville || '-'}</option>
                         </select>
                       </td>
                       <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r-4 border-blue-500">
                         <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">{candidat.telephone || '-'}</option>
+                          <option value="">{candidat.ville || '-'}</option>
                         </select>
                       </td>
                       
-                      <td className="px-2 py-2 text-xs border-r border-gray-200 bg-blue-50/30 dark:bg-blue-950/10">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">-</option>
-                        </select>
-                      </td>
                       <td className="px-2 py-2 text-xs border-r-4 border-green-500 bg-blue-50/30 dark:bg-blue-950/10">
                         <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
                           <option value="">-</option>
                         </select>
                       </td>
                       
-                      <td className="px-2 py-2 text-xs border-r border-gray-200 bg-green-50/30 dark:bg-green-950/10">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">-</option>
-                        </select>
-                      </td>
                       <td className="px-2 py-2 text-xs bg-green-50/30 dark:bg-green-950/10">
                         <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
                           <option value="">-</option>
