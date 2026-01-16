@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Search, PackageOpen, UserCheck, FileCheck, Building2, Mail, Phone, MapPin, Calendar, Clock, Pencil, Save, X } from 'lucide-react';
 import { DepotsData } from '../../types/depots';
+import RecevabiliteOffres from './RecevabiliteOffres';
 
 interface OuverturePlisProps {
   onBack: () => void;
@@ -25,6 +26,11 @@ interface Candidat {
   horsDelai: string;
   admisRejete: string;
   motifRejet: string;
+  
+  // Recevabilité
+  lotRecevabilite: string;
+  recevable: string; // 'Recevable' | 'Éliminé' | ''
+  motifRejetRecevabilite: string;
   
   // DC1
   dc1Produit: string;
@@ -68,6 +74,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
   const [searchNumero, setSearchNumero] = useState('');
   const [selectedProcedure, setSelectedProcedure] = useState<any>(null);
   const [ongletActif, setOngletActif] = useState<OngletType | null>(null);
+  const [showRecevabilite, setShowRecevabilite] = useState(false);
   const [candidats, setCandidats] = useState<Candidat[]>([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
@@ -78,6 +85,10 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
   const [msa, setMsa] = useState('');
   const [valideurTechnique, setValideurTechnique] = useState('');
   const [demandeur, setDemandeur] = useState('');
+  
+  // Déclaration d'infructuosité
+  const [lotsInfructueux, setLotsInfructueux] = useState<{lot: string; statut: string}[]>([]);
+  const [raisonInfructuosite, setRaisonInfructuosite] = useState('');
   
   // Données des dépôts depuis la procédure
   const depotsData: DepotsData | null = selectedProcedure?.depots || null;
@@ -133,16 +144,20 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
         prenom: '',
         nom: entreprise.contact || '',
         societe: entreprise.societe || '',
-        siret: entreprise.siret || '',
+        siret: '',
         email: entreprise.email || '',
         adresse: entreprise.adresse || '',
-        codePostal: entreprise.codePostal || '',
+        codePostal: entreprise.cp || '',
         ville: entreprise.ville || '',
         telephone: entreprise.telephone || '',
         lot: '',
         horsDelai: '',
         admisRejete: '',
         motifRejet: '',
+        // Recevabilité
+        lotRecevabilite: '',
+        recevable: '',
+        motifRejetRecevabilite: '',
         // DC1
         dc1Produit: '',
         dc1PrixHT: '',
@@ -665,6 +680,23 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
     );
   }
 
+  // Afficher la page de recevabilité si activée
+  if (showRecevabilite && selectedProcedure) {
+    const dossierRattache = dossiers.find(d => d.IDProjet === selectedProcedure?.IDProjet);
+    
+    return (
+      <RecevabiliteOffres
+        onBack={() => setShowRecevabilite(false)}
+        procedure={selectedProcedure}
+        dossier={dossierRattache}
+        depotsData={depotsData}
+        msa={msa}
+        valideurTechnique={valideurTechnique}
+        demandeur={demandeur}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#0d0f12] dark:via-[#121212] dark:to-[#0d0f12]">
       {/* Header */}
@@ -828,7 +860,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
             </button>
 
             <button
-              onClick={() => setOngletActif('recevabilite')}
+              onClick={() => setShowRecevabilite(true)}
               className="group bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-blue-200 dark:border-blue-500/40 hover:border-blue-400 dark:hover:border-blue-400 p-8 transition-all hover:shadow-xl hover:-translate-y-1"
             >
               <div className="flex flex-col items-center gap-4">
@@ -937,9 +969,6 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                         <div className="font-semibold">{entreprise.societe}</div>
-                        {entreprise.siret && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400">SIRET: {entreprise.siret}</div>
-                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                         {entreprise.contact}
@@ -949,15 +978,15 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                         <div>{entreprise.ville}</div>
-                        {entreprise.codePostal && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{entreprise.codePostal}</div>
+                        {entreprise.cp && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{entreprise.cp}</div>
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {entreprise.dateReception}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {entreprise.heureReception}
+                        -
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -977,44 +1006,28 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
         )}
 
         {/* Contenu sélectionné */}
-        {selectedProcedure && ongletActif && (
-          <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-gray-200 dark:border-[#333333] overflow-hidden">{/* Section title */}
+        {selectedProcedure && ongletActif === 'candidature' && (
+          <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-gray-200 dark:border-[#333333] overflow-hidden">
+            {/* Section title */}
             <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 px-6 py-4 border-b border-gray-200 dark:border-[#333333]">
               <div className="flex items-center gap-3">
-                {ongletActif === 'candidature' ? (
-                  <>
-                    <UserCheck className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white">Analyse des candidatures</h2>
-                  </>
-                ) : (
-                  <>
-                    <FileCheck className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white">Recevabilité des offres</h2>
-                  </>
-                )}
+                <UserCheck className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                <h2 className="text-xl font-black text-gray-900 dark:text-white">Analyse des candidatures</h2>
               </div>
             </div>
 
-            {/* Contenu des onglets */}
+            {/* Contenu */}
             <div className="p-6">
-              {ongletActif === 'candidature' && (
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Contenu de l'analyse des candidatures à développer...
-                  </p>
-                </div>
-              )}
-
-              {ongletActif === 'recevabilite' && (
-                <div>
-                  <div className="text-gray-600 dark:text-gray-400 text-sm">
-                    <p>Contenu de la recevabilité des offres à développer...</p>
-                  </div>
-                </div>
-              )}
+              <div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  Contenu de l'analyse des candidatures à développer...
+                </p>
+              </div>
             </div>
           </div>
         )}
+
+
 
         {/* Message si aucune procédure sélectionnée */}
         {!selectedProcedure && (
