@@ -6,18 +6,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DNA Suivi des projets - Supabase</title>
         <script>
+            // Charger le thème depuis localStorage IMMÉDIATEMENT
+            (function() {
+                const theme = localStorage.getItem('theme');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            })();
+            
             // Activer le dark mode via la classe `.dark` sur <html>
-            // (ThemeContext.tsx ajoute/retire cette classe)
+            // 
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-primary);
+       ette classe)
             window.tailwind = window.tailwind || {};
             window.tailwind.config = { darkMode: 'class' };
         </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
     </style>
-  <script type="module" crossorigin src="/assets/index-Csi72l51.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BOkNYqkB.css">
+  <script type="module" crossorigin src="/assets/index-DF1r6Cu3.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BMoVdX4b.css">
 </head>
 <body>
     <div id="root"></div>

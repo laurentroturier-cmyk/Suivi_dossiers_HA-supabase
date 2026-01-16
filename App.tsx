@@ -58,6 +58,7 @@ import RedactionPlaceholder from './components/redaction/RedactionPlaceholder';
 import RedactionOverview from './components/redaction/RedactionOverview';
 import DCESection from './components/redaction/DCESection';
 import QuestionnaireTechnique from './components/redaction/questionnaire/QuestionnaireTechnique';
+import ReglementConsultation from './components/redaction/ReglementConsultation';
 
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
@@ -325,7 +326,7 @@ const App: React.FC = () => {
   const [an01Error, setAn01Error] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TableType>('home');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [redactionSection, setRedactionSection] = useState<'DCE' | 'NOTI' | 'EXE' | 'Avenants' | 'Courriers' | null>(null);
+  const [redactionSection, setRedactionSection] = useState<'DCE' | 'NOTI' | 'EXE' | 'Avenants' | 'Courriers' | 'RapportCommission' | null>(null);
   const [dceSubsection, setDceSubsection] = useState<'questionnaire-technique' | 'cctp' | 'bpu' | null>(null);
 
   // ============================================
@@ -3095,7 +3096,11 @@ const App: React.FC = () => {
               <RedactionPlaceholder selectedSection={'DCE'} />
             )}
 
-            {activeTab === 'redaction' && redactionSection !== null && redactionSection !== 'DCE' && (
+            {activeTab === 'redaction' && redactionSection === 'RapportCommission' && (
+              <ReglementConsultation />
+            )}
+
+            {activeTab === 'redaction' && redactionSection !== null && redactionSection !== 'DCE' && redactionSection !== 'RapportCommission' && (
               <RedactionPlaceholder selectedSection={redactionSection} />
             )}
             {activeTab === 'export' && (

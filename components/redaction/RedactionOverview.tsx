@@ -1,8 +1,8 @@
 import React from 'react';
-import { FileText, CheckCircle, Zap, AlertCircle, Mail, Info } from 'lucide-react';
+import { FileText, CheckCircle, Zap, AlertCircle, Mail, Info, Users } from 'lucide-react';
 
 interface RedactionOverviewProps {
-  onNavigate: (section: 'DCE' | 'NOTI' | 'EXE' | 'Avenants' | 'Courriers') => void;
+  onNavigate: (section: 'DCE' | 'NOTI' | 'EXE' | 'Avenants' | 'Courriers' | 'RapportCommission') => void;
 }
 
 const RedactionOverview: React.FC<RedactionOverviewProps> = ({ onNavigate }) => {
@@ -16,6 +16,16 @@ const RedactionOverview: React.FC<RedactionOverviewProps> = ({ onNavigate }) => 
       iconBg: 'bg-blue-100 dark:bg-blue-500/20',
       borderColor: 'border-blue-200 dark:border-blue-500/40',
       action: () => onNavigate('DCE'),
+    },
+    {
+      id: 'RapportCommission',
+      title: 'Règlement de consultation',
+      description: "Génération de règlement de consultation",
+      icon: Users,
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      iconBg: 'bg-indigo-100 dark:bg-indigo-500/20',
+      borderColor: 'border-indigo-200 dark:border-indigo-500/40',
+      action: () => onNavigate('RapportCommission'),
     },
     {
       id: 'NOTI',
