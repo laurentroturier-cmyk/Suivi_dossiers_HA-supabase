@@ -1,4 +1,4 @@
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType, Footer, PageNumber, NumberFormat } from 'docx';
 import { saveAs } from 'file-saver';
 import type { Noti3Data } from '../types/noti3';
 
@@ -10,6 +10,31 @@ export async function generateNoti3Word(data: Noti3Data): Promise<void> {
 export async function generateNoti3WordAsBlob(data: Noti3Data): Promise<Blob> {
   const doc = createNoti3Document(data);
   return await Packer.toBlob(doc);
+}
+
+// Helper pour créer du texte avec style Aptos Corps 11
+function createBodyText(text: string, options: { bold?: boolean } = {}): TextRun {
+  return new TextRun({
+    text,
+    font: 'Aptos (Corps)',
+    size: 22, // 11pt = 22 half-points
+    bold: options.bold || false,
+  });
+}
+
+// Helper pour créer un titre de section avec Aptos 14
+function createSectionTitle(text: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text,
+        font: 'Aptos',
+        size: 28, // 14pt = 28 half-points
+        bold: true,
+      }),
+    ],
+    spacing: { before: 300, after: 200 },
+  });
 }
 
 function createNoti3Document(data: Noti3Data): Document {
@@ -25,13 +50,55 @@ function createNoti3Document(data: Noti3Data): Document {
           },
         },
       },
+      footers: {
+        default: new Footer({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "NOTI3 – Notification de rejet de candidature ou d'offre | N° de procédure: ",
+                  font: 'Aptos (Corps)',
+                  size: 18, // 9pt
+                }),
+                new TextRun({
+                  text: data.numeroProcedure,
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  text: ' | Page ',
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  children: [PageNumber.CURRENT],
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  text: ' / ',
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  children: [PageNumber.TOTAL_PAGES],
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        }),
+      },
       children: [
         // En-tête
         new Paragraph({
           children: [
             new TextRun({
               text: "MINISTERE DE L'ECONOMIE ET DES FINANCES",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
               bold: true,
             }),
           ],
@@ -117,7 +184,8 @@ function createNoti3Document(data: Noti3Data): Document {
             new TextRun({
               text: 'AFPA',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -126,7 +194,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: data.pouvoirAdjudicateur.nom,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -135,7 +204,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: data.pouvoirAdjudicateur.adresseVoie,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -144,7 +214,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `${data.pouvoirAdjudicateur.codePostal} ${data.pouvoirAdjudicateur.ville}`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -156,7 +227,8 @@ function createNoti3Document(data: Noti3Data): Document {
             new TextRun({
               text: 'Objet de la consultation',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -165,7 +237,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: data.objetConsultation,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -174,7 +247,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: 'La présente notification correspond :',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
               bold: true,
             }),
           ],
@@ -188,7 +262,8 @@ function createNoti3Document(data: Noti3Data): Document {
             }),
             new TextRun({
               text: " à l’ensemble du marché public",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -203,7 +278,8 @@ function createNoti3Document(data: Noti3Data): Document {
                 }),
                 new TextRun({
                   text: ` au lot n° ${lot.numero} : ${lot.intitule}`,
-                  size: 20,
+                  font: 'Aptos (Corps)',
+                  size: 22,
                 }),
               ],
               spacing: { after: 100 },
@@ -217,7 +293,8 @@ function createNoti3Document(data: Noti3Data): Document {
             new TextRun({
               text: data.candidat.denomination,
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -226,7 +303,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: data.candidat.adresse1,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -236,7 +314,8 @@ function createNoti3Document(data: Noti3Data): Document {
             children: [
               new TextRun({
                 text: data.candidat.adresse2!,
-                size: 20,
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
             ],
             spacing: { after: 100 },
@@ -246,7 +325,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `${data.candidat.codePostal} ${data.candidat.ville}`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -255,7 +335,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: 'SIRET : ' + data.candidat.siret,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -264,7 +345,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: 'Email : ' + data.candidat.email,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -273,7 +355,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: 'Téléphone : ' + data.candidat.telephone,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -284,7 +367,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: 'J’ai le regret de vous faire connaître que, dans le cadre de la consultation rappelée ci-dessus :',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -297,7 +381,8 @@ function createNoti3Document(data: Noti3Data): Document {
             }),
             new TextRun({
               text: ' votre candidature n’a pas été retenue.',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
             new TextRun({
               text: data.rejet.type === 'offre' ? '☒' : '☐',
@@ -306,7 +391,8 @@ function createNoti3Document(data: Noti3Data): Document {
             }),
             new TextRun({
               text: ' votre offre n’a pas été retenue.',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -316,7 +402,8 @@ function createNoti3Document(data: Noti3Data): Document {
             new TextRun({
               text: 'pour les motifs suivants :',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -325,7 +412,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: data.rejet.motifs,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -334,7 +422,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `En considération des critères de choix définis dans le Règlement de la Consultation, votre offre a obtenu ${data.rejet.total} points sur un total de 100.`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -343,7 +432,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `Note économique : ${data.rejet.noteEco} / ${data.rejet.maxEco || '60'} points`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -352,7 +442,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `Note technique : ${data.rejet.noteTech} / ${data.rejet.maxTech || '40'} points`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -361,7 +452,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `Au classement final, votre offre se classe au rang ${data.rejet.classement}.`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -372,7 +464,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: 'Le marché public ou l’accord-cadre est attribué à :',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -382,7 +475,8 @@ function createNoti3Document(data: Noti3Data): Document {
             new TextRun({
               text: data.attributaire.denomination,
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -391,7 +485,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `En effet, en considération des critères de choix définis dans le Règlement de la Consultation, son offre a obtenu ${data.attributaire.total} points sur un total de 100.`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -400,7 +495,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `Note économique : ${data.attributaire.noteEco} / ${data.attributaire.maxEco || '60'} points`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -409,7 +505,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `Note technique : ${data.attributaire.noteTech} / ${data.attributaire.maxTech || '40'} points`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -419,7 +516,8 @@ function createNoti3Document(data: Noti3Data): Document {
             new TextRun({
               text: 'Pour les motifs suivants :',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -428,7 +526,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: data.attributaire.motifs,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -439,7 +538,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `Le délai de suspension de la signature du marché public ou de l’accord-cadre est de ${data.delaiStandstill} jours, à compter de la date d’envoi de la présente notification.`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -449,11 +549,13 @@ function createNoti3Document(data: Noti3Data): Document {
             new TextRun({
               text: 'Référé précontractuel :',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
             new TextRun({
               text: " Le candidat peut, s’il le souhaite, exercer un référé précontractuel contre la présente procédure de passation, devant le président du tribunal administratif, avant la signature du marché public ou de l’accord-cadre.",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -463,11 +565,13 @@ function createNoti3Document(data: Noti3Data): Document {
             new TextRun({
               text: 'Recours pour excès de pouvoir :',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
             new TextRun({
               text: " Dans l’hypothèse d’une déclaration d’infructuosité de la procédure, le candidat peut, s’il le souhaite, exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif. Le juge doit être saisi dans un délai de deux mois à compter de la notification du présent courrier.",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -478,7 +582,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: `À ${data.signature.lieu}, le ${data.signature.date}`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           alignment: AlignmentType.RIGHT,
@@ -488,7 +593,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: 'Signature',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
               bold: true,
             }),
           ],
@@ -510,7 +616,8 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: data.signature.signataireTitre,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           alignment: AlignmentType.RIGHT,
@@ -520,25 +627,15 @@ function createNoti3Document(data: Noti3Data): Document {
           children: [
             new TextRun({
               text: 'Pour la Direction Nationale des Achats',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
               bold: true,
             }),
           ],
           alignment: AlignmentType.LEFT,
           spacing: { after: 400 },
         }),
-        // Footer
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `NOTI3 – Notification de rejet de candidature ou d’offre | N° de procédure: ${data.numeroProcedure}`,
-              size: 16,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 800 },
-          shading: { fill: '9CC3E5' },
-        }),
+
       ],
     }],
   });
@@ -549,8 +646,9 @@ function createSectionHeader(title: string): Paragraph {
     children: [
       new TextRun({
         text: title,
+        font: 'Aptos',
         bold: true,
-        size: 22,
+        size: 28,
         color: '1F4E78',
       }),
     ],
@@ -564,3 +662,5 @@ function createSectionHeader(title: string): Paragraph {
     },
   });
 }
+
+

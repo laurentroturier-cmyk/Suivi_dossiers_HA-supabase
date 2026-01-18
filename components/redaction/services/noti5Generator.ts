@@ -1,4 +1,4 @@
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType, Footer, PageNumber, NumberFormat } from 'docx';
 import { saveAs } from 'file-saver';
 import type { Noti5Data } from '../types/noti5';
 
@@ -10,6 +10,31 @@ export async function generateNoti5Word(data: Noti5Data): Promise<void> {
 export async function generateNoti5WordAsBlob(data: Noti5Data): Promise<Blob> {
   const doc = createNoti5Document(data);
   return await Packer.toBlob(doc);
+}
+
+// Helper pour créer du texte avec style Aptos Corps 11
+function createBodyText(text: string, options: { bold?: boolean } = {}): TextRun {
+  return new TextRun({
+    text,
+    font: 'Aptos (Corps)',
+    size: 22, // 11pt = 22 half-points
+    bold: options.bold || false,
+  });
+}
+
+// Helper pour créer un titre de section avec Aptos 14
+function createSectionTitle(text: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text,
+        font: 'Aptos',
+        size: 28, // 14pt = 28 half-points
+        bold: true,
+      }),
+    ],
+    spacing: { before: 300, after: 200 },
+  });
 }
 
 function createNoti5Document(data: Noti5Data): Document {
@@ -25,13 +50,55 @@ function createNoti5Document(data: Noti5Data): Document {
           },
         },
       },
+      footers: {
+        default: new Footer({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: 'NOTI5 – Notification du marché public | N° de procédure: ',
+                  font: 'Aptos (Corps)',
+                  size: 18, // 9pt
+                }),
+                new TextRun({
+                  text: data.numeroProcedure,
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  text: ' | Page ',
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  children: [PageNumber.CURRENT],
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  text: ' / ',
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  children: [PageNumber.TOTAL_PAGES],
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        }),
+      },
       children: [
         // En-tête
         new Paragraph({
           children: [
             new TextRun({
               text: "MINISTERE DE L'ECONOMIE ET DES FINANCES",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
               bold: true,
             }),
           ],
@@ -132,7 +199,8 @@ function createNoti5Document(data: Noti5Data): Document {
             new TextRun({
               text: 'AFPA',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -142,7 +210,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: data.pouvoirAdjudicateur.nom,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -152,7 +221,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: data.pouvoirAdjudicateur.adresseVoie,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -162,7 +232,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: `${data.pouvoirAdjudicateur.codePostal} ${data.pouvoirAdjudicateur.ville}`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -186,8 +257,8 @@ function createNoti5Document(data: Noti5Data): Document {
             new TextRun({
               text: 'Objet de la consultation',
               bold: true,
-              size: 20,
-              highlight: 'yellow',
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -197,7 +268,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: data.objetConsultation,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -221,8 +293,8 @@ function createNoti5Document(data: Noti5Data): Document {
             new TextRun({
               text: 'Entreprise',
               bold: true,
-              size: 20,
-              highlight: 'yellow',
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -232,8 +304,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: data.attributaire.denomination,
-              size: 20,
-              highlight: 'yellow',
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -244,8 +316,8 @@ function createNoti5Document(data: Noti5Data): Document {
             new TextRun({
               text: 'Adresse 1',
               bold: true,
-              size: 20,
-              highlight: 'yellow',
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -255,8 +327,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: data.attributaire.adresse1,
-              size: 20,
-              highlight: 'yellow',
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -268,8 +340,8 @@ function createNoti5Document(data: Noti5Data): Document {
               new TextRun({
                 text: 'Adresse 2',
                 bold: true,
-                size: 20,
-                highlight: 'yellow',
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
             ],
             spacing: { after: 100 },
@@ -278,8 +350,8 @@ function createNoti5Document(data: Noti5Data): Document {
             children: [
               new TextRun({
                 text: data.attributaire.adresse2,
-                size: 20,
-                highlight: 'yellow',
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
             ],
             spacing: { after: 100 },
@@ -290,8 +362,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: `${data.attributaire.codePostal} ${data.attributaire.ville}`,
-              size: 20,
-              highlight: 'yellow',
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -302,8 +374,8 @@ function createNoti5Document(data: Noti5Data): Document {
             new TextRun({
               text: 'SIRET',
               bold: true,
-              size: 20,
-              highlight: 'yellow',
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -313,8 +385,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: data.attributaire.siret,
-              size: 20,
-              highlight: 'yellow',
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -325,8 +397,8 @@ function createNoti5Document(data: Noti5Data): Document {
             new TextRun({
               text: 'Email',
               bold: true,
-              size: 20,
-              highlight: 'yellow',
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -336,8 +408,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: data.attributaire.email,
-              size: 20,
-              highlight: 'yellow',
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -350,7 +422,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: "Je vous informe que l'offre que vous avez faite au titre de la consultation désignée ci-dessus a été retenue :",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -375,7 +448,8 @@ function createNoti5Document(data: Noti5Data): Document {
             }),
             new TextRun({
               text: " pour l'ensemble du marché public (en cas de non allotissement).",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -389,7 +463,8 @@ function createNoti5Document(data: Noti5Data): Document {
             }),
             new TextRun({
               text: ` pour le(s) lot(s) n° ${data.notification.lots.map(l => `${l.numero}:${l.intitule}`).join(', ')}`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -399,7 +474,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: "de la procédure de passation du marché public ou de l'accord cadre (en cas d'allotissement.)",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 300 },
@@ -409,7 +485,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: 'L\'exécution des prestations commencera :',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -434,7 +511,8 @@ function createNoti5Document(data: Noti5Data): Document {
             }),
             new TextRun({
               text: ' dès réception de la présente notification.',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -448,7 +526,8 @@ function createNoti5Document(data: Noti5Data): Document {
             }),
             new TextRun({
               text: " à réception d'un bon de commande ou d'un ordre de service que j'émettrai ultérieurement.",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -461,7 +540,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: 'Le marché public qui vous est notifié comporte :',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -475,7 +555,8 @@ function createNoti5Document(data: Noti5Data): Document {
             }),
             new TextRun({
               text: ' aucune retenue de garantie ou garantie à première demande.',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -489,7 +570,8 @@ function createNoti5Document(data: Noti5Data): Document {
             }),
             new TextRun({
               text: ` une retenue de garantie d'un montant de ${data.garanties.retenue.pourcentage} % du montant initial du marché public ou de l'accord-cadre, que vous pouvez remplacer par :`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -500,7 +582,8 @@ function createNoti5Document(data: Noti5Data): Document {
             children: [
               new TextRun({
                 text: '    ',
-                size: 20,
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
               new TextRun({
                 text: data.garanties.retenue.remplacablePar.garantiePremieredemande ? '☒' : '☐',
@@ -508,7 +591,8 @@ function createNoti5Document(data: Noti5Data): Document {
               }),
               new TextRun({
                 text: ' une garantie à première demande.',
-                size: 20,
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
             ],
             spacing: { after: 100 },
@@ -517,7 +601,8 @@ function createNoti5Document(data: Noti5Data): Document {
             children: [
               new TextRun({
                 text: '    ',
-                size: 20,
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
               new TextRun({
                 text: data.garanties.retenue.remplacablePar.cautionPersonnelle ? '☒' : '☐',
@@ -525,7 +610,8 @@ function createNoti5Document(data: Noti5Data): Document {
               }),
               new TextRun({
                 text: ' une caution personnelle et solidaire.',
-                size: 20,
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
             ],
             spacing: { after: 100 },
@@ -540,7 +626,8 @@ function createNoti5Document(data: Noti5Data): Document {
             }),
             new TextRun({
               text: " une garantie à première demande en garantie du remboursement d'une avance supérieure à 30%. Vous ne pourrez recevoir cette avance qu'après avoir constitué cette garantie.",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -554,7 +641,8 @@ function createNoti5Document(data: Noti5Data): Document {
             }),
             new TextRun({
               text: " (pour les collectivités territoriales uniquement.) une garantie à première demande en garantie du remboursement de toute ou partie d'une avance inférieure ou égale à 30%.",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: data.garanties.garantieAvanceInferieure30.active ? 100 : 400 },
@@ -565,7 +653,8 @@ function createNoti5Document(data: Noti5Data): Document {
             children: [
               new TextRun({
                 text: '    ',
-                size: 20,
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
               new TextRun({
                 text: data.garanties.garantieAvanceInferieure30.remplacableParCaution ? '☒' : '☐',
@@ -573,7 +662,8 @@ function createNoti5Document(data: Noti5Data): Document {
               }),
               new TextRun({
                 text: ' vous pouvez remplacer cette garantie à première demande par une caution personnelle et solidaire.',
-                size: 20,
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
             ],
             spacing: { after: 400 },
@@ -587,7 +677,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: 'Vous trouverez ci-joints :',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -601,7 +692,8 @@ function createNoti5Document(data: Noti5Data): Document {
             }),
             new TextRun({
               text: " deux photocopies de l'acte d'engagement avec ses annexes, dont l'une est revêtue de la formule dite « d'exemplaire unique ». Cet exemplaire est destiné à être remis à l'établissement de crédit en cas de cession ou de nantissement de toute ou partie de votre créance. J'attire votre attention sur le fait qu'il n'est pas possible, en cas de perte, de délivrer un duplicata de l'exemplaire unique.",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -615,7 +707,8 @@ function createNoti5Document(data: Noti5Data): Document {
             }),
             new TextRun({
               text: " une copie au format électronique Adobe PDF de l'acte d'engagement.",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -628,7 +721,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: `À ${data.signature.lieu}, le ${data.signature.date}`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           alignment: AlignmentType.RIGHT,
@@ -639,7 +733,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: 'Signature',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
               bold: true,
             }),
           ],
@@ -663,7 +758,8 @@ function createNoti5Document(data: Noti5Data): Document {
           children: [
             new TextRun({
               text: data.signature.signataireTitre,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           alignment: AlignmentType.RIGHT,
@@ -694,19 +790,6 @@ function createNoti5Document(data: Noti5Data): Document {
           ],
           spacing: { after: 400 },
         }),
-
-        // Footer
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `NOTI5 – Notification du marché public | N° de procédure: ${data.numeroProcedure} | Page 2 / 2`,
-              size: 16,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 800 },
-          shading: { fill: '9CC3E5' },
-        }),
       ],
     }],
   });
@@ -717,8 +800,9 @@ function createSectionHeader(title: string): Paragraph {
     children: [
       new TextRun({
         text: title,
+        font: 'Aptos',
         bold: true,
-        size: 22,
+        size: 28,
         color: '1F4E78',
       }),
     ],
@@ -732,3 +816,6 @@ function createSectionHeader(title: string): Paragraph {
     },
   });
 }
+
+
+

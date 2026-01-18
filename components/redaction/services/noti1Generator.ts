@@ -1,4 +1,4 @@
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType, Footer, PageNumber, NumberFormat } from 'docx';
 import { saveAs } from 'file-saver';
 import type { Noti1Data } from '../types/noti1';
 
@@ -10,6 +10,31 @@ export async function generateNoti1Word(data: Noti1Data): Promise<void> {
 export async function generateNoti1WordAsBlob(data: Noti1Data): Promise<Blob> {
   const doc = createNoti1Document(data);
   return await Packer.toBlob(doc);
+}
+
+// Helper pour créer du texte avec style Aptos Corps 11
+function createBodyText(text: string, options: { bold?: boolean } = {}): TextRun {
+  return new TextRun({
+    text,
+    font: 'Aptos (Corps)',
+    size: 22, // 11pt = 22 half-points
+    bold: options.bold || false,
+  });
+}
+
+// Helper pour créer un titre de section avec Aptos 14
+function createSectionTitle(text: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text,
+        font: 'Aptos',
+        size: 28, // 14pt = 28 half-points
+        bold: true,
+      }),
+    ],
+    spacing: { before: 300, after: 200 },
+  });
 }
 
 function createNoti1Document(data: Noti1Data): Document {
@@ -25,13 +50,55 @@ function createNoti1Document(data: Noti1Data): Document {
           },
         },
       },
+      footers: {
+        default: new Footer({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: 'NOTI1 – Information au titulaire pressenti | N° de procédure: ',
+                  font: 'Aptos (Corps)',
+                  size: 18, // 9pt
+                }),
+                new TextRun({
+                  text: data.numeroProcedure,
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  text: ' | Page ',
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  children: [PageNumber.CURRENT],
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  text: ' / ',
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+                new TextRun({
+                  children: [PageNumber.TOTAL_PAGES],
+                  font: 'Aptos (Corps)',
+                  size: 18,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        }),
+      },
       children: [
         // En-tête
         new Paragraph({
           children: [
             new TextRun({
               text: "MINISTERE DE L'ECONOMIE ET DES FINANCES",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
               bold: true,
             }),
           ],
@@ -122,7 +189,8 @@ function createNoti1Document(data: Noti1Data): Document {
             new TextRun({
               text: 'AFPA',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -132,7 +200,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: data.pouvoirAdjudicateur.nom,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -142,7 +211,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: data.pouvoirAdjudicateur.adresseVoie,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -152,7 +222,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: `${data.pouvoirAdjudicateur.codePostal} ${data.pouvoirAdjudicateur.ville}`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -166,7 +237,8 @@ function createNoti1Document(data: Noti1Data): Document {
             new TextRun({
               text: 'Objet de la consultation',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -176,7 +248,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: data.objetConsultation,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -190,7 +263,8 @@ function createNoti1Document(data: Noti1Data): Document {
             new TextRun({
               text: 'Entreprise',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -200,7 +274,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: data.titulaire.denomination,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -211,7 +286,8 @@ function createNoti1Document(data: Noti1Data): Document {
             new TextRun({
               text: 'Adresse 1',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -221,7 +297,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: data.titulaire.adresse1,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -233,7 +310,8 @@ function createNoti1Document(data: Noti1Data): Document {
               new TextRun({
                 text: 'Adresse 2',
                 bold: true,
-                size: 20,
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
             ],
             spacing: { after: 100 },
@@ -242,7 +320,8 @@ function createNoti1Document(data: Noti1Data): Document {
             children: [
               new TextRun({
                 text: data.titulaire.adresse2,
-                size: 20,
+                font: 'Aptos (Corps)',
+                size: 22,
               }),
             ],
             spacing: { after: 100 },
@@ -253,7 +332,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: `${data.titulaire.codePostal} ${data.titulaire.ville}`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -264,7 +344,8 @@ function createNoti1Document(data: Noti1Data): Document {
             new TextRun({
               text: 'SIRET',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -274,7 +355,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: data.titulaire.siret,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -285,7 +367,8 @@ function createNoti1Document(data: Noti1Data): Document {
             new TextRun({
               text: 'Email',
               bold: true,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -295,7 +378,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: data.titulaire.email,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -308,7 +392,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: "Je vous informe que je compte vous attribuer :",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -322,7 +407,8 @@ function createNoti1Document(data: Noti1Data): Document {
             }),
             new TextRun({
               text: " l'ensemble du marché public (en cas de non allotissement).",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -336,7 +422,8 @@ function createNoti1Document(data: Noti1Data): Document {
             }),
             new TextRun({
               text: ` le(s) lot(s) n° ${data.attribution.lots.map(l => `${l.numero}:${l.intitule}`).join(', ')}`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -346,7 +433,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: "de la procédure de passation du marché public ou de l'accord cadre (en cas d'allotissement).",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -359,7 +447,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: `En application de l'article R. 2144-1 du code de la commande publique, je vous demande de me transmettre les pièces suivantes, datées et signées, avant le ${data.documents.dateSignature || '[DATE]'} :`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -373,7 +462,8 @@ function createNoti1Document(data: Noti1Data): Document {
             }),
             new TextRun({
               text: ' Si vous êtes établi en France :',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
               bold: true,
             }),
           ],
@@ -384,7 +474,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: data.documents.documentsPreuve || 'Liste des documents à fournir selon le règlement de consultation',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -398,7 +489,8 @@ function createNoti1Document(data: Noti1Data): Document {
             }),
             new TextRun({
               text: " Si vous êtes établi à l'étranger :",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
               bold: true,
             }),
           ],
@@ -409,7 +501,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: "Documents équivalents selon la législation du pays d'établissement",
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 200 },
@@ -419,7 +512,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: `Vous disposez d'un délai de ${data.documents.delaiReponse || '[NOMBRE]'} jours pour me transmettre ces documents.`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -429,7 +523,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: 'Ce délai court à compter de :',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -443,7 +538,8 @@ function createNoti1Document(data: Noti1Data): Document {
             }),
             new TextRun({
               text: ' la réception de la présente information.',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 100 },
@@ -457,7 +553,8 @@ function createNoti1Document(data: Noti1Data): Document {
             }),
             new TextRun({
               text: ' la transmission par mes soins des documents complémentaires.',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           spacing: { after: 400 },
@@ -470,7 +567,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: `À ${data.signature.lieu}, le ${data.signature.date}`,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           alignment: AlignmentType.RIGHT,
@@ -481,7 +579,8 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: 'Signature',
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
               bold: true,
             }),
           ],
@@ -505,24 +604,12 @@ function createNoti1Document(data: Noti1Data): Document {
           children: [
             new TextRun({
               text: data.signature.signataireTitre,
-              size: 20,
+              font: 'Aptos (Corps)',
+              size: 22,
             }),
           ],
           alignment: AlignmentType.RIGHT,
           spacing: { after: 600 },
-        }),
-
-        // Footer
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `NOTI1 – Information au titulaire pressenti | N° de procédure: ${data.numeroProcedure} | Page 1 / 1`,
-              size: 16,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 800 },
-          shading: { fill: '9CC3E5' },
         }),
       ],
     }],
@@ -535,7 +622,8 @@ function createSectionHeader(title: string): Paragraph {
       new TextRun({
         text: title,
         bold: true,
-        size: 22,
+        font: 'Aptos',
+        size: 28, // 14pt = 28 half-points (titres de paragraphe)
         color: '1F4E78',
       }),
     ],
@@ -549,3 +637,5 @@ function createSectionHeader(title: string): Paragraph {
     },
   });
 }
+
+
