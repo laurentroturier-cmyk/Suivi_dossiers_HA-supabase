@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { generateReglementConsultationWord } from './services/reglementConsultationGenerator';
 import { autoFillRCFromProcedure } from './services/procedureAutoFill';
+import { saveReglementConsultation, loadReglementConsultation } from './services/reglementConsultationStorage';
 import type { RapportCommissionData } from './types/rapportCommission';
 
 export default function ReglementConsultation() {
@@ -27,6 +28,8 @@ export default function ReglementConsultation() {
   const [activeSection, setActiveSection] = useState(0);
   const [isLoadingProcedure, setIsLoadingProcedure] = useState(false);
   const [autoFillStatus, setAutoFillStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
+  const [isSavingSupabase, setIsSavingSupabase] = useState(false);
+  const [isLoadingSupabase, setIsLoadingSupabase] = useState(false);
   
   const [formData, setFormData] = useState<RapportCommissionData>({
     enTete: {
@@ -61,6 +64,7 @@ export default function ReglementConsultation() {
       nbLots: '',
       lots: [],
       variantesAutorisees: false,
+      ccagApplicable: '',
       groupementSolidaire: true,
       groupementConjoint: true,
       visiteObligatoire: false,
@@ -152,14 +156,93 @@ export default function ReglementConsultation() {
 
   const handleSave = () => {
     localStorage.setItem('reglementConsultationData', JSON.stringify(formData));
-    alert('Données sauvegardées !');
+    alert('Données sauvegardées localement !');
   };
 
   const handleLoad = () => {
     const saved = localStorage.getItem('reglementConsultationData');
     if (saved) {
       setFormData(JSON.parse(saved));
-      alert('Données chargées !');
+      alert('Données chargées depuis le navigateur !');
+    }
+  };
+
+  const handleSaveSupabase = async () => {
+    const numeroProcedure = formData.enTete.numeroProcedure;
+    
+    if (!numeroProcedure || numeroProcedure.length !== 5) {
+      setAutoFillStatus({
+        type: 'error',
+        message: 'Le numéro de procédure doit être renseigné (5 chiffres)'
+      });
+      return;
+    }
+
+    setIsSavingSupabase(true);
+    setAutoFillStatus({ type: null, message: '' });
+
+    try {
+      const result = await saveReglementConsultation(numeroProcedure, formData);
+      
+      if (result.success) {
+        setAutoFillStatus({
+          type: 'success',
+          message: `RC sauvegardé dans Supabase (Procédure ${numeroProcedure})`
+        });
+      } else {
+        setAutoFillStatus({
+          type: 'error',
+          message: result.error || 'Erreur lors de la sauvegarde'
+        });
+      }
+    } catch (error: any) {
+      console.error('Erreur sauvegarde Supabase:', error);
+      setAutoFillStatus({
+        type: 'error',
+        message: 'Erreur lors de la sauvegarde dans Supabase'
+      });
+    } finally {
+      setIsSavingSupabase(false);
+    }
+  };
+
+  const handleLoadSupabase = async () => {
+    const numeroProcedure = formData.enTete.numeroProcedure;
+    
+    if (!numeroProcedure || numeroProcedure.length !== 5) {
+      setAutoFillStatus({
+        type: 'error',
+        message: 'Veuillez saisir un numéro de procédure (5 chiffres) pour charger'
+      });
+      return;
+    }
+
+    setIsLoadingSupabase(true);
+    setAutoFillStatus({ type: null, message: '' });
+
+    try {
+      const result = await loadReglementConsultation(numeroProcedure);
+      
+      if (result.success && result.data) {
+        setFormData(result.data);
+        setAutoFillStatus({
+          type: 'success',
+          message: `RC chargé depuis Supabase (Procédure ${numeroProcedure})`
+        });
+      } else {
+        setAutoFillStatus({
+          type: 'error',
+          message: result.error || 'Aucun RC trouvé pour ce numéro'
+        });
+      }
+    } catch (error: any) {
+      console.error('Erreur chargement Supabase:', error);
+      setAutoFillStatus({
+        type: 'error',
+        message: 'Erreur lors du chargement depuis Supabase'
+      });
+    } finally {
+      setIsLoadingSupabase(false);
     }
   };
 
@@ -253,19 +336,21 @@ export default function ReglementConsultation() {
             
             <div className="flex items-center space-x-2">
               <button
-                onClick={handleLoad}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
+                onClick={handleLoadSupabase}
+                disabled={isLoadingSupabase}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
               >
-                <Save className="w-4 h-4 inline mr-2" />
-                Charger
+                {isLoadingSupabase ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Charger (DB)
               </button>
               
               <button
-                onClick={handleSave}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                onClick={handleSaveSupabase}
+                disabled={isSavingSupabase}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
               >
-                <Save className="w-4 h-4 inline mr-2" />
-                Sauvegarder
+                {isSavingSupabase ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Sauvegarder (DB)
               </button>
               
               <button
@@ -357,7 +442,7 @@ export default function ReglementConsultation() {
                       rows={2}
                     />
                     <div className="mt-4 text-left">
-                      <p><strong>N° de marché :</strong> <input type="text" value={formData.enTete.numeroMarche} onChange={(e) => updateField('enTete', 'numeroMarche', e.target.value)} className="border-b border-gray-300 outline-none" /></p>
+                      <p className="flex flex-col"><strong>N° de marché :</strong> <input type="text" value={formData.enTete.numeroMarche} onChange={(e) => updateField('enTete', 'numeroMarche', e.target.value)} className="border-b border-gray-300 outline-none break-words w-full" style={{wordBreak: 'break-word'}} /></p>
                       <p><strong>Date limite :</strong> <input type="date" value={formData.enTete.dateLimiteOffres} onChange={(e) => updateField('enTete', 'dateLimiteOffres', e.target.value)} className="border-b border-gray-300 outline-none" /> à <input type="time" value={formData.enTete.heureLimiteOffres} onChange={(e) => updateField('enTete', 'heureLimiteOffres', e.target.value)} className="border-b border-gray-300 outline-none" /></p>
                     </div>
                   </div>
@@ -449,7 +534,24 @@ export default function ReglementConsultation() {
                         <li key={idx}>{doc}</li>
                       ))}
                     </ul>
-                    <p className="mt-2"><strong>CCAG :</strong> <input type="text" value={formData.dce.urlCCAG} onChange={(e) => updateField('dce', 'urlCCAG', e.target.value)} className="border-b border-gray-300 outline-none flex-1" /></p>
+                    <div className="mt-2 flex flex-col">
+                      <label htmlFor="ccag-applicable" className="font-bold mb-1">CCAG Applicable :</label>
+                      <select
+                        id="ccag-applicable"
+                        value={formData.dce.ccagApplicable}
+                        onChange={e => updateField('dce', 'ccagApplicable', e.target.value)}
+                        className="border-b border-gray-300 outline-none w-full p-1"
+                      >
+                        <option value="">-- Sélectionner --</option>
+                        <option value="CCAG-FCS">CCAG-FCS - Fournitures Courantes et Services</option>
+                        <option value="CCAG-PI">CCAG-PI - Prestations Intellectuelles</option>
+                        <option value="CCAG-TIC">CCAG-TIC - Techniques de l'Information et de la Communication</option>
+                        <option value="CCAG-MI">CCAG-MI - Marchés Industriels</option>
+                        <option value="CCAG-Travaux">CCAG-Travaux - Marchés de Travaux</option>
+                        <option value="CCAG-MOE">CCAG-MOE - Maîtrise d'Œuvre</option>
+                      </select>
+                    </div>
+                    <p className="mt-2 flex flex-col"><strong>CCAG :</strong> <input type="text" value={formData.dce.urlCCAG} onChange={(e) => updateField('dce', 'urlCCAG', e.target.value)} className="border-b border-gray-300 outline-none break-words w-full" style={{wordBreak: 'break-word'}} /></p>
                   </div>
 
                   {/* Chapitre 7 */}
@@ -1283,10 +1385,10 @@ function DCESection({ data, updateField, addArrayItem, removeArrayItem }: any) {
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white">6. Contenu du DCE</h2>
-      
+
       <div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Documents du dossier</h3>
-        
+
         <div className="space-y-2 mb-3">
           {data.documents?.map((doc: string, index: number) => (
             <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
@@ -1321,6 +1423,25 @@ function DCESection({ data, updateField, addArrayItem, removeArrayItem }: any) {
             Ajouter
           </button>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          CCAG Applicable
+        </label>
+        <select
+          value={data.ccagApplicable || ''}
+          onChange={e => updateField('dce', 'ccagApplicable', e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+        >
+          <option value="">-- Sélectionner --</option>
+          <option value="CCAG-FCS">CCAG-FCS - Fournitures Courantes et Services</option>
+          <option value="CCAG-PI">CCAG-PI - Prestations Intellectuelles</option>
+          <option value="CCAG-TIC">CCAG-TIC - Techniques de l'Information et de la Communication</option>
+          <option value="CCAG-MI">CCAG-MI - Marchés Industriels</option>
+          <option value="CCAG-Travaux">CCAG-Travaux - Marchés de Travaux</option>
+          <option value="CCAG-MOE">CCAG-MOE - Maîtrise d'Œuvre</option>
+        </select>
       </div>
 
       <div>
@@ -1524,7 +1645,7 @@ function PreviewContent({ data }: { data: RapportCommissionData }) {
       {data.enTete.titreMarche && (
         <div className="mb-4 text-center">
           <p className="font-semibold">{data.enTete.titreMarche}</p>
-          {data.enTete.numeroMarche && <p className="text-xs">{data.enTete.numeroMarche}</p>}
+          {data.enTete.numeroMarche && <p className="text-xs break-words" style={{wordBreak: 'break-word'}}>{data.enTete.numeroMarche}</p>}
         </div>
       )}
 

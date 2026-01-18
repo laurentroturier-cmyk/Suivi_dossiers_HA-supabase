@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Upload, Check, X, FileSpreadsheet, FileCog, Download, Edit2, Eye, AlertCircle, Save, FolderOpen, Clock } from 'lucide-react';
+import { FileText, Upload, Check, X, FileSpreadsheet, FileCog, Download, Edit2, Eye, AlertCircle, Save, FolderOpen, Clock, FileSignature, FileCheck } from 'lucide-react';
 import { RapportContent, RapportState } from './types';
 import { generateRapportData } from './generateRapportData';
 import { parseDepotsFile } from '../../utils/depotsParser';
@@ -10,6 +10,7 @@ import { RetraitsData } from '../../types/retraits';
 import { AnalysisData } from '../an01/types';
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, HeadingLevel, AlignmentType, Footer, Header, PageNumber, NumberFormat, ImageRun, TableOfContents } from "docx";
 import { supabase } from '../../lib/supabase';
+import NotificationsQuickAccess from '../redaction/NotificationsQuickAccess';
 
 interface Props {
   procedures: any[]; // Liste des procédures disponibles
@@ -31,6 +32,9 @@ interface RapportSauvegarde {
 }
 
 const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
+  // État pour NotificationsQuickAccess
+  const [showNotificationsQuickAccess, setShowNotificationsQuickAccess] = useState(false);
+  
   const [state, setState] = useState<RapportState>({
     procedureSelectionnee: null,
     fichiersCharges: {
@@ -1426,23 +1430,35 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
 
               {/* Bouton Exporter */}
               {state.rapportGenere && (
-                <button
-                  onClick={handleExportDOCX}
-                  disabled={isExporting}
-                  className="py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {isExporting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Export...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      Exporter en DOCX
-                    </>
-                  )}
-                </button>
+                <>
+                  <button
+                    onClick={handleExportDOCX}
+                    disabled={isExporting}
+                    className="py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isExporting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Export...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        Exporter en DOCX
+                      </>
+                    )}
+                  </button>
+
+                  {/* Bouton unique pour générer les NOTI */}
+                  <button
+                    onClick={() => setShowNotificationsQuickAccess(true)}
+                    className="py-2 px-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 hover:from-indigo-700 hover:via-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg flex items-center gap-2 shadow-lg"
+                    title="Générer les notifications (NOTI1, NOTI5, NOTI3) avec fonctionnalités avancées"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Générer NOTI
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -2218,6 +2234,18 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal NotificationsQuickAccess */}
+      {showNotificationsQuickAccess && procedureSelectionnee && state.rapportGenere && (
+        <NotificationsQuickAccess
+          onClose={() => setShowNotificationsQuickAccess(false)}
+          preloadedData={{
+            procedure: procedureSelectionnee,
+            candidats: [], // Sera chargé depuis Supabase dans NotificationsQuickAccess
+            rapportData: state.rapportGenere,
+          }}
+        />
       )}
     </div>
   );

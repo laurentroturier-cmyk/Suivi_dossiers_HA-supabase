@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (tab: string) => void;
@@ -11,6 +11,8 @@ interface LandingPageProps {
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount }) => {
   // État pour gérer l'expansion de la section Registres dans Analyse
   const [registresExpanded, setRegistresExpanded] = useState(false);
+  // État pour gérer l'expansion de la section NOTI dans Rédaction
+  const [notiExpanded, setNotiExpanded] = useState(false);
   
   // Domaines fonctionnels avec leurs actions
   const domaines = [
@@ -73,7 +75,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
       btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
-        { label: 'Ouvrir (En construction)', tab: 'redaction', isAdmin: false, icon: Edit3, color: 'text-amber-600 dark:text-amber-400' },
+        { label: 'Règlement de consultation', tab: 'reglement-consultation', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
+        { label: 'Questionnaire technique', tab: 'questionnaire-technique', isAdmin: false, icon: ClipboardList, color: 'text-teal-600 dark:text-teal-400' },
+        { label: 'Accès rapide NOTI', tab: 'notifications-quick', isAdmin: false, icon: Bell, color: 'text-indigo-600 dark:text-indigo-400' },
       ]
     },
     {
@@ -243,13 +247,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
                   {domaine.actions.map((action, idx) => {
                     const ActionIcon = action.icon;
                     
-                    // Si c'est un groupe (ex: Registres)
+                    // Si c'est un groupe (ex: Registres, NOTI)
                     if (action.isGroup && action.subActions) {
-                      const isExpanded = domaine.id === 'analyse' && registresExpanded;
+                      const isExpanded =
+                        (domaine.id === 'analyse' && registresExpanded) ||
+                        (domaine.id === 'redaction' && notiExpanded);
                       return (
                         <div key={idx}>
                           <button
-                            onClick={() => domaine.id === 'analyse' && setRegistresExpanded(!registresExpanded)}
+                            onClick={() => {
+                              if (domaine.id === 'analyse') setRegistresExpanded(!registresExpanded);
+                              if (domaine.id === 'redaction') setNotiExpanded(!notiExpanded);
+                            }}
                             className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-between group ${domaine.btnBg} ${domaine.btnText} border border-gray-200 dark:border-[#333333]`}
                           >
                             <div className="flex items-center gap-2">

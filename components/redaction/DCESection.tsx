@@ -2,6 +2,10 @@ import React from 'react';
 import { FileText, ClipboardList, Book, Info } from 'lucide-react';
 
 interface DCESectionProps {
+  data: {
+    ccagApplicable: string;
+  };
+  updateField: (section: string, field: string, value: any) => void;
   onNavigate: (subsection: 'questionnaire-technique' | 'cctp' | 'bpu') => void;
 }
 
@@ -53,6 +57,24 @@ const DCESection: React.FC<DCESectionProps> = ({ onNavigate }) => {
               Outils de rédaction et génération
             </span>
           </div>
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="ccag-applicable" className="font-bold mb-1">CCAG Applicable :</label>
+          <select
+            id="ccag-applicable"
+            value={data.ccagApplicable}
+            onChange={e => updateField('dce', 'ccagApplicable', e.target.value)}
+            className="border-b border-gray-300 outline-none w-full p-1"
+          >
+            <option value="">-- Sélectionner --</option>
+            <option value="CCAG-FCS">CCAG-FCS - Fournitures Courantes et Services</option>
+            <option value="CCAG-PI">CCAG-PI - Prestations Intellectuelles</option>
+            <option value="CCAG-TIC">CCAG-TIC - Techniques de l'Information et de la Communication</option>
+            <option value="CCAG-MI">CCAG-MI - Marchés Industriels</option>
+            <option value="CCAG-Travaux">CCAG-Travaux - Marchés de Travaux</option>
+            <option value="CCAG-MOE">CCAG-MOE - Maîtrise d'Œuvre</option>
+          </select>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -59,6 +59,8 @@ import RedactionOverview from './components/redaction/RedactionOverview';
 import DCESection from './components/redaction/DCESection';
 import QuestionnaireTechnique from './components/redaction/questionnaire/QuestionnaireTechnique';
 import ReglementConsultation from './components/redaction/ReglementConsultation';
+import NOTI1Section from './components/redaction/NOTI1Section';
+import NotificationsQuickAccess from './components/redaction/NotificationsQuickAccess';
 
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
@@ -328,6 +330,7 @@ const App: React.FC = () => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [redactionSection, setRedactionSection] = useState<'DCE' | 'NOTI' | 'EXE' | 'Avenants' | 'Courriers' | 'RapportCommission' | null>(null);
   const [dceSubsection, setDceSubsection] = useState<'questionnaire-technique' | 'cctp' | 'bpu' | null>(null);
+  const [showNotificationsQuickAccess, setShowNotificationsQuickAccess] = useState(false);
 
   // ============================================
   // NAVIGATION SYSTEM - Système de navigation interne
@@ -3078,6 +3081,39 @@ const App: React.FC = () => {
                 const actualTab = tab === 'rapport' ? 'rapport-presentation' : tab;
                 navigateTo(actualTab as any, titles[tab] || tab);
               }} />
+            )}
+
+            {activeTab === 'reglement-consultation' && (
+              <ReglementConsultation />
+            )}
+
+            {activeTab === 'questionnaire-technique' && (
+              <QuestionnaireTechnique />
+            )}
+
+            {activeTab === 'noti1' && (
+              <NOTI1Section />
+            )}
+
+            {activeTab === 'notifications-quick' && (
+              <NotificationsQuickAccess
+                procedures={procedures}
+                onClose={() => {
+                  handleGoBack();
+                }}
+              />
+            )}
+
+            {activeTab === 'dce' && dceSubsection === null && (
+              <DCESection onNavigate={(subsection) => setDceSubsection(subsection)} />
+            )}
+
+            {activeTab === 'dce' && dceSubsection === 'questionnaire-technique' && (
+              <QuestionnaireTechnique />
+            )}
+
+            {activeTab === 'dce' && dceSubsection !== null && dceSubsection !== 'questionnaire-technique' && (
+              <RedactionPlaceholder selectedSection={'DCE'} />
             )}
 
             {activeTab === 'redaction' && redactionSection === null && (
