@@ -61,6 +61,7 @@ import QuestionnaireTechnique from './components/redaction/questionnaire/Questio
 import ReglementConsultation from './components/redaction/ReglementConsultation';
 import NOTI1Section from './components/redaction/NOTI1Section';
 import NotificationsQuickAccess from './components/redaction/NotificationsQuickAccess';
+import NotiMultiAttributaires from './components/redaction/NotiMultiAttributaires';
 
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
@@ -328,7 +329,7 @@ const App: React.FC = () => {
   const [an01Error, setAn01Error] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TableType>('home');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [redactionSection, setRedactionSection] = useState<'DCE' | 'NOTI' | 'EXE' | 'Avenants' | 'Courriers' | 'RapportCommission' | null>(null);
+  const [redactionSection, setRedactionSection] = useState<'DCE' | 'NOTI' | 'NOTIMulti' | 'EXE' | 'Avenants' | 'Courriers' | 'RapportCommission' | null>(null);
   const [dceSubsection, setDceSubsection] = useState<'questionnaire-technique' | 'cctp' | 'bpu' | null>(null);
   const [showNotificationsQuickAccess, setShowNotificationsQuickAccess] = useState(false);
 
@@ -3104,6 +3105,15 @@ const App: React.FC = () => {
               />
             )}
 
+            {activeTab === 'noti-multi' && (
+              <NotiMultiAttributaires
+                isOpen={true}
+                onClose={() => {
+                  handleGoBack();
+                }}
+              />
+            )}
+
             {activeTab === 'dce' && dceSubsection === null && (
               <DCESection onNavigate={(subsection) => setDceSubsection(subsection)} />
             )}
@@ -3136,7 +3146,14 @@ const App: React.FC = () => {
               <ReglementConsultation />
             )}
 
-            {activeTab === 'redaction' && redactionSection !== null && redactionSection !== 'DCE' && redactionSection !== 'RapportCommission' && (
+            {activeTab === 'redaction' && redactionSection === 'NOTIMulti' && (
+              <NotiMultiAttributaires
+                isOpen={true}
+                onClose={() => setRedactionSection(null)}
+              />
+            )}
+
+            {activeTab === 'redaction' && redactionSection !== null && redactionSection !== 'DCE' && redactionSection !== 'RapportCommission' && redactionSection !== 'NOTIMulti' && (
               <RedactionPlaceholder selectedSection={redactionSection} />
             )}
             {activeTab === 'export' && (

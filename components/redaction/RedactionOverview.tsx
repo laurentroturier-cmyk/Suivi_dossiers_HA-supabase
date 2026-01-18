@@ -1,8 +1,8 @@
 import React from 'react';
-import { FileText, CheckCircle, Zap, AlertCircle, Mail, Info, Users } from 'lucide-react';
+import { FileText, CheckCircle, Zap, AlertCircle, Mail, Info, Users, Construction } from 'lucide-react';
 
 interface RedactionOverviewProps {
-  onNavigate: (section: 'DCE' | 'NOTI' | 'EXE' | 'Avenants' | 'Courriers' | 'RapportCommission') => void;
+  onNavigate: (section: 'DCE' | 'NOTI' | 'NOTIMulti' | 'EXE' | 'Avenants' | 'Courriers' | 'RapportCommission') => void;
 }
 
 const RedactionOverview: React.FC<RedactionOverviewProps> = ({ onNavigate }) => {
@@ -36,6 +36,17 @@ const RedactionOverview: React.FC<RedactionOverviewProps> = ({ onNavigate }) => 
       iconBg: 'bg-purple-100 dark:bg-purple-500/20',
       borderColor: 'border-purple-200 dark:border-purple-500/40',
       action: () => onNavigate('NOTI'),
+    },
+    {
+      id: 'NOTIMulti',
+      title: 'NOTI Multi 🚧',
+      description: "Multi-attributaires (en construction)",
+      icon: Construction,
+      iconColor: 'text-gray-500 dark:text-gray-400',
+      iconBg: 'bg-gray-100 dark:bg-gray-500/20',
+      borderColor: 'border-gray-300 dark:border-gray-500/40',
+      action: () => onNavigate('NOTIMulti'),
+      isUnderConstruction: true,
     },
     {
       id: 'EXE',
@@ -92,12 +103,17 @@ const RedactionOverview: React.FC<RedactionOverviewProps> = ({ onNavigate }) => 
               <div
                 key={c.id}
                 onClick={c.action}
-                className={`bg-white dark:bg-gray-800 rounded-2xl border-2 ${c.borderColor} p-6 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1`}
+                className={`bg-white dark:bg-gray-800 rounded-2xl border-2 ${c.borderColor} p-6 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 ${c.isUnderConstruction ? 'opacity-70' : ''}`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className={`w-12 h-12 ${c.iconBg} rounded-xl flex items-center justify-center`}>
                     <Icon className={`w-6 h-6 ${c.iconColor}`} />
                   </div>
+                  {c.isUnderConstruction && (
+                    <span className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full font-semibold">
+                      En construction
+                    </span>
+                  )}
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{c.title}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">{c.description}</p>

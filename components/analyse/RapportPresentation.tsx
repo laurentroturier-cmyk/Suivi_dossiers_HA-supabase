@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Upload, Check, X, FileSpreadsheet, FileCog, Download, Edit2, Eye, AlertCircle, Save, FolderOpen, Clock, FileSignature, FileCheck } from 'lucide-react';
+import { FileText, Upload, Check, X, FileSpreadsheet, FileCog, Download, Edit2, Eye, AlertCircle, Save, FolderOpen, Clock, FileSignature, FileCheck, Construction } from 'lucide-react';
 import { RapportContent, RapportState } from './types';
 import { generateRapportData } from './generateRapportData';
 import { parseDepotsFile } from '../../utils/depotsParser';
@@ -11,6 +11,7 @@ import { AnalysisData } from '../an01/types';
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, HeadingLevel, AlignmentType, Footer, Header, PageNumber, NumberFormat, ImageRun, TableOfContents } from "docx";
 import { supabase } from '../../lib/supabase';
 import NotificationsQuickAccess from '../redaction/NotificationsQuickAccess';
+import NotiMultiAttributaires from '../redaction/NotiMultiAttributaires';
 
 interface Props {
   procedures: any[]; // Liste des procédures disponibles
@@ -34,6 +35,7 @@ interface RapportSauvegarde {
 const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   // État pour NotificationsQuickAccess
   const [showNotificationsQuickAccess, setShowNotificationsQuickAccess] = useState(false);
+  const [showNotiMultiAttributaires, setShowNotiMultiAttributaires] = useState(false);
   
   const [state, setState] = useState<RapportState>({
     procedureSelectionnee: null,
@@ -1458,6 +1460,16 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     <FileText className="w-4 h-4" />
                     Générer NOTI
                   </button>
+
+                  {/* Bouton NOTI Multi-Attributaires (en construction) */}
+                  <button
+                    onClick={() => setShowNotiMultiAttributaires(true)}
+                    className="py-2 px-4 bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white font-semibold rounded-lg flex items-center gap-2 shadow-lg opacity-70"
+                    title="NOTI Multi-Attributaires (en construction)"
+                  >
+                    <Construction className="w-4 h-4" />
+                    NOTI Multi 🚧
+                  </button>
                 </>
               )}
             </div>
@@ -2245,6 +2257,14 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             candidats: [], // Sera chargé depuis Supabase dans NotificationsQuickAccess
             rapportData: state.rapportGenere,
           }}
+        />
+      )}
+
+      {/* Modal NOTI Multi-Attributaires (en construction) */}
+      {showNotiMultiAttributaires && (
+        <NotiMultiAttributaires
+          isOpen={showNotiMultiAttributaires}
+          onClose={() => setShowNotiMultiAttributaires(false)}
         />
       )}
     </div>

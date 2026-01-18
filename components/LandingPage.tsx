@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell, Construction } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (tab: string) => void;
@@ -78,6 +78,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
         { label: 'Règlement de consultation', tab: 'reglement-consultation', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
         { label: 'Questionnaire technique', tab: 'questionnaire-technique', isAdmin: false, icon: ClipboardList, color: 'text-teal-600 dark:text-teal-400' },
         { label: 'Accès rapide NOTI', tab: 'notifications-quick', isAdmin: false, icon: Bell, color: 'text-indigo-600 dark:text-indigo-400' },
+        { label: 'NOTI Multi 🚧', tab: 'noti-multi', isAdmin: false, icon: Construction, color: 'text-gray-500 dark:text-gray-400' },
       ]
     },
     {
