@@ -144,6 +144,13 @@ export function DCEComplet({ onClose }: DCECompletProps) {
     }
   };
 
+  const handleBackToSelection = () => {
+    setShowWelcome(true);
+    setActiveSection(null);
+    setNumeroProcedure('');
+    setSelectedProcedure(null);
+  };
+
   const renderSectionContent = () => {
     if (!dceState || !activeSection) return null;
 
@@ -304,13 +311,30 @@ export function DCEComplet({ onClose }: DCECompletProps) {
                   <p className="text-xs text-gray-600 mt-1">RC, AE, CCAP, CCTP...</p>
                 </div>
               </div>
+
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+                >
+                  Retour au menu précédent
+                </button>
+              </div>
             </div>
           </div>
         ) : (
           <>
             {/* En-tête de procédure */}
             <div className="p-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-              <ProcedureHeader procedure={selectedProcedure} className="mb-2" />
+              <div className="flex items-center justify-between mb-2 gap-3">
+                <ProcedureHeader procedure={selectedProcedure} />
+                <button
+                  onClick={handleBackToSelection}
+                  className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
+                >
+                  Retour à la sélection
+                </button>
+              </div>
               
               {dceState && (
                 <DCEStatusBar
