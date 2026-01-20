@@ -83,7 +83,7 @@ export async function saveQuestionnaireTechnique(
       version: '1.0'
     };
 
-    // 1. Sauvegarder dans questionnaires_techniques (table historique, avec NumProc complet)
+    // 1. Sauvegarder dans questionnaires_techniques (table historique)
     console.log(`📝 Sauvegarde QT avec NumProc: ${fullNumProc}`);
     const { error: qtError } = await supabase
       .from('questionnaires_techniques')
@@ -91,7 +91,6 @@ export async function saveQuestionnaireTechnique(
         num_proc: fullNumProc,  // ✅ Utiliser le NumProc complet
         numero_lot: 1,  // Par défaut pour DCE (pas multi-lots)
         qt_data: questionnaireData,
-        user_id: user.id,
       }, {
         onConflict: 'num_proc,numero_lot',
         ignoreDuplicates: false,
@@ -158,12 +157,12 @@ export async function loadQuestionnaireTechnique(
       }
     }
 
-    // Charger depuis questionnaires_techniques (numero_lot = 1 par défaut pour DCE)
+    // Charger depuis questionnaires_techniques
     console.log(`🔍 Recherche QT pour NumProc: ${fullNumProc}, numero_lot: 1`);
     const { data: result, error } = await supabase
       .from('questionnaires_techniques')
       .select('*')
-      .eq('num_proc', fullNumProc)  // ✅ Utiliser le NumProc complet
+      .eq('num_proc', fullNumProc)
       .eq('numero_lot', 1)
       .maybeSingle();
 
@@ -219,7 +218,7 @@ export async function loadExistingQT(
     const { data: qtRecord, error } = await supabase
       .from('questionnaires_techniques')
       .select('qt_data')
-      .eq('num_proc', fullNumProc)  // ✅ Utiliser le NumProc complet
+      .eq('num_proc', fullNumProc)
       .eq('numero_lot', 1)
       .maybeSingle();
 
@@ -228,15 +227,13 @@ export async function loadExistingQT(
       return null;
     }
 
-    if (!qtRecord) {
-      console.log(`ℹ️ Aucun QT legacy trouvé pour NumProc: ${fullNumProc}`);
+    if (!qtRecord?.qt_data) {
+      console.log(`ℹ️ Aucun QT trouvé pour NumProc: ${fullNumProc}`);
       return null;
     }
 
-    console.log(`✅ QT legacy trouvé pour NumProc: ${fullNumProc}`);
-    return {
-      data: qtRecord.qt_data,
-    };
+    console.log(`✅ QT trouvé pour NumProc: ${fullNumProc}`);
+    return qtRecord.qt_data;
   } catch (err) {
     console.error('❌ Erreur loadExistingQT:', err);
     return null;

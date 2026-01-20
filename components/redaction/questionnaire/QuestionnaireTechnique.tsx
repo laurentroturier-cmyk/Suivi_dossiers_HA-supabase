@@ -194,7 +194,7 @@ const QuestionnaireTechnique: React.FC<QuestionnaireTechniqueProps> = ({
         }
       }
 
-      // Charger depuis la nouvelle table questionnaires_techniques avec le NumProc résolu
+      // Charger depuis questionnaires_techniques
       const { data, error: fetchError } = await supabase
         .from('questionnaires_techniques')
         .select('qt_data, updated_at')
@@ -226,7 +226,7 @@ const QuestionnaireTechnique: React.FC<QuestionnaireTechniqueProps> = ({
         setHasExistingQuestionnaire(true);
         
         // Charger automatiquement le questionnaire
-        const savedData = data.qt_data;
+        const savedData = data.data;
         setState(prev => ({
           ...prev,
           criteres: savedData.criteres || []

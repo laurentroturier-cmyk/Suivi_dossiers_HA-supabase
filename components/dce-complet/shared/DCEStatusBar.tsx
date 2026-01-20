@@ -12,9 +12,11 @@ import {
   AlertTriangle,
   FileText,
   Clock,
-  Loader2
+  Loader2,
+  GitCompare
 } from 'lucide-react';
 import type { DCEState, DCEStatut } from '../types';
+import type { ConflictDetectionResult } from '../services/procedureSyncService';
 
 interface DCEStatusBarProps {
   dceState: DCEState | null;
@@ -25,6 +27,8 @@ interface DCEStatusBarProps {
   onRefresh?: () => void;
   isSaving?: boolean;
   className?: string;
+  conflicts?: ConflictDetectionResult | null;
+  onShowConflicts?: () => void;
 }
 
 export function DCEStatusBar({
@@ -36,6 +40,8 @@ export function DCEStatusBar({
   onRefresh,
   isSaving = false,
   className = '',
+  conflicts,
+  onShowConflicts,
 }: DCEStatusBarProps) {
   if (!dceState) return null;
 
@@ -151,10 +157,35 @@ export function DCEStatusBar({
 
             {/* Indicateur de modifications */}
             {isDirty && (
-              <span className="flex items-center gap-1.5 text-xs text-orange-600 font-medium">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 border border-orange-200 rounded-lg">
                 <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-                Modifications non sauvegardées
-              </span>
+                <span className="text-xs text-orange-700 font-medium">
+                  Modifications non sauvegardées
+                </span>
+              </div>
+            )}
+
+            {!isDirty && !isNew && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+                <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                <span className="text-xs text-green-700 font-medium">
+                  Tout est sauvegardé
+                </span>
+              </div>
+            )}
+
+            {/* 🆕 Badge de conflits */}
+            {conflicts && conflicts.hasConflicts && (
+              <button
+                onClick={onShowConflicts}
+                className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-300 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+                title={`${conflicts.conflicts.length} conflit(s) détecté(s) avec la table procédures`}
+              >
+                <GitCompare className="w-3.5 h-3.5 text-amber-600" />
+                <span className="text-xs text-amber-700 font-medium">
+                  {conflicts.conflicts.length} conflit{conflicts.conflicts.length > 1 ? 's' : ''}
+                </span>
+              </button>
             )}
           </div>
 

@@ -50,6 +50,18 @@ export function DPGFForm({ data, onSave, isSaving = false }: Props) {
 
   return (
     <div className="space-y-8">
+      {/* Bouton d'enregistrement en haut */}
+      <div className="flex justify-end sticky top-0 bg-white z-10 pb-4 border-b border-gray-200">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving}
+          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+        >
+          {isSaving ? 'Enregistrement...' : 'Enregistrer la section'}
+        </button>
+      </div>
+
       <p className="text-sm text-gray-700">Format: "numero lot | intitule | montant initial | montant final | num,objet,montant,date; ..."</p>
 
       <section className="space-y-2">
@@ -61,17 +73,7 @@ export function DPGFForm({ data, onSave, isSaving = false }: Props) {
           placeholder="1 | Lot principal | 100000 | 105000 | 1,Avenant,5000,2024-04-01"
         />
       </section>
-
-      <div className="pt-2 flex justify-end">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={isSaving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-        >
-          {isSaving ? 'Enregistrement...' : 'Enregistrer la section'}
-        </button>
-      </div>
     </div>
   );
 }
+

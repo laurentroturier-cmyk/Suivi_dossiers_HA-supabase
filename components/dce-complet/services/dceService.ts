@@ -43,30 +43,8 @@ export class DCEService {
 
       // Si le DCE existe, le retourner
       if (existingDCE && !loadError) {
-        // Backfill RC depuis l'ancienne table si la colonne est encore vide
-        if (!existingDCE.reglement_consultation) {
-          const rcRecord = await this.loadExistingRC(numeroProcedure);
-
-          if (rcRecord?.data) {
-            const { data: patchedDCE, error: patchError } = await supabase
-              .from('dce')
-              .update({
-                reglement_consultation: rcRecord.data,
-                titre_marche: existingDCE.titre_marche || rcRecord.titreMarche || null,
-              })
-              .eq('id', existingDCE.id)
-              .select()
-              .single();
-
-            if (!patchError && patchedDCE) {
-              return {
-                success: true,
-                data: this.recordToState(patchedDCE),
-                isNew: false,
-              };
-            }
-          }
-        }
+        // Le backfill RC depuis reglements_consultation a été retiré
+        // Le RC est maintenant géré uniquement dans dce.reglement_consultation
 
         // Backfill QT depuis l'ancienne table si la colonne est encore vide
         if (!existingDCE.qt) {
@@ -127,9 +105,8 @@ export class DCEService {
 
       // Charger les données de la procédure
       const procedure = await this.loadProcedure(numeroProcedure);
-      const rcRecord = await this.loadExistingRC(numeroProcedure);
 
-      if (!procedure && !rcRecord) {
+      if (!procedure) {
         return { 
           success: false, 
           error: `Aucune procédure trouvée avec le numéro ${numeroProcedure}` 
@@ -140,19 +117,15 @@ export class DCEService {
       let dceData = procedure ? mapProcedureToDCE(procedure) : mapProcedureToDCE({} as ProjectData);
       dceData = { ...dceData, numeroProcedure };
 
-      // Si un RC legacy existe, l'injecter dans le DCE créé
-      const reglementConsultation = rcRecord?.data || dceData.reglementConsultation;
-      const titreMarche = rcRecord?.titreMarche || dceData.titreMarche;
-
       // Créer le record dans Supabase
       const record = {
         user_id: user.id,
         numero_procedure: numeroProcedure,
-        titre_marche: titreMarche,
+        titre_marche: dceData.titreMarche,
         statut: 'brouillon' as DCEStatut,
         version: 1,
         notes: '',
-        reglement_consultation: reglementConsultation,
+        reglement_consultation: dceData.reglementConsultation,
         acte_engagement: dceData.acteEngagement,
         ccap: dceData.ccap,
         cctp: dceData.cctp,
@@ -207,41 +180,37 @@ export class DCEService {
       // Mettre à jour la section
       const updateData = { [columnName]: data };
       
+      console.log(`📝 updateSection: Mise à jour ${columnName} pour procédure ${numeroProcedure}`);
+      
       const { data: updated, error } = await supabase
         .from('dce')
         .update(updateData)
         .eq('numero_procedure', numeroProcedure)
         .eq('user_id', user.id)
-        .select()
-        .single();
+        .select();
 
       if (error) {
-        console.error('Erreur updateSection:', error);
+        console.error('❌ Erreur updateSection:', error);
         return { success: false, error: error.message };
       }
 
-      // Synchroniser le RC legacy si nécessaire
-      if (section === 'reglementConsultation' && data) {
-        const rcRecord = {
-          user_id: user.id,
-          numero_procedure: numeroProcedure,
-          titre_marche: data?.enTete?.titreMarche || updated?.titre_marche || null,
-          numero_marche: data?.enTete?.numeroMarche || null,
-          data,
-        };
-
-        const { error: rcError } = await supabase
-          .from('reglements_consultation')
-          .upsert(rcRecord, {
-            onConflict: 'numero_procedure',
-            ignoreDuplicates: false,
-          });
-
-        if (rcError) {
-          console.error('Erreur synchro RC → reglements_consultation:', rcError);
-          return { success: false, error: `Section enregistrée mais RC non synchronisé: ${rcError.message}` };
+      // Vérifier que la mise à jour a affecté au moins une ligne
+      if (!updated || updated.length === 0) {
+        console.warn(`⚠️ Aucune ligne mise à jour pour ${numeroProcedure}. Création possible du record...`);
+        // Essayer de créer le record s'il n'existe pas
+        const existingDCE = await this.loadDCE(numeroProcedure);
+        if (!existingDCE.success) {
+          console.log(`ℹ️ DCE n'existe pas, création...`);
+          const createdDCE = await this.createDCE(numeroProcedure);
+          if (createdDCE.success) {
+            return this.updateSection(numeroProcedure, section, data);
+          }
         }
+        return { success: false, error: 'Le DCE n\'existe pas et sa création a échoué' };
       }
+
+      // La synchronisation avec reglements_consultation a été retirée
+      // Le RC est maintenant géré uniquement dans la colonne reglement_consultation de la table dce
 
       // Synchroniser le QT legacy si nécessaire
       if (section === 'qt' && data) {
@@ -265,8 +234,8 @@ export class DCEService {
 
       return {
         success: true,
-        data: this.recordToState(updated),
-        id: updated.id
+        data: this.recordToState(updated[0]),
+        id: updated[0].id
       };
       
     } catch (error: any) {
@@ -301,28 +270,8 @@ export class DCEService {
         return { success: false, error: error.message };
       }
 
-      // Synchroniser le RC dans l'ancienne table pour compatibilité
-      if (dceState.reglementConsultation) {
-        const rcRecord = {
-          user_id: user.id,
-          numero_procedure: dceState.numeroProcedure,
-          titre_marche: dceState.titreMarche || dceState.reglementConsultation.enTete?.titreMarche || null,
-          numero_marche: dceState.reglementConsultation.enTete?.numeroMarche || null,
-          data: dceState.reglementConsultation,
-        };
-
-        const { error: rcError } = await supabase
-          .from('reglements_consultation')
-          .upsert(rcRecord, {
-            onConflict: 'numero_procedure',
-            ignoreDuplicates: false,
-          });
-
-        if (rcError) {
-          console.error('Erreur synchro RC → reglements_consultation:', rcError);
-          return { success: false, error: `DCE sauvegardé mais RC non synchronisé: ${rcError.message}` };
-        }
-      }
+      // La synchronisation avec reglements_consultation a été retirée
+      // Le RC est maintenant géré uniquement dans la colonne reglement_consultation de la table dce
 
       return {
         success: true,
@@ -432,39 +381,6 @@ export class DCEService {
       
     } catch (err) {
       console.error('Erreur loadProcedure:', err);
-      return null;
-    }
-  }
-
-  /**
-   * Récupère un RC existant dans la table legacy
-   */
-  private async loadExistingRC(numeroProcedure: string): Promise<{ data: any; titreMarche: string | null; numeroMarche: string | null; } | null> {
-    try {
-      const { data: rcRecord, error } = await supabase
-        .from('reglements_consultation')
-        .select('data,titre_marche,numero_marche')
-        .eq('numero_procedure', numeroProcedure)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Erreur récupération RC legacy:', error);
-      }
-
-      if (!rcRecord) {
-        return null;
-      }
-
-      const titreMarche = rcRecord.titre_marche || (rcRecord.data as any)?.enTete?.titreMarche || null;
-      const numeroMarche = rcRecord.numero_marche || (rcRecord.data as any)?.enTete?.numeroMarche || null;
-
-      return {
-        data: rcRecord.data,
-        titreMarche,
-        numeroMarche,
-      };
-    } catch (err) {
-      console.error('Erreur loadExistingRC:', err);
       return null;
     }
   }

@@ -19,23 +19,22 @@ import {
 } from 'lucide-react';
 import { generateReglementConsultationWord } from './services/reglementConsultationGenerator';
 import { autoFillRCFromProcedure } from './services/procedureAutoFill';
-import { saveReglementConsultation, loadReglementConsultation } from './services/reglementConsultationStorage';
 import type { RapportCommissionData } from './types/rapportCommission';
 
 interface ReglementConsultationProps {
   initialNumeroProcedure?: string;
+  onDataChange?: (data: RapportCommissionData) => void;
+  initialData?: RapportCommissionData;
 }
 
-export default function ReglementConsultation({ initialNumeroProcedure }: ReglementConsultationProps) {
+export default function ReglementConsultation({ initialNumeroProcedure, onDataChange, initialData }: ReglementConsultationProps) {
   const [showFullEdit, setShowFullEdit] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeSection, setActiveSection] = useState(0);
   const [isLoadingProcedure, setIsLoadingProcedure] = useState(false);
   const [autoFillStatus, setAutoFillStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
-  const [isSavingSupabase, setIsSavingSupabase] = useState(false);
-  const [isLoadingSupabase, setIsLoadingSupabase] = useState(false);
   
-  const [formData, setFormData] = useState<RapportCommissionData>({
+  const [formData, setFormData] = useState<RapportCommissionData>(initialData || {
     enTete: {
       numeroProcedure: initialNumeroProcedure || '',
       titreMarche: '',
@@ -117,6 +116,20 @@ export default function ReglementConsultation({ initialNumeroProcedure }: Reglem
     },
   });
 
+  // Synchroniser formData avec initialData quand elle change
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
+
+  // Notifier le parent à chaque changement de données
+  useEffect(() => {
+    if (onDataChange) {
+      onDataChange(formData);
+    }
+  }, [formData, onDataChange]);
+
   const sections = [
     { title: 'En-tête', icon: FileText, color: 'blue' },
     { title: 'Pouvoir adjudicateur', icon: Building, color: 'indigo' },
@@ -179,84 +192,8 @@ export default function ReglementConsultation({ initialNumeroProcedure }: Reglem
     }
   };
 
-  const handleSaveSupabase = async () => {
-    const numeroProcedure = formData.enTete.numeroProcedure;
-    
-    if (!numeroProcedure || numeroProcedure.length !== 5) {
-      setAutoFillStatus({
-        type: 'error',
-        message: 'Le numéro de procédure doit être renseigné (5 chiffres)'
-      });
-      return;
-    }
-
-    setIsSavingSupabase(true);
-    setAutoFillStatus({ type: null, message: '' });
-
-    try {
-      const result = await saveReglementConsultation(numeroProcedure, formData);
-      
-      if (result.success) {
-        setAutoFillStatus({
-          type: 'success',
-          message: `RC sauvegardé dans Supabase (Procédure ${numeroProcedure})`
-        });
-      } else {
-        setAutoFillStatus({
-          type: 'error',
-          message: result.error || 'Erreur lors de la sauvegarde'
-        });
-      }
-    } catch (error: any) {
-      console.error('Erreur sauvegarde Supabase:', error);
-      setAutoFillStatus({
-        type: 'error',
-        message: 'Erreur lors de la sauvegarde dans Supabase'
-      });
-    } finally {
-      setIsSavingSupabase(false);
-    }
-  };
-
-  const handleLoadSupabase = async () => {
-    const numeroProcedure = formData.enTete.numeroProcedure;
-    
-    if (!numeroProcedure || numeroProcedure.length !== 5) {
-      setAutoFillStatus({
-        type: 'error',
-        message: 'Veuillez saisir un numéro de procédure (5 chiffres) pour charger'
-      });
-      return;
-    }
-
-    setIsLoadingSupabase(true);
-    setAutoFillStatus({ type: null, message: '' });
-
-    try {
-      const result = await loadReglementConsultation(numeroProcedure);
-      
-      if (result.success && result.data) {
-        setFormData(result.data);
-        setAutoFillStatus({
-          type: 'success',
-          message: `RC chargé depuis Supabase (Procédure ${numeroProcedure})`
-        });
-      } else {
-        setAutoFillStatus({
-          type: 'error',
-          message: result.error || 'Aucun RC trouvé pour ce numéro'
-        });
-      }
-    } catch (error: any) {
-      console.error('Erreur chargement Supabase:', error);
-      setAutoFillStatus({
-        type: 'error',
-        message: 'Erreur lors du chargement depuis Supabase'
-      });
-    } finally {
-      setIsLoadingSupabase(false);
-    }
-  };
+  // Les fonctions de sauvegarde/chargement DB ont été retirées
+  // Le RC est maintenant géré uniquement via le module DCE Complet
 
   const handleGenerateWord = async () => {
     setIsSaving(true);
@@ -356,7 +293,7 @@ export default function ReglementConsultation({ initialNumeroProcedure }: Reglem
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && formData.enTete.numeroProcedure.length === 5) {
                       e.preventDefault();
-                      handleLoadSupabase();
+                      // Auto-remplissage depuis la procédure uniquement
                     }
                   }}
                   maxLength={5}
@@ -364,24 +301,6 @@ export default function ReglementConsultation({ initialNumeroProcedure }: Reglem
                   placeholder="12345"
                 />
               </div>
-              
-              <button
-                onClick={handleLoadSupabase}
-                disabled={isLoadingSupabase}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50 flex items-center gap-2"
-              >
-                {isLoadingSupabase ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                Charger (DB)
-              </button>
-              
-              <button
-                onClick={handleSaveSupabase}
-                disabled={isSavingSupabase}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50 flex items-center gap-2"
-              >
-                {isSavingSupabase ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Sauvegarder (DB)
-              </button>
               
               <button
                 onClick={() => setShowFullEdit(!showFullEdit)}
@@ -804,40 +723,23 @@ function EnTeteSection({ data, updateField, onAutoFill, isLoading, autoFillStatu
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           N° de procédure (5 chiffres)
         </label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={data.numeroProcedure || ''}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, '').slice(0, 5);
-              updateField('enTete', 'numeroProcedure', value);
-              
-              // Auto-fill dès que 5 chiffres sont saisis
-              if (value.length === 5) {
-                onAutoFill(value);
-              }
-            }}
-            maxLength={5}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-lg"
-            placeholder="12345"
-            disabled={isLoading}
-          />
-          
-          {(data.numeroProcedure?.length || 0) === 5 && (
-            <button
-              onClick={() => onAutoFill(data.numeroProcedure)}
-              disabled={isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              title="Recharger les données depuis Supabase"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <RefreshCw className="w-5 h-5" />
-              )}
-            </button>
-          )}
-        </div>
+        <input
+          type="text"
+          value={data.numeroProcedure || ''}
+          onChange={(e) => {
+            const value = e.target.value.replace(/\D/g, '').slice(0, 5);
+            updateField('enTete', 'numeroProcedure', value);
+            
+            // Auto-fill dès que 5 chiffres sont saisis
+            if (value.length === 5) {
+              onAutoFill(value);
+            }
+          }}
+          maxLength={5}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-lg"
+          placeholder="12345"
+          disabled={isLoading}
+        />
         {data.numeroProcedure && (data.numeroProcedure?.length || 0) < 5 && (
           <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
             ⚠️ Le numéro de procédure doit comporter 5 chiffres

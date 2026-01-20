@@ -4,10 +4,11 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
-import { X, FileText, CheckSquare, FileCheck, FileSpreadsheet, FolderOpen, ArrowLeft } from 'lucide-react';
+import { X, FileText, CheckSquare, FileCheck, FileSpreadsheet, FolderOpen, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { ProcedureSelector } from './shared/ProcedureSelector';
 import { ProcedureHeader } from './shared/ProcedureHeader';
 import { DCEStatusBar } from './shared/DCEStatusBar';
+import { ConflictResolverModal } from './shared/ConflictResolverModal';
 import { useDCEState } from './hooks/useDCEState';
 import { useProcedure } from './hooks/useProcedureLoader';
 import type { DCESectionType } from './types';
@@ -43,6 +44,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
   const [selectedProcedure, setSelectedProcedure] = useState<ProjectData | null>(null);
   const [activeSection, setActiveSection] = useState<DCESectionType | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [showConflictModal, setShowConflictModal] = useState(false);
   const [savingSection, setSavingSection] = useState<DCESectionType | null>(null);
 
   // Charger la procédure
@@ -56,14 +58,27 @@ export function DCEComplet({ onClose }: DCECompletProps) {
     error: dceError,
     loadDCE,
     updateSection,
+    updateSectionLocal,
     saveDCE,
     publishDCE,
     refreshDCE,
     isDirty,
+    conflicts,
+    resolveConflicts,
+    checkConflicts,
   } = useDCEState({
     numeroProcedure: numeroProcedure.length === 5 ? numeroProcedure : '',
     autoLoad: false,
   });
+
+  /**
+   * Afficher automatiquement le modal de conflits quand des conflits sont détectés
+   */
+  useEffect(() => {
+    if (conflicts?.hasConflicts) {
+      setShowConflictModal(true);
+    }
+  }, [conflicts]);
 
   /**
    * Quand une procédure valide est sélectionnée, charger le DCE
@@ -117,11 +132,23 @@ export function DCEComplet({ onClose }: DCECompletProps) {
    * Gestion des actions
    */
   const handleSave = async () => {
+    if (!dceState) {
+      alert('✗ Aucun DCE à sauvegarder');
+      return;
+    }
+
+    console.log('💾 Sauvegarde globale du DCE:', {
+      numeroProcedure: dceState.numeroProcedure,
+      sections: Object.keys(dceState).filter(k => 
+        !['id', 'userId', 'numeroProcedure', 'procedureId', 'statut', 'titreMarche', 'version', 'notes', 'createdAt', 'updatedAt'].includes(k)
+      ),
+    });
+
     const success = await saveDCE();
     if (success) {
-      alert('✓ DCE sauvegardé avec succès');
+      alert('✓ DCE sauvegardé avec succès dans la base de données');
     } else {
-      alert('✗ Erreur lors de la sauvegarde');
+      alert('✗ Erreur lors de la sauvegarde du DCE');
     }
   };
 
@@ -135,13 +162,48 @@ export function DCEComplet({ onClose }: DCECompletProps) {
     }
   };
 
+  /**
+   * Gestion de la sauvegarde d'une section
+   * Met à jour l'état local SANS sauvegarder immédiatement en base
+   * La sauvegarde globale se fera via le bouton "Sauvegarder"
+   */
   const handleSectionSave = async (section: DCESectionType, data: any) => {
-    setSavingSection(section);
-    try {
-      await updateSection(section, data);
-    } finally {
-      setSavingSection(null);
+    console.log(`📝 Section ${section} modifiée localement (pas encore sauvegardée en base)`);
+    
+    // Mise à jour locale uniquement - pas de sauvegarde immédiate
+    updateSectionLocal(section, data);
+    
+    // Optionnel : afficher un message de confirmation
+    // console.log(`✓ Section ${section} mise à jour localement. N'oubliez pas de sauvegarder !`);
+  };
+
+  /**
+   * Changement d'onglet avec sauvegarde automatique si modifications non sauvegardées
+   */
+  const handleSectionChange = async (newSection: DCESectionType) => {
+    // Si des modifications non sauvegardées ET que l'utilisateur change d'onglet
+    if (isDirty && activeSection && activeSection !== newSection) {
+      console.log('⚠️ Modifications non sauvegardées détectées lors du changement d\'onglet');
+      
+      // Demander confirmation ou sauvegarder automatiquement
+      const shouldSave = window.confirm(
+        'Vous avez des modifications non sauvegardées. Voulez-vous les sauvegarder maintenant ?'
+      );
+      
+      if (shouldSave) {
+        try {
+          await saveDCE();
+          console.log('✅ Sauvegarde automatique effectuée avant changement d\'onglet');
+        } catch (error) {
+          console.error('❌ Erreur lors de la sauvegarde automatique:', error);
+          alert('Erreur lors de la sauvegarde. Vos modifications ne seront pas perdues mais veuillez sauvegarder manuellement.');
+          return; // Ne pas changer d'onglet si la sauvegarde échoue
+        }
+      }
     }
+    
+    // Changer d'onglet
+    setActiveSection(newSection);
   };
 
   const handleBackToSelection = () => {
@@ -151,12 +213,30 @@ export function DCEComplet({ onClose }: DCECompletProps) {
     setSelectedProcedure(null);
   };
 
+  /**
+   * 🆕 Handler pour résoudre les conflits
+   */
+  const handleResolveConflicts = async (resolutions: Record<string, any>) => {
+    const success = await resolveConflicts(resolutions);
+    if (success) {
+      setShowConflictModal(false);
+      // Recharger le DCE pour afficher les données mises à jour
+      await loadDCE();
+    }
+  };
+
   const renderSectionContent = () => {
     if (!dceState || !activeSection) return null;
 
     switch (activeSection) {
       case 'reglementConsultation':
-        return <ReglementConsultationLegacyWrapper numeroProcedure={numeroProcedure} />;
+        return (
+          <ReglementConsultationLegacyWrapper 
+            numeroProcedure={numeroProcedure}
+            onSave={data => handleSectionSave('reglementConsultation', data)}
+            initialData={dceState.reglementConsultation}
+          />
+        );
       case 'acteEngagement':
         return (
           <ActeEngagementForm
@@ -342,9 +422,11 @@ export function DCEComplet({ onClose }: DCECompletProps) {
                   isDirty={isDirty}
                   isNew={isNew}
                   onSave={handleSave}
-                  onPublish={handlePublish}
+                  onPublish={publishDCE}
                   onRefresh={refreshDCE}
                   isSaving={isLoadingDCE}
+                  conflicts={conflicts}
+                  onShowConflicts={() => setShowConflictModal(true)}
                 />
               )}
 
@@ -421,6 +503,16 @@ export function DCEComplet({ onClose }: DCECompletProps) {
           </>
         )}
       </div>
+
+      {/* 🆕 Modal de résolution des conflits */}
+      {conflicts && conflicts.hasConflicts && (
+        <ConflictResolverModal
+          conflicts={conflicts.conflicts}
+          onResolve={handleResolveConflicts}
+          onCancel={() => setShowConflictModal(false)}
+          isOpen={showConflictModal}
+        />
+      )}
     </div>
   );
 }
