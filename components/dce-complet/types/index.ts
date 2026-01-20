@@ -237,6 +237,10 @@ export interface DCEState {
   dqe: DQEData | null;
   dpgf: DPGFData | null;
   documentsAnnexes: DocumentsAnnexesData | null;
+
+  // Nouvelles sections
+  crt: CRTData | null;
+  qt: QTData | null;
   
   // Timestamps
   createdAt?: string;
@@ -264,6 +268,9 @@ export interface DCERecord {
   dqe: DQEData | null;
   dpgf: DPGFData | null;
   documents_annexes: DocumentsAnnexesData | null;
+
+  crt: CRTData | null;
+  qt: QTData | null;
   created_at: string;
   updated_at: string;
 }
@@ -313,7 +320,9 @@ export type DCESectionType =
   | 'bpu'
   | 'dqe'
   | 'dpgf'
-  | 'documentsAnnexes';
+  | 'documentsAnnexes'
+  | 'crt'
+  | 'qt';
 
 // ============================================
 // COMPLÉTUDE DU DCE
@@ -330,7 +339,27 @@ export interface DCECompleteness {
     dqe: number;
     dpgf: number;
     documentsAnnexes: number;
+    crt: number;
+    qt: number;
   };
+}
+
+// ============================================
+// CRT (Cadre de réponse technique)
+// ============================================
+
+export interface CRTData {
+  contenu: string;
+  notes: string;
+}
+
+// ============================================
+// QT (Questionnaire technique)
+// ============================================
+
+export interface QTData {
+  questions: Array<{ question: string; reponse: string }>;
+  notes: string;
 }
 
 // ============================================

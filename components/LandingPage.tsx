@@ -76,7 +76,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
         { label: 'DCE Complet ✨', tab: 'dce-complet', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400', badge: 'NOUVEAU' },
-        { label: 'Questionnaire technique', tab: 'questionnaire-technique', isAdmin: false, icon: ClipboardList, color: 'text-teal-600 dark:text-teal-400' },
         { label: 'Accès rapide NOTI', tab: 'notifications-quick', isAdmin: false, icon: Bell, color: 'text-indigo-600 dark:text-indigo-400' },
         { label: 'NOTI Multi 🚧', tab: 'noti-multi', isAdmin: false, icon: Construction, color: 'text-gray-500 dark:text-gray-400' },
       ]

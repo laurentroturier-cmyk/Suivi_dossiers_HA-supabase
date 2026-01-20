@@ -57,18 +57,18 @@ export function DQEForm({ data, onSave, isSaving = false }: Props) {
         <textarea
           value={lotsText}
           onChange={e => setLotsText(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 min-h-[180px] font-mono text-sm"
+          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[180px] font-mono text-sm"
           placeholder="1 | Lot principal | 01,Prestation,U,10,100,1000; 02,Option,U,5,50,250 | 1250"
         />
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Total general</label>
           <input
             value={form.totalGeneral}
             onChange={e => setForm(prev => ({ ...prev, totalGeneral: e.target.value }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Total"
           />
         </div>

@@ -52,6 +52,8 @@ export function DCEStatusBar({
       'dqe',
       'dpgf',
       'documentsAnnexes',
+      'crt',
+      'qt',
     ] as const;
 
     const total = sections.length;
@@ -174,15 +176,9 @@ export function DCEStatusBar({
             {onSave && (
               <button
                 onClick={onSave}
-                disabled={isSaving || !isDirty}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
-                  ${isDirty 
-                    ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-sm' 
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  }
-                  disabled:opacity-50
-                `}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-blue-500 text-white hover:bg-blue-600 shadow-sm disabled:opacity-50"
+                title={isDirty ? 'Sauvegarder les modifications' : 'Sauvegarder le DCE'}
               >
                 {isSaving ? (
                   <>
@@ -214,15 +210,6 @@ export function DCEStatusBar({
         </div>
       </div>
 
-      {/* Barre de message si progression faible */}
-      {progress.percentage < 50 && dceState.statut === 'brouillon' && (
-        <div className="px-6 py-3 bg-blue-50 border-t border-blue-100">
-          <p className="text-sm text-blue-700 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
-            Complétez au moins 50% des sections avant de changer le statut.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

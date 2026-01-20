@@ -43,6 +43,55 @@ export class DCEService {
 
       // Si le DCE existe, le retourner
       if (existingDCE && !loadError) {
+        // Backfill RC depuis l'ancienne table si la colonne est encore vide
+        if (!existingDCE.reglement_consultation) {
+          const rcRecord = await this.loadExistingRC(numeroProcedure);
+
+          if (rcRecord?.data) {
+            const { data: patchedDCE, error: patchError } = await supabase
+              .from('dce')
+              .update({
+                reglement_consultation: rcRecord.data,
+                titre_marche: existingDCE.titre_marche || rcRecord.titreMarche || null,
+              })
+              .eq('id', existingDCE.id)
+              .select()
+              .single();
+
+            if (!patchError && patchedDCE) {
+              return {
+                success: true,
+                data: this.recordToState(patchedDCE),
+                isNew: false,
+              };
+            }
+          }
+        }
+
+        // Backfill QT depuis l'ancienne table si la colonne est encore vide
+        if (!existingDCE.qt) {
+          const qtRecord = await this.loadExistingQT(numeroProcedure);
+
+          if (qtRecord?.data) {
+            const { data: patchedDCE, error: patchError } = await supabase
+              .from('dce')
+              .update({
+                qt: qtRecord.data,
+              })
+              .eq('id', existingDCE.id)
+              .select()
+              .single();
+
+            if (!patchError && patchedDCE) {
+              return {
+                success: true,
+                data: this.recordToState(patchedDCE),
+                isNew: false,
+              };
+            }
+          }
+        }
+
         return {
           success: true,
           data: this.recordToState(existingDCE),
@@ -78,7 +127,9 @@ export class DCEService {
 
       // Charger les données de la procédure
       const procedure = await this.loadProcedure(numeroProcedure);
-      if (!procedure) {
+      const rcRecord = await this.loadExistingRC(numeroProcedure);
+
+      if (!procedure && !rcRecord) {
         return { 
           success: false, 
           error: `Aucune procédure trouvée avec le numéro ${numeroProcedure}` 
@@ -86,17 +137,22 @@ export class DCEService {
       }
 
       // Auto-mapper procédure → DCE
-      const dceData = mapProcedureToDCE(procedure);
+      let dceData = procedure ? mapProcedureToDCE(procedure) : mapProcedureToDCE({} as ProjectData);
+      dceData = { ...dceData, numeroProcedure };
+
+      // Si un RC legacy existe, l'injecter dans le DCE créé
+      const reglementConsultation = rcRecord?.data || dceData.reglementConsultation;
+      const titreMarche = rcRecord?.titreMarche || dceData.titreMarche;
 
       // Créer le record dans Supabase
       const record = {
         user_id: user.id,
         numero_procedure: numeroProcedure,
-        titre_marche: dceData.titreMarche,
+        titre_marche: titreMarche,
         statut: 'brouillon' as DCEStatut,
         version: 1,
         notes: '',
-        reglement_consultation: dceData.reglementConsultation,
+        reglement_consultation: reglementConsultation,
         acte_engagement: dceData.acteEngagement,
         ccap: dceData.ccap,
         cctp: dceData.cctp,
@@ -104,6 +160,8 @@ export class DCEService {
         dqe: dceData.dqe,
         dpgf: dceData.dpgf,
         documents_annexes: dceData.documentsAnnexes,
+        crt: dceData.crt,
+        qt: dceData.qt,
       };
 
       const { data: createdDCE, error } = await supabase
@@ -162,6 +220,49 @@ export class DCEService {
         return { success: false, error: error.message };
       }
 
+      // Synchroniser le RC legacy si nécessaire
+      if (section === 'reglementConsultation' && data) {
+        const rcRecord = {
+          user_id: user.id,
+          numero_procedure: numeroProcedure,
+          titre_marche: data?.enTete?.titreMarche || updated?.titre_marche || null,
+          numero_marche: data?.enTete?.numeroMarche || null,
+          data,
+        };
+
+        const { error: rcError } = await supabase
+          .from('reglements_consultation')
+          .upsert(rcRecord, {
+            onConflict: 'numero_procedure',
+            ignoreDuplicates: false,
+          });
+
+        if (rcError) {
+          console.error('Erreur synchro RC → reglements_consultation:', rcError);
+          return { success: false, error: `Section enregistrée mais RC non synchronisé: ${rcError.message}` };
+        }
+      }
+
+      // Synchroniser le QT legacy si nécessaire
+      if (section === 'qt' && data) {
+        const { error: qtError } = await supabase
+          .from('questionnaires_techniques')
+          .upsert({
+            user_id: user.id,
+            num_proc: numeroProcedure,
+            numero_lot: 1,  // Par défaut pour DCE
+            qt_data: data,
+          }, {
+            onConflict: 'num_proc,numero_lot',
+            ignoreDuplicates: false,
+          });
+
+        if (qtError) {
+          console.warn('⚠️ Synchro QT → questionnaires_techniques non critique:', qtError);
+          // On log mais on ne bloque pas - la sauvegarde dans dce a réussi
+        }
+      }
+
       return {
         success: true,
         data: this.recordToState(updated),
@@ -198,6 +299,29 @@ export class DCEService {
       if (error) {
         console.error('Erreur saveDCE:', error);
         return { success: false, error: error.message };
+      }
+
+      // Synchroniser le RC dans l'ancienne table pour compatibilité
+      if (dceState.reglementConsultation) {
+        const rcRecord = {
+          user_id: user.id,
+          numero_procedure: dceState.numeroProcedure,
+          titre_marche: dceState.titreMarche || dceState.reglementConsultation.enTete?.titreMarche || null,
+          numero_marche: dceState.reglementConsultation.enTete?.numeroMarche || null,
+          data: dceState.reglementConsultation,
+        };
+
+        const { error: rcError } = await supabase
+          .from('reglements_consultation')
+          .upsert(rcRecord, {
+            onConflict: 'numero_procedure',
+            ignoreDuplicates: false,
+          });
+
+        if (rcError) {
+          console.error('Erreur synchro RC → reglements_consultation:', rcError);
+          return { success: false, error: `DCE sauvegardé mais RC non synchronisé: ${rcError.message}` };
+        }
       }
 
       return {
@@ -313,6 +437,39 @@ export class DCEService {
   }
 
   /**
+   * Récupère un RC existant dans la table legacy
+   */
+  private async loadExistingRC(numeroProcedure: string): Promise<{ data: any; titreMarche: string | null; numeroMarche: string | null; } | null> {
+    try {
+      const { data: rcRecord, error } = await supabase
+        .from('reglements_consultation')
+        .select('data,titre_marche,numero_marche')
+        .eq('numero_procedure', numeroProcedure)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erreur récupération RC legacy:', error);
+      }
+
+      if (!rcRecord) {
+        return null;
+      }
+
+      const titreMarche = rcRecord.titre_marche || (rcRecord.data as any)?.enTete?.titreMarche || null;
+      const numeroMarche = rcRecord.numero_marche || (rcRecord.data as any)?.enTete?.numeroMarche || null;
+
+      return {
+        data: rcRecord.data,
+        titreMarche,
+        numeroMarche,
+      };
+    } catch (err) {
+      console.error('Erreur loadExistingRC:', err);
+      return null;
+    }
+  }
+
+  /**
    * Convertit un DCERecord (Supabase) en DCEState (React)
    */
   private recordToState(record: DCERecord): DCEState {
@@ -333,6 +490,8 @@ export class DCEService {
       dqe: record.dqe,
       dpgf: record.dpgf,
       documentsAnnexes: record.documents_annexes,
+      crt: record.crt,
+      qt: record.qt,
       createdAt: record.created_at,
       updatedAt: record.updated_at,
     };
@@ -359,6 +518,8 @@ export class DCEService {
       dqe: state.dqe,
       dpgf: state.dpgf,
       documents_annexes: state.documentsAnnexes,
+      crt: state.crt,
+      qt: state.qt,
     };
   }
 
@@ -375,8 +536,39 @@ export class DCEService {
       dqe: 'dqe',
       dpgf: 'dpgf',
       documentsAnnexes: 'documents_annexes',
+      crt: 'crt',
+      qt: 'qt',
     };
     return mapping[section];
+  }
+
+  /**
+   * Récupère un QT existant depuis questionnaires_techniques
+   */
+  private async loadExistingQT(numeroProcedure: string): Promise<{ data: any } | null> {
+    try {
+      const { data: qtRecord, error } = await supabase
+        .from('questionnaires_techniques')
+        .select('qt_data')
+        .eq('num_proc', numeroProcedure)
+        .eq('numero_lot', 1)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erreur récupération QT legacy:', error);
+      }
+
+      if (!qtRecord) {
+        return null;
+      }
+
+      return {
+        data: qtRecord.qt_data,
+      };
+    } catch (err) {
+      console.error('Erreur loadExistingQT:', err);
+      return null;
+    }
   }
 }
 

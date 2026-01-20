@@ -68,13 +68,13 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
 
   return (
     <div className="space-y-8">
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Numéro de procédure</label>
           <input
             value={form.enTete.numeroProcedure}
             onChange={e => updateForm(p => ({ ...p, enTete: { ...p.enTete, numeroProcedure: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="20241"
           />
         </div>
@@ -83,7 +83,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           <input
             value={form.enTete.titreMarche}
             onChange={e => updateForm(p => ({ ...p, enTete: { ...p.enTete, titreMarche: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Objet principal"
           />
         </div>
@@ -92,7 +92,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           <input
             value={form.enTete.dateLimiteOffres}
             onChange={e => updateForm(p => ({ ...p, enTete: { ...p.enTete, dateLimiteOffres: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="YYYY-MM-DD"
           />
         </div>
@@ -101,19 +101,19 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           <input
             value={form.enTete.heureLimiteOffres}
             onChange={e => updateForm(p => ({ ...p, enTete: { ...p.enTete, heureLimiteOffres: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="17:00"
           />
         </div>
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Acheteur</label>
           <input
             value={form.pouvoirAdjudicateur.nom}
             onChange={e => updateForm(p => ({ ...p, pouvoirAdjudicateur: { ...p.pouvoirAdjudicateur, nom: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Nom de l'acheteur"
           />
         </div>
@@ -122,7 +122,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           <input
             value={form.pouvoirAdjudicateur.ville}
             onChange={e => updateForm(p => ({ ...p, pouvoirAdjudicateur: { ...p.pouvoirAdjudicateur, ville: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Ville"
           />
         </div>
@@ -131,7 +131,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           <input
             value={form.pouvoirAdjudicateur.adresseVoie}
             onChange={e => updateForm(p => ({ ...p, pouvoirAdjudicateur: { ...p.pouvoirAdjudicateur, adresseVoie: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Adresse complète"
           />
         </div>
@@ -140,7 +140,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           <input
             value={form.pouvoirAdjudicateur.codePostal}
             onChange={e => updateForm(p => ({ ...p, pouvoirAdjudicateur: { ...p.pouvoirAdjudicateur, codePostal: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="75000"
           />
         </div>
@@ -151,15 +151,15 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
         <textarea
           value={form.objet.description}
           onChange={e => updateForm(p => ({ ...p, objet: { ...p.objet, description: e.target.value } }))}
-          className="w-full border rounded-lg px-3 py-2 min-h-[80px]"
+          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[80px]"
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">CPV principal</label>
             <input
               value={form.objet.cpvPrincipal}
               onChange={e => updateForm(p => ({ ...p, objet: { ...p.objet, cpvPrincipal: e.target.value } }))}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border rounded-lg px-2 py-1.5 text-sm"
               placeholder="12345678"
             />
           </div>
@@ -168,7 +168,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
             <input
               value={form.objet.cpvPrincipalLib}
               onChange={e => updateForm(p => ({ ...p, objet: { ...p.objet, cpvPrincipalLib: e.target.value } }))}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border rounded-lg px-2 py-1.5 text-sm"
               placeholder="Services ..."
             />
           </div>
@@ -178,7 +178,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           <textarea
             value={cpvSecondairesText}
             onChange={e => setCpvSecondairesText(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 min-h-[80px] font-mono text-sm"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[80px] font-mono text-sm"
             placeholder="12345678 | Description"
           />
         </div>
@@ -189,16 +189,16 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
         <textarea
           value={lotsText}
           onChange={e => setLotsText(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 min-h-[80px] font-mono text-sm"
+          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[80px] font-mono text-sm"
           placeholder="1 | Lot principal | 50000"
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mode de passation</label>
             <input
               value={form.conditions.modePassation}
               onChange={e => updateForm(p => ({ ...p, conditions: { ...p.conditions, modePassation: e.target.value } }))}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border rounded-lg px-2 py-1.5 text-sm"
               placeholder="AO ouvert"
             />
           </div>
@@ -207,20 +207,20 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
             <input
               value={form.conditions.nbLots}
               onChange={e => updateForm(p => ({ ...p, conditions: { ...p.conditions, nbLots: e.target.value } }))}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border rounded-lg px-2 py-1.5 text-sm"
               placeholder="1"
             />
           </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Forme du marché</label>
           <input
             value={form.typeMarche.forme}
             onChange={e => updateForm(p => ({ ...p, typeMarche: { ...p.typeMarche, forme: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Accord-cadre ..."
           />
         </div>
@@ -229,19 +229,19 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           <input
             value={form.typeMarche.lieuExecution}
             onChange={e => updateForm(p => ({ ...p, typeMarche: { ...p.typeMarche, lieuExecution: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Ville / site"
           />
         </div>
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Délai validité des offres (jours)</label>
           <input
             value={form.remise.delaiValiditeOffres}
             onChange={e => updateForm(p => ({ ...p, remise: { ...p.remise, delaiValiditeOffres: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="90"
           />
         </div>
@@ -250,7 +250,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           <input
             value={form.jugement.critereFinancier}
             onChange={e => updateForm(p => ({ ...p, jugement: { ...p.jugement, critereFinancier: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="40"
           />
         </div>
@@ -259,7 +259,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           <input
             value={form.jugement.critereTechnique}
             onChange={e => updateForm(p => ({ ...p, jugement: { ...p.jugement, critereTechnique: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="60"
           />
         </div>
@@ -270,7 +270,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
         <textarea
           value={sousCriteresText}
           onChange={e => setSousCriteresText(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 min-h-[80px] font-mono text-sm"
+          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[80px] font-mono text-sm"
           placeholder="Méthodologie | 20"
         />
       </section>

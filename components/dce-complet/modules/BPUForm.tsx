@@ -58,7 +58,7 @@ export function BPUForm({ data, onSave, isSaving = false }: Props) {
         <textarea
           value={lotsText}
           onChange={e => setLotsText(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 min-h-[160px] font-mono text-sm"
+          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[160px] font-mono text-sm"
           placeholder="1 | Lot principal | 01,Prestation,U,100,10; 02,Option,U,50,5"
         />
       </section>

@@ -45,26 +45,26 @@ export function CCAPForm({ data, onSave, isSaving = false }: Props) {
   };
 
   return (
-    <div className="space-y-10">
-      <section className="space-y-4">
+    <div className="space-y-6">
+      <section className="space-y-3">
         <div className="text-sm font-semibold text-gray-800">Dispositions generales</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input
             value={form.dispositionsGenerales.objet}
             onChange={e => update('dispositionsGenerales.objet', e.target.value)}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Objet"
           />
           <input
             value={form.dispositionsGenerales.ccagApplicable}
             onChange={e => update('dispositionsGenerales.ccagApplicable', e.target.value)}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="CCAG applicable"
           />
           <input
             value={form.dispositionsGenerales.duree}
             onChange={e => update('dispositionsGenerales.duree', e.target.value)}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Duree"
           />
           <label className="inline-flex items-center space-x-2">
@@ -79,19 +79,19 @@ export function CCAPForm({ data, onSave, isSaving = false }: Props) {
           <input
             value={form.dispositionsGenerales.nbReconductions || ''}
             onChange={e => update('dispositionsGenerales.nbReconductions', e.target.value)}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Nombre de reconductions"
           />
         </div>
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-3">
         <div className="text-sm font-semibold text-gray-800">Prix et paiement</div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
           <input
             value={form.prixPaiement.typePrix}
             onChange={e => update('prixPaiement.typePrix', e.target.value)}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="forfaitaire / unitaire"
           />
           <label className="inline-flex items-center space-x-2">
@@ -124,37 +124,37 @@ export function CCAPForm({ data, onSave, isSaving = false }: Props) {
           <input
             value={form.prixPaiement.modalitesPaiement}
             onChange={e => update('prixPaiement.modalitesPaiement', e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 md:col-span-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm md:col-span-2"
             placeholder="Modalites de paiement"
           />
           <input
             value={form.prixPaiement.delaiPaiement}
             onChange={e => update('prixPaiement.delaiPaiement', e.target.value)}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Delai de paiement"
           />
         </div>
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-3">
         <div className="text-sm font-semibold text-gray-800">Execution</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input
             value={form.execution.delaiExecution}
             onChange={e => update('execution.delaiExecution', e.target.value)}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Delai d'execution"
           />
           <input
             value={form.execution.penalitesRetard}
             onChange={e => update('execution.penalitesRetard', e.target.value)}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm"
             placeholder="Penalites de retard"
           />
           <input
             value={form.execution.conditionsReception}
             onChange={e => update('execution.conditionsReception', e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 md:col-span-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm md:col-span-2"
             placeholder="Conditions de reception"
           />
         </div>
@@ -165,7 +165,7 @@ export function CCAPForm({ data, onSave, isSaving = false }: Props) {
         <textarea
           value={sectionsText}
           onChange={e => setSectionsText(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 min-h-[140px] font-mono text-sm"
+          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[140px] font-mono text-sm"
           placeholder="Modalites | Details..."
         />
       </section>

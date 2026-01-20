@@ -3,11 +3,23 @@ import { Plus, Trash2, ChevronDown, ChevronRight, Save, AlertCircle, Search, X, 
 import { Critere, SousCritere, Question, QuestionnaireState, Procedure } from './types';
 import { supabase } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
+import { saveQuestionnaireTechnique, loadQuestionnaireTechnique, loadExistingQT } from './questionnaireTechniqueStorage';
 
-const QuestionnaireTechnique: React.FC = () => {
+interface QuestionnaireTechniqueProps {
+  initialNumeroProcedure?: string;
+  onSave?: (data: QuestionnaireState) => void;
+}
+
+const QuestionnaireTechnique: React.FC<QuestionnaireTechniqueProps> = ({ 
+  initialNumeroProcedure,
+  onSave 
+}) => {
   const [state, setState] = useState<QuestionnaireState>({
     criteres: []
   });
+  
+  // Si un numero_procedure est passé, l'utiliser directement sans recherche
+  const [directNumeroProcedure, setDirectNumeroProcedure] = useState(initialNumeroProcedure || '');
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Procedure[]>([]);
@@ -24,6 +36,66 @@ const QuestionnaireTechnique: React.FC = () => {
 
   // Génération d'ID unique
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Chargement automatique si numero_procedure fourni (depuis DCE)
+  useEffect(() => {
+    if (initialNumeroProcedure && initialNumeroProcedure.length === 5) {
+      const loadDirectly = async () => {
+        setIsLoadingFromDb(true);
+        try {
+          // 1. Charger la procédure complète depuis la table procédures
+          const { data: procedures, error: procError } = await supabase
+            .from('procédures')
+            .select('NumProc, "numero court procédure afpa", "Numéro de procédure (Afpa)", "Nom de la procédure", "Nombre de lots"')
+            .ilike('numero court procédure afpa', `%${initialNumeroProcedure}%`)
+            .limit(1);
+
+          let procedureData = null;
+          if (!procError && procedures && procedures.length > 0) {
+            const proc = procedures[0];
+            procedureData = {
+              id: proc['NumProc'],
+              NumProc: proc['NumProc'],
+              'numero court procédure afpa': proc['numero court procédure afpa'],
+              'Numéro de procédure (Afpa)': proc['Numéro de procédure (Afpa)'],
+              nom_procedure: proc['Nom de la procédure'],
+              nombre_lots: proc['Nombre de lots'] || 0
+            };
+            console.log('✅ Procédure chargée:', procedureData['NumProc'], procedureData['Numéro de procédure (Afpa)']);
+          }
+
+          // 2. Chercher le QT existant dans questionnaires_techniques
+          const result = await loadQuestionnaireTechnique(initialNumeroProcedure);
+          
+          if (result.success && result.data) {
+            setState({
+              ...result.data,
+              procedure: procedureData || result.data.procedure  // Utiliser les infos complètes
+            });
+            setHasExistingQuestionnaire(true);
+            console.log('✅ Questionnaire technique chargé depuis la base');
+          } else {
+            // Pas de QT existant, pré-remplir avec la procédure complète
+            setState(prev => ({
+              ...prev,
+              procedure: procedureData || {
+                NumProc: initialNumeroProcedure,
+                numero_court_procedure_afpa: initialNumeroProcedure
+              },
+              numeroLot: procedureData?.nombre_lots > 0 ? 1 : undefined
+            }));
+            console.log('ℹ️ Aucun questionnaire technique trouvé, initialisation vierge avec procédure');
+          }
+        } catch (err) {
+          console.error('Erreur chargement QT direct:', err);
+        } finally {
+          setIsLoadingFromDb(false);
+        }
+      };
+      
+      loadDirectly();
+    }
+  }, [initialNumeroProcedure]);
 
   // Recherche de procédure par numéro
   const searchProcedures = async (query: string) => {
@@ -106,11 +178,27 @@ const QuestionnaireTechnique: React.FC = () => {
         return;
       }
 
-      // Charger depuis la nouvelle table questionnaires_techniques
+      // 🔧 CLEF: Si numProc est un code court (5 chiffres), le résoudre en NumProc complet
+      let fullNumProc = numProc;
+      if (numProc.length === 5 && /^\d{5}$/.test(numProc)) {
+        console.log(`🔗 Code court détecté: ${numProc}, résolution du NumProc...`);
+        const { data: procedures, error: searchError } = await supabase
+          .from('procédures')
+          .select('NumProc')
+          .ilike('numero court procédure afpa', `%${numProc}%`)
+          .limit(1);
+        
+        if (!searchError && procedures && procedures.length > 0) {
+          fullNumProc = procedures[0].NumProc;
+          console.log(`✅ NumProc résolu: ${numProc} → ${fullNumProc}`);
+        }
+      }
+
+      // Charger depuis la nouvelle table questionnaires_techniques avec le NumProc résolu
       const { data, error: fetchError } = await supabase
         .from('questionnaires_techniques')
         .select('qt_data, updated_at')
-        .eq('num_proc', numProc)
+        .eq('num_proc', fullNumProc)
         .eq('numero_lot', state.numeroLot)
         .single();
 
@@ -165,12 +253,16 @@ const QuestionnaireTechnique: React.FC = () => {
 
   // Sauvegarde du questionnaire dans la base de données
   const saveQuestionnaireToDatabase = async () => {
-    if (!state.procedure?.NumProc) {
+    // Si numero_procedure direct (DCE), l'utiliser; sinon utiliser la procédure sélectionnée
+    const numeroProcedure = directNumeroProcedure || state.procedure?.NumProc;
+    
+    if (!numeroProcedure) {
       setError('Aucune procédure sélectionnée pour la sauvegarde');
       return;
     }
 
-    if (!state.numeroLot) {
+    // Si pas de numero_lot et pas de direct, demander
+    if (!directNumeroProcedure && !state.numeroLot) {
       setError('Veuillez sélectionner un numéro de lot');
       return;
     }
@@ -180,37 +272,29 @@ const QuestionnaireTechnique: React.FC = () => {
     setSaveSuccess(false);
 
     try {
-      // Préparer les données à sauvegarder
-      const questionnaireData = {
-        criteres: state.criteres,
-        savedAt: new Date().toISOString(),
-        version: '1.0'
-      };
+      console.log('💾 Sauvegarde du questionnaire pour NumProc:', numeroProcedure);
 
-      console.log('💾 Sauvegarde du questionnaire pour NumProc:', state.procedure.NumProc, 'Lot:', state.numeroLot);
-      console.log('📝 Données à sauvegarder:', questionnaireData);
+      // Utiliser le service de sauvegarde qui gère la double synchro
+      const result = await saveQuestionnaireTechnique(
+        numeroProcedure,
+        state,
+        state.procedure?.nom_procedure
+      );
 
-      // Upsert dans la table questionnaires_techniques
-      const { data, error: upsertError } = await supabase
-        .from('questionnaires_techniques')
-        .upsert({
-          num_proc: state.procedure.NumProc,
-          numero_lot: state.numeroLot,
-          qt_data: questionnaireData
-        }, {
-          onConflict: 'num_proc,numero_lot' // Clé unique
-        })
-        .select();
-
-      if (upsertError) {
-        console.error('❌ Erreur lors de la sauvegarde:', upsertError);
-        throw upsertError;
+      if (result.success) {
+        console.log('✅ Questionnaire sauvegardé avec succès');
+        setHasExistingQuestionnaire(true);
+        setSaveSuccess(true);
+        
+        // Appeler le callback onSave si fourni (pour DCE)
+        if (onSave) {
+          onSave(state);
+        }
+        
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        throw new Error(result.error || 'Erreur inconnue');
       }
-
-      console.log('✅ Questionnaire sauvegardé avec succès:', data);
-      setHasExistingQuestionnaire(true);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
       console.error('❌ Erreur sauvegarde questionnaire:', err);
       setError(err.message || 'Erreur lors de la sauvegarde dans la base de données');
@@ -696,37 +780,37 @@ const QuestionnaireTechnique: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-4">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configuration du Questionnaire</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Structure hiérarchique d'évaluation</p>
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white">Configuration du Questionnaire</h1>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Structure hiérarchique d'évaluation</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={exportQuestionnaireToExcel}
                 disabled={state.criteres.length === 0}
-                className="flex items-center gap-2 bg-green-700 hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-full font-medium transition shadow-md"
+                className="flex items-center gap-1.5 bg-green-700 hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-full text-sm font-medium transition shadow-md"
                 title="Exporter la configuration en Excel"
               >
-                <FileSpreadsheet className="w-4 h-4" />
+                <FileSpreadsheet className="w-3.5 h-3.5" />
                 Exporter Excel
               </button>
               <button
                 onClick={ajouterCritere}
-                className="flex items-center gap-2 bg-teal-700 hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600 text-white px-6 py-2.5 rounded-full font-medium transition shadow-md"
+                className="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600 text-white px-4 py-1.5 rounded-full text-sm font-medium transition shadow-md"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 Ajouter un critère
               </button>
             </div>
           </div>
 
           {/* Section Procédure */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-teal-300 dark:border-teal-700 p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Affectation à une procédure</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-teal-300 dark:border-teal-700 p-4 shadow-sm">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Affectation à une procédure</h2>
             
             {!state.procedure ? (
               <div className="space-y-4">
@@ -816,35 +900,35 @@ const QuestionnaireTechnique: React.FC = () => {
                 )}
 
                 {/* Informations procédure sélectionnée */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-4 border border-teal-200 dark:border-teal-700">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-3 border border-teal-200 dark:border-teal-700">
                     <label className="block text-xs font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wide mb-1">
                       ID Procédure (NumProc)
                     </label>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{state.procedure.NumProc || state.procedure.id}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{state.procedure.NumProc || state.procedure.id}</p>
                   </div>
-                  <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-4 border border-teal-200 dark:border-teal-700">
+                  <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-3 border border-teal-200 dark:border-teal-700">
                     <label className="block text-xs font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wide mb-1">
                       Numéro de procédure (Afpa)
                     </label>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
                       {state.procedure['Numéro de procédure (Afpa)'] ||
                         state.procedure["numero court procédure afpa"] ||
                         state.procedure.numero_procedure ||
                         'Non renseigné'}
                     </p>
                   </div>
-                  <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-4 border border-teal-200 dark:border-teal-700">
+                  <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-3 border border-teal-200 dark:border-teal-700">
                     <label className="block text-xs font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wide mb-1">
                       Nom de la procédure
                     </label>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{state.procedure.nom_procedure}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{state.procedure.nom_procedure}</p>
                   </div>
                 </div>
 
                 {/* Sélection du lot si plusieurs */}
                 {state.procedure.nombre_lots > 0 && (
-                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-700">
+                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
                     <label className="block text-sm font-semibold text-amber-900 dark:text-amber-200 mb-2">
                       Numéro du lot
                     </label>
@@ -854,7 +938,7 @@ const QuestionnaireTechnique: React.FC = () => {
                         ...prev,
                         numeroLot: parseInt(e.target.value)
                       }))}
-                      className="w-full px-4 py-2 border border-amber-300 dark:border-amber-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full px-3 py-1.5 border border-amber-300 dark:border-amber-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
                     >
                       {Array.from({ length: state.procedure.nombre_lots }, (_, i) => (
                         <option key={i + 1} value={i + 1}>
@@ -876,12 +960,12 @@ const QuestionnaireTechnique: React.FC = () => {
 
                 {/* Boutons d'action */}
                 {state.criteres.length > 0 && (
-                  <div className="mt-6 space-y-4">
-                    <div className="flex justify-center gap-4">
+                  <div className="mt-4 space-y-3">
+                    <div className="flex justify-center gap-3">
                       <button
                         onClick={saveQuestionnaireToDatabase}
                         disabled={isSavingToDb}
-                        className={`px-6 py-3 rounded-lg transition-colors flex items-center gap-2 font-medium shadow-sm ${
+                        className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium shadow-sm ${
                           saveSuccess
                             ? 'bg-green-600 text-white'
                             : 'bg-teal-800 hover:bg-teal-900 text-white'
@@ -889,19 +973,19 @@ const QuestionnaireTechnique: React.FC = () => {
                       >
                         {isSavingToDb ? (
                           <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             Enregistrement...
                           </>
                         ) : saveSuccess ? (
                           <>
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                             Enregistré dans la procédure !
                           </>
                         ) : (
                           <>
-                            <Save className="w-5 h-5" />
+                            <Save className="w-4 h-4" />
                             Enregistrer dans la procédure {state.procedure.NumProc}
                           </>
                         )}
@@ -909,9 +993,9 @@ const QuestionnaireTechnique: React.FC = () => {
 
                       <button
                         onClick={openDuplicateModal}
-                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 font-medium shadow-sm"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium shadow-sm"
                       >
-                        <Copy className="w-5 h-5" />
+                        <Copy className="w-4 h-4" />
                         Dupliquer vers d'autres lots
                       </button>
                     </div>
@@ -929,57 +1013,57 @@ const QuestionnaireTechnique: React.FC = () => {
 
         {/* Liste des critères */}
         {state.criteres.length === 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-            <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 dark:text-gray-400">Aucun critère défini. Commencez par ajouter un critère.</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
+            <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600 dark:text-gray-400">Aucun critère défini. Commencez par ajouter un critère.</p>
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {state.criteres.map((critere, critereIndex) => {
             const totalPoints = calculerTotalCritere(critere);
             return (
               <div key={critere.id} className="bg-white dark:bg-gray-800 rounded-xl border-2 border-teal-300 dark:border-teal-700 overflow-hidden shadow-sm">
                 {/* Bandeau Critère */}
-                <div className="bg-teal-100 dark:bg-teal-900/30 border-b border-teal-300 dark:border-teal-700 p-4">
-                  <div className="flex items-center gap-3">
+                <div className="bg-teal-100 dark:bg-teal-900/30 border-b border-teal-300 dark:border-teal-700 p-3">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => toggleCritere(critere.id)}
                       className="text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-800/50 p-1 rounded"
                     >
-                      {critere.isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                      {critere.isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                     </button>
-                    <span className="font-bold text-teal-950 dark:text-teal-200 text-sm">Critère {critereIndex + 1}</span>
+                    <span className="font-bold text-teal-950 dark:text-teal-200 text-xs">Critère {critereIndex + 1}</span>
                     <input
                       type="text"
                       value={critere.nom}
                       onChange={(e) => modifierNomCritere(critere.id, e.target.value)}
-                      className="flex-1 bg-white dark:bg-gray-700 border border-teal-300 dark:border-teal-600 rounded px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="flex-1 bg-white dark:bg-gray-700 border border-teal-300 dark:border-teal-600 rounded px-2 py-1 text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                       placeholder="Nom du critère"
                     />
-                    <div className="flex items-center gap-2 bg-teal-200 dark:bg-teal-800/50 px-3 py-1.5 rounded">
+                    <div className="flex items-center gap-1.5 bg-teal-200 dark:bg-teal-800/50 px-2 py-1 rounded">
                       <span className="text-xs font-medium text-teal-900 dark:text-teal-300">Total:</span>
-                      <span className="font-bold text-teal-900 dark:text-teal-200">{totalPoints} pts</span>
+                      <span className="font-bold text-sm text-teal-900 dark:text-teal-200">{totalPoints} pts</span>
                     </div>
                     <button
                       onClick={() => supprimerCritere(critere.id)}
-                      className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded"
+                      className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded"
                       title="Supprimer le critère"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
                 {/* Contenu du critère */}
                 {critere.isExpanded && (
-                  <div className="p-4 space-y-4">
+                  <div className="p-3 space-y-3">
                     {/* Bouton ajouter sous-critère */}
                     <button
                       onClick={() => ajouterSousCritere(critere.id)}
-                      className="flex items-center gap-2 text-teal-800 dark:text-teal-300 hover:bg-teal-200 dark:hover:bg-teal-800/40 px-3 py-2 rounded text-sm font-medium transition"
+                      className="flex items-center gap-1.5 text-teal-800 dark:text-teal-300 hover:bg-teal-200 dark:hover:bg-teal-800/40 px-2 py-1.5 rounded text-xs font-medium transition"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3.5 h-3.5" />
                       Ajouter un sous-critère
                     </button>
 
@@ -989,8 +1073,8 @@ const QuestionnaireTechnique: React.FC = () => {
                     )}
 
                     {critere.sousCriteres.map((sousCritere, scIndex) => (
-                      <div key={sousCritere.id} className="ml-8 border-l-2 border-teal-400 dark:border-teal-700 pl-4">
-                        <div className="flex items-center gap-3 mb-3">
+                      <div key={sousCritere.id} className="ml-6 border-l-2 border-teal-400 dark:border-teal-700 pl-3">
+                        <div className="flex items-center gap-2 mb-2">
                           <span className="text-xs font-bold text-teal-800 dark:text-teal-300">
                             {critereIndex + 1}.{scIndex + 1}
                           </span>
@@ -998,7 +1082,7 @@ const QuestionnaireTechnique: React.FC = () => {
                             type="text"
                             value={sousCritere.nom}
                             onChange={(e) => modifierNomSousCritere(critere.id, sousCritere.id, e.target.value)}
-                            className="flex-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-1.5 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            className="flex-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                             placeholder="Nom du sous-critère"
                           />
                           <button
@@ -1006,14 +1090,14 @@ const QuestionnaireTechnique: React.FC = () => {
                             className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded"
                             title="Supprimer le sous-critère"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
 
                         {/* Bouton ajouter question */}
                         <button
                           onClick={() => ajouterQuestion(critere.id, sousCritere.id)}
-                          className="flex items-center gap-2 text-sm text-teal-800 dark:text-teal-300 hover:bg-teal-200 dark:hover:bg-teal-800/40 px-2 py-1 rounded mb-2"
+                          className="flex items-center gap-1.5 text-xs text-teal-800 dark:text-teal-300 hover:bg-teal-200 dark:hover:bg-teal-800/40 px-2 py-1 rounded mb-2"
                         >
                           <Plus className="w-3 h-3" />
                           Ajouter une question
@@ -1024,11 +1108,11 @@ const QuestionnaireTechnique: React.FC = () => {
                           <p className="text-xs text-gray-400 dark:text-gray-500 italic ml-4">Aucune question définie</p>
                         )}
 
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           {sousCritere.questions.map((question, qIndex) => (
-                            <div key={question.id} className="ml-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
-                              <div className="flex items-start gap-3 mb-2">
-                                <span className="text-xs font-mono text-gray-500 dark:text-gray-400 mt-2">
+                            <div key={question.id} className="ml-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 border border-gray-200 dark:border-gray-600">
+                              <div className="flex items-start gap-2 mb-2">
+                                <span className="text-xs font-mono text-gray-500 dark:text-gray-400 mt-1.5">
                                   {critereIndex + 1}.{scIndex + 1}.{qIndex + 1}
                                 </span>
                                 <input
@@ -1037,7 +1121,7 @@ const QuestionnaireTechnique: React.FC = () => {
                                   onChange={(e) =>
                                     modifierQuestion(critere.id, sousCritere.id, question.id, 'intitule', e.target.value)
                                   }
-                                  className="flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                  className="flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                                   placeholder="Intitulé de la question"
                                 />
                                 <input
@@ -1046,7 +1130,7 @@ const QuestionnaireTechnique: React.FC = () => {
                                   onChange={(e) =>
                                     modifierQuestion(critere.id, sousCritere.id, question.id, 'pointsMax', parseInt(e.target.value) || 0)
                                   }
-                                  className="w-20 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white text-center focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                  className="w-16 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 text-sm font-semibold text-gray-900 dark:text-white text-center focus:outline-none focus:ring-2 focus:ring-teal-500"
                                   min="0"
                                   placeholder="Pts"
                                 />
@@ -1055,19 +1139,19 @@ const QuestionnaireTechnique: React.FC = () => {
                                   className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded"
                                   title="Supprimer la question"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
 
                               {/* Champs optionnels */}
-                              <div className="space-y-2 ml-8">
+                              <div className="space-y-1.5 ml-6">
                                 <div className="grid grid-cols-2 gap-2">
                                   <select
                                     value={question.type || 'Texte libre'}
                                     onChange={(e) =>
                                       modifierQuestion(critere.id, sousCritere.id, question.id, 'type', e.target.value)
                                     }
-                                    className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
                                   >
                                     <option value="Texte libre">Texte libre</option>
                                     <option value="Oui/Non">Oui/Non</option>
@@ -1075,14 +1159,14 @@ const QuestionnaireTechnique: React.FC = () => {
                                     <option value="Numérique">Numérique</option>
                                     <option value="Document">Document</option>
                                   </select>
-                                  <label className="flex items-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 cursor-pointer">
+                                  <label className="flex items-center gap-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 cursor-pointer">
                                     <input
                                       type="checkbox"
                                       checked={question.obligatoire || false}
                                       onChange={(e) =>
                                         modifierQuestion(critere.id, sousCritere.id, question.id, 'obligatoire', e.target.checked)
                                       }
-                                      className="w-4 h-4 text-teal-600 focus:ring-2 focus:ring-teal-500 rounded"
+                                      className="w-3.5 h-3.5 text-teal-600 focus:ring-2 focus:ring-teal-500 rounded"
                                     />
                                     <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">Obligatoire</span>
                                   </label>
@@ -1092,7 +1176,7 @@ const QuestionnaireTechnique: React.FC = () => {
                                   onChange={(e) =>
                                     modifierQuestion(critere.id, sousCritere.id, question.id, 'description', e.target.value)
                                   }
-                                  className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                  className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
                                   placeholder="Description / Extrait CCTP (optionnel)"
                                   rows={2}
                                 />
@@ -1102,7 +1186,7 @@ const QuestionnaireTechnique: React.FC = () => {
                                   onChange={(e) =>
                                     modifierQuestion(critere.id, sousCritere.id, question.id, 'evaluateurs', e.target.value)
                                   }
-                                  className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                  className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
                                   placeholder="Évaluateurs (ex: Expert Juridique, Chef de projet)"
                                 />
                               </div>

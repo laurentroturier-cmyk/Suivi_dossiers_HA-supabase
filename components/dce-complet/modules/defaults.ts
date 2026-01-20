@@ -11,6 +11,8 @@ import type {
   DPGFData,
   DQEData,
   DocumentsAnnexesData,
+  CRTData,
+  QTData,
 } from '../types';
 import type { RapportCommissionData } from '../../redaction/types/rapportCommission';
 
@@ -176,6 +178,16 @@ export const createDefaultDocumentsAnnexes = (): DocumentsAnnexesData => ({
   documents: [],
 });
 
+export const createDefaultCRT = (): CRTData => ({
+  contenu: '',
+  notes: '',
+});
+
+export const createDefaultQT = (): QTData => ({
+  questions: [],
+  notes: '',
+});
+
 // Utilitaires pour garantir des valeurs non nulles
 export const ensureReglementConsultation = (data: DCEState['reglementConsultation']) => data || createDefaultReglementConsultation();
 export const ensureActeEngagement = (data: DCEState['acteEngagement']) => data || createDefaultActeEngagement();
@@ -185,3 +197,5 @@ export const ensureBPU = (data: DCEState['bpu']) => data || createDefaultBPU();
 export const ensureDQE = (data: DCEState['dqe']) => data || createDefaultDQE();
 export const ensureDPGF = (data: DCEState['dpgf']) => data || createDefaultDPGF();
 export const ensureDocumentsAnnexes = (data: DCEState['documentsAnnexes']) => data || createDefaultDocumentsAnnexes();
+export const ensureCRT = (data: DCEState['crt']) => data || createDefaultCRT();
+export const ensureQT = (data: DCEState['qt']) => data || createDefaultQT();

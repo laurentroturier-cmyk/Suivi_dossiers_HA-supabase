@@ -56,6 +56,30 @@ export async function saveReglementConsultation(
       return { success: false, error: error.message };
     }
 
+    // Synchroniser la colonne reglement_consultation de la table DCE pour conserver l'historique
+    // ⚠️ Synchro NON-CRITIQUE : on log mais on continue si elle échoue
+    try {
+      const { error: dceError } = await supabase
+        .from('dce')
+        .upsert({
+          user_id: user.id,
+          numero_procedure: numeroProcedure,
+          titre_marche: record.titre_marche,
+          reglement_consultation: record.data,
+        }, {
+          onConflict: 'numero_procedure,user_id',
+          ignoreDuplicates: false,
+        });
+
+      if (dceError) {
+        console.warn('⚠️ Synchro RC → DCE non critique:', dceError);
+        // On continue quand même - la sauvegarde dans reglements_consultation a réussi
+      }
+    } catch (syncErr) {
+      console.warn('⚠️ Erreur synchro RC → DCE:', syncErr);
+      // On continue quand même
+    }
+
     return { success: true, id: result.id };
   } catch (error: any) {
     console.error('Erreur sauvegarde RC:', error);

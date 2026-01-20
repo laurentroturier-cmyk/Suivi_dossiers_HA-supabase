@@ -29,6 +29,10 @@ CREATE TABLE IF NOT EXISTS public.dce (
   dqe JSONB,
   dpgf JSONB,
   documents_annexes JSONB,
+  crt JSONB,
+  qt JSONB,
+  crt JSONB,
+  qt JSONB,
   
   -- Timestamps
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -47,6 +51,8 @@ COMMENT ON COLUMN public.dce.numero_procedure IS 'Numéro de procédure à 5 chi
 COMMENT ON COLUMN public.dce.statut IS 'Statut du DCE : brouillon, en-cours, finalisé, publié';
 COMMENT ON COLUMN public.dce.reglement_consultation IS 'Données du Règlement de Consultation';
 COMMENT ON COLUMN public.dce.acte_engagement IS 'Données de l''Acte d''Engagement';
+COMMENT ON COLUMN public.dce.crt IS 'Cadre de réponse technique';
+COMMENT ON COLUMN public.dce.qt IS 'Questionnaire technique';
 
 -- ============================================
 -- 2. TABLE DCE_VERSIONS (Historique optionnel)

@@ -13,6 +13,8 @@ import {
   createDefaultDPGF,
   createDefaultDQE,
   createDefaultDocumentsAnnexes,
+  createDefaultCRT,
+  createDefaultQT,
   createDefaultReglementConsultation,
 } from '../modules/defaults';
 
@@ -69,6 +71,8 @@ export function mapProcedureToDCE(procedure: ProjectData): Omit<DCEState, 'id' |
   const dqe = createDefaultDQE();
   const dpgf = createDefaultDPGF();
   const annexes = createDefaultDocumentsAnnexes();
+  const crt = createDefaultCRT();
+  const qt = createDefaultQT();
 
   return {
     numeroProcedure,
@@ -85,6 +89,8 @@ export function mapProcedureToDCE(procedure: ProjectData): Omit<DCEState, 'id' |
     dqe,
     dpgf,
     documentsAnnexes: annexes,
+    crt,
+    qt,
   };
 }
 

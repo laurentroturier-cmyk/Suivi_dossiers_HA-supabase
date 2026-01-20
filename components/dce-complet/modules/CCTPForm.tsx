@@ -74,26 +74,26 @@ export function CCTPForm({ data, onSave, isSaving = false }: Props) {
   };
 
   return (
-    <div className="space-y-10">
-      <section className="space-y-4">
+    <div className="space-y-6">
+      <section className="space-y-3">
         <div className="text-sm font-semibold text-gray-800">Contexte</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <textarea
             value={form.contexte.presentation}
             onChange={e => setForm(prev => ({ ...prev, contexte: { ...prev.contexte, presentation: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2 min-h-[80px] md:col-span-2"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[80px] md:col-span-2"
             placeholder="Presentation du projet"
           />
           <textarea
             value={form.contexte.objectifs}
             onChange={e => setForm(prev => ({ ...prev, contexte: { ...prev.contexte, objectifs: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2 min-h-[80px]"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[80px]"
             placeholder="Objectifs"
           />
           <textarea
             value={form.contexte.contraintes}
             onChange={e => setForm(prev => ({ ...prev, contexte: { ...prev.contexte, contraintes: e.target.value } }))}
-            className="w-full border rounded-lg px-3 py-2 min-h-[80px]"
+            className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[80px]"
             placeholder="Contraintes"
           />
         </div>
@@ -104,7 +104,7 @@ export function CCTPForm({ data, onSave, isSaving = false }: Props) {
         <textarea
           value={specsText}
           onChange={e => setSpecsText(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 min-h-[140px] font-mono text-sm"
+          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[140px] font-mono text-sm"
           placeholder="Infrastructure | Description | exigence1,exigence2 | ISO9001"
         />
       </section>
@@ -114,7 +114,7 @@ export function CCTPForm({ data, onSave, isSaving = false }: Props) {
         <textarea
           value={prestationsText}
           onChange={e => setPrestationsText(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 min-h-[140px] font-mono text-sm"
+          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[140px] font-mono text-sm"
           placeholder="Audit | Description | 10 | Jour"
         />
       </section>
@@ -124,7 +124,7 @@ export function CCTPForm({ data, onSave, isSaving = false }: Props) {
         <textarea
           value={livrablesText}
           onChange={e => setLivrablesText(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 min-h-[140px] font-mono text-sm"
+          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[140px] font-mono text-sm"
           placeholder="Rapport | Rapport final | PDF | J+30"
         />
       </section>

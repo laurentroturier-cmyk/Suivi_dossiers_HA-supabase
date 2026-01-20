@@ -21,10 +21,17 @@ create table if not exists public.dce (
   dqe jsonb,
   dpgf jsonb,
   documents_annexes jsonb,
+  crt jsonb,
+  qt jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, numero_procedure)
 );
+
+-- Ajout idempotent des colonnes CRT et QT si la table existait déjà
+alter table public.dce
+  add column if not exists crt jsonb,
+  add column if not exists qt jsonb;
 
 comment on table public.dce is 'DCE complet, par utilisateur et numéro de procédure';
 comment on column public.dce.numero_procedure is 'Numéro court de procédure (5 chiffres)';

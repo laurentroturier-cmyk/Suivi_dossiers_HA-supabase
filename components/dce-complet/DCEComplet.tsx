@@ -20,6 +20,8 @@ import { BPUForm } from './modules/BPUForm';
 import { DQEForm } from './modules/DQEForm';
 import { DPGFForm } from './modules/DPGFForm';
 import { DocumentsAnnexesForm } from './modules/DocumentsAnnexesForm';
+import { CRTForm } from './modules/CRTForm';
+import QuestionnaireTechnique from "../redaction/questionnaire/QuestionnaireTechnique";
 import {
   ensureActeEngagement,
   ensureBPU,
@@ -28,6 +30,7 @@ import {
   ensureDPGF,
   ensureDQE,
   ensureDocumentsAnnexes,
+  ensureCRT,
   ensureReglementConsultation,
 } from './modules/defaults';
 
@@ -88,6 +91,8 @@ export function DCEComplet({ onClose }: DCECompletProps) {
     { key: 'dqe', label: 'DQE', icon: <FileSpreadsheet className="w-5 h-5" /> },
     { key: 'dpgf', label: 'DPGF', icon: <FileSpreadsheet className="w-5 h-5" /> },
     { key: 'documentsAnnexes', label: 'Documents Annexes', icon: <FolderOpen className="w-5 h-5" /> },
+    { key: 'crt', label: 'CRT (Cadre de réponse technique)', icon: <FileText className="w-5 h-5" /> },
+    { key: 'qt', label: 'Questionnaire technique', icon: <FileText className="w-5 h-5" /> },
   ];
 
   /**
@@ -201,6 +206,21 @@ export function DCEComplet({ onClose }: DCECompletProps) {
             isSaving={savingSection === 'documentsAnnexes' || isLoadingDCE}
           />
         );
+      case 'crt':
+        return (
+          <CRTForm
+            data={ensureCRT(dceState.crt)}
+            onSave={data => handleSectionSave('crt', data)}
+            isSaving={savingSection === 'crt' || isLoadingDCE}
+          />
+        );
+      case 'qt':
+        return (
+          <QuestionnaireTechnique
+            initialNumeroProcedure={numeroProcedure}
+            onSave={data => handleSectionSave('qt', data)}
+          />
+        );
       default:
         return null;
     }
@@ -209,28 +229,25 @@ export function DCEComplet({ onClose }: DCECompletProps) {
   return (
     <div className="fixed inset-0 bg-white z-50 overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#004d3d] to-[#003329] text-white px-6 py-4 flex-shrink-0">
+      <div className="bg-gradient-to-r from-[#004d3d] to-[#003329] text-white px-4 py-2 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
               title="Retour"
             >
-              <ArrowLeft className="w-6 h-6" />
+              <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold">DCE Complet</h1>
-              <p className="text-emerald-100 text-sm mt-0.5">
-                Interface centralisée pour tous les documents du DCE
-              </p>
+              <h1 className="text-lg font-bold">DCE Complet</h1>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -292,8 +309,8 @@ export function DCEComplet({ onClose }: DCECompletProps) {
         ) : (
           <>
             {/* En-tête de procédure */}
-            <div className="p-6 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-              <ProcedureHeader procedure={selectedProcedure} className="mb-4" />
+            <div className="p-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
+              <ProcedureHeader procedure={selectedProcedure} className="mb-2" />
               
               {dceState && (
                 <DCEStatusBar
