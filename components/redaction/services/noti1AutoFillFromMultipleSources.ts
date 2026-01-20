@@ -65,8 +65,9 @@ async function fetchCoordonneesFromProceduresTable(
     console.log(`📊 [Source 1] Recherche dans table procédures...`);
 
     const { data: allProcedures, error } = await supabase
-      .from('procédures')
-      .select('depots, retraits, "numero court procédure afpa"');
+    .from('procédures')
+    .select('depots, retraits, "numero court procédure afpa"')
+    .eq('numero court procédure afpa', numeroCourt);
 
     if (error) {
       console.error('[Source 1] ❌ Erreur Supabase:', error);
@@ -80,15 +81,8 @@ async function fetchCoordonneesFromProceduresTable(
 
     console.log(`[Source 1] 📋 ${allProcedures.length} procédures trouvées dans la table`);
 
-    // Filtrer pour trouver la procédure avec le bon numéro
-    const procedure = allProcedures.find(p => {
-      const numProc = String(p['numero court procédure afpa'] || '');
-      const match = numProc === numeroCourt || numProc.includes(numeroCourt);
-      if (match) {
-        console.log(`[Source 1] ✓ Match trouvé: "${numProc}" correspond à "${numeroCourt}"`);
-      }
-      return match;
-    });
+    // La requête est déjà filtrée côté serveur, prendre la première
+    const procedure = allProcedures[0];
 
     if (!procedure) {
       console.log(`[Source 1] ⚠️ Procédure ${numeroCourt} non trouvée dans les ${allProcedures.length} résultats`);

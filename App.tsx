@@ -55,13 +55,14 @@ import RapportPresentation from './components/analyse/RapportPresentation';
 import { AppVersion } from './components/AppVersion';
 import AnalyseOverview from './components/an01/AnalyseOverview';
 import RedactionPlaceholder from './components/redaction/RedactionPlaceholder';
-import RedactionOverview from './components/redaction/RedactionOverview';
+
 import DCESection from './components/redaction/DCESection';
 import QuestionnaireTechnique from './components/redaction/questionnaire/QuestionnaireTechnique';
 import ReglementConsultation from './components/redaction/ReglementConsultation';
 import NOTI1Section from './components/redaction/NOTI1Section';
 import NotificationsQuickAccess from './components/redaction/NotificationsQuickAccess';
 import NotiMultiAttributaires from './components/redaction/NotiMultiAttributaires';
+import { DCEComplet } from './components/dce-complet/DCEComplet';
 
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
@@ -3084,6 +3085,14 @@ const App: React.FC = () => {
               }} />
             )}
 
+            {activeTab === 'dce-complet' && (
+              <DCEComplet
+                onClose={() => {
+                  handleGoBack();
+                }}
+              />
+            )}
+
             {activeTab === 'reglement-consultation' && (
               <ReglementConsultation />
             )}
@@ -3127,7 +3136,7 @@ const App: React.FC = () => {
             )}
 
             {activeTab === 'redaction' && redactionSection === null && (
-              <RedactionOverview onNavigate={(section) => setRedactionSection(section)} />
+              <RedactionPlaceholder selectedSection={'redaction'} />
             )}
 
             {activeTab === 'redaction' && redactionSection === 'DCE' && dceSubsection === null && (
@@ -3146,6 +3155,14 @@ const App: React.FC = () => {
               <ReglementConsultation />
             )}
 
+            {activeTab === 'redaction' && redactionSection === 'DCEComplet' && (
+              <DCEComplet onClose={() => setRedactionSection(null)} />
+            )}
+
+            {activeTab === 'redaction' && redactionSection === 'NOTI' && (
+              <RedactionPlaceholder selectedSection={'NOTI'} />
+            )}
+
             {activeTab === 'redaction' && redactionSection === 'NOTIMulti' && (
               <NotiMultiAttributaires
                 isOpen={true}
@@ -3153,7 +3170,7 @@ const App: React.FC = () => {
               />
             )}
 
-            {activeTab === 'redaction' && redactionSection !== null && redactionSection !== 'DCE' && redactionSection !== 'RapportCommission' && redactionSection !== 'NOTIMulti' && (
+            {activeTab === 'redaction' && redactionSection !== null && redactionSection !== 'DCE' && redactionSection !== 'RapportCommission' && redactionSection !== 'NOTIMulti' && redactionSection !== 'DCEComplet' && redactionSection !== 'NOTI' && (
               <RedactionPlaceholder selectedSection={redactionSection} />
             )}
             {activeTab === 'export' && (

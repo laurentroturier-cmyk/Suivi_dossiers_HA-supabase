@@ -66,7 +66,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
     {
       id: 'redaction',
       titre: 'Rédaction',
-      description: 'Rédaction des documents et DCE (en construction)',
+      description: 'Rédaction des documents et DCE',
       icon: Edit3,
       iconColor: 'text-amber-600 dark:text-amber-400',
       iconBg: 'bg-amber-100 dark:bg-amber-500/20',
@@ -75,7 +75,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
       btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
-        { label: 'Règlement de consultation', tab: 'reglement-consultation', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
+        { label: 'DCE Complet ✨', tab: 'dce-complet', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400', badge: 'NOUVEAU' },
         { label: 'Questionnaire technique', tab: 'questionnaire-technique', isAdmin: false, icon: ClipboardList, color: 'text-teal-600 dark:text-teal-400' },
         { label: 'Accès rapide NOTI', tab: 'notifications-quick', isAdmin: false, icon: Bell, color: 'text-indigo-600 dark:text-indigo-400' },
         { label: 'NOTI Multi 🚧', tab: 'noti-multi', isAdmin: false, icon: Construction, color: 'text-gray-500 dark:text-gray-400' },

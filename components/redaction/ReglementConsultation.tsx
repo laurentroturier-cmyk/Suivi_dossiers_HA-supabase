@@ -22,7 +22,11 @@ import { autoFillRCFromProcedure } from './services/procedureAutoFill';
 import { saveReglementConsultation, loadReglementConsultation } from './services/reglementConsultationStorage';
 import type { RapportCommissionData } from './types/rapportCommission';
 
-export default function ReglementConsultation() {
+interface ReglementConsultationProps {
+  initialNumeroProcedure?: string;
+}
+
+export default function ReglementConsultation({ initialNumeroProcedure }: ReglementConsultationProps) {
   const [showFullEdit, setShowFullEdit] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeSection, setActiveSection] = useState(0);
@@ -33,7 +37,7 @@ export default function ReglementConsultation() {
   
   const [formData, setFormData] = useState<RapportCommissionData>({
     enTete: {
-      numeroProcedure: '',
+      numeroProcedure: initialNumeroProcedure || '',
       titreMarche: '',
       numeroMarche: '',
       typeMarcheTitle: 'MARCHE PUBLIC DE FOURNITURES ET SERVICES',
@@ -152,6 +156,14 @@ export default function ReglementConsultation() {
         [field]: ((prev[section as keyof RapportCommissionData] as any)[field] || []).filter((_: any, i: number) => i !== index),
       },
     }));
+  };
+
+  const handleNumeroProcedureInput = (rawValue: string) => {
+    const value = rawValue.replace(/\D/g, '').slice(0, 5);
+    updateField('enTete', 'numeroProcedure', value);
+    if (value.length === 5) {
+      handleAutoFillFromProcedure(value);
+    }
   };
 
   const handleSave = () => {
@@ -320,25 +332,43 @@ export default function ReglementConsultation() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              <FileText className="w-6 h-6 text-[#006d57] dark:text-[#006d57]" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white">
                   Règlement de consultation
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Génération de règlement de consultation (marchés publics)
                 </p>
               </div>
             </div>
             
             <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Procédure</label>
+                <input
+                  type="text"
+                  value={formData.enTete.numeroProcedure}
+                  onChange={(e) => handleNumeroProcedureInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && formData.enTete.numeroProcedure.length === 5) {
+                      e.preventDefault();
+                      handleLoadSupabase();
+                    }
+                  }}
+                  maxLength={5}
+                  className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-sm"
+                  placeholder="12345"
+                />
+              </div>
+              
               <button
                 onClick={handleLoadSupabase}
                 disabled={isLoadingSupabase}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50 flex items-center gap-2"
               >
                 {isLoadingSupabase ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                 Charger (DB)
@@ -347,7 +377,7 @@ export default function ReglementConsultation() {
               <button
                 onClick={handleSaveSupabase}
                 disabled={isSavingSupabase}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50 flex items-center gap-2"
               >
                 {isSavingSupabase ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Sauvegarder (DB)
@@ -355,18 +385,18 @@ export default function ReglementConsultation() {
               
               <button
                 onClick={() => setShowFullEdit(!showFullEdit)}
-                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700"
               >
-                <FileCheck className="w-4 h-4 inline mr-2" />
-                {showFullEdit ? 'Mode navigation' : 'Édition complète'}
+                <FileCheck className="w-4 h-4 inline mr-1" />
+                {showFullEdit ? 'Navigation' : 'Édition'}
               </button>
               
               <button
                 onClick={handleGenerateWord}
                 disabled={isSaving}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50"
               >
-                <Download className="w-4 h-4 inline mr-2" />
+                <Download className="w-4 h-4 inline mr-1" />
                 {isSaving ? 'Génération...' : 'Télécharger Word'}
               </button>
             </div>
@@ -374,7 +404,7 @@ export default function ReglementConsultation() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-12 gap-6">
           {/* Navigation sections - masquée en mode édition complète */}
           {!showFullEdit && (

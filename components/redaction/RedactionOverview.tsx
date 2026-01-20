@@ -1,125 +1,60 @@
 import React from 'react';
-import { FileText, CheckCircle, Zap, AlertCircle, Mail, Info, Users, Construction } from 'lucide-react';
+import { FileText, ClipboardList, Bell, Construction, ChevronRight, Edit2 } from 'lucide-react';
 
 interface RedactionOverviewProps {
-  onNavigate: (section: 'DCE' | 'NOTI' | 'NOTIMulti' | 'EXE' | 'Avenants' | 'Courriers' | 'RapportCommission') => void;
+  onNavigate: (section: 'DCEComplet' | 'NOTI' | 'NOTIMulti' | 'EXE' | 'Avenants' | 'Courriers' | 'RapportCommission') => void;
 }
 
 const RedactionOverview: React.FC<RedactionOverviewProps> = ({ onNavigate }) => {
-  const cards = [
-    {
-      id: 'DCE',
-      title: 'DCE',
-      description: "Cahier des charges et spécifications techniques",
-      icon: FileText,
-      iconColor: 'text-blue-600 dark:text-blue-400',
-      iconBg: 'bg-blue-100 dark:bg-blue-500/20',
-      borderColor: 'border-blue-200 dark:border-blue-500/40',
-      action: () => onNavigate('DCE'),
-    },
-    {
-      id: 'RapportCommission',
-      title: 'Règlement de consultation',
-      description: "Génération de règlement de consultation",
-      icon: Users,
-      iconColor: 'text-indigo-600 dark:text-indigo-400',
-      iconBg: 'bg-indigo-100 dark:bg-indigo-500/20',
-      borderColor: 'border-indigo-200 dark:border-indigo-500/40',
-      action: () => onNavigate('RapportCommission'),
-    },
-    {
-      id: 'NOTI',
-      title: 'NOTI',
-      description: "Notifications et avis officiels",
-      icon: AlertCircle,
-      iconColor: 'text-purple-600 dark:text-purple-400',
-      iconBg: 'bg-purple-100 dark:bg-purple-500/20',
-      borderColor: 'border-purple-200 dark:border-purple-500/40',
-      action: () => onNavigate('NOTI'),
-    },
-    {
-      id: 'NOTIMulti',
-      title: 'NOTI Multi 🚧',
-      description: "Multi-attributaires (en construction)",
-      icon: Construction,
-      iconColor: 'text-gray-500 dark:text-gray-400',
-      iconBg: 'bg-gray-100 dark:bg-gray-500/20',
-      borderColor: 'border-gray-300 dark:border-gray-500/40',
-      action: () => onNavigate('NOTIMulti'),
-      isUnderConstruction: true,
-    },
-    {
-      id: 'EXE',
-      title: 'EXE',
-      description: "Exécution et suivi des contrats",
-      icon: CheckCircle,
-      iconColor: 'text-emerald-600 dark:text-emerald-400',
-      iconBg: 'bg-emerald-100 dark:bg-emerald-500/20',
-      borderColor: 'border-emerald-200 dark:border-emerald-500/40',
-      action: () => onNavigate('EXE'),
-    },
-    {
-      id: 'Avenants',
-      title: 'Avenants',
-      description: "Modifications et amendements de contrats",
-      icon: Zap,
-      iconColor: 'text-amber-600 dark:text-amber-400',
-      iconBg: 'bg-amber-100 dark:bg-amber-500/20',
-      borderColor: 'border-amber-200 dark:border-amber-500/40',
-      action: () => onNavigate('Avenants'),
-    },
-    {
-      id: 'Courriers',
-      title: 'Courriers',
-      description: "Correspondances et documents administratifs",
-      icon: Mail,
-      iconColor: 'text-red-600 dark:text-red-400',
-      iconBg: 'bg-red-100 dark:bg-red-500/20',
-      borderColor: 'border-red-200 dark:border-red-500/40',
-      action: () => onNavigate('Courriers'),
-    },
+  const modules = [
+    { label: 'DCE Complet ✨', tab: 'DCEComplet', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400', badge: 'NOUVEAU' },
+    { label: 'Questionnaire technique', tab: 'questionnaire-technique', isAdmin: false, icon: ClipboardList, color: 'text-teal-600 dark:text-teal-400' },
+    { label: 'Accès rapide NOTI', tab: 'NOTI', isAdmin: false, icon: Bell, color: 'text-indigo-600 dark:text-indigo-400' },
+    { label: 'NOTI Multi 🚧', tab: 'NOTIMulti', isAdmin: false, icon: Construction, color: 'text-gray-500 dark:text-gray-400' },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white">Rédaction</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Vue d'ensemble des modules de rédaction et documents</p>
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl border-2 border-amber-200 dark:border-amber-500/40 p-6 md:p-8">
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-14 h-14 bg-amber-100 dark:bg-amber-500/20 rounded-2xl flex items-center justify-center">
+              <Edit2 className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Rédaction</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Rédaction des documents de DCE</p>
+            </div>
           </div>
-          <div className="inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <Info className="w-4 h-4 text-gray-500" />
-            <span className="text-xs text-gray-600 dark:text-gray-300">
-              Modules en construction
-            </span>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cards.map((c) => {
-            const Icon = c.icon;
-            return (
-              <div
-                key={c.id}
-                onClick={c.action}
-                className={`bg-white dark:bg-gray-800 rounded-2xl border-2 ${c.borderColor} p-6 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 ${c.isUnderConstruction ? 'opacity-70' : ''}`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 ${c.iconBg} rounded-xl flex items-center justify-center`}>
-                    <Icon className={`w-6 h-6 ${c.iconColor}`} />
+          {/* Divider */}
+          <div className="border-t border-gray-200 dark:border-gray-700 my-6"></div>
+
+          {/* Modules List */}
+          <div className="space-y-2">
+            {modules.map((module) => {
+              const Icon = module.icon;
+              return (
+                <button
+                  key={module.tab}
+                  onClick={() => onNavigate(module.tab as any)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-5 h-5 ${module.color}`} />
+                    <span className="font-medium text-gray-900 dark:text-white">{module.label}</span>
+                    {module.badge && (
+                      <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full font-semibold ml-1">
+                        {module.badge}
+                      </span>
+                    )}
                   </div>
-                  {c.isUnderConstruction && (
-                    <span className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full font-semibold">
-                      En construction
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{c.title}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{c.description}</p>
-              </div>
-            );
-          })}
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

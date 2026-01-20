@@ -49,7 +49,22 @@ export async function fetchProcedureByNumeroCourt(numeroCourt: string): Promise<
   }
 
   try {
-    // Récupérer toutes les procédures et filtrer côté client (workaround pour les noms de colonnes avec caractères spéciaux)
+    // 1) Requête ciblée sur la colonne "numero court procédure afpa"
+    const { data: directProcedure, error: directError } = await supabase
+      .from('procédures')
+      .select('*')
+      .eq('numero court procédure afpa', numeroCourt)
+      .maybeSingle();
+
+    if (directError && directError.code !== 'PGRST116') {
+      console.error('Erreur récupération procédure (requête directe):', directError);
+    }
+
+    if (directProcedure) {
+      return directProcedure as ProjectData;
+    }
+
+    // 2) Fallback : récupérer toutes les procédures et filtrer côté client (compat rétro)
     const { data: allProcedures, error } = await supabase
       .from('procédures')
       .select('*');
@@ -64,10 +79,10 @@ export async function fetchProcedureByNumeroCourt(numeroCourt: string): Promise<
       return null;
     }
 
-    // Filtrer côté client pour trouver une procédure dont le numéro Afpa commence par le numéro court
     const procedures = allProcedures.filter(p => {
+      const numCourt = String(p['numero court procédure afpa'] || '');
       const numAfpa = String(p['Numéro de procédure (Afpa)'] || '');
-      return numAfpa.startsWith(numeroCourt);
+      return numCourt === numeroCourt || numAfpa.startsWith(numeroCourt);
     });
 
     if (!procedures || procedures.length === 0) {
