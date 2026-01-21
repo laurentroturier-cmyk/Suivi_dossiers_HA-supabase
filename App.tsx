@@ -1795,7 +1795,7 @@ const App: React.FC = () => {
                     <option key={opt} value={opt}>{opt}</option>
                   ))}
                 </select>
-                {isRequired && <p className="text-[10px] font-black text-red-500 uppercase tracking-widest px-1">Obligatoire si Nombre de lots = 1</p>}
+                {isRequired && <p className={`text-[10px] font-black uppercase tracking-widest px-1 ${val ? 'text-green-600' : 'text-red-500'}`}>Obligatoire si Nombre de lots = 1</p>}
               </div>
             );
           }
