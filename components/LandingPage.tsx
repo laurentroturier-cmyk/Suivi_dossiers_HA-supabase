@@ -172,7 +172,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
           </div>
 
           {/* Stats rapides */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 dark:bg-[#252525] dark:border-[#333333]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center">
@@ -192,17 +192,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Procédures</p>
                   <p className="text-2xl font-black text-gray-900 dark:text-white">{proceduresCount}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 dark:bg-[#252525] dark:border-[#333333]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-950/30 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">En cours</p>
-                  <p className="text-2xl font-black text-gray-900 dark:text-white">{Math.floor(projectsCount * 0.65)}</p>
                 </div>
               </div>
             </div>

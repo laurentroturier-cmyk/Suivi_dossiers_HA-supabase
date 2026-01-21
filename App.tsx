@@ -403,6 +403,8 @@ const App: React.FC = () => {
     return DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5'));
   });
   const [selectedProcedureStatuses, setSelectedProcedureStatuses] = useState<string[]>([]);
+  const [selectedLaunchYears, setSelectedLaunchYears] = useState<string[]>([]);
+  const [selectedOfferYears, setSelectedOfferYears] = useState<string[]>([]);
   const [selectedClientsInternes, setSelectedClientsInternes] = useState<string[]>([]);
   const [selectedCcags, setSelectedCcags] = useState<string[]>([]);
   const [launchFrom, setLaunchFrom] = useState<string>('');
@@ -1147,10 +1149,27 @@ const App: React.FC = () => {
         const matchesAcheteur = selectedAcheteurs.length === 0 || selectedAcheteurs.includes(getProp(p, 'Acheteur'));
         const matchesSearch = matchesProcedureSearch(p);
         const matchesStatus = selectedProcedureStatuses.length === 0 || selectedProcedureStatuses.includes(getProp(p, 'Statut de la consultation'));
-        return matchesAcheteur && matchesSearch && matchesStatus;
+        
+        // Filtre par année de lancement
+        const matchesLaunchYear = selectedLaunchYears.length === 0 || (() => {
+          const launchDate = getProp(p, 'Date de lancement de la consultation');
+          if (!launchDate) return false;
+          const year = new Date(launchDate).getFullYear().toString();
+          return selectedLaunchYears.includes(year);
+        })();
+        
+        // Filtre par année de remise des offres finales
+        const matchesOfferYear = selectedOfferYears.length === 0 || (() => {
+          const offerDate = getProp(p, 'Date de remise des offres finales');
+          if (!offerDate) return false;
+          const year = new Date(offerDate).getFullYear().toString();
+          return selectedOfferYears.includes(year);
+        })();
+        
+        return matchesAcheteur && matchesSearch && matchesStatus && matchesLaunchYear && matchesOfferYear;
       })
       .sort((a, b) => (parseFloat(String(getProp(b, 'NumProc'))) || 0) - (parseFloat(String(getProp(a, 'NumProc'))) || 0));
-  }, [procedures, selectedAcheteurs, procedureSearch, selectedProcedureStatuses]);
+  }, [procedures, selectedAcheteurs, procedureSearch, selectedProcedureStatuses, selectedLaunchYears, selectedOfferYears]);
 
   // ============================================
   // AUTH HANDLERS & RENDERING
@@ -1422,6 +1441,8 @@ const App: React.FC = () => {
     // Réinitialiser avec les 6 statuts par défaut (exclure "4 - Terminé" et "5 - Abandonné")
     setSelectedStatuses(DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5')));
     setSelectedProcedureStatuses([]);
+    setSelectedLaunchYears([]);
+    setSelectedOfferYears([]);
     setSelectedClientsInternes([]);
     setSelectedCcags([]);
     setLaunchFrom('');
@@ -3505,15 +3526,51 @@ const App: React.FC = () => {
                     />
                   )}
                   {activeTab === 'procedures' && (
-                    <FilterDropdown 
-                      id="list-procedure-status"
-                      label="Statut"
-                      options={PROCEDURE_STATUS_OPTIONS}
-                      selected={selectedProcedureStatuses}
-                      onToggle={(status) => setSelectedProcedureStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status])}
-                    />
+                    <>
+                      <FilterDropdown 
+                        id="list-procedure-status"
+                        label="Statut"
+                        options={PROCEDURE_STATUS_OPTIONS}
+                        selected={selectedProcedureStatuses}
+                        onToggle={(status) => setSelectedProcedureStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status])}
+                      />
+                      <FilterDropdown 
+                        id="list-launch-year"
+                        label="Année lancement"
+                        options={(() => {
+                          const years = new Set<string>();
+                          procedures.forEach(p => {
+                            const date = getProp(p, 'Date de lancement de la consultation');
+                            if (date) {
+                              const year = new Date(date).getFullYear().toString();
+                              if (year !== 'NaN') years.add(year);
+                            }
+                          });
+                          return Array.from(years).sort((a, b) => b.localeCompare(a));
+                        })()}
+                        selected={selectedLaunchYears}
+                        onToggle={(year) => setSelectedLaunchYears(prev => prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year])}
+                      />
+                      <FilterDropdown 
+                        id="list-offer-year"
+                        label="Année remise offres"
+                        options={(() => {
+                          const years = new Set<string>();
+                          procedures.forEach(p => {
+                            const date = getProp(p, 'Date de remise des offres finales');
+                            if (date) {
+                              const year = new Date(date).getFullYear().toString();
+                              if (year !== 'NaN') years.add(year);
+                            }
+                          });
+                          return Array.from(years).sort((a, b) => b.localeCompare(a));
+                        })()}
+                        selected={selectedOfferYears}
+                        onToggle={(year) => setSelectedOfferYears(prev => prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year])}
+                      />
+                    </>
                   )}
-                  {(selectedAcheteurs.length > 0 || selectedPriorities.length > 0 || selectedProcedureStatuses.length > 0 || projectSearch || procedureSearch) && (
+                  {(selectedAcheteurs.length > 0 || selectedPriorities.length > 0 || selectedProcedureStatuses.length > 0 || selectedLaunchYears.length > 0 || selectedOfferYears.length > 0 || projectSearch || procedureSearch) && (
                     <button onClick={resetFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-xl transition-all flex items-center gap-2 h-[54px]">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>Reset
                     </button>
