@@ -1,15 +1,32 @@
 {
-  "version": "1.0.14",
+  "version": "1.0.16",
   "name": "GestProjet",
   "lastUpdate": "2026-01-21",
-  "build": "14",
+  "build": "16",
   "changelog": {
-    "1.0.3": {
-      "date": "2026-01-10",
+    "1.0.15": {
+      "date": "2026-01-21",
+      "type": "feature",
+      "changes": [
+        "🔗 Connexion automatique Rapport Présentation ↔ DCE Complet",
+        "📋 Auto-remplissage paragraphe 3 'DOSSIER DE CONSULTATION' depuis table dce",
+        "✨ Bouton 'Charger depuis DCE' avec indicateur de chargement",
+        "✅ Gestion complète des erreurs (DCE inexistant, RC vide, etc.)",
+        "🎨 Badge de confirmation visuel après chargement",
+        "📚 Documentation complète (RAPPORT_DCE_CONNEXION.md, QUICKSTART)"
+      ],
+      "files": [
+        "components/analyse/RapportPresentation.tsx",
+        "docs/RAPPORT_DCE_CONNEXION.md",
+        "docs/RAPPORT_DCE_QUICKSTART.md"
+      ],
+      "technical": "Récupération depuis dce.reglement_consultation via Supabase, clé: numero_procedure"
+    },
+    "1.0.14": {
+      "date": "2026-01-21",
       "type": "patch",
       "changes": [
-        "Affichage du numéro de version en entête principal",
-        "Alignement des métadonnées avec la version 1.0.3"
+        "Build automatique"
       ]
     },
     "1.0.1": {
@@ -111,7 +128,7 @@
         "Build automatique"
       ]
     },
-    "1.0.14": {
+    "1.0.16": {
       "date": "2026-01-21",
       "type": "patch",
       "changes": [

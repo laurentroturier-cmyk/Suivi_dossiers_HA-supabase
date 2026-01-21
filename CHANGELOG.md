@@ -7,6 +7,27 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
+## [1.0.16] - 2026-01-21
+
+🐛 **PATCH**
+
+- Build automatique
+
+---
+
+## [1.0.15] - 2026-01-21
+
+✨ **FEATURE**
+
+- 🔗 Connexion automatique Rapport Présentation ↔ DCE Complet
+- 📋 Auto-remplissage paragraphe 3 'DOSSIER DE CONSULTATION' depuis table dce
+- ✨ Bouton 'Charger depuis DCE' avec indicateur de chargement
+- ✅ Gestion complète des erreurs (DCE inexistant, RC vide, etc.)
+- 🎨 Badge de confirmation visuel après chargement
+- 📚 Documentation complète (RAPPORT_DCE_CONNEXION.md, QUICKSTART)
+
+---
+
 ## [1.0.14] - 2026-01-21
 
 🐛 **PATCH**
@@ -92,15 +113,6 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 🐛 **PATCH**
 
 - Build automatique
-
----
-
-## [1.0.3] - 2026-01-10
-
-🐛 **PATCH**
-
-- Affichage du numéro de version en entête principal
-- Alignement des métadonnées avec la version 1.0.3
 
 ---
 
