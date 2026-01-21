@@ -55,6 +55,7 @@ import RapportPresentation from './components/analyse/RapportPresentation';
 import { AppVersion } from './components/AppVersion';
 import AnalyseOverview from './components/an01/AnalyseOverview';
 import RedactionPlaceholder from './components/redaction/RedactionPlaceholder';
+import DashboardPage from './pages/DashboardPage';
 
 import DCESection from './components/redaction/DCESection';
 import QuestionnaireTechnique from './components/redaction/questionnaire/QuestionnaireTechnique';
@@ -1458,9 +1459,28 @@ const App: React.FC = () => {
     setLaunchFrom('');
     setLaunchTo('');
     setDeployFrom('');
+  };
+
+  // Fonction de reset spécifique aux filtres PROJETS
+  const resetProjectFilters = () => {
+    setSelectedAcheteurs([]);
+    setSelectedFamilies([]);
+    setSelectedPriorities([]);
+    setSelectedDeployYears([]);
+    // Réinitialiser avec les 6 statuts par défaut (exclure "4 - Terminé" et "5 - Abandonné")
+    setSelectedStatuses(DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5')));
+  };
+
+  // Fonction de reset spécifique aux filtres PROCÉDURES
+  const resetProcedureFilters = () => {
+    setSelectedAcheteurs([]); // Reset acheteur car maintenant partagé avec procédures
+    setSelectedProcTypes([]);
+    setSelectedYears([]);
+    setSelectedProcedureStatuses([]);
+    setLaunchFrom('');
+    setLaunchTo('');
+    setDeployFrom('');
     setDeployTo('');
-    setProjectSearch('');
-    setProcedureSearch('');
   };
 
   // AN01 Handlers
@@ -2773,233 +2793,43 @@ const App: React.FC = () => {
             )}
 
             {activeTab === 'dashboard' && (
-              <div className="space-y-8 animate-in fade-in duration-700">
-                <div className="flex flex-col md:flex-row flex-wrap items-end gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100" ref={dropdownRef}>
-                  <FilterDropdown 
-                    id="dash-acheteur"
-                    label="Acheteur"
-                    options={[...refAcheteurs].sort((a, b) => {
-                      const nameA = getProp(a, 'Personne') || getProp(a, 'Nom') || '';
-                      const nameB = getProp(b, 'Personne') || getProp(b, 'Nom') || '';
-                      return String(nameA).localeCompare(String(nameB));
-                    }).map(a => getProp(a, 'Personne') || getProp(a, 'Nom'))}
-                    selected={selectedAcheteurs}
-                    onToggle={toggleAcheteur}
-                  />
-                  <FilterDropdown 
-                    id="dash-priority"
-                    label="Priorité"
-                    options={priorityOptions}
-                    selected={selectedPriorities}
-                    onToggle={togglePriority}
-                  />
-                  <FilterDropdown 
-                    id="dash-family"
-                    label="Famille d'achat"
-                    options={uniqueFamilies}
-                    selected={selectedFamilies}
-                    onToggle={toggleFamily}
-                  />
-                  <FilterDropdown 
-                    id="dash-proctype"
-                    label="Type de procédure"
-                    options={uniqueTypesForFilter}
-                    selected={selectedProcTypes}
-                    onToggle={toggleProcType}
-                  />
-                  <FilterDropdown 
-                    id="dash-year"
-                    label="Année de Lancement"
-                    options={uniqueYears}
-                    selected={selectedYears}
-                    onToggle={toggleYear}
-                  />
-                  <FilterDropdown 
-                    id="dash-deploy-year"
-                    label="Année de Déploiement"
-                    options={uniqueDeployYears}
-                    selected={selectedDeployYears}
-                    onToggle={toggleDeployYear}
-                  />
-                  <FilterDropdown 
-                    id="dash-status"
-                    label="Statut projet"
-                    options={DOSSIER_STATUS_OPTIONS}
-                    selected={selectedStatuses}
-                    onToggle={toggleDossierStatus}
-                  />
-                  {(selectedAcheteurs.length > 0 || selectedFamilies.length > 0 || selectedProcTypes.length > 0 || selectedPriorities.length > 0 || selectedYears.length > 0 || selectedDeployYears.length > 0 || selectedStatuses.length !== DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5')).length) && (
-                    <button onClick={resetFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-2xl transition-all flex items-center gap-2 h-[54px]">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>Reset
-                    </button>
-                  )}
-                </div>
-                
-                {/* Titre avec années filtrées */}
-                {/* Affichage des filtres appliqués */}
-                {(selectedAcheteurs.length > 0 || selectedPriorities.length > 0 || selectedFamilies.length > 0 || 
-                  selectedProcTypes.length > 0 || selectedYears.length > 0 || selectedDeployYears.length > 0 || 
-                  selectedStatuses.length > 0) && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-3xl p-4 dark:bg-blue-900/20 dark:border-blue-800/40">
-                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">Filtres appliqués :</p>
-                    <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                      {selectedAcheteurs.length > 0 && (
-                        <li>• Acheteur : {selectedAcheteurs.join(', ')}</li>
-                      )}
-                      {selectedPriorities.length > 0 && (
-                        <li>• Priorité : {selectedPriorities.join(', ')}</li>
-                      )}
-                      {selectedFamilies.length > 0 && (
-                        <li>• Famille d'achat : {selectedFamilies.join(', ')}</li>
-                      )}
-                      {selectedProcTypes.length > 0 && (
-                        <li>• Type de procédure : {selectedProcTypes.join(', ')}</li>
-                      )}
-                      {selectedYears.length > 0 && (
-                        <li>• Année de lancement : {selectedYears.join(', ')}</li>
-                      )}
-                      {selectedDeployYears.length > 0 && (
-                        <li>• Année de déploiement : {selectedDeployYears.join(', ')}</li>
-                      )}
-                      {selectedStatuses.length > 0 && (
-                        <li>• Statut projet : {selectedStatuses.join(', ')}</li>
-                      )}
-                    </ul>
-                  </div>
-                )}
-                
-                {/* Executive KPI Dashboard */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  <KPITile label="NB PROJETS" value={kpis.nbP} />
-                  <KPITile label="NB PROCÉDURES" value={kpis.nbProc} />
-                  <KPITile label="TOTAL PROJET" value={Math.round(kpis.amtP)} unit="€" />
-                  <KPITile label="TOTAL PROCÉDURES" value={Math.round(kpis.amtProc)} unit="€" />
-                  <KPITile label="MOYENNE PROJET" value={Math.round(kpis.avgP)} unit="€" />
-                  <KPITile label="MOYENNE PROCÉDURE" value={Math.round(kpis.avgProc)} unit="€" />
-                  <KPITile label="TAUX DISPO. ENVIRONNEMENTALES" value={Math.round(kpis.tauxDispoEnv * 10) / 10} unit="%" />
-                  <KPITile label="TAUX DISPO. SOCIALES" value={Math.round(kpis.tauxDispoSoc * 10) / 10} unit="%" />
-                  <KPITile label="TAUX PROJETS INNOVANTS" value={Math.round(kpis.tauxProjetsInnovants * 10) / 10} unit="%" />
-                  <KPITile label="TAUX PROJETS TPE/PME" value={Math.round(kpis.tauxProjetsTPEPME * 10) / 10} unit="%" />
-                </div>
-                
-                {/* Section PROJETS */}
-                <div className="mt-12">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="h-1 w-12 bg-[#004d3d] rounded"></div>
-                    <h2 className="text-2xl font-black text-gray-900 uppercase tracking-wide">Projets</h2>
-                    <div className="flex-1 h-1 bg-gray-200 rounded"></div>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-                    <SimpleBarChart 
-                      data={kpis.charts.projetsAcheteur} 
-                      title={selectedAcheteurs.length > 0 ? "Répartition Projets Filtrés" : "Top Acheteurs (Projets)"} 
-                      color="bg-[#004d3d]" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Acheteur', filterField: 'Acheteur', filterValue: label });
-                      }}
-                    />
-                    <SimpleBarChart 
-                      data={kpis.charts.projetsPriorite} 
-                      title="Projets par Priorité" 
-                      color="bg-teal-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Priorité', filterField: 'Priorite', filterValue: label });
-                      }}
-                    />
-                    <SimpleBarChart 
-                      data={kpis.charts.projetsStatut} 
-                      title="Projets par Statut" 
-                      color="bg-emerald-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Statut', filterField: 'StatutDossier', filterValue: label });
-                      }}
-                    />
-                    <SimpleBarChart 
-                      data={kpis.charts.projetsClientInterne} 
-                      title="Projets par Client Interne" 
-                      color="bg-violet-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'procedure', data: kpis.filteredDossiers, title: 'Projets par Client Interne', filterField: 'ClientInterne', filterValue: label });
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Section PROCÉDURES */}
-                <div className="mt-12">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="h-1 w-12 bg-indigo-600 rounded"></div>
-                    <h2 className="text-2xl font-black text-gray-900 uppercase tracking-wide">Procédures</h2>
-                    <div className="flex-1 h-1 bg-gray-200 rounded"></div>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-                    <SimpleBarChart 
-                      data={kpis.charts.proceduresAcheteur} 
-                      title={selectedAcheteurs.length > 0 ? "Répartition Procédures Filtrées" : "Top Acheteurs (Procédures)"} 
-                      color="bg-indigo-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Acheteur', filterField: 'Acheteur', filterValue: label });
-                      }}
-                    />
-                    <SimpleBarChart 
-                      data={kpis.charts.proceduresType} 
-                      title="Procédures par Type" 
-                      color="bg-orange-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Type', filterField: 'Type de procédure', filterValue: label });
-                      }}
-                    />
-                    <SimpleBarChart 
-                      data={kpis.charts.proceduresStatut} 
-                      title="Procédures par Statut" 
-                      color="bg-blue-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Procédures par Statut', filterField: 'Statut de la consultation', filterValue: label });
-                      }}
-                    />
-                    <SimpleBarChart 
-                      data={kpis.charts.proceduresTypeMoyenne} 
-                      title="Montant Moyen par Type (€)" 
-                      color="bg-rose-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Montant Moyen par Type', filterField: 'Type de procédure', filterValue: label });
-                      }}
-                    />
-                    <SimpleBarChart 
-                      data={kpis.charts.proceduresDispoEnv} 
-                      title="Dispositions Environnementales" 
-                      color="bg-green-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Environnementales', filterField: 'Dispo environnementales', filterValue: label });
-                      }}
-                    />
-                    <SimpleBarChart 
-                      data={kpis.charts.proceduresDispoSoc} 
-                      title="Dispositions Sociales" 
-                      color="bg-purple-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Dispositions Sociales', filterField: 'Dispo sociales', filterValue: label });
-                      }}
-                    />
-                    <SimpleBarChart 
-                      data={kpis.charts.proceduresProjetsInnovants} 
-                      title="Projets Innovants" 
-                      color="bg-cyan-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Projets Innovants', filterField: 'Projet ouvert à l\'acquisition de solutions innovantes', filterValue: label });
-                      }}
-                    />
-                    <SimpleBarChart 
-                      data={kpis.charts.proceduresProjetsTPEPME} 
-                      title="Projets TPE/PME" 
-                      color="bg-amber-600" 
-                      onClick={(label) => {
-                        navigateToDetail({ type: 'project', data: kpis.filteredProcedures, title: 'Projets TPE/PME', filterField: 'Projet facilitant l\'accès aux TPE/PME', filterValue: label });
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
+              <DashboardPage
+                kpis={kpis}
+                selectedAcheteurs={selectedAcheteurs}
+                selectedPriorities={selectedPriorities}
+                selectedFamilies={selectedFamilies}
+                selectedDeployYears={selectedDeployYears}
+                selectedStatuses={selectedStatuses}
+                onToggleAcheteur={toggleAcheteur}
+                onTogglePriority={togglePriority}
+                onToggleFamily={toggleFamily}
+                onToggleDeployYear={toggleDeployYear}
+                onToggleDossierStatus={toggleDossierStatus}
+                onResetProjectFilters={resetProjectFilters}
+                selectedProcTypes={selectedProcTypes}
+                selectedYears={selectedYears}
+                selectedProcedureStatuses={selectedProcedureStatuses}
+                onToggleProcType={toggleProcType}
+                onToggleYear={toggleYear}
+                onToggleProcedureStatus={(status) => {
+                  setSelectedProcedureStatuses(prev => 
+                    prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+                  );
+                }}
+                onResetProcedureFilters={resetProcedureFilters}
+                navigateToDetail={navigateToDetail}
+                FilterDropdown={FilterDropdown}
+                SimpleBarChart={SimpleBarChart}
+                KPITile={KPITile}
+                refAcheteurs={refAcheteurs}
+                priorityOptions={priorityOptions}
+                uniqueFamilies={uniqueFamilies}
+                uniqueDeployYears={uniqueDeployYears}
+                DOSSIER_STATUS_OPTIONS={DOSSIER_STATUS_OPTIONS}
+                uniqueTypesForFilter={uniqueTypesForFilter}
+                uniqueYears={uniqueYears}
+                PROCEDURE_STATUS_OPTIONS={PROCEDURE_STATUS_OPTIONS}
+              />
             )}
 
             {activeTab === 'analyse' && (
