@@ -38,9 +38,26 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack }) => {
 
   // Sorting and Filtering Logic
   const processedOffers = useMemo(() => {
-    let result = offers.filter(o => 
-      o.name.toLowerCase().includes(filter.toLowerCase())
-    );
+    const normalizeText = (text: any): string => {
+      if (!text) return '';
+      return String(text)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    };
+
+    const searchTerm = normalizeText(filter);
+    
+    let result = offers.filter(o => {
+      if (!searchTerm) return true;
+      
+      return (
+        normalizeText(o.name).includes(searchTerm) ||
+        normalizeText(metadata.description).includes(searchTerm) ||
+        normalizeText(metadata.consultation).includes(searchTerm) ||
+        normalizeText(lotName).includes(searchTerm)
+      );
+    });
 
     if (sortConfig) {
       result.sort((a, b) => {
@@ -54,7 +71,7 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack }) => {
     }
     
     return result;
-  }, [offers, filter, sortConfig]);
+  }, [offers, filter, sortConfig, metadata, lotName]);
 
   // Pagination Logic
   const totalPages = Math.ceil(processedOffers.length / itemsPerPage);

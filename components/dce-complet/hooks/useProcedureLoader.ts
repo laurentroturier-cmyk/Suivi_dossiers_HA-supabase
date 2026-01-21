@@ -111,13 +111,22 @@ export function useProcedureLoader(options: UseProcedureLoaderOptions = {}) {
   const suggestProcedures = useCallback((partialNumero: string, limit = 10): ProjectData[] => {
     if (!partialNumero) return [];
 
+    const normalizeText = (text: any): string => {
+      if (!text) return '';
+      return String(text)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    };
+
+    const search = normalizeText(partialNumero);
+
     return allProcedures
       .filter(p => {
-         const numCourt = String(p['numero court procédure afpa'] || '');
-         const numAfpa = String(p['Numéro de procédure (Afpa)'] || '');
-         const numProc = String(p['NumProc'] || '');
-        const titre = String(p['Intitulé'] || '').toLowerCase();
-        const search = partialNumero.toLowerCase();
+         const numCourt = normalizeText(p['numero court procédure afpa'] || '');
+         const numAfpa = normalizeText(p['Numéro de procédure (Afpa)'] || '');
+         const numProc = normalizeText(p['NumProc'] || '');
+        const titre = normalizeText(p['Intitulé'] || '');
         
          return numCourt.includes(search) ||
            numAfpa.includes(search) || 

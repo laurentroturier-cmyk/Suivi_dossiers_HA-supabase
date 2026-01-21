@@ -1121,10 +1121,20 @@ const App: React.FC = () => {
   }, [dossiers, procedures, selectedAcheteurs, selectedFamilies, selectedProcTypes, selectedPriorities, selectedStatuses, selectedYears, selectedDeployYears]);
 
   const filteredD = useMemo(() => {
+    const normalizeText = (text: any): string => {
+      if (!text) return '';
+      return String(text)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    };
+
     const matchesProjectSearch = (d: DossierData) => {
       if (!projectSearch) return true;
-      const idVal = String(getProp(d, 'IDProjet') || '').toLowerCase();
-      return idVal.includes(projectSearch.toLowerCase());
+      const searchNorm = normalizeText(projectSearch);
+      const idVal = normalizeText(getProp(d, 'IDProjet') || '');
+      const titreVal = normalizeText(getProp(d, 'Titre_du_dossier') || '');
+      return idVal.includes(searchNorm) || titreVal.includes(searchNorm);
     };
 
     return dossiers
@@ -3340,6 +3350,14 @@ const App: React.FC = () => {
                       return true;
                     };
 
+                    const normalizeText = (text: any): string => {
+                      if (!text) return '';
+                      return String(text)
+                        .toLowerCase()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '');
+                    };
+
                     const applyFilters = (d: DossierData) => {
                       const ach = String(getProp(d, 'Acheteur') || '');
                       const cli = String(getProp(d, 'Client_Interne') || '');
@@ -3350,7 +3368,10 @@ const App: React.FC = () => {
                       const ccagSet = procByProject[pid]?.ccags || new Set<string>();
                       const launch = toDate(getProp(d, 'Date_de_lancement_de_la_consultation'));
                       const deploy = toDate(getProp(d, 'Date_de_deploiement_previsionnelle_du_marche'));
-                      const matchesText = !projectSearch || (String(getProp(d, 'Titre_du_dossier') || '').toLowerCase().includes(projectSearch.toLowerCase()) || String(pid).toLowerCase().includes(projectSearch.toLowerCase()));
+                      const titre = normalizeText(getProp(d, 'Titre_du_dossier') || '');
+                      const pidNorm = normalizeText(pid);
+                      const searchNorm = normalizeText(projectSearch);
+                      const matchesText = !projectSearch || titre.includes(searchNorm) || pidNorm.includes(searchNorm);
                       const matchesAch = selectedAcheteurs.length === 0 || selectedAcheteurs.includes(ach);
                       const matchesCli = selectedClientsInternes.length === 0 || selectedClientsInternes.includes(cli);
                       const matchesPri = selectedPriorities.length === 0 || selectedPriorities.includes(pri);
