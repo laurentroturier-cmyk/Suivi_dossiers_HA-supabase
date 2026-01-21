@@ -14,12 +14,12 @@ import { useProcedure } from './hooks/useProcedureLoader';
 import type { DCESectionType } from './types';
 import type { ProjectData } from '../../types';
 import { ReglementConsultationLegacyWrapper } from './modules/ReglementConsultationLegacyWrapper';
-import { ActeEngagementForm } from './modules/ActeEngagementForm';
-import { CCAPForm } from './modules/CCAPForm';
-import { CCTPForm } from './modules/CCTPForm';
-import { BPUForm } from './modules/BPUForm';
-import { DQEForm } from './modules/DQEForm';
-import { DPGFForm } from './modules/DPGFForm';
+import { ActeEngagementMultiLots } from './modules/ActeEngagementMultiLots';
+import { CCAPMultiLots } from './modules/CCAPMultiLots';
+import { CCTPMultiLots } from './modules/CCTPMultiLots';
+import { BPUMultiLots } from './modules/BPUMultiLots';
+import { DQEMultiLots } from './modules/DQEMultiLots';
+import { DPGFMultiLots } from './modules/DPGFMultiLots';
 import { DocumentsAnnexesForm } from './modules/DocumentsAnnexesForm';
 import { CRTForm } from './modules/CRTForm';
 import QuestionnaireTechnique from "../redaction/questionnaire/QuestionnaireTechnique";
@@ -239,50 +239,44 @@ export function DCEComplet({ onClose }: DCECompletProps) {
         );
       case 'acteEngagement':
         return (
-          <ActeEngagementForm
-            data={ensureActeEngagement(dceState.acteEngagement)}
-            onSave={data => handleSectionSave('acteEngagement', data)}
-            isSaving={savingSection === 'acteEngagement' || isLoadingDCE}
+          <ActeEngagementMultiLots
+            procedureId={numeroProcedure}
+            onSave={() => loadDCE()}
           />
         );
       case 'ccap':
         return (
-          <CCAPForm
-            data={ensureCCAP(dceState.ccap)}
-            onSave={data => handleSectionSave('ccap', data)}
-            isSaving={savingSection === 'ccap' || isLoadingDCE}
+          <CCAPMultiLots
+            procedureId={numeroProcedure}
+            onSave={() => loadDCE()}
           />
         );
       case 'cctp':
         return (
-          <CCTPForm
-            data={ensureCCTP(dceState.cctp)}
-            onSave={data => handleSectionSave('cctp', data)}
-            isSaving={savingSection === 'cctp' || isLoadingDCE}
+          <CCTPMultiLots
+            procedureId={numeroProcedure}
+            onSave={() => loadDCE()}
           />
         );
       case 'bpu':
         return (
-          <BPUForm
-            data={ensureBPU(dceState.bpu)}
-            onSave={data => handleSectionSave('bpu', data)}
-            isSaving={savingSection === 'bpu' || isLoadingDCE}
+          <BPUMultiLots
+            procedureId={numeroProcedure}
+            onSave={() => loadDCE()}
           />
         );
       case 'dqe':
         return (
-          <DQEForm
-            data={ensureDQE(dceState.dqe)}
-            onSave={data => handleSectionSave('dqe', data)}
-            isSaving={savingSection === 'dqe' || isLoadingDCE}
+          <DQEMultiLots
+            procedureId={numeroProcedure}
+            onSave={() => loadDCE()}
           />
         );
       case 'dpgf':
         return (
-          <DPGFForm
-            data={ensureDPGF(dceState.dpgf)}
-            onSave={data => handleSectionSave('dpgf', data)}
-            isSaving={savingSection === 'dpgf' || isLoadingDCE}
+          <DPGFMultiLots
+            procedureId={numeroProcedure}
+            onSave={() => loadDCE()}
           />
         );
       case 'documentsAnnexes':
