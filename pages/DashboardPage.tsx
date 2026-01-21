@@ -25,9 +25,13 @@ interface DashboardPageProps {
   selectedProcTypes?: string[];
   selectedYears?: string[];
   selectedProcedureStatuses?: string[];
+  selectedLaunchYears?: string[];
+  selectedOfferYears?: string[];
   onToggleProcType?: (val: string) => void;
   onToggleYear?: (val: string) => void;
   onToggleProcedureStatus?: (val: string) => void;
+  onToggleLaunchYear?: (val: string) => void;
+  onToggleOfferYear?: (val: string) => void;
   onResetProcedureFilters?: () => void;
   
   // Handler pour la navigation vers le détail
@@ -46,6 +50,8 @@ interface DashboardPageProps {
   DOSSIER_STATUS_OPTIONS?: string[];
   uniqueTypesForFilter?: string[];
   uniqueYears?: string[];
+  uniqueLaunchYears?: string[];
+  uniqueOfferYears?: string[];
   PROCEDURE_STATUS_OPTIONS?: string[];
 }
 
@@ -81,6 +87,8 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
     selectedProcTypes = [],
     selectedYears = [],
     selectedProcedureStatuses = [],
+    selectedLaunchYears = [],
+    selectedOfferYears = [],
     onToggleAcheteur,
     onTogglePriority,
     onToggleFamily,
@@ -90,6 +98,8 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
     onToggleProcType,
     onToggleYear,
     onToggleProcedureStatus,
+    onToggleLaunchYear,
+    onToggleOfferYear,
     onResetProcedureFilters,
     navigateToDetail,
     FilterDropdown,
@@ -102,6 +112,8 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
     DOSSIER_STATUS_OPTIONS = [],
     uniqueTypesForFilter = [],
     uniqueYears = [],
+    uniqueLaunchYears = [],
+    uniqueOfferYears = [],
     PROCEDURE_STATUS_OPTIONS = [],
   } = props;
   
@@ -119,7 +131,7 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
     selectedFamilies.length + selectedDeployYears.length + 
     (selectedStatuses.length !== DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5')).length ? 1 : 0);
   
-  const procedureFiltersCount = selectedAcheteurs.length + selectedProcTypes.length + selectedYears.length + selectedProcedureStatuses.length;
+  const procedureFiltersCount = selectedAcheteurs.length + selectedProcTypes.length + selectedYears.length + selectedProcedureStatuses.length + selectedLaunchYears.length + selectedOfferYears.length;
   
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -396,18 +408,27 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
                     onToggle={onToggleProcType}
                   />
                   <FilterDropdown
-                    id="proc-year"
-                    label="Année de Lancement"
-                    options={uniqueYears}
-                    selected={selectedYears}
-                    onToggle={onToggleYear}
-                  />
-                  <FilterDropdown
                     id="proc-status"
                     label="Statut procédure"
                     options={PROCEDURE_STATUS_OPTIONS}
                     selected={selectedProcedureStatuses}
                     onToggle={onToggleProcedureStatus}
+                  />
+                  <FilterDropdown
+                    id="proc-launch-year"
+                    label="Année lancement"
+                    options={uniqueLaunchYears}
+                    selected={selectedLaunchYears}
+                    onToggle={onToggleLaunchYear}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                  <FilterDropdown
+                    id="proc-offer-year"
+                    label="Année remise offres"
+                    options={uniqueOfferYears}
+                    selected={selectedOfferYears}
+                    onToggle={onToggleOfferYear}
                   />
                 </div>
               </div>

@@ -933,6 +933,32 @@ const App: React.FC = () => {
     setSelectedYears(prev => prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]);
   };
 
+  // Années de lancement des procédures (pour filtre Dashboard)
+  const uniqueLaunchYears = useMemo(() => {
+    const years = new Set<string>();
+    procedures.forEach(p => {
+      const date = getProp(p, 'Date de lancement de la consultation');
+      if (date) {
+        const year = new Date(date).getFullYear().toString();
+        if (year !== 'NaN') years.add(year);
+      }
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [procedures]);
+
+  // Années de remise des offres finales (pour filtre Dashboard)
+  const uniqueOfferYears = useMemo(() => {
+    const years = new Set<string>();
+    procedures.forEach(p => {
+      const date = getProp(p, 'Date de remise des offres finales');
+      if (date) {
+        const year = new Date(date).getFullYear().toString();
+        if (year !== 'NaN') years.add(year);
+      }
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [procedures]);
+
   const uniqueDeployYears = useMemo(() => {
     const years = new Set<string>();
     dossiers.forEach(d => {
@@ -1021,11 +1047,45 @@ const App: React.FC = () => {
       matchesDeployYear(d)
     ));
 
-    const filteredProcedures = procedures.filter(p => (
-      matchesAcheteur(getProp(p, 'Acheteur')) &&
-      matchesFamily(getProp(p, 'Famille Achat Principale')) &&
-      matchesProcType(getProp(p, 'Type de procédure'))
-    ));
+    // ✅ Filtrage complet des procédures avec TOUS les filtres actifs
+    const filteredProcedures = procedures.filter(p => {
+      // Filtres généraux
+      const matchesAcheteurFilter = matchesAcheteur(getProp(p, 'Acheteur'));
+      const matchesFamilyFilter = matchesFamily(getProp(p, 'Famille Achat Principale'));
+      const matchesProcTypeFilter = matchesProcType(getProp(p, 'Type de procédure'));
+      
+      // Filtre par statut de la consultation
+      const matchesStatusFilter = selectedProcedureStatuses.length === 0 || 
+        selectedProcedureStatuses.includes(getProp(p, 'Statut de la consultation'));
+      
+      // Filtre par année de lancement
+      const matchesLaunchYearFilter = selectedLaunchYears.length === 0 || (() => {
+        const launchDate = getProp(p, 'Date de lancement de la consultation');
+        if (!launchDate) return false;
+        const year = new Date(launchDate).getFullYear().toString();
+        return selectedLaunchYears.includes(year);
+      })();
+      
+      // Filtre par année de remise des offres
+      const matchesOfferYearFilter = selectedOfferYears.length === 0 || (() => {
+        const offerDate = getProp(p, 'Date de remise des offres finales');
+        if (!offerDate) return false;
+        const year = new Date(offerDate).getFullYear().toString();
+        return selectedOfferYears.includes(year);
+      })();
+      
+      // Filtre par recherche
+      const matchesSearchFilter = !procedureSearch || (() => {
+        const numProc = String(getProp(p, 'NumProc') || '').toLowerCase();
+        const numAfpa = String(getProp(p, 'Numéro de procédure (Afpa)') || '').toLowerCase();
+        return numProc.includes(procedureSearch.toLowerCase()) || 
+               numAfpa.includes(procedureSearch.toLowerCase());
+      })();
+      
+      return matchesAcheteurFilter && matchesFamilyFilter && matchesProcTypeFilter &&
+             matchesStatusFilter && matchesLaunchYearFilter && matchesOfferYearFilter &&
+             matchesSearchFilter;
+    });
 
     const nbP = filteredDossiers.length;
     const nbProc = filteredProcedures.length;
@@ -1119,7 +1179,7 @@ const App: React.FC = () => {
           }, {})
       }
     };
-  }, [dossiers, procedures, selectedAcheteurs, selectedFamilies, selectedProcTypes, selectedPriorities, selectedStatuses, selectedYears, selectedDeployYears]);
+  }, [dossiers, procedures, selectedAcheteurs, selectedFamilies, selectedProcTypes, selectedPriorities, selectedStatuses, selectedYears, selectedDeployYears, selectedProcedureStatuses, selectedLaunchYears, selectedOfferYears, procedureSearch]);
 
   const filteredD = useMemo(() => {
     const normalizeText = (text: any): string => {
@@ -1146,41 +1206,6 @@ const App: React.FC = () => {
       ))
       .sort((a, b) => (parseFloat(String(a.IDProjet)) || 0) < (parseFloat(String(b.IDProjet)) || 0) ? 1 : -1);
   }, [dossiers, selectedAcheteurs, selectedPriorities, projectSearch]);
-
-  const filteredP = useMemo(() => {
-    const matchesProcedureSearch = (p: ProjectData) => {
-      if (!procedureSearch) return true;
-      const numProc = String(getProp(p, 'NumProc') || '').toLowerCase();
-      const numAfpa = String(getProp(p, 'Numéro de procédure (Afpa)') || '').toLowerCase();
-      return numProc.includes(procedureSearch.toLowerCase()) || numAfpa.includes(procedureSearch.toLowerCase());
-    };
-
-    return procedures
-      .filter(p => {
-        const matchesAcheteur = selectedAcheteurs.length === 0 || selectedAcheteurs.includes(getProp(p, 'Acheteur'));
-        const matchesSearch = matchesProcedureSearch(p);
-        const matchesStatus = selectedProcedureStatuses.length === 0 || selectedProcedureStatuses.includes(getProp(p, 'Statut de la consultation'));
-        
-        // Filtre par année de lancement
-        const matchesLaunchYear = selectedLaunchYears.length === 0 || (() => {
-          const launchDate = getProp(p, 'Date de lancement de la consultation');
-          if (!launchDate) return false;
-          const year = new Date(launchDate).getFullYear().toString();
-          return selectedLaunchYears.includes(year);
-        })();
-        
-        // Filtre par année de remise des offres finales
-        const matchesOfferYear = selectedOfferYears.length === 0 || (() => {
-          const offerDate = getProp(p, 'Date de remise des offres finales');
-          if (!offerDate) return false;
-          const year = new Date(offerDate).getFullYear().toString();
-          return selectedOfferYears.includes(year);
-        })();
-        
-        return matchesAcheteur && matchesSearch && matchesStatus && matchesLaunchYear && matchesOfferYear;
-      })
-      .sort((a, b) => (parseFloat(String(getProp(b, 'NumProc'))) || 0) - (parseFloat(String(getProp(a, 'NumProc'))) || 0));
-  }, [procedures, selectedAcheteurs, procedureSearch, selectedProcedureStatuses, selectedLaunchYears, selectedOfferYears]);
 
   // ============================================
   // AUTH HANDLERS & RENDERING
@@ -1477,6 +1502,8 @@ const App: React.FC = () => {
     setSelectedProcTypes([]);
     setSelectedYears([]);
     setSelectedProcedureStatuses([]);
+    setSelectedLaunchYears([]); // ✅ Ajout : réinitialiser le filtre année de lancement
+    setSelectedOfferYears([]); // ✅ Ajout : réinitialiser le filtre année de remise
     setLaunchFrom('');
     setLaunchTo('');
     setDeployFrom('');
@@ -2809,11 +2836,23 @@ const App: React.FC = () => {
                 selectedProcTypes={selectedProcTypes}
                 selectedYears={selectedYears}
                 selectedProcedureStatuses={selectedProcedureStatuses}
+                selectedLaunchYears={selectedLaunchYears}
+                selectedOfferYears={selectedOfferYears}
                 onToggleProcType={toggleProcType}
                 onToggleYear={toggleYear}
                 onToggleProcedureStatus={(status) => {
                   setSelectedProcedureStatuses(prev => 
                     prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+                  );
+                }}
+                onToggleLaunchYear={(year) => {
+                  setSelectedLaunchYears(prev => 
+                    prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]
+                  );
+                }}
+                onToggleOfferYear={(year) => {
+                  setSelectedOfferYears(prev => 
+                    prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]
                   );
                 }}
                 onResetProcedureFilters={resetProcedureFilters}
@@ -2828,6 +2867,8 @@ const App: React.FC = () => {
                 DOSSIER_STATUS_OPTIONS={DOSSIER_STATUS_OPTIONS}
                 uniqueTypesForFilter={uniqueTypesForFilter}
                 uniqueYears={uniqueYears}
+                uniqueLaunchYears={uniqueLaunchYears}
+                uniqueOfferYears={uniqueOfferYears}
                 PROCEDURE_STATUS_OPTIONS={PROCEDURE_STATUS_OPTIONS}
               />
             )}
@@ -3421,8 +3462,14 @@ const App: React.FC = () => {
                       />
                     </>
                   )}
-                  {(selectedAcheteurs.length > 0 || selectedPriorities.length > 0 || selectedProcedureStatuses.length > 0 || selectedLaunchYears.length > 0 || selectedOfferYears.length > 0 || projectSearch || procedureSearch) && (
-                    <button onClick={resetFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-xl transition-all flex items-center gap-2 h-[54px]">
+                  {/* Bouton Reset - adapté selon l'onglet actif */}
+                  {activeTab === 'dossiers' && (selectedAcheteurs.length > 0 || selectedPriorities.length > 0 || selectedStatuses.length !== DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5')).length || projectSearch) && (
+                    <button onClick={resetProjectFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-xl transition-all flex items-center gap-2 h-[54px]">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>Reset
+                    </button>
+                  )}
+                  {activeTab === 'procedures' && (selectedAcheteurs.length > 0 || selectedProcedureStatuses.length > 0 || selectedLaunchYears.length > 0 || selectedOfferYears.length > 0 || procedureSearch) && (
+                    <button onClick={resetProcedureFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-xl transition-all flex items-center gap-2 h-[54px]">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>Reset
                     </button>
                   )}
@@ -3502,7 +3549,7 @@ const App: React.FC = () => {
                         }
                       };
                       
-                      const baseRows = activeTab === 'dossiers' ? filteredD : filteredP;
+                      const baseRows = activeTab === 'dossiers' ? filteredD : kpis.filteredProcedures;
                       const rows = sortColumn ? [...baseRows].sort((a, b) => {
                         const aVal = String(getProp(a, sortColumn) || '');
                         const bVal = String(getProp(b, sortColumn) || '');

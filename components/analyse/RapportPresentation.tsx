@@ -76,6 +76,10 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   // Mode édition des chapitres
   const [modeEdition, setModeEdition] = useState(false);
   const [rapportEditable, setRapportEditable] = useState<any>(null);
+  
+  // État pour les données DCE
+  const [dceData, setDceData] = useState<any>(null);
+  const [loadingDCE, setLoadingDCE] = useState(false);
 
   const procedureSelectionnee = procedures.find(p => p.NumProc === state.procedureSelectionnee);
   const dossierRattache = dossiers.find(d => d.IDProjet === procedureSelectionnee?.IDProjet);
@@ -102,6 +106,69 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
       setRapportsSauvegardes(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des rapports:', error);
+    }
+  };
+
+  // Charger les données du DCE depuis la table 'reglements_consultation'
+  const loadDCEData = async () => {
+    if (!procedureSelectionnee?.NumProc) {
+      alert('Aucune procédure sélectionnée');
+      return;
+    }
+
+    // Extraire le numéro à 5 chiffres depuis "Numéro de procédure (Afpa)"
+    const numeroAfpa = procedureSelectionnee['Numéro de procédure (Afpa)'];
+    const numero5chiffres = numeroAfpa?.match(/^(\d{5})/)?.[1] || procedureSelectionnee['NumeroAfpa5Chiffres'];
+    
+    if (!numero5chiffres) {
+      alert(`Impossible de trouver le numéro à 5 chiffres pour la procédure ${procedureSelectionnee.NumProc}`);
+      return;
+    }
+
+    setLoadingDCE(true);
+    try {
+      const { data, error } = await supabase
+        .from('reglements_consultation')
+        .select('data')
+        .eq('numero_procedure', numero5chiffres)
+        .single();
+
+      if (error) {
+        // Si le DCE n'existe pas encore
+        if (error.code === 'PGRST116') {
+          alert(`Aucun DCE trouvé pour la procédure ${numero5chiffres} (${procedureSelectionnee.NumProc}).\n\nVeuillez d'abord créer le DCE dans le module "6. Contenu du DCE".`);
+          return;
+        }
+        throw error;
+      }
+
+      if (!data?.data) {
+        alert(`Le DCE existe mais le Règlement de Consultation n'a pas encore été rempli.\n\nAllez dans le module "DCE Complet" > "6. Contenu du DCE" pour le compléter.`);
+        return;
+      }
+
+      const rcData = data.data;
+      setDceData(rcData);
+
+      // Auto-remplir le champ "Dossier de Consultation" avec la liste des documents
+      if (rcData.dce?.documents && Array.isArray(rcData.dce.documents)) {
+        const documentsList = rcData.dce.documents
+          .map((doc: string, index: number) => `${index + 1}. ${doc}`)
+          .join('\n');
+        
+        const dceDescription = `Description du DCE et des documents fournis :\n\n${documentsList}`;
+        setContenuChapitre3(dceDescription);
+        
+        alert('✅ Données du DCE chargées avec succès !\n\nLe paragraphe 3 "DOSSIER DE CONSULTATION" a été automatiquement rempli.');
+      } else {
+        alert('⚠️ Le Règlement de Consultation ne contient pas de liste de documents.');
+      }
+
+    } catch (error: any) {
+      console.error('Erreur lors du chargement du DCE:', error);
+      alert(`Erreur lors du chargement du DCE :\n${error.message || 'Erreur inconnue'}`);
+    } finally {
+      setLoadingDCE(false);
     }
   };
 
@@ -1627,15 +1694,43 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               icon="📁"
             >
               <div className="space-y-2">
-                <p className="text-sm text-gray-700 font-medium">✏️ Saisissez ou collez le contenu ci-dessous :</p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-gray-700 font-medium">✏️ Saisissez ou collez le contenu ci-dessous :</p>
+                  <button
+                    onClick={loadDCEData}
+                    disabled={!procedureSelectionnee || loadingDCE}
+                    className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white text-xs font-semibold rounded-lg flex items-center gap-2 transition-all"
+                    title="Charger automatiquement les données depuis le module DCE Complet"
+                  >
+                    {loadingDCE ? (
+                      <>
+                        <Clock className="w-4 h-4 animate-spin" />
+                        Chargement...
+                      </>
+                    ) : (
+                      <>
+                        <FileCheck className="w-4 h-4" />
+                        Charger depuis DCE
+                      </>
+                    )}
+                  </button>
+                </div>
                 <textarea
                   value={contenuChapitre3}
                   onChange={(e) => setContenuChapitre3(e.target.value)}
-                  placeholder="Description du DCE et des documents fournis...\n\nExemple :\n- Acte d'engagement\n- CCAP\n- CCTP\n- BPU\n- etc."
+                  placeholder="Description du DCE et des documents fournis...\n\nExemple :\n- Acte d'engagement\n- CCAP\n- CCTP\n- BPU\n- etc.\n\nOu cliquez sur 'Charger depuis DCE' pour importer automatiquement la liste des documents."
                   className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 {contenuChapitre3 && (
                   <p className="text-xs text-green-600">✓ {contenuChapitre3.length} caractères saisis</p>
+                )}
+                {dceData && (
+                  <div className="mt-2 p-2 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg">
+                    <p className="text-xs text-teal-700 dark:text-teal-300 flex items-center gap-2">
+                      <Check className="w-3 h-3" />
+                      Données chargées depuis le DCE (Procédure {procedureSelectionnee?.NumProc})
+                    </p>
+                  </div>
                 )}
               </div>
             </ChapterPreview>
