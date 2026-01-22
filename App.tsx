@@ -425,6 +425,7 @@ const App: React.FC = () => {
   const [editingProject, setEditingProject] = useState<Partial<DossierData> | null>(null);
   const [editingProcedure, setEditingProcedure] = useState<Partial<ProjectData> | null>(null);
   const [showProjectPreview, setShowProjectPreview] = useState(false);
+  const [powerAutomateMessage, setPowerAutomateMessage] = useState<string | null>(null);
   
   // Fonction pour ouvrir une procédure à partir d'un numéro AFPA
   const openProcedureByAfpaNumber = (numeroAfpa: string) => {
@@ -1392,7 +1393,7 @@ const App: React.FC = () => {
 
   const priorityOptions = ['P0 - Pas de priorité', 'P1 - Important', 'P2 - Moyen', 'P3 - Faible'];
 
-  const generateAfpaNumber = () => {
+  const generateAfpaNumber = async () => {
     if (!editingProcedure) return;
     
     // Récupérer le numéro actuel s'il existe
@@ -1430,6 +1431,33 @@ const App: React.FC = () => {
       "Numéro de procédure (Afpa)": afpaNum,
       "Objet court": objetCourt,
     }));
+
+    // Envoyer la requête HTTP vers Power Automate
+    try {
+      const powerAutomateUrl = 'https://8ccd8456481eec16bc2b4e120bc1e6.f8.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0df46e7bce6e4c83ba24a0b99e7b6411/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=-JNczVgft1bpeYzZI6ZPPFLZvi1Hq_WCtkigKHsquao';
+      
+      await fetch(powerAutomateUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          Contenu: afpaNum,
+          typeProcedure: typeProc,
+          acheteur: acheteur,
+          objetCourt: objetCourt,
+          timestamp: new Date().toISOString()
+        })
+      });
+      
+      console.log('Notification Power Automate envoyée avec succès');
+      setPowerAutomateMessage('✅ Notification envoyée à Power Automate');
+      setTimeout(() => setPowerAutomateMessage(null), 4000);
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de la notification Power Automate:', error);
+      setPowerAutomateMessage('⚠️ Erreur lors de l\'envoi de la notification');
+      setTimeout(() => setPowerAutomateMessage(null), 4000);
+    }
   };
   
   // Fonction auxiliaire pour créer un nouveau numéro Afpa
@@ -2414,6 +2442,11 @@ const App: React.FC = () => {
                 />
                 {key === "Numéro de procédure (Afpa)" && <button onClick={generateAfpaNumber} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-[#004d3d] text-white rounded-xl shadow-lg hover:scale-105 transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></button>}
               </div>
+              {key === "Numéro de procédure (Afpa)" && powerAutomateMessage && (
+                <div className={`px-4 py-2 rounded-lg text-xs font-semibold ${powerAutomateMessage.includes('✅') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-orange-50 text-orange-700 border border-orange-200'}`}>
+                  {powerAutomateMessage}
+                </div>
+              )}
             </div>
           );
         })}
