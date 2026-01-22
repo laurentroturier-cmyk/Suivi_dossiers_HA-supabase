@@ -75,6 +75,7 @@ function generateDeroulement(sources: RapportSources): Section2Deroulement {
     || '';
   
   return {
+    clientInterne: dossier['Client_Interne'] || '',
     datePublication,
     nombreRetraits,
     dateReceptionOffres: procedure['Date de remise des offres'] || '',
@@ -282,7 +283,7 @@ function generatePerformanceFromMultiLots(allLots: AnalysisData[], sources: Rapp
   const totalSavings = allLots.reduce((sum, lot) => sum + (lot.stats?.savingAmount || 0), 0);
   const totalAverage = allLots.reduce((sum, lot) => sum + (lot.stats?.average || 0), 0);
   const totalAttributaireTTC = allLots.reduce((sum, lot) => sum + (lot.stats?.winner?.amountTTC || 0), 0);
-  const performanceGlobale = totalAverage > 0 ? (totalSavings / totalAverage) * 100 : 0;
+  const performanceGlobale = totalAverage > 0 ? (-1 * totalSavings / totalAverage) * 100 : 0;
   
   const tva = parseFloat(allLots[0]?.metadata?.tva) || 20;
   const totalAttributaireHT = totalAttributaireTTC / (1 + tva / 100);

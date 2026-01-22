@@ -274,7 +274,7 @@ const calculateStats = (offers: Offer[]): Stats => {
   const min = Math.min(...validOffers.map(o => o.amountTTC));
 
   const savingAmount = round2(average - winner.amountTTC);
-  const savingPercent = round2((savingAmount / average) * 100);
+  const savingPercent = round2(-1 * (savingAmount / average) * 100);
 
   return { average, max: round2(max), min: round2(min), winner, savingAmount, savingPercent };
 };

@@ -269,6 +269,11 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         // Charger les données du rapport dans l'état
         const rapport = data.rapport_data;
         
+        // Migration: Si clientInterne n'existe pas dans le rapport chargé, le récupérer du dossier
+        if (rapport.section2_deroulement && !rapport.section2_deroulement.clientInterne) {
+          rapport.section2_deroulement.clientInterne = dossierRattache?.Client_Interne || '';
+        }
+        
         setState(prev => ({
           ...prev,
           rapportGenere: rapport,
@@ -615,6 +620,10 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
       const imageBuffer = await imageBlob.arrayBuffer();
       
       const doc = new Document({
+        // Configuration pour mettre à jour automatiquement les champs sans demander
+        settings: {
+          updateFields: true,
+        },
         sections: [{
           properties: {},
           headers: {
@@ -787,7 +796,9 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             
             new Paragraph({
               children: [
-                new TextRun({ text: "La procédure a été lancée sur la plateforme « ", font: "Aptos", size: 22 }),
+                new TextRun({ text: "La procédure, menée conjointement avec la ", font: "Aptos", size: 22 }),
+                new TextRun({ text: state.rapportGenere.section2_deroulement.clientInterne || dossierRattache?.Client_Interne || 'le client interne', bold: true, font: "Aptos", size: 22 }),
+                new TextRun({ text: " de l'Afpa, a été lancée sur la plateforme « ", font: "Aptos", size: 22 }),
                 new TextRun({ text: state.rapportGenere.section2_deroulement.supportProcedure, bold: true, font: "Aptos", size: 22 }),
                 new TextRun({ text: " » selon le calendrier suivant :", font: "Aptos", size: 22 }),
               ],
@@ -1455,7 +1466,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     }
                     setModeEdition(!modeEdition);
                   }}
-                  className={`py-2 px-4 ${modeEdition ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'} text-white font-semibold rounded-lg flex items-center gap-2`}
+                  className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2"
                 >
                   <Edit2 className="w-4 h-4" />
                   {modeEdition ? 'Quitter l\'édition' : 'Modifier'}
@@ -1470,7 +1481,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     setModeEdition(false);
                     alert('Modifications enregistrées dans le rapport');
                   }}
-                  className="py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center gap-2"
+                  className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2"
                 >
                   <Check className="w-4 h-4" />
                   Valider les modifications
@@ -1481,7 +1492,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               <button
                 onClick={() => setShowSaveDialog(true)}
                 disabled={!state.rapportGenere || modeEdition}
-                className="py-2 px-4 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" />
                 Sauvegarder
@@ -1491,7 +1502,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               <button
                 onClick={() => setShowLoadDialog(true)}
                 disabled={rapportsSauvegardes.length === 0}
-                className="py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <FolderOpen className="w-4 h-4" />
                 Charger ({rapportsSauvegardes.length})
@@ -1503,7 +1514,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   <button
                     onClick={handleExportDOCX}
                     disabled={isExporting}
-                    className="py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isExporting ? (
                       <>
@@ -1521,7 +1532,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   {/* Bouton unique pour générer les NOTI */}
                   <button
                     onClick={() => setShowNotificationsQuickAccess(true)}
-                    className="py-2 px-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 hover:from-indigo-700 hover:via-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg flex items-center gap-2 shadow-lg"
+                    className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2"
                     title="Générer les notifications (NOTI1, NOTI5, NOTI3) avec fonctionnalités avancées"
                   >
                     <FileText className="w-4 h-4" />
@@ -1531,7 +1542,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   {/* Bouton NOTI Multi-Attributaires (en construction) */}
                   <button
                     onClick={() => setShowNotiMultiAttributaires(true)}
-                    className="py-2 px-4 bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white font-semibold rounded-lg flex items-center gap-2 shadow-lg opacity-70"
+                    className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2 opacity-70"
                     title="NOTI Multi-Attributaires (en construction)"
                   >
                     <Construction className="w-4 h-4" />
@@ -1606,6 +1617,18 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                 modeEdition && rapportEditable ? (
                   <div className="space-y-3">
                     <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Client Interne</label>
+                      <input
+                        type="text"
+                        value={rapportEditable.section2_deroulement.clientInterne || dossierRattache?.Client_Interne || ''}
+                        onChange={(e) => setRapportEditable({
+                          ...rapportEditable,
+                          section2_deroulement: { ...rapportEditable.section2_deroulement, clientInterne: e.target.value }
+                        })}
+                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Support de procédure</label>
                       <input
                         type="text"
@@ -1668,6 +1691,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   </div>
                 ) : (
                   <>
+                    <p><strong>Client Interne :</strong> {state.rapportGenere.section2_deroulement.clientInterne || dossierRattache?.Client_Interne || 'Non renseigné'}</p>
                     <p><strong>Support :</strong> {state.rapportGenere.section2_deroulement.supportProcedure}</p>
                     <p><strong>Date de publication :</strong> {state.rapportGenere.section2_deroulement.datePublication}</p>
                     <p><strong>Nombre de retraits :</strong> {state.rapportGenere.section2_deroulement.nombreRetraits}</p>
@@ -1677,6 +1701,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                 )
               ) : (
                 <>
+                  <p className="text-gray-500 italic">• Client Interne</p>
                   <p className="text-gray-500 italic">• Support de procédure (e-marchespublics, etc.)</p>
                   <p className="text-gray-500 italic">• Date de publication</p>
                   <p className="text-gray-500 italic">• Nombre de retraits du DCE</p>

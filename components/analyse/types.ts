@@ -40,6 +40,7 @@ export interface Section1Contexte {
 
 // Section 2 : Déroulement de la procédure
 export interface Section2Deroulement {
+  clientInterne: string; // Client interne du projet rattaché
   datePublication: string;
   nombreRetraits: number;
   dateReceptionOffres: string;
