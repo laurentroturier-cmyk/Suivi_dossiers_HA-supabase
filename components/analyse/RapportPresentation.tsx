@@ -868,9 +868,58 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               heading: HeadingLevel.HEADING_2,
               spacing: { before: 400, after: 200 },
             }),
-            
-            ...(contenuChapitre3 
-              ? createParagraphsFromText(contenuChapitre3)
+
+            ...(contenuChapitre3
+              ? (() => {
+                  // Vérifier si le contenu contient la phrase d'introduction
+                  const introPhrase = "Le dossier de consultation comprenait :";
+                  const hasIntro = contenuChapitre3.includes(introPhrase);
+
+                  if (hasIntro) {
+                    const paragraphs: any[] = [];
+
+                    // Ajouter l'introduction
+                    paragraphs.push(
+                      new Paragraph({
+                        children: [createBodyText(introPhrase)],
+                        spacing: { after: 200 },
+                      })
+                    );
+
+                    // Parser les lignes suivantes comme liste à puces
+                    const lines = contenuChapitre3.split(/\r?\n/);
+                    let startParsing = false;
+
+                    for (const line of lines) {
+                      const trimmedLine = line.trim();
+
+                      if (trimmedLine.includes(introPhrase)) {
+                        startParsing = true;
+                        continue;
+                      }
+
+                      if (startParsing && trimmedLine) {
+                        // Enlever les marqueurs de liste existants
+                        const cleanedLine = trimmedLine.replace(/^[-•*]\s/, '').replace(/^\d+\.\s/, '');
+
+                        if (cleanedLine) {
+                          paragraphs.push(
+                            new Paragraph({
+                              children: [createBodyText(cleanedLine)],
+                              bullet: { level: 0 },
+                              spacing: { after: 100 },
+                            })
+                          );
+                        }
+                      }
+                    }
+
+                    return paragraphs;
+                  } else {
+                    // Sinon, utiliser le comportement par défaut
+                    return createParagraphsFromText(contenuChapitre3);
+                  }
+                })()
               : [new Paragraph({
                   children: [new TextRun({ text: "[À compléter : Description du DCE et des documents fournis]", italics: true, color: "FF8800", font: "Aptos", size: 22 })],
                   spacing: { after: 200 },

@@ -27,6 +27,85 @@ const createHeadingText = (text: string): TextRun => {
 const formatCurrency = (val: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
 
 /**
+ * Parse le contenu du chapitre 3 et crée des paragraphes avec liste à puces
+ */
+const parseChapitre3Content = (contenu: string | undefined): Paragraph[] => {
+  if (!contenu) {
+    return [
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "[À compléter : Description du DCE et des documents fournis]",
+            italics: true,
+            color: "FF8800",
+            font: "Aptos",
+            size: 22
+          }),
+        ],
+        spacing: { after: 200 },
+      })
+    ];
+  }
+
+  const paragraphs: Paragraph[] = [];
+
+  // Vérifier si le contenu contient la phrase d'introduction
+  const introPhrase = "Le dossier de consultation comprenait :";
+  const hasIntro = contenu.includes(introPhrase);
+
+  if (hasIntro) {
+    // Ajouter le paragraphe d'introduction
+    paragraphs.push(
+      new Paragraph({
+        children: [createBodyText(introPhrase)],
+        spacing: { after: 200 },
+      })
+    );
+
+    // Extraire et parser les lignes suivantes
+    const lines = contenu.split('\n');
+    let startParsing = false;
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+
+      // Commencer à parser après la phrase d'introduction
+      if (trimmedLine.includes(introPhrase)) {
+        startParsing = true;
+        continue;
+      }
+
+      if (startParsing && trimmedLine) {
+        // Enlever les puces existantes (•, -, *, etc.) au début de la ligne
+        const cleanedLine = trimmedLine.replace(/^[•\-\*]\s*/, '');
+
+        if (cleanedLine) {
+          paragraphs.push(
+            new Paragraph({
+              children: [createBodyText(cleanedLine)],
+              bullet: {
+                level: 0
+              },
+              spacing: { after: 100 },
+            })
+          );
+        }
+      }
+    }
+  } else {
+    // Si pas de phrase d'introduction, afficher le contenu tel quel
+    paragraphs.push(
+      new Paragraph({
+        children: [createBodyText(contenu)],
+        spacing: { after: 200 },
+      })
+    );
+  }
+
+  return paragraphs;
+};
+
+/**
  * Génère et télécharge un document DOCX du rapport de présentation
  */
 export async function exportRapportDOCX(options: ExportRapportOptions): Promise<void> {
@@ -220,15 +299,8 @@ export async function exportRapportDOCX(options: ExportRapportOptions): Promise<
           heading: HeadingLevel.HEADING_2,
           spacing: { before: 400, after: 200 },
         }),
-        
-        new Paragraph({
-          children: [
-            contenuChapitre3 
-              ? createBodyText(contenuChapitre3)
-              : new TextRun({ text: "[À compléter : Description du DCE et des documents fournis]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
-          ],
-          spacing: { after: 200 },
-        }),
+
+        ...parseChapitre3Content(contenuChapitre3),
         
         // Section 4 : Questions-Réponses
         new Paragraph({
@@ -488,8 +560,8 @@ export async function exportRapportDOCX(options: ExportRapportOptions): Promise<
                 spacing: { after: 200 },
               }),
             ]
-          : [])
-        
+          : []),
+
         // Bloc de signature
         new Paragraph({
           text: "",
