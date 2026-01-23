@@ -1,8 +1,8 @@
 {
-  "version": "1.0.19",
+  "version": "1.0.20",
   "name": "GestProjet",
   "lastUpdate": "2026-01-23",
-  "build": "19",
+  "build": "20",
   "changelog": {
     "1.0.15": {
       "date": "2026-01-21",
@@ -150,6 +150,13 @@
       ]
     },
     "1.0.19": {
+      "date": "2026-01-23",
+      "type": "patch",
+      "changes": [
+        "Build automatique"
+      ]
+    },
+    "1.0.20": {
       "date": "2026-01-23",
       "type": "patch",
       "changes": [
