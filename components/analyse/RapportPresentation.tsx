@@ -59,7 +59,14 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   // Contenu des chapitres à compléter manuellement
   const [contenuChapitre3, setContenuChapitre3] = useState('');
   const [contenuChapitre4, setContenuChapitre4] = useState('');
-  const [contenuChapitre10, setContenuChapitre10] = useState('');
+  
+  // Structure du Chapitre 10 - Calendrier de mise en œuvre
+  const [chapitre10, setCharpitre10] = useState({
+    validationAttribution: 'à l\'issue de la validation d\'attribution du marché',
+    envoiRejet: 'à l\'issue du délai de standstill',
+    attributionMarche: '',
+    autresElements: ''
+  });
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -192,7 +199,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         ...state.rapportGenere,
         contenuChapitre3,
         contenuChapitre4,
-        contenuChapitre10,
+        chapitre10,
       };
 
       // Préparer les métadonnées des fichiers sources
@@ -282,7 +289,12 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
 
         setContenuChapitre3(rapport.contenuChapitre3 || '');
         setContenuChapitre4(rapport.contenuChapitre4 || '');
-        setContenuChapitre10(rapport.contenuChapitre10 || '');
+        setCharpitre10(rapport.chapitre10 || {
+          validationAttribution: 'à l\'issue de la validation d\'attribution du marché',
+          envoiRejet: 'à l\'issue du délai de standstill',
+          attributionMarche: '',
+          autresElements: ''
+        });
         setRapportActuelId(rapportId);
         setTitreRapport(data.titre);
         setNotesRapport(data.notes || '');
@@ -362,7 +374,12 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     setSelectedLotIndex(0);
     setContenuChapitre3('');
     setContenuChapitre4('');
-    setContenuChapitre10('');
+    setCharpitre10({
+      validationAttribution: 'à l\'issue de la validation d\'attribution du marché',
+      envoiRejet: 'à l\'issue du délai de standstill',
+      attributionMarche: '',
+      autresElements: ''
+    });
     setNumeroAfpa('');
   };
 
@@ -1156,13 +1173,41 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               spacing: { before: 400, after: 200 },
             }),
             
-            ...(contenuChapitre10
-              ? createParagraphsFromText(contenuChapitre10)
-              : [new Paragraph({
-                  children: [new TextRun({ text: "[À compléter : Date de notification, démarrage et planning prévisionnel]", italics: true, color: "FF8800", font: "Aptos", size: 22 })],
-                  spacing: { after: 200 },
-                })]
-            ),
+            new Paragraph({
+              children: [
+                createBodyText("Validation de la proposition d'attribution du marché : ", true),
+                createBodyText(chapitre10.validationAttribution),
+              ],
+              spacing: { after: 200 },
+            }),
+            
+            new Paragraph({
+              children: [
+                createBodyText("Envoi des lettres de rejet : ", true),
+                createBodyText(chapitre10.envoiRejet),
+              ],
+              spacing: { after: 200 },
+            }),
+            
+            new Paragraph({
+              children: [
+                createBodyText("Attribution du marché : ", true),
+                createBodyText(chapitre10.attributionMarche || "[À compléter]"),
+              ],
+              spacing: { after: 200 },
+            }),
+            
+            ...(chapitre10.autresElements
+              ? [
+                  new Paragraph({
+                    children: [
+                      createBodyText("Autres éléments du calendrier : ", true),
+                      createBodyText(chapitre10.autresElements),
+                    ],
+                    spacing: { after: 200 },
+                  }),
+                ]
+              : []),
             
             // Bloc de signature
             new Paragraph({
@@ -2160,19 +2205,76 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             <ChapterPreview 
               number={10} 
               title="PROPOSITION DE CALENDRIER DE MISE EN ŒUVRE" 
-              hasData={!!contenuChapitre10}
+              hasData={!!(chapitre10.attributionMarche || chapitre10.autresElements)}
               icon="📆"
             >
-              <div className="space-y-2">
-                <p className="text-sm text-gray-700 font-medium">✏️ Saisissez ou collez le contenu ci-dessous :</p>
-                <textarea
-                  value={contenuChapitre10}
-                  onChange={(e) => setContenuChapitre10(e.target.value)}
-                  placeholder="Date de notification, démarrage et planning prévisionnel...&#10;&#10;Exemple :&#10;- Notification : [date]&#10;- Démarrage : [date]&#10;- Durée : [X] mois&#10;- Étapes clés : ..."
-                  className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-                {contenuChapitre10 && (
-                  <p className="text-xs text-green-600">✓ {contenuChapitre10.length} caractères saisis</p>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-700 font-medium">✏️ Complétez les informations :</p>
+                
+                {/* Validation de la proposition d'attribution du marché */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <label className="text-sm font-semibold text-gray-900">
+                    Validation de la proposition d'attribution du marché :
+                  </label>
+                  <p className="text-sm text-gray-700 mt-1">
+                    {chapitre10.validationAttribution}
+                  </p>
+                </div>
+
+                {/* Envoi des lettres de rejet */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <label className="text-sm font-semibold text-gray-900 mb-2 block">
+                    Envoi des lettres de rejet :
+                  </label>
+                  <select
+                    value={chapitre10.envoiRejet}
+                    onChange={(e) => setCharpitre10({...chapitre10, envoiRejet: e.target.value})}
+                    className="w-full p-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="à l'issue du délai de standstill">à l'issue du délai de standstill</option>
+                    <option value="à l'issue de la validation d'attribution du marché">à l'issue de la validation d'attribution du marché</option>
+                  </select>
+                </div>
+
+                {/* Attribution du marché */}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <label className="text-sm font-semibold text-gray-900 mb-2 block">
+                    Attribution du marché :
+                  </label>
+                  <input
+                    type="text"
+                    value={chapitre10.attributionMarche}
+                    onChange={(e) => setCharpitre10({...chapitre10, attributionMarche: e.target.value})}
+                    placeholder="Ex: novembre 2025 (mois en cours + 1)"
+                    className="w-full p-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">💡 Suggestion : {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</p>
+                </div>
+
+                {/* Autres éléments du calendrier */}
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <label className="text-sm font-semibold text-gray-900 mb-2 block">
+                    Autres éléments du calendrier (optionnel) :
+                  </label>
+                  <textarea
+                    value={chapitre10.autresElements}
+                    onChange={(e) => setCharpitre10({...chapitre10, autresElements: e.target.value})}
+                    placeholder="Ajoutez d'autres jalons ou informations..."
+                    className="w-full h-24 p-2 border border-purple-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  />
+                </div>
+
+                {/* Aperçu */}
+                {(chapitre10.attributionMarche || chapitre10.autresElements) && (
+                  <div className="bg-gray-50 border border-gray-300 rounded-lg p-3">
+                    <p className="text-xs text-green-600 mb-2">✓ Données saisies</p>
+                    <div className="space-y-1 text-xs text-gray-700 font-mono">
+                      <p><strong>Validation :</strong> {chapitre10.validationAttribution}</p>
+                      <p><strong>Rejet :</strong> {chapitre10.envoiRejet}</p>
+                      <p><strong>Attribution :</strong> {chapitre10.attributionMarche}</p>
+                      {chapitre10.autresElements && <p><strong>Autres :</strong> {chapitre10.autresElements}</p>}
+                    </div>
+                  </div>
                 )}
               </div>
             </ChapterPreview>

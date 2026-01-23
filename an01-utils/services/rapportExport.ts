@@ -6,7 +6,12 @@ export interface ExportRapportOptions {
   procedureInfo: any;
   contenuChapitre3?: string;
   contenuChapitre4?: string;
-  contenuChapitre10?: string;
+  chapitre10?: {
+    validationAttribution: string;
+    envoiRejet: string;
+    attributionMarche: string;
+    autresElements: string;
+  };
   an01Buyer?: string;
 }
 
@@ -25,7 +30,7 @@ const formatCurrency = (val: number) => new Intl.NumberFormat('fr-FR', { style: 
  * Génère et télécharge un document DOCX du rapport de présentation
  */
 export async function exportRapportDOCX(options: ExportRapportOptions): Promise<void> {
-  const { rapportData, procedureInfo, contenuChapitre3, contenuChapitre4, contenuChapitre10, an01Buyer } = options;
+  const { rapportData, procedureInfo, contenuChapitre3, contenuChapitre4, chapitre10, an01Buyer } = options;
 
   // Charger l'image depuis public/
   const imageResponse = await fetch('/Image1.png');
@@ -451,12 +456,39 @@ export async function exportRapportDOCX(options: ExportRapportOptions): Promise<
         
         new Paragraph({
           children: [
-            contenuChapitre10
-              ? createBodyText(contenuChapitre10)
-              : new TextRun({ text: "[À compléter : Date de notification, démarrage et planning prévisionnel]", italics: true, color: "FF8800", font: "Aptos", size: 22 }),
+            createBodyText("Validation de la proposition d'attribution du marché : ", true),
+            createBodyText(chapitre10?.validationAttribution || "[À compléter]"),
           ],
           spacing: { after: 200 },
         }),
+        
+        new Paragraph({
+          children: [
+            createBodyText("Envoi des lettres de rejet : ", true),
+            createBodyText(chapitre10?.envoiRejet || "[À compléter]"),
+          ],
+          spacing: { after: 200 },
+        }),
+        
+        new Paragraph({
+          children: [
+            createBodyText("Attribution du marché : ", true),
+            createBodyText(chapitre10?.attributionMarche || "[À compléter]"),
+          ],
+          spacing: { after: 200 },
+        }),
+        
+        ...(chapitre10?.autresElements
+          ? [
+              new Paragraph({
+                children: [
+                  createBodyText("Autres éléments du calendrier : ", true),
+                  createBodyText(chapitre10.autresElements),
+                ],
+                spacing: { after: 200 },
+              }),
+            ]
+          : [])
         
         // Bloc de signature
         new Paragraph({
