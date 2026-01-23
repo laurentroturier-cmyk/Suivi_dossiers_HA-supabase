@@ -3,9 +3,10 @@
 // Affiche les informations clés de la procédure
 // ============================================
 
-import React from 'react';
-import { FileText, Calendar, Euro, Building2, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, Calendar, Euro, Building2, MapPin, Eye } from 'lucide-react';
 import type { ProjectData } from '../../../types';
+import { ProcedureDetailsModal } from './ProcedureDetailsModal';
 
 interface ProcedureHeaderProps {
   procedure: ProjectData | null;
@@ -13,6 +14,8 @@ interface ProcedureHeaderProps {
 }
 
 export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderProps) {
+  const [showModal, setShowModal] = useState(false);
+
   if (!procedure) return null;
 
   const numeroProcedure = String(procedure['Numéro de procédure (Afpa)'] || procedure['NumProc'] || '');
@@ -56,16 +59,24 @@ export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderPr
           </div>
         </div>
 
-        {/* Acheteur */}
+        {/* Acheteur avec bouton Visualiser */}
         {acheteur && (
           <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
             <Building2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-gray-500 font-medium">Acheteur</p>
               <p className="text-xs font-semibold text-gray-900 truncate">
                 {acheteur}
               </p>
             </div>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex-shrink-0 px-3 py-1.5 bg-[#2F5B58] hover:bg-[#234441] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+              title="Visualiser les détails de la procédure"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Visualiser
+            </button>
           </div>
         )}
 
@@ -95,6 +106,13 @@ export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderPr
           </div>
         )}
       </div>
+
+      {/* Modal de détails */}
+      <ProcedureDetailsModal
+        procedure={procedure}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+      />
     </div>
   );
 }

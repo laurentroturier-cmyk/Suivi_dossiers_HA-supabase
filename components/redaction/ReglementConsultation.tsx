@@ -39,7 +39,7 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
       numeroProcedure: initialNumeroProcedure || '',
       titreMarche: '',
       numeroMarche: '',
-      typeMarcheTitle: 'MARCHE PUBLIC DE FOURNITURES ET SERVICES',
+      typeMarcheTitle: 'Marché public de travaux',
       dateLimiteOffres: '',
       heureLimiteOffres: '',
       dateLimiteQuestions: '',
@@ -53,8 +53,8 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
       pays: 'France',
       telephone: '',
       courriel: '',
-      adresseWeb: 'www.afpa.fr',
-      profilAcheteur: 'http://afpa.e-marchespublics.com',
+      adresseWeb: 'https://www.afpa.fr/',
+      profilAcheteur: 'http://afpa.e-marchespublics.com/',
     },
     objet: {
       description: '',
@@ -788,9 +788,9 @@ function EnTeteSection({ data, updateField, onAutoFill, isLoading, autoFillStatu
             onChange={(e) => updateField('enTete', 'typeMarcheTitle', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           >
-            <option>MARCHE PUBLIC DE FOURNITURES ET SERVICES</option>
-            <option>MARCHE PUBLIC DE TRAVAUX</option>
-            <option>MARCHE PUBLIC DE PRESTATIONS INTELLECTUELLES</option>
+            <option>Marché public de travaux</option>
+            <option>Marché public de fournitures</option>
+            <option>Marché public de services</option>
           </select>
         </div>
       </div>
@@ -1235,7 +1235,7 @@ function TypeMarcheSection({ data, updateField }: any) {
 
       <div className="grid grid-cols-4 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 min-h-[40px] flex items-center">
             Durée initiale (mois)
           </label>
           <input
@@ -1247,7 +1247,7 @@ function TypeMarcheSection({ data, updateField }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 min-h-[40px] flex items-center">
             Nb reconductions
           </label>
           <input
@@ -1259,7 +1259,7 @@ function TypeMarcheSection({ data, updateField }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 min-h-[40px] flex items-center">
             Durée reconduction (mois)
           </label>
           <input
@@ -1271,7 +1271,7 @@ function TypeMarcheSection({ data, updateField }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 min-h-[40px] flex items-center">
             Durée max (mois)
           </label>
           <input
