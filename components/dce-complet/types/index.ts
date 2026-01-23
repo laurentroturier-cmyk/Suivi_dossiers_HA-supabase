@@ -4,6 +4,9 @@
 
 import type { RapportCommissionData } from '../../redaction/types/rapportCommission';
 
+// Re-export des types ATTRI1 pour l'Acte d'Engagement
+export * from './acteEngagement';
+
 // ============================================
 // STATUT DU DCE
 // ============================================
@@ -11,7 +14,7 @@ import type { RapportCommissionData } from '../../redaction/types/rapportCommiss
 export type DCEStatut = 'brouillon' | 'en-cours' | 'finalisé' | 'publié';
 
 // ============================================
-// ACTE D'ENGAGEMENT
+// ACTE D'ENGAGEMENT (Format simplifié - Legacy)
 // ============================================
 
 export interface ActeEngagementData {
