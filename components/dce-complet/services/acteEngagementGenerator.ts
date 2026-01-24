@@ -105,14 +105,8 @@ export const generateActeEngagementWord = async (
   const lotNum = data.objet.typeActe.numeroLot || String(numeroLot);
   const lotIntitule = data.objet.typeActe.intituleLot || '';
 
-  // DEBUG : Vérifier les pièces constitutives
-  console.log('📄 Génération AE - Pièces constitutives:', {
-    ccap: data.piecesConstitutives.ccap,
-    ccapNumero: data.piecesConstitutives.ccapNumero,
-    ccatp: data.piecesConstitutives.ccatp,
-    ccatpNumero: data.piecesConstitutives.ccatpNumero,
-    ccag: data.piecesConstitutives.ccag,
-  });
+  // DEBUG : Vérifier les pièces constitutives ET le numéro de référence
+  console.log(`📄 Lot ${numeroLot} | numeroRef: "${numeroReference}" | CCAP: "${data.piecesConstitutives.ccapNumero}" | CCATP: "${data.piecesConstitutives.ccatpNumero}"`);
 
   const doc = new Document({
     styles: {

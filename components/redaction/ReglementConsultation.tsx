@@ -202,11 +202,13 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
   }, []);
 
   // Notifier le parent à chaque changement de données
+  // Note: onDataChange n'est PAS dans les dépendances pour éviter une boucle infinie
+  // car le parent peut mettre à jour initialData, qui met à jour formData, qui rappellerait onDataChange
   useEffect(() => {
     if (onDataChange) {
       onDataChange(formData);
     }
-  }, [formData, onDataChange]);
+  }, [formData]);
 
   const sections = [
     { title: 'En-tête', icon: FileText, color: 'blue' },

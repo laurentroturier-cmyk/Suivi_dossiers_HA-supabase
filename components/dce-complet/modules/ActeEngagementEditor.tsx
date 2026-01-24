@@ -19,7 +19,8 @@ import {
   User,
   FileDown,
   Eye,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react';
 import { downloadActeEngagementWord } from '../services/acteEngagementGenerator';
 import type { 
@@ -199,6 +200,7 @@ export function ActeEngagementEditor({
     return defaultData;
   });
   const [showPreview, setShowPreview] = useState(false);
+  const [showSyncAlert, setShowSyncAlert] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
     objet: true,
     titulaire: true,
@@ -214,9 +216,31 @@ export function ActeEngagementEditor({
 
   useEffect(() => {
     if (data) {
+      console.log('🔍 ActeEngagementEditor - Auto-fill:', {
+        'RC disponible': !!reglementConsultation,
+        'RC.enTete.numeroMarche': reglementConsultation?.enTete?.numeroMarche,
+        'data.objet.numeroReference': data.objet?.numeroReference,
+        'data.piecesConstitutives.ccapNumero': data.piecesConstitutives?.ccapNumero,
+      });
+
       // Pré-remplir les champs acheteur AFPA s'ils sont vides
       // et l'objet du marché depuis le RC ou la Configuration Globale
       const defaultData = createDefaultActeEngagementATTRI1();
+      const numeroFromRC = reglementConsultation?.enTete?.numeroMarche || '';
+      
+      // Détecter si le numéro du RC diffère du numéro sauvegardé (besoin de mise à jour)
+      const needsSync = numeroFromRC && 
+                       data.objet?.numeroReference && 
+                       numeroFromRC !== data.objet.numeroReference;
+      
+      if (needsSync) {
+        console.warn('⚠️ Numéros différents détectés:', {
+          'RC': numeroFromRC,
+          'Sauvegardé': data.objet.numeroReference,
+        });
+        setShowSyncAlert(true);
+      }
+      
       const updatedData = {
         ...defaultData,
         ...data,
@@ -234,12 +258,27 @@ export function ActeEngagementEditor({
                        reglementConsultation?.enTete?.titreMarche || 
                        configurationGlobale?.informationsGenerales?.titreMarche || 
                        '',
+          // IMPORTANT: Toujours utiliser le numéro du RC si disponible pour forcer la mise à jour
+          // (car les anciens lots peuvent avoir l'ancien numéro court)
+          numeroReference: numeroFromRC || data.objet.numeroReference || '',
         },
         piecesConstitutives: {
           ...defaultData.piecesConstitutives,
           ...data.piecesConstitutives,
+          // Auto-remplir les numéros de documents avec le numéro de référence (priorité au RC)
+          ccapNumero: numeroFromRC || data.piecesConstitutives?.ccapNumero || '',
+          ccatpNumero: numeroFromRC || data.piecesConstitutives?.ccatpNumero || '',
+          cctpNumero: numeroFromRC || data.piecesConstitutives?.cctpNumero || '',
         }
       };
+
+      console.log('✅ Données mises à jour:', {
+        'numeroReference': updatedData.objet.numeroReference,
+        'ccapNumero': updatedData.piecesConstitutives.ccapNumero,
+        'ccatpNumero': updatedData.piecesConstitutives.ccatpNumero,
+        'cctpNumero': updatedData.piecesConstitutives.cctpNumero,
+      });
+
       setForm(updatedData);
     }
   }, [data, configurationGlobale, reglementConsultation]);
@@ -274,12 +313,17 @@ export function ActeEngagementEditor({
   const handleExportWord = async () => {
     try {
       setIsExporting(true);
-      console.log('🔍 Export Word - Pièces constitutives:', {
-        ccap: form.piecesConstitutives.ccap,
-        ccapNumero: form.piecesConstitutives.ccapNumero,
-        ccatp: form.piecesConstitutives.ccatp,
-        ccatpNumero: form.piecesConstitutives.ccatpNumero,
-        ccag: form.piecesConstitutives.ccag,
+      console.log('🔍 Export Word - DEBUG COMPLET:', {
+        'numeroReference dans form.objet': form.objet.numeroReference,
+        'numeroProcedure param': numeroProcedure,
+        'numeroLot param': numeroLot,
+        'ccap checked': form.piecesConstitutives.ccap,
+        'ccapNumero': form.piecesConstitutives.ccapNumero,
+        'ccatp checked': form.piecesConstitutives.ccatp,
+        'ccatpNumero': form.piecesConstitutives.ccatpNumero,
+        'cctp checked': form.piecesConstitutives.cctp,
+        'cctpNumero': form.piecesConstitutives.cctpNumero,
+        'ccag': form.piecesConstitutives.ccag,
       });
       await downloadActeEngagementWord(form, numeroProcedure, numeroLot);
     } catch (error) {
@@ -1545,6 +1589,29 @@ export function ActeEngagementEditor({
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
+      {/* Alerte de synchronisation */}
+      {showSyncAlert && (
+        <div className="flex-shrink-0 bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">
+                Numéros mis à jour depuis le Règlement de Consultation
+              </p>
+              <p className="text-xs text-amber-700">
+                Les numéros de documents ont été synchronisés. <strong>Cliquez sur "Enregistrer"</strong> pour sauvegarder ces modifications.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowSyncAlert(false)}
+            className="text-amber-600 hover:text-amber-800"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex-shrink-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">

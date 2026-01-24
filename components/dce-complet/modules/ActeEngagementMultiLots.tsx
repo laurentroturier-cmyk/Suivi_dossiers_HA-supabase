@@ -216,6 +216,12 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
   const handleExportAllLotsAsZip = async () => {
     setExportingZip(true);
     try {
+      console.log('📦 Export ZIP - DEBUG RC:', {
+        'RC disponible': !!reglementConsultation,
+        'RC.enTete': reglementConsultation?.enTete,
+        'RC.enTete.numeroMarche': reglementConsultation?.enTete?.numeroMarche,
+      });
+
       const zip = new JSZip();
       let filesAdded = 0;
 
@@ -225,7 +231,31 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
           const lot = await lotService.getLot(procedureId, lotNum, 'ae');
 
           // Utiliser les données du lot ou des données par défaut
-          const lotData = (lot?.data as ActeEngagementATTRI1Data) || createDefaultActeEngagementATTRI1();
+          let lotData = (lot?.data as ActeEngagementATTRI1Data) || createDefaultActeEngagementATTRI1();
+
+          // 🔄 IMPORTANT: Synchroniser les numéros avec le Règlement de Consultation si disponible
+          // (car les lots sauvegardés peuvent avoir d'anciens numéros courts)
+          if (reglementConsultation?.enTete?.numeroMarche) {
+            const numeroFromRC = reglementConsultation.enTete.numeroMarche;
+            console.log(`🔄 Synchronisation numéros lot ${lotNum}:`, {
+              'ancien': lotData.objet?.numeroReference,
+              'nouveau (RC)': numeroFromRC
+            });
+            
+            lotData = {
+              ...lotData,
+              objet: {
+                ...lotData.objet,
+                numeroReference: numeroFromRC,
+              },
+              piecesConstitutives: {
+                ...lotData.piecesConstitutives,
+                ccapNumero: numeroFromRC,
+                ccatpNumero: numeroFromRC,
+                cctpNumero: numeroFromRC,
+              }
+            };
+          }
 
           // Récupérer le libellé depuis la Configuration Globale ou depuis le lot
           let lotLabel = `Lot ${lotNum}`;
