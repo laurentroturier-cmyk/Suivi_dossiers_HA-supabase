@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 import { 
   FileText, 
   Download, 
@@ -33,6 +34,67 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
   const [activeSection, setActiveSection] = useState(0);
   const [isLoadingProcedure, setIsLoadingProcedure] = useState(false);
   const [autoFillStatus, setAutoFillStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
+  const [loadingCPV, setLoadingCPV] = useState(false);
+  
+  // Fonction pour récupérer le libellé CPV depuis Supabase
+  const fetchCPVLibelle = async (code: string | number) => {
+    // Convertir en string pour être sûr
+    const codeStr = String(code || '').trim();
+    
+    if (!codeStr || codeStr.length < 6) {
+      console.log('❌ Code CPV trop court:', codeStr, 'Type:', typeof code);
+      return;
+    }
+    
+    console.log('🔍 Recherche du libellé CPV pour le code:', codeStr, 'Type original:', typeof code);
+    setLoadingCPV(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('codes_cpv_long')
+        .select('TitreLong')
+        .eq('CPV', codeStr)
+        .single();
+      
+      console.log('📊 Résultat Supabase:', { data, error });
+      
+      if (error) {
+        console.error('❌ Erreur Supabase:', error);
+        return;
+      }
+      
+      if (data && data.TitreLong) {
+        console.log('✅ Libellé trouvé:', data.TitreLong);
+        updateField('objet', 'cpvPrincipalLib', data.TitreLong);
+      } else {
+        console.log('⚠️ Aucun libellé trouvé pour ce code CPV');
+      }
+    } catch (err) {
+      console.error('💥 Erreur lors de la récupération du libellé CPV:', err);
+    } finally {
+      setLoadingCPV(false);
+    }
+  };
+  
+  // Fonction pour récupérer le libellé CPV secondaire
+  const fetchCPVSecondaireLibelle = async (code: string | number) => {
+    const codeStr = String(code || '').trim();
+    
+    if (!codeStr || codeStr.length < 6) return null;
+    
+    try {
+      const { data, error } = await supabase
+        .from('codes_cpv_long')
+        .select('TitreLong')
+        .eq('CPV', codeStr)
+        .single();
+      
+      return data?.TitreLong || null;
+    } catch (err) {
+      console.error('Erreur lors de la récupération du libellé CPV secondaire:', err);
+      return null;
+    }
+  };
   
   const [formData, setFormData] = useState<RapportCommissionData>(initialData || {
     enTete: {
@@ -83,13 +145,8 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
     },
     dce: {
       documents: [
-        'Règlement de la Consultation (RC)',
-        'Acte d\'Engagement (AE)',
-        'Bordereau des Prix Unitaires (BPU)',
-        'Cahier des Clauses Administratives Particulières (CCAP)',
-        'Cahier des Clauses Techniques Particulières (CCTP)',
-        'Détail Quantitatif Estimatif (DQE)',
-        'Questionnaire Technique (QT)'
+        'Le Règlement de la Consultation (RC)',
+        'L\'Acte d\'Engagement (AE)'
       ],
       urlCCAG: 'https://www.economie.gouv.fr/daj/cahiers-clauses-administratives-generales-et-techniques#CCAG',
     },
@@ -122,6 +179,27 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
       setFormData(initialData);
     }
   }, [initialData]);
+
+  // Garantir que RC et AE sont toujours présents
+  useEffect(() => {
+    const documentsObligatoires = [
+      'Le Règlement de la Consultation (RC)',
+      'L\'Acte d\'Engagement (AE)'
+    ];
+    
+    const currentDocs = formData.dce?.documents || [];
+    const missingDocs = documentsObligatoires.filter(doc => !currentDocs.includes(doc));
+    
+    if (missingDocs.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        dce: {
+          ...prev.dce,
+          documents: [...missingDocs, ...currentDocs]
+        }
+      }));
+    }
+  }, []);
 
   // Notifier le parent à chaque changement de données
   useEffect(() => {
@@ -680,7 +758,7 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
                   />
                 )}
                 {activeSection === 1 && <PouvoirSection data={formData.pouvoirAdjudicateur} updateField={updateField} />}
-                {activeSection === 2 && <ObjetSection data={formData.objet} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />}
+                {activeSection === 2 && <ObjetSection data={formData.objet} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} loadingCPV={loadingCPV} fetchCPVLibelle={fetchCPVLibelle} fetchCPVSecondaireLibelle={fetchCPVSecondaireLibelle} supabase={supabase} />}
                 {activeSection === 3 && <ConditionsSection data={formData.conditions} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />}
                 {activeSection === 4 && <TypeMarcheSection data={formData.typeMarche} updateField={updateField} />}
                 {activeSection === 5 && <DCESection data={formData.dce} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />}
@@ -960,8 +1038,56 @@ function PouvoirSection({ data, updateField }: any) {
   );
 }
 
-function ObjetSection({ data, updateField, addArrayItem, removeArrayItem }: any) {
+function ObjetSection({ data, updateField, addArrayItem, removeArrayItem, loadingCPV, fetchCPVLibelle, fetchCPVSecondaireLibelle, supabase }: any) {
   const [newCPV, setNewCPV] = useState({ code: '', libelle: '' });
+  const [searchCPV, setSearchCPV] = useState('');
+  const [cpvResults, setCpvResults] = useState<Array<{ CPV: string; TitreLong: string }>>([]);
+  const [showCPVDropdown, setShowCPVDropdown] = useState(false);
+  const [searchingCPV, setSearchingCPV] = useState(false);
+
+  // Fermer le dropdown quand on clique en dehors
+  React.useEffect(() => {
+    const handleClickOutside = () => setShowCPVDropdown(false);
+    if (showCPVDropdown) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showCPVDropdown]);
+
+  // Fonction de recherche CPV dans Supabase
+  const searchCPVInSupabase = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.length < 3) {
+      setCpvResults([]);
+      setShowCPVDropdown(false);
+      return;
+    }
+
+    setSearchingCPV(true);
+    try {
+      const { data, error } = await supabase
+        .from('codes_cpv_long')
+        .select('CPV, TitreLong')
+        .or(`CPV.ilike.%${searchTerm}%,TitreLong.ilike.%${searchTerm}%`)
+        .limit(10);
+
+      if (data) {
+        setCpvResults(data);
+        setShowCPVDropdown(true);
+      }
+    } catch (err) {
+      console.error('Erreur recherche CPV:', err);
+    } finally {
+      setSearchingCPV(false);
+    }
+  };
+
+  // Sélection d'un CPV depuis les résultats
+  const selectCPV = (cpv: { CPV: string; TitreLong: string }) => {
+    addArrayItem('objet', 'cpvSecondaires', { code: cpv.CPV, libelle: cpv.TitreLong });
+    setSearchCPV('');
+    setCpvResults([]);
+    setShowCPVDropdown(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -988,18 +1114,31 @@ function ObjetSection({ data, updateField, addArrayItem, removeArrayItem }: any)
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Code
             </label>
-            <input
-              type="text"
-              value={data.cpvPrincipal}
-              onChange={(e) => updateField('objet', 'cpvPrincipal', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="Ex: 45000000-7"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={data.cpvPrincipal}
+                onChange={(e) => {
+                  updateField('objet', 'cpvPrincipal', e.target.value);
+                }}
+                onBlur={() => fetchCPVLibelle(data.cpvPrincipal)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="Ex: 45000000-7"
+              />
+              {loadingCPV && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Libellé
+              {data.cpvPrincipalLib && (
+                <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ Auto-rempli</span>
+              )}
             </label>
             <input
               type="text"
@@ -1015,52 +1154,80 @@ function ObjetSection({ data, updateField, addArrayItem, removeArrayItem }: any)
       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Codes CPV Secondaires</h3>
         
-        <div className="space-y-2 mb-3">
-          {data.cpvSecondaires?.map((cpv: any, index: number) => (
-            <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">{cpv.code}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">{cpv.libelle}</div>
+        {data.cpvSecondaires && data.cpvSecondaires.length > 0 ? (
+          <div className="space-y-2 mb-3">
+            {data.cpvSecondaires.map((cpv: any, index: number) => (
+              <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+                <div>
+                  <div className="font-medium text-gray-900 dark:text-white">{cpv.code}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{cpv.libelle}</div>
+                </div>
+                <button
+                  onClick={() => removeArrayItem('objet', 'cpvSecondaires', index)}
+                  className="text-red-600 hover:text-red-700 dark:text-red-400"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={() => removeArrayItem('objet', 'cpvSecondaires', index)}
-                className="text-red-600 hover:text-red-700 dark:text-red-400"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-3 italic">
+            Aucun code CPV secondaire ajouté
+          </div>
+        )}
 
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          <input
-            type="text"
-            value={newCPV.code}
-            onChange={(e) => setNewCPV({ ...newCPV, code: e.target.value })}
-            placeholder="Code CPV"
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-          />
-          <input
-            type="text"
-            value={newCPV.libelle}
-            onChange={(e) => setNewCPV({ ...newCPV, libelle: e.target.value })}
-            placeholder="Libellé"
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-          />
+        {/* Recherche CPV avec autocomplétion */}
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Rechercher un code CPV
+          </label>
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="text"
+              value={searchCPV}
+              onChange={(e) => {
+                setSearchCPV(e.target.value);
+                searchCPVInSupabase(e.target.value);
+              }}
+              onFocus={() => {
+                if (cpvResults.length > 0) setShowCPVDropdown(true);
+              }}
+              placeholder="Tapez un code ou un mot-clé (ex: 72267000 ou 'programmation')"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            {searchingCPV && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+              </div>
+            )}
+            
+            {/* Dropdown résultats */}
+            {showCPVDropdown && cpvResults.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                {cpvResults.map((cpv, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      selectCPV(cpv);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                  >
+                    <div className="font-medium text-gray-900 dark:text-white">{cpv.CPV}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">{cpv.TitreLong}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {searchCPV.length > 0 && searchCPV.length < 3 && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Tapez au moins 3 caractères pour rechercher
+            </p>
+          )}
         </div>
-        
-        <button
-          onClick={() => {
-            if (newCPV.code && newCPV.libelle) {
-              addArrayItem('objet', 'cpvSecondaires', newCPV);
-              setNewCPV({ code: '', libelle: '' });
-            }
-          }}
-          className="w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
-        >
-          <Plus className="w-4 h-4 inline mr-1" />
-          Ajouter un CPV secondaire
-        </button>
       </div>
     </div>
   );
@@ -1312,7 +1479,42 @@ function TypeMarcheSection({ data, updateField }: any) {
 }
 
 function DCESection({ data, updateField, addArrayItem, removeArrayItem }: any) {
-  const [newDoc, setNewDoc] = useState('');
+  const [selectedDoc, setSelectedDoc] = useState('');
+
+  // Liste ordonnée des documents standard
+  const documentsStandard = [
+    'Le Règlement de la Consultation (RC)',
+    'L\'Acte d\'Engagement (AE)',
+    'Le Cahier des Clauses Administratives Particulières (CCAP) et ses annexes',
+    'Le Cahier des Clauses Administratives et techniques Particulières (CCATP) et ses annexes',
+    'Le Cahier des Clauses Techniques Particulières (CCTP) et ses annexes',
+    'Le Bordereau des Prix Unitaires (BPU)',
+    'Le Détail Quantitatif Estimatif (DQE)',
+    'La Décomposition du Prix Global et Forfaitaire (DPGF)',
+    'Le Cadre de Réponse Technique (CRT) et ses annexes',
+    'Le Questionnaire Technique (QT)',
+    'Le Cahier des Clauses Techniques Générales (CCTG)'
+  ];
+
+  // Filtrer les documents déjà ajoutés
+  const documentsDisponibles = documentsStandard.filter(doc => !data.documents?.includes(doc));
+
+  // Fonction pour ajouter un document en respectant l'ordre
+  const handleAddDocument = () => {
+    if (selectedDoc && !data.documents?.includes(selectedDoc)) {
+      // Ajouter le document
+      const nouveauxDocs = [...(data.documents || []), selectedDoc];
+      // Trier selon l'ordre de documentsStandard
+      const docsTries = nouveauxDocs.sort((a, b) => {
+        const indexA = documentsStandard.indexOf(a);
+        const indexB = documentsStandard.indexOf(b);
+        return indexA - indexB;
+      });
+      // Mettre à jour
+      updateField('dce', 'documents', docsTries);
+      setSelectedDoc('');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -1322,39 +1524,54 @@ function DCESection({ data, updateField, addArrayItem, removeArrayItem }: any) {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Documents du dossier</h3>
 
         <div className="space-y-2 mb-3">
-          {data.documents?.map((doc: string, index: number) => (
-            <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
-              <span className="text-gray-900 dark:text-white text-sm">{doc}</span>
-              <button
-                onClick={() => removeArrayItem('dce', 'documents', index)}
-                className="text-red-600 hover:text-red-700 dark:text-red-400"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+          {data.documents?.map((doc: string, index: number) => {
+            // RC et AE ne peuvent pas être supprimés
+            const isRequired = doc === 'Le Règlement de la Consultation (RC)' || doc === 'L\'Acte d\'Engagement (AE)';
+            return (
+              <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
+                <span className="text-gray-900 dark:text-white text-sm">
+                  {doc}
+                  {isRequired && <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">(Obligatoire)</span>}
+                </span>
+                {!isRequired && (
+                  <button
+                    onClick={() => removeArrayItem('dce', 'documents', index)}
+                    className="text-red-600 hover:text-red-700 dark:text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newDoc}
-            onChange={(e) => setNewDoc(e.target.value)}
-            placeholder="Ajouter un document..."
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-          />
-          <button
-            onClick={() => {
-              if (newDoc) {
-                addArrayItem('dce', 'documents', newDoc);
-                setNewDoc('');
-              }
-            }}
-            className="px-4 py-2 text-sm text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
-          >
-            Ajouter
-          </button>
-        </div>
+        {documentsDisponibles.length > 0 && (
+          <div className="space-y-2">
+            <select
+              value={selectedDoc}
+              onChange={(e) => setSelectedDoc(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+            >
+              <option value="">-- Sélectionner un document à ajouter --</option>
+              {documentsDisponibles.map((doc, idx) => (
+                <option key={idx} value={doc}>{doc}</option>
+              ))}
+            </select>
+            <button
+              onClick={handleAddDocument}
+              disabled={!selectedDoc}
+              className="w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Ajouter
+            </button>
+          </div>
+        )}
+
+        {documentsDisponibles.length === 0 && data.documents?.length > 0 && (
+          <p className="text-sm text-green-600 dark:text-green-400 italic">Tous les documents standard ont été ajoutés</p>
+        )}
       </div>
 
       <div>

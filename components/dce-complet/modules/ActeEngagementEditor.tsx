@@ -6,8 +6,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Save, 
-  Eye, 
-  Edit3, 
   ChevronDown, 
   ChevronUp, 
   Plus, 
@@ -19,7 +17,9 @@ import {
   Clock,
   PenTool,
   User,
-  FileDown
+  FileDown,
+  Eye,
+  X
 } from 'lucide-react';
 import { generateActeEngagementWord } from '../services/acteEngagementGenerator';
 import type { 
@@ -172,7 +172,6 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
   </div>
 );
 
-type ViewMode = 'edit' | 'preview';
 type SectionKey = 'objet' | 'titulaire' | 'prix' | 'groupement' | 'compte' | 'avance' | 'duree' | 'signatureC1' | 'signatureC2' | 'acheteur';
 
 export function ActeEngagementEditor({ 
@@ -186,7 +185,7 @@ export function ActeEngagementEditor({
   const [form, setForm] = useState<ActeEngagementATTRI1Data>(
     data || createDefaultActeEngagementATTRI1()
   );
-  const [viewMode, setViewMode] = useState<ViewMode>('edit');
+  const [showPreview, setShowPreview] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
     objet: true,
     titulaire: true,
@@ -407,189 +406,7 @@ export function ActeEngagementEditor({
   );
 
   // ============================================
-  // MODE PRÉVISUALISATION
-  // ============================================
-
-  const renderPreview = () => (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-      {/* En-tête officiel */}
-      <div className="bg-gradient-to-r from-blue-800 to-blue-900 text-white p-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-xs uppercase tracking-wide opacity-75">Ministère de l'Économie et des Finances</p>
-            <p className="text-xs opacity-75">Direction des Affaires Juridiques</p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold">ATTRI1</p>
-          </div>
-        </div>
-        <h1 className="text-2xl font-bold mt-4">MARCHÉS PUBLICS</h1>
-        <h2 className="text-xl">ACTE D'ENGAGEMENT</h2>
-      </div>
-
-      <div className="p-6 space-y-6">
-        {/* Section A */}
-        <section className="border-l-4 border-blue-500 pl-4">
-          <h3 className="text-lg font-bold text-blue-800 mb-3">A - Objet de l'acte d'engagement</h3>
-          <div className="space-y-2 text-sm">
-            <p><strong>Objet du marché public :</strong> {form.objet.objetMarche || '(Non renseigné)'}</p>
-            <p><strong>N° de référence :</strong> {form.objet.numeroReference || numeroProcedure}</p>
-            
-            <div className="mt-3">
-              <p className="font-medium">Cet acte d'engagement correspond :</p>
-              <ul className="ml-4 mt-1 space-y-1">
-                {form.objet.typeActe.ensembleMarche && (
-                  <li>☑ à l'ensemble du marché public (en cas de non allotissement)</li>
-                )}
-                {form.objet.typeActe.lotSpecifique && (
-                  <li>☑ au lot n°{form.objet.typeActe.numeroLot || numeroLot} - {form.objet.typeActe.intituleLot || '(Intitulé du lot)'}</li>
-                )}
-                {form.objet.typeOffre.offreBase && <li>☑ à l'offre de base</li>}
-                {form.objet.typeOffre.variante && (
-                  <li>☑ à la variante suivante : {form.objet.typeOffre.descriptionVariante}</li>
-                )}
-                {form.objet.prestationsSupplementaires.avecPrestations && (
-                  <li>☑ avec les prestations supplémentaires : {form.objet.prestationsSupplementaires.description}</li>
-                )}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {/* Section B */}
-        <section className="border-l-4 border-green-500 pl-4">
-          <h3 className="text-lg font-bold text-green-800 mb-3">B - Engagement du titulaire ou du groupement titulaire</h3>
-          
-          {/* B1 */}
-          <div className="mb-4">
-            <h4 className="font-semibold text-green-700">B1 - Identification et engagement du titulaire</h4>
-            <p className="text-sm mt-2">Après avoir pris connaissance des pièces constitutives du marché public suivantes :</p>
-            <ul className="text-sm ml-4 mt-1 space-y-1">
-              {form.piecesConstitutives.ccap && <li>☑ CCAP n° {form.piecesConstitutives.ccapNumero || form.objet.numeroReference}</li>}
-              {form.piecesConstitutives.ccatp && <li>☑ CCATP n° {form.piecesConstitutives.ccatpNumero || form.objet.numeroReference}</li>}
-              {form.piecesConstitutives.cctp && <li>☑ CCTP n° {form.piecesConstitutives.cctpNumero || form.objet.numeroReference}</li>}
-              {form.piecesConstitutives.ccag && (
-                <li>☑ CCAG {
-                  form.piecesConstitutives.ccag === 'FCS' ? 'de Fournitures Courantes et de Services' :
-                  form.piecesConstitutives.ccag === 'Travaux' ? 'de Travaux' :
-                  form.piecesConstitutives.ccag === 'PI' ? 'de Prestations Intellectuelles' :
-                  form.piecesConstitutives.ccag === 'TIC' ? 'TIC' :
-                  form.piecesConstitutives.ccag === 'MOE' ? 'Maîtrise d\'œuvre' : ''
-                }</li>
-              )}
-              {form.piecesConstitutives.autres && <li>☑ Autres : {form.piecesConstitutives.autresDescription}</li>}
-            </ul>
-            
-            <p className="text-sm mt-3">
-              <strong>Le signataire</strong> {form.titulaire.civilite} {form.titulaire.nomPrenom || '(Non renseigné)'}
-            </p>
-            
-            {form.titulaire.typeEngagement === 'societe' && (
-              <div className="text-sm mt-2 p-3 bg-gray-50 rounded">
-                <p><strong>engage la société</strong> {form.titulaire.nomCommercial || form.titulaire.denominationSociale || '(Non renseigné)'}</p>
-                <p className="mt-1"><strong>Adresse :</strong> {form.titulaire.adresseEtablissement || '(Non renseigné)'}</p>
-                <p><strong>SIRET :</strong> {form.titulaire.siret || '(Non renseigné)'}</p>
-                <p><strong>Tél :</strong> {form.titulaire.telephone || '(Non renseigné)'}</p>
-              </div>
-            )}
-          </div>
-
-          {/* B3 */}
-          <div className="mb-4">
-            <h4 className="font-semibold text-green-700">B3 - Compte(s) à créditer</h4>
-            {form.comptesBancaires.map((compte, i) => (
-              <div key={compte.id} className="text-sm mt-2 p-3 bg-gray-50 rounded">
-                <p><strong>Établissement bancaire :</strong> {compte.nomEtablissement || '(Non renseigné)'} ({compte.codeEtablissement})</p>
-                <p><strong>N° de compte :</strong> {compte.numeroCompte || '(Non renseigné)'}</p>
-                {compte.iban && <p><strong>IBAN :</strong> {compte.iban}</p>}
-              </div>
-            ))}
-          </div>
-
-          {/* B4 */}
-          <div className="mb-4">
-            <h4 className="font-semibold text-green-700">B4 - Avance</h4>
-            <p className="text-sm mt-1">
-              Je renonce au bénéfice de l'avance : {form.avance.renonceBenefice ? '☑ Oui' : '☑ Non'}
-            </p>
-          </div>
-
-          {/* B5 */}
-          <div className="mb-4">
-            <h4 className="font-semibold text-green-700">B5 - Durée d'exécution du marché public</h4>
-            <p className="text-sm mt-1">
-              La durée d'exécution est de <strong>{form.dureeExecution.dureeEnMois}</strong> mois à compter de :
-            </p>
-            <ul className="text-sm ml-4 mt-1">
-              {form.dureeExecution.pointDepart === 'notification' && <li>☑ la date de notification du marché public</li>}
-              {form.dureeExecution.pointDepart === 'ordre-service' && <li>☑ la date de notification de l'ordre de service</li>}
-              {form.dureeExecution.pointDepart === 'date-execution' && <li>☑ la date de début d'exécution prévue</li>}
-            </ul>
-            <p className="text-sm mt-2">
-              Le marché public est reconductible : {form.dureeExecution.estReconductible ? '☑ Oui' : '☑ Non'}
-            </p>
-            {form.dureeExecution.estReconductible && (
-              <p className="text-sm ml-4">
-                Nombre : {form.dureeExecution.nombreReconductions} | Durée : {form.dureeExecution.dureeReconductions}
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* Section C */}
-        <section className="border-l-4 border-orange-500 pl-4">
-          <h3 className="text-lg font-bold text-orange-800 mb-3">C - Signature du marché public</h3>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-orange-50">
-                  <th className="border border-gray-300 p-2 text-left">Nom, prénom et qualité du signataire</th>
-                  <th className="border border-gray-300 p-2 text-left">Lieu et date de signature</th>
-                  <th className="border border-gray-300 p-2 text-left">Signature</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="border border-gray-300 p-2">
-                    {form.signatureTitulaire.nomPrenom || '(Non renseigné)'}<br />
-                    <span className="text-gray-500">{form.signatureTitulaire.qualite}</span>
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    A {form.signatureTitulaire.lieuSignature || '(Lieu)'}<br />
-                    Le {form.signatureTitulaire.dateSignature || '(Date)'}
-                  </td>
-                  <td className="border border-gray-300 p-2 text-center">
-                    {form.signatureTitulaire.signatureElectronique ? 'électronique' : '(Signature)'}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* Section D */}
-        <section className="border-l-4 border-purple-500 pl-4">
-          <h3 className="text-lg font-bold text-purple-800 mb-3">D - Identification et signature de l'acheteur</h3>
-          <div className="text-sm space-y-2">
-            <p><strong>Désignation de l'acheteur :</strong> {form.acheteur.designation || '(Non renseigné)'}</p>
-            <p><strong>Signataire :</strong> {form.acheteur.signataire.civilite} {form.acheteur.signataire.nomPrenom} - {form.acheteur.signataire.qualite}</p>
-            <p><strong>A :</strong> {form.acheteur.lieuSignature}, le {form.acheteur.dateSignature || '...'}</p>
-          </div>
-        </section>
-      </div>
-
-      {/* Pied de page */}
-      <div className="bg-gray-100 px-6 py-3 text-xs text-gray-500 flex justify-between">
-        <span>ATTRI1 – Acte d'engagement</span>
-        <span>N° {form.objet.numeroReference || numeroProcedure} Lot {form.objet.typeActe.numeroLot || numeroLot}</span>
-        <span>Version code de la commande publique - 2019</span>
-      </div>
-    </div>
-  );
-
-  // ============================================
-  // MODE ÉDITION
+  // FORMULAIRE D'ÉDITION
   // ============================================
 
   const renderEditForm = () => (
@@ -1705,37 +1522,21 @@ export function ActeEngagementEditor({
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Toggle Vue */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('edit')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition ${
-                viewMode === 'edit' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Edit3 className="w-4 h-4" />
-              Édition
-            </button>
-            <button
-              onClick={() => setViewMode('preview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition ${
-                viewMode === 'preview' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Eye className="w-4 h-4" />
-              Aperçu
-            </button>
-          </div>
-          
+          {/* Bouton Aperçu */}
+          <button
+            onClick={() => setShowPreview(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium shadow-sm"
+            title="Prévisualiser le document"
+          >
+            <Eye className="w-4 h-4" />
+            Aperçu
+          </button>
+
           {/* Bouton Sauvegarder */}
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
           >
             <Save className="w-4 h-4" />
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
@@ -1745,7 +1546,7 @@ export function ActeEngagementEditor({
           <button
             onClick={handleExportWord}
             disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
             title="Exporter au format Word (ATTRI1)"
           >
             <FileDown className="w-4 h-4" />
@@ -1757,9 +1558,222 @@ export function ActeEngagementEditor({
       {/* Contenu */}
       <div className="flex-1 overflow-auto p-4">
         <div className="max-w-5xl mx-auto">
-          {viewMode === 'edit' ? renderEditForm() : renderPreview()}
+          {renderEditForm()}
         </div>
       </div>
+
+      {/* Modal de prévisualisation */}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-75 p-4">
+          <div className="bg-gray-100 rounded-lg shadow-2xl w-full max-w-[900px] max-h-[95vh] flex flex-col">
+            {/* En-tête du modal */}
+            <div className="flex items-center justify-between p-4 bg-white border-b border-gray-300">
+              <h2 className="text-lg font-semibold text-gray-700">Aperçu du document ATTRI1</h2>
+              <button
+                onClick={() => setShowPreview(false)}
+                className="p-1.5 hover:bg-gray-100 rounded transition"
+                title="Fermer"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Contenu du modal - Prévisualisation style document Word */}
+            <div className="flex-1 overflow-auto p-8 bg-gray-100">
+              {/* Page A4 style */}
+              <div className="bg-white mx-auto shadow-xl" style={{ width: '210mm', minHeight: '297mm', padding: '2.54cm' }}>
+                {/* En-tête officiel */}
+                <div className="mb-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <p className="text-[9pt] uppercase font-semibold" style={{ fontFamily: 'Calibri, sans-serif' }}>Ministère de l'Économie et des Finances</p>
+                      <p className="text-[9pt]" style={{ fontFamily: 'Calibri, sans-serif' }}>Direction des Affaires Juridiques</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[18pt] font-bold" style={{ fontFamily: 'Calibri, sans-serif' }}>ATTRI1</p>
+                    </div>
+                  </div>
+                  <h1 className="text-[16pt] font-bold text-center mb-1" style={{ fontFamily: 'Calibri, sans-serif' }}>MARCHÉS PUBLICS</h1>
+                  <h2 className="text-[14pt] font-bold text-center" style={{ fontFamily: 'Calibri, sans-serif' }}>ACTE D'ENGAGEMENT</h2>
+                </div>
+
+                <div className="space-y-5" style={{ fontFamily: 'Calibri, sans-serif', fontSize: '11pt', lineHeight: '1.5' }}>
+                  {/* Section A */}
+                  <section>
+                    <h3 className="text-[12pt] font-bold mb-2 pb-1 border-b-2 border-blue-600">A - Objet de l'acte d'engagement</h3>
+                    <div className="space-y-2">
+                      <p><strong>Objet du marché public :</strong> {form.objet.objetMarche || '______________________________'}</p>
+                      <p><strong>N° de référence :</strong> {form.objet.numeroReference || numeroProcedure || '______________________________'}</p>
+                      
+                      <div className="mt-3">
+                        <p className="font-semibold mb-2">Cet acte d'engagement correspond :</p>
+                        <div className="ml-6 space-y-1">
+                          <p>☐ à l'ensemble du marché public (en cas de non allotissement) {form.objet.typeActe.ensembleMarche && '✓'}</p>
+                          <p>☐ au lot n° {form.objet.typeActe.numeroLot || numeroLot || '___'} - {form.objet.typeActe.intituleLot || '_____________________'} {form.objet.typeActe.lotSpecifique && '✓'}</p>
+                          <p>☐ à l'offre de base {form.objet.typeOffre.offreBase && '✓'}</p>
+                          <p>☐ à la variante suivante : {form.objet.typeOffre.descriptionVariante || '_____________________'} {form.objet.typeOffre.variante && '✓'}</p>
+                          <p>☐ avec les prestations supplémentaires suivantes : {form.objet.prestationsSupplementaires.description || '_____________________'} {form.objet.prestationsSupplementaires.avecPrestations && '✓'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Section B */}
+                  <section>
+                    <h3 className="text-[12pt] font-bold mb-2 pb-1 border-b-2 border-green-600">B - Engagement du titulaire ou du groupement titulaire</h3>
+                    
+                    {/* B1 */}
+                    <div className="mb-4">
+                      <h4 className="font-bold text-[11pt] mb-1">B1 - Identification et engagement du titulaire</h4>
+                      <p className="mb-2">Après avoir pris connaissance des pièces constitutives du marché public suivantes :</p>
+                      <div className="ml-6 space-y-0.5">
+                        <p>☐ CCAP n° {form.piecesConstitutives.ccapNumero || form.objet.numeroReference || '________'} {form.piecesConstitutives.ccap && '✓'}</p>
+                        <p>☐ CCATP n° {form.piecesConstitutives.ccatpNumero || form.objet.numeroReference || '________'} {form.piecesConstitutives.ccatp && '✓'}</p>
+                        <p>☐ CCTP n° {form.piecesConstitutives.cctpNumero || form.objet.numeroReference || '________'} {form.piecesConstitutives.cctp && '✓'}</p>
+                        {form.piecesConstitutives.ccag && (
+                          <p>☑ CCAG {
+                            form.piecesConstitutives.ccag === 'FCS' ? 'de Fournitures Courantes et de Services' :
+                            form.piecesConstitutives.ccag === 'Travaux' ? 'de Travaux' :
+                            form.piecesConstitutives.ccag === 'PI' ? 'de Prestations Intellectuelles' :
+                            form.piecesConstitutives.ccag === 'TIC' ? 'TIC' :
+                            form.piecesConstitutives.ccag === 'MOE' ? 'Maîtrise d\'œuvre' : ''
+                          }</p>
+                        )}
+                        {form.piecesConstitutives.autres && <p>☑ Autres : {form.piecesConstitutives.autresDescription}</p>}
+                      </div>
+                      
+                      <p className="mt-3">
+                        <strong>Le signataire</strong> {form.titulaire.civilite} {form.titulaire.nomPrenom || '_____________________'}
+                      </p>
+                      
+                      {form.titulaire.typeEngagement === 'societe' && (
+                        <div className="mt-2 pl-4">
+                          <p><strong>engage la société</strong> {form.titulaire.nomCommercial || form.titulaire.denominationSociale || '_____________________'}</p>
+                          <p className="mt-1">Adresse de l'établissement : {form.titulaire.adresseEtablissement || '_____________________'}</p>
+                          <p>N° SIRET : {form.titulaire.siret || '_____________________'}</p>
+                          <p>Téléphone : {form.titulaire.telephone || '_____________________'}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* B2 - Prix */}
+                    <div className="mb-4">
+                      <h4 className="font-bold text-[11pt] mb-1">B2 - Prix</h4>
+                      <p>Le prix du marché s'élève à la somme de : <strong>{form.prix.montantGlobal || '___________'} €</strong></p>
+                    </div>
+
+                    {/* B3 */}
+                    <div className="mb-4">
+                      <h4 className="font-bold text-[11pt] mb-1">B3 - Compte(s) à créditer</h4>
+                      {form.comptesBancaires.map((compte, i) => (
+                        <div key={compte.id} className="mt-2 pl-4">
+                          <p>Établissement bancaire : {compte.nomEtablissement || '_____________________'}</p>
+                          <p>Code établissement : {compte.codeEtablissement || '________'} | Code guichet : {compte.codeGuichet || '________'}</p>
+                          <p>N° de compte : {compte.numeroCompte || '_____________________'}</p>
+                          {compte.iban && <p>IBAN : {compte.iban}</p>}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* B4 */}
+                    <div className="mb-4">
+                      <h4 className="font-bold text-[11pt] mb-1">B4 - Avance</h4>
+                      <p>Je renonce au bénéfice de l'avance : ☐ Oui {form.avance.renonceBenefice && '✓'} | ☐ Non {!form.avance.renonceBenefice && '✓'}</p>
+                    </div>
+
+                    {/* B5 */}
+                    <div className="mb-4">
+                      <h4 className="font-bold text-[11pt] mb-1">B5 - Durée d'exécution du marché public</h4>
+                      <p>La durée d'exécution est de <strong>{form.dureeExecution.dureeEnMois || '___'}</strong> mois à compter de :</p>
+                      <div className="ml-6 mt-1">
+                        <p>☐ la date de notification du marché public {form.dureeExecution.pointDepart === 'notification' && '✓'}</p>
+                        <p>☐ la date de notification de l'ordre de service {form.dureeExecution.pointDepart === 'ordre-service' && '✓'}</p>
+                        <p>☐ la date de début d'exécution prévue au CCAP {form.dureeExecution.pointDepart === 'date-execution' && '✓'}</p>
+                      </div>
+                      <p className="mt-2">Le marché public est reconductible : ☐ Oui {form.dureeExecution.estReconductible && '✓'} | ☐ Non {!form.dureeExecution.estReconductible && '✓'}</p>
+                      {form.dureeExecution.estReconductible && (
+                        <p className="ml-6">
+                          Nombre : {form.dureeExecution.nombreReconductions || '___'} | Durée : {form.dureeExecution.dureeReconductions || '___'}
+                        </p>
+                      )}
+                    </div>
+                  </section>
+
+                  {/* Section C */}
+                  <section>
+                    <h3 className="text-[12pt] font-bold mb-2 pb-1 border-b-2 border-orange-600">C - Signature du marché public</h3>
+                    
+                    <table className="w-full border-collapse mt-2" style={{ fontSize: '10pt' }}>
+                      <thead>
+                        <tr>
+                          <th className="border border-gray-400 p-2 bg-gray-50 text-left font-semibold">Nom, prénom et qualité du signataire</th>
+                          <th className="border border-gray-400 p-2 bg-gray-50 text-left font-semibold">Lieu et date de signature</th>
+                          <th className="border border-gray-400 p-2 bg-gray-50 text-left font-semibold">Signature</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border border-gray-400 p-2 align-top">
+                            {form.signatureTitulaire.nomPrenom || '_____________________'}<br />
+                            <span className="text-gray-600 text-[9pt]">{form.signatureTitulaire.qualite || '_____________________'}</span>
+                          </td>
+                          <td className="border border-gray-400 p-2 align-top">
+                            A {form.signatureTitulaire.lieuSignature || '_____________________'}<br />
+                            Le {form.signatureTitulaire.dateSignature || '__/__/____'}
+                          </td>
+                          <td className="border border-gray-400 p-2 text-center align-top" style={{ minHeight: '60px' }}>
+                            {form.signatureTitulaire.signatureElectronique ? '(Signature électronique)' : ''}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </section>
+
+                  {/* Section D */}
+                  <section>
+                    <h3 className="text-[12pt] font-bold mb-2 pb-1 border-b-2 border-purple-600">D - Identification et signature de l'acheteur</h3>
+                    <div className="space-y-1.5">
+                      <p><strong>Désignation de l'acheteur :</strong> {form.acheteur.designation || '_____________________'}</p>
+                      <p><strong>Signataire :</strong> {form.acheteur.signataire.civilite} {form.acheteur.signataire.nomPrenom || '_____________________'}</p>
+                      <p><strong>Qualité :</strong> {form.acheteur.signataire.qualite || '_____________________'}</p>
+                      <p className="mt-3"><strong>Fait à :</strong> {form.acheteur.lieuSignature || '_____________________'}, <strong>le</strong> {form.acheteur.dateSignature || '__/__/____'}</p>
+                      <p className="mt-2 text-[9pt] text-gray-600">(Signature et cachet de l'acheteur)</p>
+                    </div>
+                  </section>
+                </div>
+
+                {/* Pied de page */}
+                <div className="mt-8 pt-3 border-t border-gray-300 text-[8pt] text-gray-500 flex justify-between">
+                  <span>ATTRI1 – Acte d'engagement</span>
+                  <span>N° {form.objet.numeroReference || numeroProcedure} Lot {form.objet.typeActe.numeroLot || numeroLot}</span>
+                  <span>Version code de la commande publique - 2019</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Pied du modal */}
+            <div className="flex items-center justify-end gap-3 p-4 bg-white border-t border-gray-300">
+              <button
+                onClick={() => setShowPreview(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 font-medium text-sm"
+              >
+                Fermer
+              </button>
+              <button
+                onClick={() => {
+                  setShowPreview(false);
+                  handleExportWord();
+                }}
+                disabled={isExporting}
+                className="flex items-center gap-2 px-4 py-2 bg-teal-700 text-white rounded-md hover:bg-teal-800 disabled:opacity-50 font-medium text-sm"
+              >
+                <FileDown className="w-4 h-4" />
+                {isExporting ? 'Export...' : 'Exporter en Word'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
