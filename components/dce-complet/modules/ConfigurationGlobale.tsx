@@ -38,7 +38,7 @@ export function ConfigurationGlobaleForm({
     data || {
       informationsGenerales: {
         acheteur: procedure?.Acheteur || '',
-        titreMarche: procedure?.['Nom de la procédure'] || '',
+        titreMarche: procedure?.['Nom de la procédure'] || procedure?.['Objet court'] || '',
         typeProcedure: procedure?.['Type de procédure'] || '',
         dureeMarche: procedure?.['Durée du marché (en mois)'] || '',
         dateRemiseOffres: procedure?.['Date de remise des offres'] || '',
@@ -62,13 +62,30 @@ export function ConfigurationGlobaleForm({
 
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Synchroniser le titre depuis la procédure (toujours utiliser Nom de la procédure)
+  useEffect(() => {
+    if (procedure) {
+      const titreProcedure = procedure['Nom de la procédure'] || procedure['Objet court'] || '';
+      if (titreProcedure && titreProcedure !== config.informationsGenerales.titreMarche) {
+        setConfig(prev => ({
+          ...prev,
+          informationsGenerales: {
+            ...prev.informationsGenerales,
+            titreMarche: titreProcedure
+          }
+        }));
+        setHasChanges(true);
+      }
+    }
+  }, [procedure]);
+
   // Initialiser les lots depuis la procédure
   useEffect(() => {
     if (procedure && (!data || data.lots.length === 0)) {
       const nombreLots = parseInt(procedure['Nombre de lots'] || '1');
       if (nombreLots > 0) {
         const lotsInitiaux: LotConfiguration[] = Array.from(
-          { length: nombreLots }, 
+          { length: nombreLots },
           (_, i) => ({
             numero: String(i + 1),
             intitule: `Lot ${i + 1}`,
@@ -76,7 +93,7 @@ export function ConfigurationGlobaleForm({
             description: '',
           })
         );
-        
+
         setConfig(prev => ({
           ...prev,
           lots: lotsInitiaux
