@@ -233,26 +233,27 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
           // Utiliser les données du lot ou des données par défaut
           let lotData = (lot?.data as ActeEngagementATTRI1Data) || createDefaultActeEngagementATTRI1();
 
-          // 🔄 IMPORTANT: Synchroniser les numéros avec le Règlement de Consultation si disponible
-          // (car les lots sauvegardés peuvent avoir d'anciens numéros courts)
-          if (reglementConsultation?.enTete?.numeroMarche) {
-            const numeroFromRC = reglementConsultation.enTete.numeroMarche;
-            console.log(`🔄 Synchronisation numéros lot ${lotNum}:`, {
-              'ancien': lotData.objet?.numeroReference,
-              'nouveau (RC)': numeroFromRC
-            });
+          // 🔄 IMPORTANT: Synchroniser les numéros ET l'objet du marché avec le Règlement de Consultation
+          // (car les lots sauvegardés peuvent avoir d'anciens numéros courts ou un objet vide)
+          if (reglementConsultation?.enTete?.numeroMarche || reglementConsultation?.enTete?.titreMarche) {
+            const numeroFromRC = reglementConsultation.enTete?.numeroMarche;
+            const objetFromRC = reglementConsultation.enTete?.titreMarche; // Titre du marché = objet complet
+            
+            console.log(`🔄 Lot ${lotNum} | Objet: "${objetFromRC?.substring(0, 50)}..." | Numero: "${numeroFromRC}"`);
             
             lotData = {
               ...lotData,
               objet: {
                 ...lotData.objet,
-                numeroReference: numeroFromRC,
+                numeroReference: numeroFromRC || lotData.objet.numeroReference,
+                intitule: objetFromRC || lotData.objet.intitule,
+                objetMarche: objetFromRC || lotData.objet.objetMarche, // 🔥 IMPORTANT pour le Word
               },
               piecesConstitutives: {
                 ...lotData.piecesConstitutives,
-                ccapNumero: numeroFromRC,
-                ccatpNumero: numeroFromRC,
-                cctpNumero: numeroFromRC,
+                ccapNumero: numeroFromRC || lotData.piecesConstitutives.ccapNumero,
+                ccatpNumero: numeroFromRC || lotData.piecesConstitutives.ccatpNumero,
+                cctpNumero: numeroFromRC || lotData.piecesConstitutives.cctpNumero,
               }
             };
           }
