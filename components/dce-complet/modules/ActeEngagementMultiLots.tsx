@@ -13,10 +13,20 @@ import { lotService } from '../../../services/lotService';
 import type { ActeEngagementData } from '../types';
 import type { ActeEngagementATTRI1Data } from '../types/acteEngagement';
 import { createDefaultActeEngagementATTRI1 } from '../types/acteEngagement';
+import type { RapportCommissionData } from '../../redaction/types/rapportCommission';
 
 interface Props {
   procedureId: string;
   onSave?: () => void;
+  configurationGlobale?: {
+    lots: Array<{
+      numero: string;
+      intitule: string;
+      montant: string;
+      description?: string;
+    }>;
+  } | null;
+  reglementConsultation?: RapportCommissionData | null;
 }
 
 // Type de formulaire à afficher
@@ -64,7 +74,7 @@ const defaultActeEngagementData: ActeEngagementData = {
   },
 };
 
-export function ActeEngagementMultiLots({ procedureId, onSave }: Props) {
+export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlobale, reglementConsultation }: Props) {
   const [currentLot, setCurrentLot] = useState(1);
   const [totalLots, setTotalLots] = useState(1);
   const [formData, setFormData] = useState<ActeEngagementData>(defaultActeEngagementData);
@@ -75,6 +85,10 @@ export function ActeEngagementMultiLots({ procedureId, onSave }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [formType, setFormType] = useState<FormType>('attri1'); // Par défaut ATTRI1
 
+  // 🆕 Utiliser les lots de la Configuration Globale si disponibles
+  const hasConfigGlobale = configurationGlobale && configurationGlobale.lots && configurationGlobale.lots.length > 0;
+  const configLots = hasConfigGlobale ? configurationGlobale!.lots : [];
+
   // Charger les données au montage et à chaque changement de lot
   useEffect(() => {
     loadLotData();
@@ -82,8 +96,19 @@ export function ActeEngagementMultiLots({ procedureId, onSave }: Props) {
 
   // Charger le nombre total de lots
   useEffect(() => {
-    loadTotalLots();
-  }, [procedureId]);
+    // 🆕 Si Configuration Globale disponible, utiliser ses lots
+    if (hasConfigGlobale) {
+      setTotalLots(configLots.length);
+      // Mettre à jour le libellé du lot depuis la config
+      const currentConfigLot = configLots.find(l => parseInt(l.numero) === currentLot);
+      if (currentConfigLot) {
+        setLotLibelle(currentConfigLot.intitule);
+      }
+    } else {
+      // Sinon, charger depuis la base de données (ancien comportement)
+      loadTotalLots();
+    }
+  }, [procedureId, configurationGlobale, currentLot]);
 
   /**
    * Charge le nombre total de lots pour cette procédure
@@ -287,15 +312,26 @@ export function ActeEngagementMultiLots({ procedureId, onSave }: Props) {
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
+      {/* Message d'info si Configuration Globale active */}
+      {hasConfigGlobale && (
+        <div className="mx-6 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
+          <Settings className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-blue-800">
+            <strong>Configuration Globale active :</strong> Les lots sont gérés depuis l'onglet "⚙️ Configuration Globale". 
+            Vous travaillez sur <strong>{configLots.length} lot{configLots.length > 1 ? 's' : ''}</strong> configuré{configLots.length > 1 ? 's' : ''}.
+          </div>
+        </div>
+      )}
+
       {/* Sélecteur de lot */}
       <LotSelector
         procedureId={procedureId}
         totalLots={totalLots}
         currentLot={currentLot}
         onLotChange={handleLotChange}
-        onAddLot={handleAddLot}
-        onDuplicateLot={handleDuplicateLot}
-        onDeleteLot={handleDeleteLot}
+        onAddLot={hasConfigGlobale ? undefined : handleAddLot}
+        onDuplicateLot={hasConfigGlobale ? undefined : handleDuplicateLot}
+        onDeleteLot={hasConfigGlobale ? undefined : handleDeleteLot}
         loading={loading}
         disabled={saving}
         lotLibelle={lotLibelle}
@@ -377,6 +413,7 @@ export function ActeEngagementMultiLots({ procedureId, onSave }: Props) {
             isSaving={saving}
             numeroProcedure={procedureId}
             numeroLot={currentLot}
+            reglementConsultation={reglementConsultation}
           />
         ) : (
           <div className="h-full overflow-y-auto px-6 py-6">

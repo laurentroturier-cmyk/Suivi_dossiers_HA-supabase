@@ -30,6 +30,7 @@ import type {
   PrestationGroupement
 } from '../types/acteEngagement';
 import { createDefaultActeEngagementATTRI1, CCAG_OPTIONS } from '../types/acteEngagement';
+import type { RapportCommissionData } from '../../redaction/types/rapportCommission';
 
 interface Props {
   data?: ActeEngagementATTRI1Data;
@@ -37,6 +38,7 @@ interface Props {
   isSaving?: boolean;
   numeroProcedure?: string;
   numeroLot?: number;
+  reglementConsultation?: RapportCommissionData | null;
 }
 
 // ============================================
@@ -178,7 +180,8 @@ export function ActeEngagementEditor({
   onSave, 
   isSaving = false,
   numeroProcedure = '',
-  numeroLot = 1
+  numeroLot = 1,
+  reglementConsultation = null
 }: Props) {
   const [form, setForm] = useState<ActeEngagementATTRI1Data>(
     data || createDefaultActeEngagementATTRI1()
@@ -462,11 +465,18 @@ export function ActeEngagementEditor({
             <h4 className="font-semibold text-green-700">B1 - Identification et engagement du titulaire</h4>
             <p className="text-sm mt-2">Après avoir pris connaissance des pièces constitutives du marché public suivantes :</p>
             <ul className="text-sm ml-4 mt-1 space-y-1">
-              {form.piecesConstitutives.ccatp && <li>☑ CCATP n° {form.piecesConstitutives.ccatpNumero}</li>}
-              {form.piecesConstitutives.ccagFCS && <li>☑ CCAG de Fournitures Courantes et de Services</li>}
-              {form.piecesConstitutives.ccagTravaux && <li>☑ CCAG de Travaux</li>}
-              {form.piecesConstitutives.ccagPI && <li>☑ CCAG de Prestations Intellectuelles</li>}
-              {form.piecesConstitutives.cctp && <li>☑ CCTP n° {form.piecesConstitutives.cctpNumero}</li>}
+              {form.piecesConstitutives.ccap && <li>☑ CCAP n° {form.piecesConstitutives.ccapNumero || form.objet.numeroReference}</li>}
+              {form.piecesConstitutives.ccatp && <li>☑ CCATP n° {form.piecesConstitutives.ccatpNumero || form.objet.numeroReference}</li>}
+              {form.piecesConstitutives.cctp && <li>☑ CCTP n° {form.piecesConstitutives.cctpNumero || form.objet.numeroReference}</li>}
+              {form.piecesConstitutives.ccag && (
+                <li>☑ CCAG {
+                  form.piecesConstitutives.ccag === 'FCS' ? 'de Fournitures Courantes et de Services' :
+                  form.piecesConstitutives.ccag === 'Travaux' ? 'de Travaux' :
+                  form.piecesConstitutives.ccag === 'PI' ? 'de Prestations Intellectuelles' :
+                  form.piecesConstitutives.ccag === 'TIC' ? 'TIC' :
+                  form.piecesConstitutives.ccag === 'MOE' ? 'Maîtrise d\'œuvre' : ''
+                }</li>
+              )}
               {form.piecesConstitutives.autres && <li>☑ Autres : {form.piecesConstitutives.autresDescription}</li>}
             </ul>
             
@@ -604,9 +614,9 @@ export function ActeEngagementEditor({
             
             <FormField
               label="N° de référence du marché"
-              value={form.objet.numeroReference}
+              value={form.objet.numeroReference || reglementConsultation?.enTete?.numeroMarche || ''}
               onChange={v => updateForm('objet', prev => ({ ...prev, numeroReference: v }))}
-              placeholder={numeroProcedure || "Ex: 23274/AOO/ACCESSOIRES INF/KFI"}
+              placeholder={reglementConsultation?.enTete?.numeroMarche || numeroProcedure || "Ex: 23274/AOO/ACCESSOIRES INF/KFI"}
             />
 
             <div className="border-t pt-4">
@@ -737,6 +747,28 @@ export function ActeEngagementEditor({
                 Après avoir pris connaissance des pièces constitutives du marché public suivantes :
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* CCAP */}
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    label="CCAP n°"
+                    checked={form.piecesConstitutives.ccap}
+                    onChange={checked => updateForm('piecesConstitutives', {
+                      ...form.piecesConstitutives, ccap: checked
+                    })}
+                  />
+                  <input
+                    type="text"
+                    value={form.piecesConstitutives.ccapNumero || form.objet.numeroReference || reglementConsultation?.enTete?.numeroMarche || ''}
+                    onChange={e => updateForm('piecesConstitutives', {
+                      ...form.piecesConstitutives, ccapNumero: e.target.value
+                    })}
+                    placeholder={form.objet.numeroReference || reglementConsultation?.enTete?.numeroMarche || "Numéro CCAP"}
+                    className="flex-1 border rounded px-2 py-1 text-sm"
+                    disabled={!form.piecesConstitutives.ccap}
+                  />
+                </div>
+
+                {/* CCATP */}
                 <div className="flex items-center gap-2">
                   <Checkbox
                     label="CCATP n°"
@@ -747,56 +779,17 @@ export function ActeEngagementEditor({
                   />
                   <input
                     type="text"
-                    value={form.piecesConstitutives.ccatpNumero}
+                    value={form.piecesConstitutives.ccatpNumero || form.objet.numeroReference || reglementConsultation?.enTete?.numeroMarche || ''}
                     onChange={e => updateForm('piecesConstitutives', {
                       ...form.piecesConstitutives, ccatpNumero: e.target.value
                     })}
-                    placeholder="Numéro CCATP"
+                    placeholder={form.objet.numeroReference || reglementConsultation?.enTete?.numeroMarche || "Numéro CCATP"}
                     className="flex-1 border rounded px-2 py-1 text-sm"
                     disabled={!form.piecesConstitutives.ccatp}
                   />
                 </div>
                 
-                <Checkbox
-                  label="CCAG de Fournitures Courantes et de Services"
-                  checked={form.piecesConstitutives.ccagFCS}
-                  onChange={checked => updateForm('piecesConstitutives', {
-                    ...form.piecesConstitutives, ccagFCS: checked
-                  })}
-                />
-                
-                <Checkbox
-                  label="CCAG de Travaux"
-                  checked={form.piecesConstitutives.ccagTravaux}
-                  onChange={checked => updateForm('piecesConstitutives', {
-                    ...form.piecesConstitutives, ccagTravaux: checked
-                  })}
-                />
-                
-                <Checkbox
-                  label="CCAG de Prestations Intellectuelles"
-                  checked={form.piecesConstitutives.ccagPI}
-                  onChange={checked => updateForm('piecesConstitutives', {
-                    ...form.piecesConstitutives, ccagPI: checked
-                  })}
-                />
-
-                <Checkbox
-                  label="CCAG TIC"
-                  checked={form.piecesConstitutives.ccagTIC}
-                  onChange={checked => updateForm('piecesConstitutives', {
-                    ...form.piecesConstitutives, ccagTIC: checked
-                  })}
-                />
-
-                <Checkbox
-                  label="CCAG Maîtrise d'œuvre"
-                  checked={form.piecesConstitutives.ccagMOE}
-                  onChange={checked => updateForm('piecesConstitutives', {
-                    ...form.piecesConstitutives, ccagMOE: checked
-                  })}
-                />
-                
+                {/* CCTP */}
                 <div className="flex items-center gap-2">
                   <Checkbox
                     label="CCTP n°"
@@ -807,16 +800,36 @@ export function ActeEngagementEditor({
                   />
                   <input
                     type="text"
-                    value={form.piecesConstitutives.cctpNumero}
+                    value={form.piecesConstitutives.cctpNumero || form.objet.numeroReference || reglementConsultation?.enTete?.numeroMarche || ''}
                     onChange={e => updateForm('piecesConstitutives', {
                       ...form.piecesConstitutives, cctpNumero: e.target.value
                     })}
-                    placeholder="Numéro CCTP"
+                    placeholder={form.objet.numeroReference || reglementConsultation?.enTete?.numeroMarche || "Numéro CCTP"}
                     className="flex-1 border rounded px-2 py-1 text-sm"
                     disabled={!form.piecesConstitutives.cctp}
                   />
                 </div>
+
+                {/* CCAG - Liste déroulante */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">CCAG</label>
+                  <select
+                    value={form.piecesConstitutives.ccag}
+                    onChange={e => updateForm('piecesConstitutives', {
+                      ...form.piecesConstitutives, ccag: e.target.value as '' | 'FCS' | 'Travaux' | 'PI' | 'TIC' | 'MOE'
+                    })}
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="">-- Sélectionner un CCAG --</option>
+                    <option value="FCS">CCAG de Fournitures Courantes et de Services</option>
+                    <option value="Travaux">CCAG de Travaux</option>
+                    <option value="PI">CCAG de Prestations Intellectuelles</option>
+                    <option value="TIC">CCAG TIC</option>
+                    <option value="MOE">CCAG Maîtrise d'œuvre</option>
+                  </select>
+                </div>
                 
+                {/* Autres */}
                 <div className="md:col-span-2 flex items-center gap-2">
                   <Checkbox
                     label="Autres :"
@@ -1606,14 +1619,8 @@ export function ActeEngagementEditor({
               label="Désignation de l'acheteur"
               value={form.acheteur.designation}
               onChange={v => updateForm('acheteur', prev => ({ ...prev, designation: v }))}
-              placeholder="Ex: AFPA - Agence nationale pour la formation professionnelle des adultes"
-            />
-            
-            <FormField
-              label="Référence de l'avis (si publication JOUE ou BOAMP)"
-              value={form.acheteur.referenceAvis}
-              onChange={v => updateForm('acheteur', prev => ({ ...prev, referenceAvis: v }))}
-              placeholder="Référence de l'avis de marché"
+              placeholder="Agence pour la formation professionnelle des Adultes"
+              disabled={true}
             />
 
             <div className="border-t pt-4">

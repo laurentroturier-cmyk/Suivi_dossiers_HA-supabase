@@ -4,7 +4,7 @@
 // ============================================
 
 import type { ProjectData } from '../../../types';
-import type { DCEState } from '../types';
+import type { DCEState, ConfigurationGlobale, LotConfiguration } from '../types';
 import {
   createDefaultActeEngagement,
   createDefaultBPU,
@@ -34,6 +34,45 @@ export function mapProcedureToDCE(procedure: ProjectData): Omit<DCEState, 'id' |
   const ville = String(procedure['Ville'] || '');
   const lieuExecution = `${codePostal} ${ville}`.trim();
   const modePassation = String(procedure['Mode de passation'] || '');
+  const nombreLots = parseInt(procedure['Nombre de lots'] || '1');
+  const typeProcedure = String(procedure['Type de procédure'] || '');
+  const dureeMarche = String(procedure['Durée du marché (en mois)'] || '');
+  const ccagApplicable = String(procedure['CCAG'] || '');
+
+  // 🆕 CONFIGURATION GLOBALE
+  const lots: LotConfiguration[] = Array.from(
+    { length: Math.max(1, nombreLots) }, 
+    (_, i) => ({
+      numero: String(i + 1),
+      intitule: `Lot ${i + 1}`,
+      montant: '',
+      description: '',
+    })
+  );
+
+  const configurationGlobale: ConfigurationGlobale = {
+    informationsGenerales: {
+      acheteur,
+      titreMarche,
+      typeProcedure,
+      dureeMarche,
+      dateRemiseOffres: dateLimiteOffre || dateLimiteCandidature,
+    },
+    lots,
+    variablesCommunes: {
+      ccagApplicable,
+      delaiPaiement: '30',
+      delaiExecution: '',
+      garantieFinanciere: false,
+      avance: false,
+      montantAvance: '',
+    },
+    contacts: {
+      responsableProcedure: '',
+      emailContact: '',
+      telephoneContact: '',
+    }
+  };
 
   const rc = createDefaultReglementConsultation();
   rc.enTete.numeroProcedure = numeroProcedure;
@@ -81,6 +120,7 @@ export function mapProcedureToDCE(procedure: ProjectData): Omit<DCEState, 'id' |
     titreMarche,
     version: 1,
     notes: '',
+    configurationGlobale,
     reglementConsultation: rc,
     acteEngagement: ae,
     ccap,

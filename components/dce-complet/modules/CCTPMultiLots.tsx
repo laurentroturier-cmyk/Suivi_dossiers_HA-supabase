@@ -18,9 +18,17 @@ const defaultCCTPData: CCTPData = {
 interface Props {
   procedureId: string;
   onSave?: () => void;
+  configurationGlobale?: {
+    lots: Array<{
+      numero: string;
+      intitule: string;
+      montant: string;
+      description?: string;
+    }>;
+  } | null;
 }
 
-export function CCTPMultiLots({ procedureId, onSave }: Props) {
+export function CCTPMultiLots({ procedureId, onSave, configurationGlobale }: Props) {
   return (
     <GenericMultiLots
       procedureId={procedureId}
@@ -29,6 +37,7 @@ export function CCTPMultiLots({ procedureId, onSave }: Props) {
       defaultData={defaultCCTPData}
       FormComponent={CCTPForm}
       onSave={onSave}
+      configurationGlobale={configurationGlobale}
     />
   );
 }

@@ -11,9 +11,17 @@ const defaultBPUData: BPUData = {
 interface Props {
   procedureId: string;
   onSave?: () => void;
+  configurationGlobale?: {
+    lots: Array<{
+      numero: string;
+      intitule: string;
+      montant: string;
+      description?: string;
+    }>;
+  } | null;
 }
 
-export function BPUMultiLots({ procedureId, onSave }: Props) {
+export function BPUMultiLots({ procedureId, onSave, configurationGlobale }: Props) {
   return (
     <GenericMultiLots
       procedureId={procedureId}
@@ -22,6 +30,7 @@ export function BPUMultiLots({ procedureId, onSave }: Props) {
       defaultData={defaultBPUData}
       FormComponent={BPUForm}
       onSave={onSave}
+      configurationGlobale={configurationGlobale}
     />
   );
 }

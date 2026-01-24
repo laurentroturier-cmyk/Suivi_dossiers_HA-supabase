@@ -4,7 +4,7 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
-import { X, FileText, CheckSquare, FileCheck, FileSpreadsheet, FolderOpen, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { X, FileText, CheckSquare, FileCheck, FileSpreadsheet, FolderOpen, ArrowLeft, AlertTriangle, Settings } from 'lucide-react';
 import { ProcedureSelector } from './shared/ProcedureSelector';
 import { ProcedureHeader } from './shared/ProcedureHeader';
 import { DCEStatusBar } from './shared/DCEStatusBar';
@@ -13,6 +13,7 @@ import { useDCEState } from './hooks/useDCEState';
 import { useProcedure } from './hooks/useProcedureLoader';
 import type { DCESectionType } from './types';
 import type { ProjectData } from '../../types';
+import { ConfigurationGlobaleForm } from './modules/ConfigurationGlobale';
 import { ReglementConsultationLegacyWrapper } from './modules/ReglementConsultationLegacyWrapper';
 import { ActeEngagementMultiLots } from './modules/ActeEngagementMultiLots';
 import { CCAPMultiLots } from './modules/CCAPMultiLots';
@@ -98,6 +99,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
    * Menu des sections du DCE
    */
   const sections: Array<{ key: DCESectionType; label: string; icon: React.ReactNode }> = [
+    { key: 'configurationGlobale', label: '⚙️ Configuration Globale', icon: <Settings className="w-5 h-5" /> },
     { key: 'reglementConsultation', label: 'Règlement de Consultation', icon: <FileText className="w-5 h-5" /> },
     { key: 'acteEngagement', label: 'Acte d\'Engagement', icon: <CheckSquare className="w-5 h-5" /> },
     { key: 'ccap', label: 'CCAP', icon: <FileCheck className="w-5 h-5" /> },
@@ -229,6 +231,14 @@ export function DCEComplet({ onClose }: DCECompletProps) {
     if (!dceState || !activeSection) return null;
 
     switch (activeSection) {
+      case 'configurationGlobale':
+        return (
+          <ConfigurationGlobaleForm
+            data={dceState.configurationGlobale}
+            onChange={data => handleSectionSave('configurationGlobale', data)}
+            procedure={selectedProcedure}
+          />
+        );
       case 'reglementConsultation':
         return (
           <ReglementConsultationLegacyWrapper 
@@ -242,13 +252,16 @@ export function DCEComplet({ onClose }: DCECompletProps) {
           <ActeEngagementMultiLots
             procedureId={numeroProcedure}
             onSave={() => loadDCE()}
+            configurationGlobale={dceState.configurationGlobale}
+            reglementConsultation={dceState.reglementConsultation}
           />
         );
       case 'ccap':
         return (
           <CCAPMultiLots
             procedureId={numeroProcedure}
-            onSave={() => loadDCE()}
+            onSave={data => handleSectionSave('ccap', data)}
+            initialData={dceState.ccap}
           />
         );
       case 'cctp':
@@ -256,6 +269,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
           <CCTPMultiLots
             procedureId={numeroProcedure}
             onSave={() => loadDCE()}
+            configurationGlobale={dceState.configurationGlobale}
           />
         );
       case 'bpu':
@@ -263,6 +277,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
           <BPUMultiLots
             procedureId={numeroProcedure}
             onSave={() => loadDCE()}
+            configurationGlobale={dceState.configurationGlobale}
           />
         );
       case 'dqe':
@@ -270,6 +285,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
           <DQEMultiLots
             procedureId={numeroProcedure}
             onSave={() => loadDCE()}
+            configurationGlobale={dceState.configurationGlobale}
           />
         );
       case 'dpgf':
@@ -277,6 +293,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
           <DPGFMultiLots
             procedureId={numeroProcedure}
             onSave={() => loadDCE()}
+            configurationGlobale={dceState.configurationGlobale}
           />
         );
       case 'documentsAnnexes':

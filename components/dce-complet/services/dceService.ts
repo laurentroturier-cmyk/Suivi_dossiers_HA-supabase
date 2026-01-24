@@ -125,6 +125,7 @@ export class DCEService {
         statut: 'brouillon' as DCEStatut,
         version: 1,
         notes: '',
+        configuration_globale: dceData.configurationGlobale,
         reglement_consultation: dceData.reglementConsultation,
         acte_engagement: dceData.acteEngagement,
         ccap: dceData.ccap,
@@ -398,6 +399,7 @@ export class DCEService {
       titreMarche: record.titre_marche,
       version: record.version,
       notes: record.notes,
+      configurationGlobale: record.configuration_globale,
       reglementConsultation: record.reglement_consultation,
       acteEngagement: record.acte_engagement,
       ccap: record.ccap,
@@ -426,6 +428,7 @@ export class DCEService {
       titre_marche: state.titreMarche,
       version: state.version,
       notes: state.notes,
+      configuration_globale: state.configurationGlobale,
       reglement_consultation: state.reglementConsultation,
       acte_engagement: state.acteEngagement,
       ccap: state.ccap,
@@ -444,6 +447,7 @@ export class DCEService {
    */
   private sectionToColumnName(section: DCESectionType): string {
     const mapping: Record<DCESectionType, string> = {
+      configurationGlobale: 'configuration_globale',
       reglementConsultation: 'reglement_consultation',
       acteEngagement: 'acte_engagement',
       ccap: 'ccap',

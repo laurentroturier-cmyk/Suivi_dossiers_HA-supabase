@@ -12,9 +12,17 @@ const defaultDQEData: DQEData = {
 interface Props {
   procedureId: string;
   onSave?: () => void;
+  configurationGlobale?: {
+    lots: Array<{
+      numero: string;
+      intitule: string;
+      montant: string;
+      description?: string;
+    }>;
+  } | null;
 }
 
-export function DQEMultiLots({ procedureId, onSave }: Props) {
+export function DQEMultiLots({ procedureId, onSave, configurationGlobale }: Props) {
   return (
     <GenericMultiLots
       procedureId={procedureId}
@@ -23,6 +31,7 @@ export function DQEMultiLots({ procedureId, onSave }: Props) {
       defaultData={defaultDQEData}
       FormComponent={DQEForm}
       onSave={onSave}
+      configurationGlobale={configurationGlobale}
     />
   );
 }

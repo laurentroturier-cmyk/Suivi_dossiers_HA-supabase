@@ -11,9 +11,17 @@ const defaultDPGFData: DPGFData = {
 interface Props {
   procedureId: string;
   onSave?: () => void;
+  configurationGlobale?: {
+    lots: Array<{
+      numero: string;
+      intitule: string;
+      montant: string;
+      description?: string;
+    }>;
+  } | null;
 }
 
-export function DPGFMultiLots({ procedureId, onSave }: Props) {
+export function DPGFMultiLots({ procedureId, onSave, configurationGlobale }: Props) {
   return (
     <GenericMultiLots
       procedureId={procedureId}
@@ -22,6 +30,7 @@ export function DPGFMultiLots({ procedureId, onSave }: Props) {
       defaultData={defaultDPGFData}
       FormComponent={DPGFForm}
       onSave={onSave}
+      configurationGlobale={configurationGlobale}
     />
   );
 }

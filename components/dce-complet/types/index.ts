@@ -231,6 +231,9 @@ export interface DCEState {
   version: number;
   notes: string;
   
+  // 🆕 Configuration globale (variables communes)
+  configurationGlobale: ConfigurationGlobale | null;
+  
   // Modules du DCE
   reglementConsultation: RapportCommissionData | null;
   acteEngagement: ActeEngagementData | null;
@@ -263,6 +266,7 @@ export interface DCERecord {
   titre_marche: string;
   version: number;
   notes: string;
+  configuration_globale: ConfigurationGlobale | null;
   reglement_consultation: RapportCommissionData | null;
   acte_engagement: ActeEngagementData | null;
   ccap: CCAPData | null;
@@ -316,6 +320,7 @@ export interface DCELoadResult {
 // ============================================
 
 export type DCESectionType = 
+  | 'configurationGlobale'
   | 'reglementConsultation'
   | 'acteEngagement'
   | 'ccap'
@@ -334,6 +339,7 @@ export type DCESectionType =
 export interface DCECompleteness {
   overall: number; // Pourcentage global
   sections: {
+    configurationGlobale: number;
     reglementConsultation: number;
     acteEngagement: number;
     ccap: number;
@@ -344,6 +350,48 @@ export interface DCECompleteness {
     documentsAnnexes: number;
     crt: number;
     qt: number;
+  };
+}
+
+// ============================================
+// CONFIGURATION GLOBALE (Variables communes)
+// ============================================
+
+export interface LotConfiguration {
+  numero: string;
+  intitule: string;
+  montant: string;
+  description?: string;
+}
+
+export interface ConfigurationGlobale {
+  // Informations générales
+  informationsGenerales: {
+    acheteur: string;
+    titreMarche: string;
+    typeProcedure: string;
+    dureeMarche: string;
+    dateRemiseOffres: string;
+  };
+  
+  // Configuration des lots
+  lots: LotConfiguration[];
+  
+  // Autres variables communes
+  variablesCommunes: {
+    ccagApplicable: string;
+    delaiPaiement: string;
+    delaiExecution: string;
+    garantieFinanciere: boolean;
+    avance: boolean;
+    montantAvance?: string;
+  };
+  
+  // Contacts
+  contacts: {
+    responsableProcedure: string;
+    emailContact: string;
+    telephoneContact: string;
   };
 }
 
