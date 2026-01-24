@@ -100,10 +100,19 @@ export const generateActeEngagementWord = async (
   data: ActeEngagementATTRI1Data,
   numeroProcedure: string,
   numeroLot: number
-): Promise<void> => {
+): Promise<Blob> => {
   const numeroReference = data.objet.numeroReference || numeroProcedure;
   const lotNum = data.objet.typeActe.numeroLot || String(numeroLot);
   const lotIntitule = data.objet.typeActe.intituleLot || '';
+
+  // DEBUG : Vérifier les pièces constitutives
+  console.log('📄 Génération AE - Pièces constitutives:', {
+    ccap: data.piecesConstitutives.ccap,
+    ccapNumero: data.piecesConstitutives.ccapNumero,
+    ccatp: data.piecesConstitutives.ccatp,
+    ccatpNumero: data.piecesConstitutives.ccatpNumero,
+    ccag: data.piecesConstitutives.ccag,
+  });
 
   const doc = new Document({
     styles: {
@@ -378,61 +387,38 @@ export const generateActeEngagementWord = async (
           }),
 
           // Pièces constitutives
+          ...(data.piecesConstitutives.ccap ? [
+            new Paragraph({
+              children: [
+                createBlackText(`${createCheckbox(true)} `),
+                createBlackText(`CCAP n° ${data.piecesConstitutives.ccapNumero || numeroReference}`),
+              ],
+              spacing: { after: 60 },
+              indent: { left: 360 },
+            }),
+          ] : []),
           ...(data.piecesConstitutives.ccatp ? [
             new Paragraph({
               children: [
                 createBlackText(`${createCheckbox(true)} `),
-                createBlackText(`CCATP n° ${data.piecesConstitutives.ccatpNumero}`),
+                createBlackText(`CCATP n° ${data.piecesConstitutives.ccatpNumero || numeroReference}`),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
             }),
           ] : []),
-          ...(data.piecesConstitutives.ccagFCS ? [
+          ...(data.piecesConstitutives.ccag ? [
             new Paragraph({
               children: [
                 createBlackText(`${createCheckbox(true)} `),
-                createBlackText('CCAG de Fournitures Courantes et de Services'),
-              ],
-              spacing: { after: 60 },
-              indent: { left: 360 },
-            }),
-          ] : []),
-          ...(data.piecesConstitutives.ccagTravaux ? [
-            new Paragraph({
-              children: [
-                createBlackText(`${createCheckbox(true)} `),
-                createBlackText('CCAG de Travaux'),
-              ],
-              spacing: { after: 60 },
-              indent: { left: 360 },
-            }),
-          ] : []),
-          ...(data.piecesConstitutives.ccagPI ? [
-            new Paragraph({
-              children: [
-                createBlackText(`${createCheckbox(true)} `),
-                createBlackText('CCAG de Prestations Intellectuelles'),
-              ],
-              spacing: { after: 60 },
-              indent: { left: 360 },
-            }),
-          ] : []),
-          ...(data.piecesConstitutives.ccagTIC ? [
-            new Paragraph({
-              children: [
-                createBlackText(`${createCheckbox(true)} `),
-                createBlackText('CCAG des Technologies de l\'Information et de la Communication'),
-              ],
-              spacing: { after: 60 },
-              indent: { left: 360 },
-            }),
-          ] : []),
-          ...(data.piecesConstitutives.ccagMOE ? [
-            new Paragraph({
-              children: [
-                createBlackText(`${createCheckbox(true)} `),
-                createBlackText('CCAG de Maîtrise d\'Œuvre'),
+                createBlackText(
+                  data.piecesConstitutives.ccag === 'FCS' ? 'CCAG de Fournitures Courantes et de Services' :
+                  data.piecesConstitutives.ccag === 'Travaux' ? 'CCAG de Travaux' :
+                  data.piecesConstitutives.ccag === 'PI' ? 'CCAG de Prestations Intellectuelles' :
+                  data.piecesConstitutives.ccag === 'TIC' ? 'CCAG TIC' :
+                  data.piecesConstitutives.ccag === 'MOE' ? 'CCAG de Maîtrise d\'Œuvre' :
+                  'CCAG'
+                ),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
@@ -442,7 +428,7 @@ export const generateActeEngagementWord = async (
             new Paragraph({
               children: [
                 createBlackText(`${createCheckbox(true)} `),
-                createBlackText(`CCTP n° ${data.piecesConstitutives.cctpNumero}`),
+                createBlackText(`CCTP n° ${data.piecesConstitutives.cctpNumero || numeroReference}`),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
@@ -1135,8 +1121,23 @@ export const generateActeEngagementWord = async (
     ],
   });
 
-  // Générer et télécharger le fichier
+  // Générer le Blob et le retourner (pour permettre l'export ZIP)
   const blob = await Packer.toBlob(doc);
+  return blob;
+};
+
+/**
+ * Génère et télécharge un seul acte d'engagement au format Word
+ */
+export const downloadActeEngagementWord = async (
+  data: ActeEngagementATTRI1Data,
+  numeroProcedure: string,
+  numeroLot: number
+): Promise<void> => {
+  const blob = await generateActeEngagementWord(data, numeroProcedure, numeroLot);
+  const numeroReference = data.objet.numeroReference || numeroProcedure;
+  const lotNum = data.objet.typeActe.numeroLot || String(numeroLot);
   const filename = `ATTRI1_Acte_Engagement_${numeroReference.replace(/[^a-zA-Z0-9]/g, '_')}_Lot${lotNum}.docx`;
   saveAs(blob, filename);
 };
+

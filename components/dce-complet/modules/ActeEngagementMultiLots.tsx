@@ -5,7 +5,8 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
-import { Info } from 'lucide-react';
+import { Info, PackageOpen } from 'lucide-react';
+import JSZip from 'jszip';
 import { ActeEngagementEditor } from './ActeEngagementEditor';
 import { LotSelector } from '../shared/LotSelector';
 import { lotService } from '../../../services/lotService';
@@ -13,6 +14,7 @@ import type { ActeEngagementATTRI1Data } from '../types/acteEngagement';
 import { createDefaultActeEngagementATTRI1 } from '../types/acteEngagement';
 import type { RapportCommissionData } from '../../redaction/types/rapportCommission';
 import type { ConfigurationGlobale } from '../types';
+import { generateActeEngagementWord } from '../services/acteEngagementGenerator';
 
 interface Props {
   procedureId: string;
@@ -29,6 +31,7 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportingZip, setExportingZip] = useState(false);
 
   // 🆕 Utiliser les lots de la Configuration Globale si disponibles
   const hasConfigGlobale = configurationGlobale && configurationGlobale.lots && configurationGlobale.lots.length > 0;
@@ -90,7 +93,6 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
       console.error('Erreur lors du chargement du lot:', err);
       setError('Impossible de charger les données du lot');
       setFormDataATTRI1(createDefaultActeEngagementATTRI1());
-      setFormData(defaultActeEngagementData);
     } finally {
       setLoading(false);
     }
@@ -208,6 +210,85 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
     setCurrentLot(newLot);
   };
 
+  /**
+   * Exporte tous les actes d'engagement dans un fichier ZIP
+   */
+  const handleExportAllLotsAsZip = async () => {
+    setExportingZip(true);
+    try {
+      const zip = new JSZip();
+      let filesAdded = 0;
+
+      // Charger tous les lots
+      for (let lotNum = 1; lotNum <= totalLots; lotNum++) {
+        try {
+          const lot = await lotService.getLot(procedureId, lotNum, 'ae');
+
+          // Utiliser les données du lot ou des données par défaut
+          const lotData = (lot?.data as ActeEngagementATTRI1Data) || createDefaultActeEngagementATTRI1();
+
+          // Récupérer le libellé depuis la Configuration Globale ou depuis le lot
+          let lotLabel = `Lot ${lotNum}`;
+          if (hasConfigGlobale) {
+            const configLot = configLots.find(l => parseInt(l.numero) === lotNum);
+            if (configLot) {
+              lotLabel = configLot.intitule;
+            }
+          } else if (lot?.libelle_lot) {
+            lotLabel = lot.libelle_lot;
+          }
+
+          console.log(`Génération du lot ${lotNum} - ${lotLabel}`);
+
+          // Générer le document Word pour ce lot
+          const blob = await generateActeEngagementWord(lotData, procedureId, lotNum);
+
+          console.log(`Blob généré pour lot ${lotNum}, taille:`, blob.size);
+
+          // Créer un nom de fichier avec le numéro et le nom du lot
+          // Nettoyer le nom pour éviter les caractères invalides
+          const cleanLabel = lotLabel.replace(/[<>:"/\\|?*]/g, '_');
+          const fileName = `AE_Lot_${String(lotNum).padStart(2, '0')}_${cleanLabel}.docx`;
+
+          // Ajouter au ZIP
+          zip.file(fileName, blob);
+          filesAdded++;
+        } catch (lotErr) {
+          console.error(`Erreur lors de la génération du lot ${lotNum}:`, lotErr);
+          // Continuer avec les autres lots même si un échoue
+        }
+      }
+
+      if (filesAdded === 0) {
+        alert('❌ Aucun fichier n\'a pu être généré');
+        return;
+      }
+
+      console.log(`${filesAdded} fichiers ajoutés au ZIP, génération...`);
+
+      // Générer le ZIP
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+      console.log('ZIP généré, taille:', zipBlob.size);
+
+      // Télécharger le ZIP
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = `Actes_Engagement_${procedureId}_tous_lots.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+
+      alert(`✅ Export ZIP réussi : ${filesAdded} acte(s) d'engagement exporté(s)`);
+    } catch (err) {
+      console.error('Erreur lors de l\'export ZIP:', err);
+      alert(`❌ Erreur lors de l\'export ZIP: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+    } finally {
+      setExportingZip(false);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* Message d'info si Configuration Globale active */}
@@ -235,8 +316,16 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
         lotLibelle={lotLibelle}
       />
 
-      {/* Libellé du lot */}
-      <div className="mx-6 mt-4 flex items-center justify-end bg-white p-3 rounded-lg border border-gray-200">
+      {/* Libellé du lot et Export ZIP */}
+      <div className="mx-6 mt-4 flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
+        <button
+          onClick={handleExportAllLotsAsZip}
+          disabled={exportingZip || totalLots === 0}
+          className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <PackageOpen className="w-4 h-4" />
+          {exportingZip ? 'Export en cours...' : `Export ZIP (${totalLots} lot${totalLots > 1 ? 's' : ''})`}
+        </button>
         <div className="flex items-center gap-2">
           <label className="text-sm text-gray-600">Libellé :</label>
           <input

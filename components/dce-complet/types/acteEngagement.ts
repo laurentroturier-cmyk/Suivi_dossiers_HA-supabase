@@ -39,8 +39,11 @@ export interface ObjetActeEngagement {
 // ============================================
 
 export interface PiecesConstitutives {
+  ccap: boolean;                      // CCAP - Cahier des Clauses Administratives Particulières
+  ccapNumero: string;
   ccatp: boolean;
   ccatpNumero: string;
+  ccag: '' | 'FCS' | 'Travaux' | 'PI' | 'TIC' | 'MOE';  // CCAG unique via select
   ccagFCS: boolean;                   // CCAG Fournitures Courantes et Services
   ccagTravaux: boolean;               // CCAG Travaux
   ccagPI: boolean;                    // CCAG Propriété Intellectuelle
@@ -279,9 +282,12 @@ export const createDefaultActeEngagementATTRI1 = (): ActeEngagementATTRI1Data =>
   },
   
   piecesConstitutives: {
+    ccap: true,
+    ccapNumero: '',
     ccatp: true,
     ccatpNumero: '',
-    ccagFCS: true,
+    ccag: '',  // Utiliser le select, pas les booléens
+    ccagFCS: false,
     ccagTravaux: false,
     ccagPI: false,
     ccagTIC: false,

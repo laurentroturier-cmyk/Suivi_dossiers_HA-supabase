@@ -21,7 +21,7 @@ import {
   Eye,
   X
 } from 'lucide-react';
-import { generateActeEngagementWord } from '../services/acteEngagementGenerator';
+import { downloadActeEngagementWord } from '../services/acteEngagementGenerator';
 import type { 
   ActeEngagementATTRI1Data, 
   MembreGroupement, 
@@ -187,9 +187,14 @@ export function ActeEngagementEditor({
 }: Props) {
   const [form, setForm] = useState<ActeEngagementATTRI1Data>(() => {
     const defaultData = data || createDefaultActeEngagementATTRI1();
-    // Pré-remplir l'objet du marché avec le titre du marché de la Configuration Globale
-    if (configurationGlobale?.informationsGenerales?.titreMarche && !defaultData.objet.objetMarche) {
-      defaultData.objet.objetMarche = configurationGlobale.informationsGenerales.titreMarche;
+    // Pré-remplir l'objet du marché si vide
+    // Priorité : 1) RC, 2) Config Globale
+    if (!defaultData.objet.objetMarche) {
+      if (reglementConsultation?.enTete?.titreMarche) {
+        defaultData.objet.objetMarche = reglementConsultation.enTete.titreMarche;
+      } else if (configurationGlobale?.informationsGenerales?.titreMarche) {
+        defaultData.objet.objetMarche = configurationGlobale.informationsGenerales.titreMarche;
+      }
     }
     return defaultData;
   });
@@ -210,23 +215,34 @@ export function ActeEngagementEditor({
   useEffect(() => {
     if (data) {
       // Pré-remplir les champs acheteur AFPA s'ils sont vides
-      // et l'objet du marché depuis la Configuration Globale
+      // et l'objet du marché depuis le RC ou la Configuration Globale
+      const defaultData = createDefaultActeEngagementATTRI1();
       const updatedData = {
+        ...defaultData,
         ...data,
         acheteur: {
+          ...defaultData.acheteur,
           ...data.acheteur,
           designation: data.acheteur.designation || 'AFPA - Agence nationale pour la formation professionnelle des adultes',
           lieuSignature: data.acheteur.lieuSignature || 'Montreuil',
         },
         objet: {
+          ...defaultData.objet,
           ...data.objet,
-          // Pré-remplir l'objet du marché avec le titre du marché de la Configuration Globale
-          objetMarche: data.objet.objetMarche || (configurationGlobale?.informationsGenerales?.titreMarche || ''),
+          // Pré-remplir l'objet du marché : priorité au RC puis Config Globale
+          objetMarche: data.objet.objetMarche || 
+                       reglementConsultation?.enTete?.titreMarche || 
+                       configurationGlobale?.informationsGenerales?.titreMarche || 
+                       '',
+        },
+        piecesConstitutives: {
+          ...defaultData.piecesConstitutives,
+          ...data.piecesConstitutives,
         }
       };
       setForm(updatedData);
     }
-  }, [data, configurationGlobale]);
+  }, [data, configurationGlobale, reglementConsultation]);
 
   // ============================================
   // HELPERS
@@ -258,7 +274,14 @@ export function ActeEngagementEditor({
   const handleExportWord = async () => {
     try {
       setIsExporting(true);
-      await generateActeEngagementWord(form, numeroProcedure, numeroLot);
+      console.log('🔍 Export Word - Pièces constitutives:', {
+        ccap: form.piecesConstitutives.ccap,
+        ccapNumero: form.piecesConstitutives.ccapNumero,
+        ccatp: form.piecesConstitutives.ccatp,
+        ccatpNumero: form.piecesConstitutives.ccatpNumero,
+        ccag: form.piecesConstitutives.ccag,
+      });
+      await downloadActeEngagementWord(form, numeroProcedure, numeroLot);
     } catch (error) {
       console.error('Erreur lors de l\'export Word:', error);
       alert('Une erreur est survenue lors de l\'export Word');
@@ -1641,9 +1664,12 @@ export function ActeEngagementEditor({
                       <h4 className="font-bold text-[11pt] mb-1">B1 - Identification et engagement du titulaire</h4>
                       <p className="mb-2">Après avoir pris connaissance des pièces constitutives du marché public suivantes :</p>
                       <div className="ml-6 space-y-0.5">
-                        <p>☐ CCAP n° {form.piecesConstitutives.ccapNumero || form.objet.numeroReference || '________'} {form.piecesConstitutives.ccap && '✓'}</p>
-                        <p>☐ CCATP n° {form.piecesConstitutives.ccatpNumero || form.objet.numeroReference || '________'} {form.piecesConstitutives.ccatp && '✓'}</p>
-                        <p>☐ CCTP n° {form.piecesConstitutives.cctpNumero || form.objet.numeroReference || '________'} {form.piecesConstitutives.cctp && '✓'}</p>
+                        {form.piecesConstitutives.ccap && (
+                          <p>☑ CCAP n° {form.piecesConstitutives.ccapNumero || form.objet.numeroReference || '________'}</p>
+                        )}
+                        {form.piecesConstitutives.ccatp && (
+                          <p>☑ CCATP n° {form.piecesConstitutives.ccatpNumero || form.objet.numeroReference || '________'}</p>
+                        )}
                         {form.piecesConstitutives.ccag && (
                           <p>☑ CCAG {
                             form.piecesConstitutives.ccag === 'FCS' ? 'de Fournitures Courantes et de Services' :
@@ -1652,6 +1678,9 @@ export function ActeEngagementEditor({
                             form.piecesConstitutives.ccag === 'TIC' ? 'TIC' :
                             form.piecesConstitutives.ccag === 'MOE' ? 'Maîtrise d\'œuvre' : ''
                           }</p>
+                        )}
+                        {form.piecesConstitutives.cctp && (
+                          <p>☑ CCTP n° {form.piecesConstitutives.cctpNumero || form.objet.numeroReference || '________'}</p>
                         )}
                         {form.piecesConstitutives.autres && <p>☑ Autres : {form.piecesConstitutives.autresDescription}</p>}
                       </div>
