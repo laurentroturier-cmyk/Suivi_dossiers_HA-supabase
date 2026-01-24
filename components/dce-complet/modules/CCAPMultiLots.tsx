@@ -1,11 +1,13 @@
 // CCAP - Clause Administrative Particulière (Commune à tous les lots)
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CCAPForm } from './CCAPForm';
 import { createDefaultCCAP } from './defaults';
 import { CCAP_TYPES, createCCAPFromTemplate, getCCAPTypeLabel } from './ccapTemplates';
 import { exportCCAPToWord } from './ccapExportWord';
+import { exportCCAPToPdf } from './ccapExportPdf';
+import { parseWordToCCAP } from './ccapWordParser';
 import type { CCAPData, CCAPType } from '../types';
-import { Save, FileCheck, AlertCircle, Sparkles, FileDown } from 'lucide-react';
+import { Save, FileCheck, AlertCircle, Sparkles, FileDown, Upload, FileText } from 'lucide-react';
 
 interface Props {
   procedureId: string;
@@ -18,9 +20,12 @@ export function CCAPMultiLots({ procedureId, numeroProcedure, onSave, initialDat
   const [ccapData, setCcapData] = useState<CCAPData>(initialData || createDefaultCCAP());
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [showTypeSelector, setShowTypeSelector] = useState(!initialData?.typeCCAP);
   const [selectedType, setSelectedType] = useState<CCAPType | null>(initialData?.typeCCAP || null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -60,6 +65,51 @@ export function CCAPMultiLots({ procedureId, numeroProcedure, onSave, initialDat
       setSaveMessage({ type: 'error', text: `Erreur lors de l'export Word : ${error.message}` });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+    setSaveMessage(null);
+
+    try {
+      await exportCCAPToPdf(ccapData, numeroProcedure);
+      setSaveMessage({ type: 'success', text: 'CCAP exporté au format PDF avec succès' });
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (error: any) {
+      setSaveMessage({ type: 'error', text: `Erreur lors de l'export PDF : ${error.message}` });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
+  const handleImportWord = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.docx')) {
+      setSaveMessage({ type: 'error', text: 'Veuillez sélectionner un fichier Word (.docx)' });
+      return;
+    }
+
+    setIsImporting(true);
+    setSaveMessage(null);
+
+    try {
+      const result = await parseWordToCCAP(file);
+      setCcapData(prev => ({
+        ...prev,
+        sections: result.sections,
+      }));
+      setShowTypeSelector(false);
+      setSaveMessage({ type: 'success', text: `${result.totalSections} sections importées avec succès` });
+    } catch (error: any) {
+      setSaveMessage({ type: 'error', text: error?.message || "Erreur lors de l'import Word" });
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -103,16 +153,24 @@ export function CCAPMultiLots({ procedureId, numeroProcedure, onSave, initialDat
                   >
                     Changer de type
                   </button>
-                  <button
-                    onClick={handleExportWord}
-                    disabled={isExporting}
-                    className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <FileDown className="w-4 h-4" />
-                    {isExporting ? 'Export en cours...' : 'Exporter en Word'}
-                  </button>
                 </>
               )}
+              <button
+                onClick={handleExportWord}
+                disabled={isExporting}
+                className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <FileDown className="w-4 h-4" />
+                {isExporting ? 'Export en cours...' : 'Exporter en Word'}
+              </button>
+              <button
+                onClick={handleExportPdf}
+                disabled={isExportingPdf}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                {isExportingPdf ? 'Export PDF...' : 'Exporter en PDF'}
+              </button>
             </div>
           </div>
         </div>
@@ -130,6 +188,25 @@ export function CCAPMultiLots({ procedureId, numeroProcedure, onSave, initialDat
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Sélectionnez le type de marché pour pré-remplir le CCAP avec un modèle adapté
           </p>
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".docx"
+              onChange={handleImportWord}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isImporting}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Importer un CCAP Word (.docx)"
+            >
+              <Upload className="w-4 h-4" />
+              {isImporting ? 'Import en cours...' : 'Importer Word'}
+            </button>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {CCAP_TYPES.map((type) => (
@@ -182,6 +259,7 @@ export function CCAPMultiLots({ procedureId, numeroProcedure, onSave, initialDat
           data={ccapData}
           onSave={handleSave}
           isSaving={isSaving}
+          onChange={setCcapData}
         />
       )}
     </div>

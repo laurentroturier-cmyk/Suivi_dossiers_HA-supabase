@@ -1,20 +1,61 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import type { CCAPData } from '../types';
-import { Trash2, Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { Trash2, Plus, ChevronDown, ChevronRight, Upload } from 'lucide-react';
+import { parseWordToCCAP } from './ccapWordParser';
 
 interface Props {
   data: CCAPData;
   onSave: (data: CCAPData) => Promise<void> | void;
   isSaving?: boolean;
+  onChange?: (data: CCAPData) => void;
 }
 
-export function CCAPForm({ data, onSave, isSaving = false }: Props) {
+export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
   const [form, setForm] = useState<CCAPData>(data);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0, 1, 2])); // Les 3 premières sections ouvertes par défaut
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setForm(data);
   }, [data]);
+
+  const handleImportWord = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Vérifier que c'est un fichier .docx
+    if (!file.name.endsWith('.docx')) {
+      alert('Veuillez sélectionner un fichier Word (.docx)');
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const result = await parseWordToCCAP(file);
+      
+      // Remplacer les sections par celles importées
+      setForm(prev => {
+        const next = { ...prev, sections: result.sections };
+        onChange?.(next);
+        return next;
+      });
+      
+      // Ouvrir les 3 premières sections
+      setExpandedSections(new Set([0, 1, 2]));
+      
+      alert(`✅ ${result.totalSections} sections importées avec succès !`);
+    } catch (error) {
+      console.error('Erreur import Word:', error);
+      alert(`❌ Erreur lors de l'import : ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    } finally {
+      setIsImporting(false);
+      // Réinitialiser l'input pour permettre de ré-importer le même fichier
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const update = (path: string, value: string | boolean) => {
     setForm(prev => {
@@ -25,32 +66,45 @@ export function CCAPForm({ data, onSave, isSaving = false }: Props) {
         cursor = cursor[parts[i]];
       }
       cursor[parts[parts.length - 1]] = value;
+      onChange?.(copy);
       return copy;
     });
   };
 
   const updateSection = (index: number, field: 'titre' | 'contenu', value: string) => {
-    setForm(prev => ({
-      ...prev,
-      sections: prev.sections.map((s, i) => 
-        i === index ? { ...s, [field]: value } : s
-      )
-    }));
+    setForm(prev => {
+      const next = {
+        ...prev,
+        sections: prev.sections.map((s, i) =>
+          i === index ? { ...s, [field]: value } : s
+        )
+      };
+      onChange?.(next);
+      return next;
+    });
   };
 
   const addSection = () => {
-    setForm(prev => ({
-      ...prev,
-      sections: [...prev.sections, { titre: 'Nouvelle section', contenu: '' }]
-    }));
+    setForm(prev => {
+      const next = {
+        ...prev,
+        sections: [...prev.sections, { titre: 'Nouvelle section', contenu: '' }]
+      };
+      onChange?.(next);
+      return next;
+    });
   };
 
   const deleteSection = (index: number) => {
     if (confirm('Supprimer cette section ?')) {
-      setForm(prev => ({
-        ...prev,
-        sections: prev.sections.filter((_, i) => i !== index)
-      }));
+      setForm(prev => {
+        const next = {
+          ...prev,
+          sections: prev.sections.filter((_, i) => i !== index)
+        };
+        onChange?.(next);
+        return next;
+      });
     }
   };
 
@@ -84,19 +138,42 @@ export function CCAPForm({ data, onSave, isSaving = false }: Props) {
         </button>
       </div>
 
+      <div className="flex items-center gap-2">
+        {/* Bouton Import Word */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".docx"
+          onChange={handleImportWord}
+          className="hidden"
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isImporting}
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
+          title="Importer un CCAP Word (.docx)"
+        >
+          <Upload className="w-4 h-4" />
+          {isImporting ? 'Import...' : 'Importer Word'}
+        </button>
+
+        {/* Bouton Ajouter section */}
+        <button
+          type="button"
+          onClick={addSection}
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+        >
+          <Plus className="w-4 h-4" />
+          Ajouter une section
+        </button>
+      </div>
+
       <section className="space-y-2">
         <div className="flex items-center justify-between mb-4">
           <label className="block text-sm font-semibold text-gray-800">
             Sections du CCAP ({form.sections.length})
           </label>
-          <button
-            type="button"
-            onClick={addSection}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-          >
-            <Plus className="w-4 h-4" />
-            Ajouter une section
-          </button>
         </div>
 
         {form.sections.length === 0 ? (
