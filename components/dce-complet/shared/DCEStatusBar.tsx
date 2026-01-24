@@ -92,7 +92,7 @@ export function DCEStatusBar({
   const StatutBadge = ({ statut }: { statut: DCEStatut }) => {
     const styles = {
       brouillon: 'bg-gray-100 text-gray-700 border-gray-300',
-      en_cours: 'bg-blue-100 text-blue-700 border-blue-300',
+      en_cours: 'bg-green-100 text-green-700 border-green-300',
       en_attente_validation: 'bg-yellow-100 text-yellow-700 border-yellow-300',
       publié: 'bg-green-100 text-green-700 border-green-300',
       archivé: 'bg-purple-100 text-purple-700 border-purple-300',
@@ -146,7 +146,7 @@ export function DCEStatusBar({
             <div className="flex items-center gap-3">
               <div className="relative w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-500"
+                  className="absolute top-0 left-0 h-full bg-[#2F5B58] transition-all duration-500"
                   style={{ width: `${progress.percentage}%` }}
                 />
               </div>
@@ -208,7 +208,7 @@ export function DCEStatusBar({
               <button
                 onClick={onSave}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-blue-500 text-white hover:bg-blue-600 shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-[#2F5B58] text-white hover:bg-[#234441] shadow-sm disabled:opacity-50"
                 title={isDirty ? 'Sauvegarder les modifications' : 'Sauvegarder le DCE'}
               >
                 {isSaving ? (

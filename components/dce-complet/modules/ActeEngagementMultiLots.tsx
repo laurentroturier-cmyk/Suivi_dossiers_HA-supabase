@@ -12,18 +12,12 @@ import { lotService } from '../../../services/lotService';
 import type { ActeEngagementATTRI1Data } from '../types/acteEngagement';
 import { createDefaultActeEngagementATTRI1 } from '../types/acteEngagement';
 import type { RapportCommissionData } from '../../redaction/types/rapportCommission';
+import type { ConfigurationGlobale } from '../types';
 
 interface Props {
   procedureId: string;
   onSave?: () => void;
-  configurationGlobale?: {
-    lots: Array<{
-      numero: string;
-      intitule: string;
-      montant: string;
-      description?: string;
-    }>;
-  } | null;
+  configurationGlobale?: ConfigurationGlobale | null;
   reglementConsultation?: RapportCommissionData | null;
 }
 
@@ -218,10 +212,10 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
     <div className="h-full flex flex-col bg-gray-50">
       {/* Message d'info si Configuration Globale active */}
       {hasConfigGlobale && (
-        <div className="mx-6 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
-          <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-blue-800">
-            <strong>Configuration Globale active :</strong> Les lots sont gérés depuis l'onglet "⚙️ Configuration Globale". 
+        <div className="mx-6 mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+          <Info className="w-5 h-5 text-[#2F5B58] mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-green-800">
+            <strong>Configuration Globale active :</strong> Les lots sont gérés depuis l'onglet "⚙️ Configuration Globale".
             Vous travaillez sur <strong>{configLots.length} lot{configLots.length > 1 ? 's' : ''}</strong> configuré{configLots.length > 1 ? 's' : ''}.
           </div>
         </div>
@@ -248,7 +242,7 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
           <input
             value={lotLibelle}
             onChange={(e) => setLotLibelle(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-green-500 focus:border-green-500"
             placeholder="Ex: Lot 1 - Travaux de plomberie"
           />
         </div>
@@ -277,7 +271,7 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2F5B58] mx-auto mb-4"></div>
               <p className="text-gray-600">Chargement du lot {currentLot}...</p>
             </div>
           </div>
@@ -289,6 +283,7 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
             numeroProcedure={procedureId}
             numeroLot={currentLot}
             reglementConsultation={reglementConsultation}
+            configurationGlobale={configurationGlobale}
           />
         )}
       </div>

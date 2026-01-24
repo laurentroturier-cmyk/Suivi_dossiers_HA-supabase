@@ -280,7 +280,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+          className="px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50"
         >
           {isSaving ? 'Enregistrement...' : 'Enregistrer la section'}
         </button>

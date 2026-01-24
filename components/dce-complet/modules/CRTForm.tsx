@@ -28,7 +28,7 @@ export function CRTForm({ data, onSave, isSaving = false }: CRTFormProps) {
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+          className="px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50"
         >
           <Save className="w-4 h-4 inline mr-1" />
           {isSaving ? 'Sauvegarde...' : 'Enregistrer la section'}
@@ -41,7 +41,7 @@ export function CRTForm({ data, onSave, isSaving = false }: CRTFormProps) {
           value={form.contenu}
           onChange={(e) => setForm({ ...form, contenu: e.target.value })}
           rows={6}
-          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
           placeholder="Ajoutez ici le contenu ou la structure du cadre de réponse technique"
         />
       </div>
@@ -52,7 +52,7 @@ export function CRTForm({ data, onSave, isSaving = false }: CRTFormProps) {
           value={form.notes}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
           rows={3}
-          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
           placeholder="Notes ou instructions complémentaires (non visibles dans le document)"
         />
       </div>

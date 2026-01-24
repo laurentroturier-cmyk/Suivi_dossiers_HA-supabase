@@ -36,7 +36,7 @@ export function QTForm({ data, onSave, isSaving = false }: QTFormProps) {
         <button
           onClick={addQuestion}
           type="button"
-          className="inline-flex items-center gap-2 px-2 py-1.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+          className="inline-flex items-center gap-2 px-2 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441]"
         >
           <Plus className="w-4 h-4" />
           Ajouter une question
@@ -55,14 +55,14 @@ export function QTForm({ data, onSave, isSaving = false }: QTFormProps) {
                   type="text"
                   value={q.question}
                   onChange={(e) => updateQuestion(index, 'question', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   placeholder={`Question ${index + 1}`}
                 />
                 <textarea
                   value={q.reponse}
                   onChange={(e) => updateQuestion(index, 'reponse', e.target.value)}
                   rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   placeholder="Réponse attendue / éléments de preuve"
                 />
               </div>
@@ -84,7 +84,7 @@ export function QTForm({ data, onSave, isSaving = false }: QTFormProps) {
           value={form.notes}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
           rows={3}
-          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
           placeholder="Notes ou instructions complémentaires (non visibles dans le document)"
         />
       </div>
@@ -93,7 +93,7 @@ export function QTForm({ data, onSave, isSaving = false }: QTFormProps) {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
           {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}

@@ -62,7 +62,7 @@ export const LotSelector: React.FC<LotSelectorProps> = ({
               value={currentLot}
               onChange={(e) => onLotChange(Number(e.target.value))}
               disabled={disabled || loading}
-              className={`px-3 py-2 border border-gray-300 rounded-lg font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              className={`px-3 py-2 border border-gray-300 rounded-lg font-medium focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
                 disabled || loading ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
               }`}
             >
@@ -98,8 +98,8 @@ export const LotSelector: React.FC<LotSelectorProps> = ({
 
           {/* Indicateur de chargement */}
           {loading && (
-            <div className="flex items-center gap-2 text-sm text-blue-600">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <div className="flex items-center gap-2 text-sm text-green-700">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-700"></div>
               <span>Chargement...</span>
             </div>
           )}
@@ -132,7 +132,7 @@ export const LotSelector: React.FC<LotSelectorProps> = ({
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                 disabled || loading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-[#2F5B58] text-white hover:bg-[#234441]'
               }`}
               title="Dupliquer le lot actuel"
             >

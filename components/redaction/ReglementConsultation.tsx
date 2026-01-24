@@ -422,13 +422,13 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
                       onClick={() => setActiveSection(index)}
                       className={`w-full text-left px-3 py-2.5 rounded-lg mb-1 transition-all ${
                         isActive
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-medium'
+                          ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-medium'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                     >
                       <div className="flex items-center space-x-2">
                         <Icon className={`w-5 h-5 flex-shrink-0 ${
-                          isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
+                          isActive ? 'text-green-700 dark:text-green-400' : 'text-gray-400'
                         }`} />
                         <span className="text-sm font-medium">{section.title}</span>
                         {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
@@ -453,7 +453,7 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
                       type="text"
                       value={formData.enTete.typeMarcheTitle}
                       onChange={(e) => updateField('enTete', 'typeMarcheTitle', e.target.value)}
-                      className="w-full text-center text-2xl font-bold mb-4 uppercase border-b-2 border-dashed border-blue-300 focus:border-blue-500 outline-none bg-transparent"
+                      className="w-full text-center text-2xl font-bold mb-4 uppercase border-b-2 border-dashed border-green-300 focus:border-green-500 outline-none bg-transparent"
                     />
                     <h2 className="text-xl font-bold mb-4">RÈGLEMENT DE CONSULTATION</h2>
                     {formData.enTete.numeroProcedure && (
@@ -465,7 +465,7 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
                     <textarea
                       value={formData.enTete.titreMarche}
                       onChange={(e) => updateField('enTete', 'titreMarche', e.target.value)}
-                      className="w-full text-center text-xl font-bold border-b-2 border-dashed border-blue-300 focus:border-blue-500 outline-none bg-transparent resize-none"
+                      className="w-full text-center text-xl font-bold border-b-2 border-dashed border-green-300 focus:border-green-500 outline-none bg-transparent resize-none"
                       rows={2}
                     />
                     <div className="mt-4 text-left">
@@ -730,7 +730,7 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
                 <div className="flex justify-end gap-4 sticky bottom-0 bg-white dark:bg-gray-800 p-4 border-t border-gray-200 dark:border-gray-700">
                   <button
                     onClick={handleSave}
-                    className="px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                    className="px-6 py-3 text-sm font-medium text-white bg-[#2F5B58] rounded-lg hover:bg-[#234441] flex items-center gap-2"
                   >
                     <Save className="w-5 h-5" />
                     Sauvegarder les modifications
@@ -824,7 +824,7 @@ function EnTeteSection({ data, updateField, onAutoFill, isLoading, autoFillStatu
           </p>
         )}
         {(data.numeroProcedure?.length || 0) === 5 && !isLoading && (
-          <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+          <p className="text-sm text-green-700 dark:text-green-400 mt-1">
             💡 Les données seront chargées automatiquement depuis la table procédures
           </p>
         )}
@@ -838,7 +838,7 @@ function EnTeteSection({ data, updateField, onAutoFill, isLoading, autoFillStatu
           value={data.titreMarche}
           onChange={(e) => updateField('enTete', 'titreMarche', e.target.value)}
           rows={2}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
           placeholder="Ex: Marché de Prestation d'assistance à maitrise d'ouvrage..."
         />
       </div>
@@ -1101,7 +1101,7 @@ function ObjetSection({ data, updateField, addArrayItem, removeArrayItem, loadin
           value={data.description}
           onChange={(e) => updateField('objet', 'description', e.target.value)}
           rows={4}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
           placeholder="Décrivez l'objet de la consultation..."
         />
       </div>
@@ -1127,7 +1127,7 @@ function ObjetSection({ data, updateField, addArrayItem, removeArrayItem, loadin
               />
               {loadingCPV && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                  <Loader2 className="w-4 h-4 animate-spin text-green-700" />
                 </div>
               )}
             </div>
@@ -1198,7 +1198,7 @@ function ObjetSection({ data, updateField, addArrayItem, removeArrayItem, loadin
             />
             {searchingCPV && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                <Loader2 className="w-4 h-4 animate-spin text-green-700" />
               </div>
             )}
             
@@ -1275,7 +1275,7 @@ function ConditionsSection({ data, updateField, addArrayItem, removeArrayItem }:
         
         <div className="space-y-2 mb-3">
           {data.lots?.map((lot: any, index: number) => (
-            <div key={index} className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+            <div key={index} className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="font-medium text-gray-900 dark:text-white">Lot n°{lot.numero}: {lot.intitule}</div>
@@ -1323,7 +1323,7 @@ function ConditionsSection({ data, updateField, addArrayItem, removeArrayItem }:
               setNewLot({ numero: '', intitule: '', montantMax: '' });
             }
           }}
-          className="w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+          className="w-full px-4 py-2 text-sm text-green-700 dark:text-green-400 border border-green-600 dark:border-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
         >
           <Plus className="w-4 h-4 inline mr-1" />
           Ajouter un lot
@@ -1531,7 +1531,7 @@ function DCESection({ data, updateField, addArrayItem, removeArrayItem }: any) {
               <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
                 <span className="text-gray-900 dark:text-white text-sm">
                   {doc}
-                  {isRequired && <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">(Obligatoire)</span>}
+                  {isRequired && <span className="ml-2 text-xs text-green-700 dark:text-green-400">(Obligatoire)</span>}
                 </span>
                 {!isRequired && (
                   <button
@@ -1561,7 +1561,7 @@ function DCESection({ data, updateField, addArrayItem, removeArrayItem }: any) {
             <button
               onClick={handleAddDocument}
               disabled={!selectedDoc}
-              className="w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full px-4 py-2 text-sm text-green-700 dark:text-green-400 border border-green-600 dark:border-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Ajouter
@@ -1685,7 +1685,7 @@ function JugementSection({ data, updateField, addArrayItem, removeArrayItem }: a
               setNewCritere({ nom: '', points: '' });
             }
           }}
-          className="w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+          className="w-full px-4 py-2 text-sm text-green-700 dark:text-green-400 border border-green-600 dark:border-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
         >
           <Plus className="w-4 h-4 inline mr-1" />
           Ajouter un sous-critère
@@ -1785,7 +1785,7 @@ function PreviewContent({ data }: { data: RapportCommissionData }) {
       
       {data.enTete.numeroProcedure && (
         <div className="mb-2 text-center">
-          <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+          <p className="text-sm font-semibold text-green-700 dark:text-green-400">
             Procédure n° {data.enTete.numeroProcedure}
           </p>
         </div>

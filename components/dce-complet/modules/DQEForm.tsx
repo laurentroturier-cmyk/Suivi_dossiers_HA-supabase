@@ -56,7 +56,7 @@ export function DQEForm({ data, onSave, isSaving = false }: Props) {
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+          className="px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50"
         >
           {isSaving ? 'Enregistrement...' : 'Enregistrer la section'}
         </button>

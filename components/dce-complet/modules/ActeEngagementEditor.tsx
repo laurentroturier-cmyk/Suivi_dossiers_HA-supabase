@@ -31,6 +31,7 @@ import type {
 } from '../types/acteEngagement';
 import { createDefaultActeEngagementATTRI1, CCAG_OPTIONS } from '../types/acteEngagement';
 import type { RapportCommissionData } from '../../redaction/types/rapportCommission';
+import type { ConfigurationGlobale } from '../types';
 
 interface Props {
   data?: ActeEngagementATTRI1Data;
@@ -39,6 +40,7 @@ interface Props {
   numeroProcedure?: string;
   numeroLot?: number;
   reglementConsultation?: RapportCommissionData | null;
+  configurationGlobale?: ConfigurationGlobale | null;
 }
 
 // ============================================
@@ -76,7 +78,7 @@ const FormField: React.FC<FormFieldProps> = ({
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
     />
   </div>
 );
@@ -105,7 +107,7 @@ const TextArea: React.FC<TextAreaProps> = ({
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
     />
   </div>
 );
@@ -128,7 +130,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
       type="checkbox"
       checked={checked}
       onChange={e => onChange(e.target.checked)}
-      className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+      className="mt-0.5 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
     />
     <div>
       <span className="text-sm text-gray-700 group-hover:text-gray-900">{label}</span>
@@ -163,7 +165,7 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
             value={option.value}
             checked={value === option.value}
             onChange={e => onChange(e.target.value)}
-            className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+            className="mt-0.5 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
           />
           <span className="text-sm text-gray-700 group-hover:text-gray-900">{option.label}</span>
         </label>
@@ -174,17 +176,23 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
 
 type SectionKey = 'objet' | 'titulaire' | 'prix' | 'groupement' | 'compte' | 'avance' | 'duree' | 'signatureC1' | 'signatureC2' | 'acheteur';
 
-export function ActeEngagementEditor({ 
-  data, 
-  onSave, 
+export function ActeEngagementEditor({
+  data,
+  onSave,
   isSaving = false,
   numeroProcedure = '',
   numeroLot = 1,
-  reglementConsultation = null
+  reglementConsultation = null,
+  configurationGlobale = null
 }: Props) {
-  const [form, setForm] = useState<ActeEngagementATTRI1Data>(
-    data || createDefaultActeEngagementATTRI1()
-  );
+  const [form, setForm] = useState<ActeEngagementATTRI1Data>(() => {
+    const defaultData = data || createDefaultActeEngagementATTRI1();
+    // Pré-remplir l'objet du marché avec le titre du marché de la Configuration Globale
+    if (configurationGlobale?.informationsGenerales?.titreMarche && !defaultData.objet.objetMarche) {
+      defaultData.objet.objetMarche = configurationGlobale.informationsGenerales.titreMarche;
+    }
+    return defaultData;
+  });
   const [showPreview, setShowPreview] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
     objet: true,
@@ -202,17 +210,23 @@ export function ActeEngagementEditor({
   useEffect(() => {
     if (data) {
       // Pré-remplir les champs acheteur AFPA s'ils sont vides
+      // et l'objet du marché depuis la Configuration Globale
       const updatedData = {
         ...data,
         acheteur: {
           ...data.acheteur,
           designation: data.acheteur.designation || 'AFPA - Agence nationale pour la formation professionnelle des adultes',
           lieuSignature: data.acheteur.lieuSignature || 'Montreuil',
+        },
+        objet: {
+          ...data.objet,
+          // Pré-remplir l'objet du marché avec le titre du marché de la Configuration Globale
+          objetMarche: data.objet.objetMarche || (configurationGlobale?.informationsGenerales?.titreMarche || ''),
         }
       };
       setForm(updatedData);
     }
-  }, [data]);
+  }, [data, configurationGlobale]);
 
   // ============================================
   // HELPERS
@@ -386,10 +400,10 @@ export function ActeEngagementEditor({
   }) => (
     <button
       onClick={() => toggleSection(section)}
-      className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-lg transition-colors border border-blue-100"
+      className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-lg transition-colors border border-green-100"
     >
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-blue-600 rounded-lg text-white">
+        <div className="p-2 bg-[#2F5B58] rounded-lg text-white">
           <Icon className="w-5 h-5" />
         </div>
         <div className="text-left">
@@ -787,7 +801,7 @@ export function ActeEngagementEditor({
                   <button
                     type="button"
                     onClick={addMembreGroupement}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100"
                   >
                     <Plus className="w-4 h-4" />
                     Ajouter un membre
@@ -886,7 +900,7 @@ export function ActeEngagementEditor({
                   <button
                     type="button"
                     onClick={addPrestationGroupement}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100"
                   >
                     <Plus className="w-4 h-4" />
                     Ajouter
@@ -1022,7 +1036,7 @@ export function ActeEngagementEditor({
             <button
               type="button"
               onClick={addCompteBancaire}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100"
             >
               <Plus className="w-4 h-4" />
               Ajouter un compte
@@ -1050,7 +1064,7 @@ export function ActeEngagementEditor({
                     name="avance"
                     checked={!form.avance.renonceBenefice}
                     onChange={() => updateForm('avance', { renonceBenefice: false })}
-                    className="h-4 w-4 text-blue-600"
+                    className="h-4 w-4 text-green-600"
                   />
                   <span className="text-sm">Non</span>
                 </label>
@@ -1060,7 +1074,7 @@ export function ActeEngagementEditor({
                     name="avance"
                     checked={form.avance.renonceBenefice}
                     onChange={() => updateForm('avance', { renonceBenefice: true })}
-                    className="h-4 w-4 text-blue-600"
+                    className="h-4 w-4 text-green-600"
                   />
                   <span className="text-sm">Oui</span>
                 </label>
@@ -1105,7 +1119,7 @@ export function ActeEngagementEditor({
                     ...form.dureeExecution, 
                     pointDepart: 'notification' 
                   })}
-                  className="h-4 w-4 text-blue-600"
+                  className="h-4 w-4 text-green-600"
                 />
                 <span className="text-sm">la date de notification du marché public</span>
               </label>
@@ -1119,7 +1133,7 @@ export function ActeEngagementEditor({
                     ...form.dureeExecution, 
                     pointDepart: 'ordre-service' 
                   })}
-                  className="h-4 w-4 text-blue-600"
+                  className="h-4 w-4 text-green-600"
                 />
                 <span className="text-sm">la date de notification de l'ordre de service</span>
               </label>
@@ -1133,7 +1147,7 @@ export function ActeEngagementEditor({
                     ...form.dureeExecution, 
                     pointDepart: 'date-execution' 
                   })}
-                  className="h-4 w-4 text-blue-600"
+                  className="h-4 w-4 text-green-600"
                 />
                 <span className="text-sm">la date de début d'exécution prévue par le marché public</span>
               </label>
@@ -1152,7 +1166,7 @@ export function ActeEngagementEditor({
                         ...form.dureeExecution, 
                         estReconductible: false 
                       })}
-                      className="h-4 w-4 text-blue-600"
+                      className="h-4 w-4 text-green-600"
                     />
                     <span className="text-sm">Non</span>
                   </label>
@@ -1165,7 +1179,7 @@ export function ActeEngagementEditor({
                         ...form.dureeExecution, 
                         estReconductible: true 
                       })}
-                      className="h-4 w-4 text-blue-600"
+                      className="h-4 w-4 text-green-600"
                     />
                     <span className="text-sm">Oui</span>
                   </label>
@@ -1369,7 +1383,7 @@ export function ActeEngagementEditor({
                 <button
                   type="button"
                   onClick={addSignataireGroupement}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100"
                 >
                   <Plus className="w-4 h-4" />
                   Ajouter un signataire
@@ -1515,7 +1529,7 @@ export function ActeEngagementEditor({
             Acte d'Engagement (ATTRI1)
           </h2>
           {numeroLot && (
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
               Lot {numeroLot}
             </span>
           )}
@@ -1536,7 +1550,7 @@ export function ActeEngagementEditor({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
           >
             <Save className="w-4 h-4" />
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
@@ -1546,7 +1560,7 @@ export function ActeEngagementEditor({
           <button
             onClick={handleExportWord}
             disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
             title="Exporter au format Word (ATTRI1)"
           >
             <FileDown className="w-4 h-4" />
@@ -1600,7 +1614,7 @@ export function ActeEngagementEditor({
                 <div className="space-y-5" style={{ fontFamily: 'Calibri, sans-serif', fontSize: '11pt', lineHeight: '1.5' }}>
                   {/* Section A */}
                   <section>
-                    <h3 className="text-[12pt] font-bold mb-2 pb-1 border-b-2 border-blue-600">A - Objet de l'acte d'engagement</h3>
+                    <h3 className="text-[12pt] font-bold mb-2 pb-1 border-b-2 border-green-600">A - Objet de l'acte d'engagement</h3>
                     <div className="space-y-2">
                       <p><strong>Objet du marché public :</strong> {form.objet.objetMarche || '______________________________'}</p>
                       <p><strong>N° de référence :</strong> {form.objet.numeroReference || numeroProcedure || '______________________________'}</p>
@@ -1765,7 +1779,7 @@ export function ActeEngagementEditor({
                   handleExportWord();
                 }}
                 disabled={isExporting}
-                className="flex items-center gap-2 px-4 py-2 bg-teal-700 text-white rounded-md hover:bg-teal-800 disabled:opacity-50 font-medium text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-md hover:bg-[#234441] disabled:opacity-50 font-medium text-sm"
               >
                 <FileDown className="w-4 h-4" />
                 {isExporting ? 'Export...' : 'Exporter en Word'}

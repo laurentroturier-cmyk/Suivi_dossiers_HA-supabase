@@ -147,9 +147,9 @@ export function ProcedureSelector({
             transition-all duration-200
             ${validationState === 'valid' ? 'border-green-500 bg-green-50' : ''}
             ${validationState === 'invalid' ? 'border-red-500 bg-red-50' : ''}
-            ${validationState === 'idle' ? 'border-gray-300 focus:border-blue-500' : ''}
+            ${validationState === 'idle' ? 'border-gray-300 focus:border-green-500' : ''}
             disabled:bg-gray-100 disabled:cursor-not-allowed
-            focus:outline-none focus:ring-2 focus:ring-blue-200
+            focus:outline-none focus:ring-2 focus:ring-green-200
           `}
         />
         
@@ -202,11 +202,11 @@ export function ProcedureSelector({
               <button
                 key={index}
                 onClick={() => handleSelectSuggestion(proc)}
-                className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                className="w-full px-4 py-3 text-left hover:bg-green-50 border-b border-gray-100 last:border-b-0 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="font-mono font-semibold text-blue-600 text-sm">
+                    <p className="font-mono font-semibold text-green-700 text-sm">
                       {numProc}
                     </p>
                     <p className="text-sm text-gray-800 truncate mt-1">

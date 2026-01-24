@@ -4,18 +4,18 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Save, 
-  Plus, 
-  Trash2, 
-  AlertCircle, 
-  CheckCircle, 
+import {
+  Save,
+  Plus,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
   Package,
   User,
   Phone,
   Mail,
   Calendar,
-  DollarSign,
+  Euro,
   FileText,
   Settings
 } from 'lucide-react';
@@ -38,7 +38,7 @@ export function ConfigurationGlobaleForm({
     data || {
       informationsGenerales: {
         acheteur: procedure?.Acheteur || '',
-        titreMarche: procedure?.['Objet court'] || '',
+        titreMarche: procedure?.['Nom de la procédure'] || '',
         typeProcedure: procedure?.['Type de procédure'] || '',
         dureeMarche: procedure?.['Durée du marché (en mois)'] || '',
         dateRemiseOffres: procedure?.['Date de remise des offres'] || '',
@@ -181,7 +181,7 @@ export function ConfigurationGlobaleForm({
       {/* En-tête */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <Settings className="w-8 h-8 text-blue-600" />
+          <Settings className="w-8 h-8 text-[#2F5B58]" />
           <h1 className="text-2xl font-bold text-gray-900">Configuration Globale</h1>
         </div>
         <p className="text-gray-600">
@@ -189,9 +189,9 @@ export function ConfigurationGlobaleForm({
           Cela vous évite de ressaisir les mêmes informations dans chaque module.
         </p>
         
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-blue-800">
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-green-800">
             <strong>Important :</strong> Les informations saisies ici seront automatiquement reprises dans :
             <ul className="list-disc ml-5 mt-2">
               <li>Règlement de consultation</li>
@@ -220,21 +220,21 @@ export function ConfigurationGlobaleForm({
                 type="text"
                 value={config.informationsGenerales.acheteur}
                 onChange={(e) => handleInfoGeneraleChange('acheteur', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="Ex: Afpa"
               />
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Titre du marché
               </label>
-              <input
-                type="text"
+              <textarea
                 value={config.informationsGenerales.titreMarche}
                 onChange={(e) => handleInfoGeneraleChange('titreMarche', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: Travaux de rénovation..."
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                placeholder="Ex: Prestations de Tierce Maintenance Applicative (TMA)..."
               />
             </div>
 
@@ -246,7 +246,7 @@ export function ConfigurationGlobaleForm({
                 type="text"
                 value={config.informationsGenerales.typeProcedure}
                 onChange={(e) => handleInfoGeneraleChange('typeProcedure', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="Ex: Appel d'offres ouvert"
               />
             </div>
@@ -259,7 +259,7 @@ export function ConfigurationGlobaleForm({
                 type="text"
                 value={config.informationsGenerales.dureeMarche}
                 onChange={(e) => handleInfoGeneraleChange('dureeMarche', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="Ex: 12"
               />
             </div>
@@ -272,7 +272,7 @@ export function ConfigurationGlobaleForm({
                 type="date"
                 value={config.informationsGenerales.dateRemiseOffres}
                 onChange={(e) => handleInfoGeneraleChange('dateRemiseOffres', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
             </div>
           </div>
@@ -284,13 +284,13 @@ export function ConfigurationGlobaleForm({
             <div className="flex items-center gap-2">
               <Package className="w-5 h-5 text-gray-700" />
               <h2 className="text-xl font-semibold text-gray-900">Configuration des lots</h2>
-              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+              <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded">
                 {config.lots.length} lot{config.lots.length > 1 ? 's' : ''}
               </span>
             </div>
             <button
               onClick={addLot}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition-colors"
             >
               <Plus className="w-4 h-4" />
               Ajouter un lot
@@ -305,10 +305,10 @@ export function ConfigurationGlobaleForm({
           ) : (
             <div className="space-y-4">
               {config.lots.map((lot, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 font-semibold rounded-full text-sm">
+                      <span className="flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 font-semibold rounded-full text-sm">
                         {lot.numero}
                       </span>
                       <span className="font-medium text-gray-700">Lot {lot.numero}</span>
@@ -333,7 +333,7 @@ export function ConfigurationGlobaleForm({
                         type="text"
                         value={lot.intitule}
                         onChange={(e) => handleLotChange(index, 'intitule', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         placeholder="Ex: Travaux de gros œuvre"
                       />
                     </div>
@@ -347,10 +347,10 @@ export function ConfigurationGlobaleForm({
                           type="text"
                           value={lot.montant}
                           onChange={(e) => handleLotChange(index, 'montant', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                           placeholder="Ex: 50000"
                         />
-                        <DollarSign className="absolute right-3 top-2.5 w-5 h-5 text-gray-400" />
+                        <Euro className="absolute right-3 top-2.5 w-5 h-5 text-gray-400" />
                       </div>
                     </div>
 
@@ -362,7 +362,7 @@ export function ConfigurationGlobaleForm({
                         type="text"
                         value={lot.description || ''}
                         onChange={(e) => handleLotChange(index, 'description', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         placeholder="Optionnel"
                       />
                     </div>
@@ -374,7 +374,7 @@ export function ConfigurationGlobaleForm({
               <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-gray-700">Total estimatif (tous lots)</span>
-                  <span className="text-2xl font-bold text-blue-600">
+                  <span className="text-2xl font-bold text-green-700">
                     {totalMontant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT
                   </span>
                 </div>
@@ -399,7 +399,7 @@ export function ConfigurationGlobaleForm({
                 type="text"
                 value={config.variablesCommunes.ccagApplicable}
                 onChange={(e) => handleVariableCommuneChange('ccagApplicable', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="Ex: CCAG-Travaux"
               />
             </div>
@@ -412,7 +412,7 @@ export function ConfigurationGlobaleForm({
                 type="text"
                 value={config.variablesCommunes.delaiPaiement}
                 onChange={(e) => handleVariableCommuneChange('delaiPaiement', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="Ex: 30"
               />
             </div>
@@ -425,7 +425,7 @@ export function ConfigurationGlobaleForm({
                 type="text"
                 value={config.variablesCommunes.delaiExecution}
                 onChange={(e) => handleVariableCommuneChange('delaiExecution', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="Ex: 6 mois"
               />
             </div>
@@ -436,7 +436,7 @@ export function ConfigurationGlobaleForm({
                   type="checkbox"
                   checked={config.variablesCommunes.garantieFinanciere}
                   onChange={(e) => handleVariableCommuneChange('garantieFinanciere', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                 />
                 <span className="text-sm font-medium text-gray-700">Garantie financière</span>
               </label>
@@ -446,7 +446,7 @@ export function ConfigurationGlobaleForm({
                   type="checkbox"
                   checked={config.variablesCommunes.avance}
                   onChange={(e) => handleVariableCommuneChange('avance', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                 />
                 <span className="text-sm font-medium text-gray-700">Avance</span>
               </label>
@@ -461,7 +461,7 @@ export function ConfigurationGlobaleForm({
                   type="text"
                   value={config.variablesCommunes.montantAvance || ''}
                   onChange={(e) => handleVariableCommuneChange('montantAvance', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   placeholder="Ex: 5"
                 />
               </div>
@@ -485,7 +485,7 @@ export function ConfigurationGlobaleForm({
                 type="text"
                 value={config.contacts.responsableProcedure}
                 onChange={(e) => handleContactChange('responsableProcedure', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="Ex: Jean Dupont"
               />
             </div>
@@ -499,7 +499,7 @@ export function ConfigurationGlobaleForm({
                 type="email"
                 value={config.contacts.emailContact}
                 onChange={(e) => handleContactChange('emailContact', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="Ex: jean.dupont@afpa.fr"
               />
             </div>
@@ -513,7 +513,7 @@ export function ConfigurationGlobaleForm({
                 type="tel"
                 value={config.contacts.telephoneContact}
                 onChange={(e) => handleContactChange('telephoneContact', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="Ex: 01 23 45 67 89"
               />
             </div>

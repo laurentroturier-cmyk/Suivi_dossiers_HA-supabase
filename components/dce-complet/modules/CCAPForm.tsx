@@ -132,7 +132,7 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+          className="px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50"
         >
           {isSaving ? 'Enregistrement...' : 'Enregistrer le CCAP'}
         </button>
@@ -151,7 +151,7 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={isImporting}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-[#2F5B58] text-white rounded-md hover:bg-[#234441] transition disabled:opacity-50"
           title="Importer un CCAP Word (.docx)"
         >
           <Upload className="w-4 h-4" />
@@ -200,7 +200,7 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
                   <input
                     value={section.titre}
                     onChange={e => updateSection(index, 'titre', e.target.value)}
-                    className="flex-1 border-0 bg-transparent font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                    className="flex-1 border-0 bg-transparent font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-green-500 rounded px-2 py-1"
                     placeholder="Titre de la section"
                   />
                   <span className="text-xs text-gray-500 min-w-[60px] text-right">
@@ -225,7 +225,7 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
                     <textarea
                       value={section.contenu}
                       onChange={e => updateSection(index, 'contenu', e.target.value)}
-                      className="w-full border rounded-lg px-3 py-2 text-sm min-h-[120px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border rounded-lg px-3 py-2 text-sm min-h-[120px] focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       placeholder="Saisissez le contenu de cette section..."
                     />
                   </div>

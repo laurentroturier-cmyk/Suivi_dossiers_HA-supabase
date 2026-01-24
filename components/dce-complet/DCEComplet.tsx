@@ -386,8 +386,8 @@ export function DCEComplet({ onClose }: DCECompletProps) {
               </div>
 
               <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-blue-50 rounded-lg text-center">
-                  <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <div className="p-4 bg-green-50 rounded-lg text-center">
+                  <FileText className="w-8 h-8 text-green-600 mx-auto mb-2" />
                   <p className="text-sm font-medium text-gray-900">Auto-remplissage</p>
                   <p className="text-xs text-gray-600 mt-1">Depuis la procédure</p>
                 </div>
@@ -396,8 +396,8 @@ export function DCEComplet({ onClose }: DCECompletProps) {
                   <p className="text-sm font-medium text-gray-900">Une seule saisie</p>
                   <p className="text-xs text-gray-600 mt-1">Données synchronisées</p>
                 </div>
-                <div className="p-4 bg-purple-50 rounded-lg text-center">
-                  <FolderOpen className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                <div className="p-4 bg-green-50 rounded-lg text-center">
+                  <FolderOpen className="w-8 h-8 text-green-600 mx-auto mb-2" />
                   <p className="text-sm font-medium text-gray-900">Tous les documents</p>
                   <p className="text-xs text-gray-600 mt-1">RC, AE, CCAP, CCTP...</p>
                 </div>
@@ -467,13 +467,13 @@ export function DCEComplet({ onClose }: DCECompletProps) {
                           onClick={() => setActiveSection(section.key)}
                           className={`
                             w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all
-                            ${isActive 
-                              ? 'bg-blue-50 text-blue-700 font-medium shadow-sm' 
+                            ${isActive
+                              ? 'bg-green-50 text-green-700 font-medium shadow-sm'
                               : 'text-gray-700 hover:bg-gray-50'
                             }
                           `}
                         >
-                          <div className={`flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                          <div className={`flex-shrink-0 ${isActive ? 'text-[#2F5B58]' : 'text-gray-400'}`}>
                             {section.icon}
                           </div>
                           <span className="flex-1 truncate text-sm">
