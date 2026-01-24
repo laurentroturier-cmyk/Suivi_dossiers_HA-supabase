@@ -369,14 +369,14 @@ export const createDefaultActeEngagementATTRI1 = (): ActeEngagementATTRI1Data =>
   },
   
   acheteur: {
-    designation: '',
+    designation: 'AFPA - Agence nationale pour la formation professionnelle des adultes',
     referenceAvis: '',
     signataire: {
       civilite: 'Mme',
       nomPrenom: '',
       qualite: '',
     },
-    lieuSignature: '',
+    lieuSignature: 'Montreuil',
     dateSignature: '',
   },
 });

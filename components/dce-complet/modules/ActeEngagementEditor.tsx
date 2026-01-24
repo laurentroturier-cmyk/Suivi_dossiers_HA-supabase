@@ -199,7 +199,16 @@ export function ActeEngagementEditor({
 
   useEffect(() => {
     if (data) {
-      setForm(data);
+      // Pré-remplir les champs acheteur AFPA s'ils sont vides
+      const updatedData = {
+        ...data,
+        acheteur: {
+          ...data.acheteur,
+          designation: data.acheteur.designation || 'AFPA - Agence nationale pour la formation professionnelle des adultes',
+          lieuSignature: data.acheteur.lieuSignature || 'Montreuil',
+        }
+      };
+      setForm(updatedData);
     }
   }, [data]);
 

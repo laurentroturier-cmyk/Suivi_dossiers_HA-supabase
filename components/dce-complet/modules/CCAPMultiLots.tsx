@@ -2,31 +2,9 @@
 import React from 'react';
 import { GenericMultiLots } from '../shared/GenericMultiLots';
 import { CCAPForm } from './CCAPForm';
-import type { CCAPData } from '../types';
+import { createDefaultCCAP } from './defaults';
 
-const defaultCCAPData: CCAPData = {
-  dispositionsGenerales: {
-    objet: '',
-    reglementation: '',
-    delaiExecution: '',
-  },
-  conditionsPaiement: {
-    modalites: '',
-    delaiPaiement: '',
-    avance: false,
-    montantAvance: '',
-  },
-  garanties: {
-    garantieParfaitAchevement: false,
-    garantieDecennale: false,
-    assurances: '',
-  },
-  penalites: {
-    retard: '',
-    nonConformite: '',
-  },
-  clauses: [],
-};
+const defaultCCAPData = createDefaultCCAP();
 
 interface Props {
   procedureId: string;

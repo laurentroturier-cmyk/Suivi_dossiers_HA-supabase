@@ -80,13 +80,13 @@ const createInstructionParagraph = (text: string): Paragraph =>
     spacing: { after: 80 },
   });
 
-// Créer une ligne de case à cocher
+// Créer une ligne de case à cocher (en noir pour sobriété)
 const createCheckboxLine = (checked: boolean, label: string, additionalText = ''): Paragraph =>
   new Paragraph({
     children: [
-      createBlueText(`${createCheckbox(checked)} `),
-      createBlueText(label),
-      additionalText ? createBlueText(additionalText) : new TextRun(''),
+      createBlackText(`${createCheckbox(checked)} `),
+      createBlackText(label),
+      additionalText ? createBlackText(additionalText) : new TextRun(''),
     ],
     spacing: { after: 80 },
     indent: { left: 360 },
@@ -282,11 +282,11 @@ export const generateActeEngagementWord = async (
           createInstructionParagraph('(Reprendre le contenu de la mention figurant dans l\'avis d\'appel à la concurrence ou l\'invitation à confirmer l\'intérêt ; en cas de publication d\'une annonce au Journal officiel de l\'Union européenne ou au Bulletin officiel des annonces de marchés publics, la simple indication de la référence à cet avis est suffisante ; dans tous les cas, l\'indication du numéro de référence attribué au dossier par l\'acheteur est également une information suffisante. Toutefois, en cas d\'allotissement, identifier également le ou les lots concernés par le présent acte d\'engagement.)'),
           
           new Paragraph({
-            children: [createBlueText(data.objet.objetMarche || '(Non renseigné)')],
+            children: [createBlackText(data.objet.objetMarche || '(Non renseigné)')],
             spacing: { after: 80 },
           }),
           new Paragraph({
-            children: [createBlueBoldText(`N° ${numeroReference}`)],
+            children: [createBlackText(`N° ${numeroReference}`, true)],
             spacing: { after: 160 },
           }),
 
@@ -303,19 +303,19 @@ export const generateActeEngagementWord = async (
           // Cases à cocher
           new Paragraph({
             children: [
-              createBlueText('1. '),
-              createBlueText(`${createCheckbox(data.objet.typeActe.ensembleMarche)} `),
-              createBlueText('à l\'ensemble du marché public '),
+              createBlackText('1. '),
+              createBlackText(`${createCheckbox(data.objet.typeActe.ensembleMarche)} `),
+              createBlackText('à l\'ensemble du marché public '),
               createItalicText('(en cas de non allotissement)', FONT_SIZE_NORMAL),
-              createBlueText(' ;'),
+              createBlackText(' ;'),
             ],
             spacing: { after: 80 },
             indent: { left: 360 },
           }),
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.objet.typeActe.lotSpecifique)} `),
-              createBlueText(`au lot n°${lotNum}${lotIntitule ? ` - ${lotIntitule}` : ''} du marché public`),
+              createBlackText(`    ${createCheckbox(data.objet.typeActe.lotSpecifique)} `),
+              createBlackText(`au lot n°${lotNum}${lotIntitule ? ` - ${lotIntitule}` : ''} du marché public`),
             ],
             spacing: { after: 120 },
             indent: { left: 360 },
@@ -323,18 +323,18 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText('2. '),
-              createBlueText(`${createCheckbox(data.objet.typeOffre.offreBase)} `),
-              createBlueText('à l\'offre de base ;'),
+              createBlackText('2. '),
+              createBlackText(`${createCheckbox(data.objet.typeOffre.offreBase)} `),
+              createBlackText('à l\'offre de base ;'),
             ],
             spacing: { after: 80 },
             indent: { left: 360 },
           }),
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.objet.typeOffre.variante)} `),
-              createBlueText('à la variante suivante : '),
-              createBlueText(data.objet.typeOffre.descriptionVariante || ''),
+              createBlackText(`    ${createCheckbox(data.objet.typeOffre.variante)} `),
+              createBlackText('à la variante suivante : '),
+              createBlackText(data.objet.typeOffre.descriptionVariante || ''),
             ],
             spacing: { after: 120 },
             indent: { left: 360 },
@@ -342,10 +342,10 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText('3. '),
-              createBlueText(`${createCheckbox(data.objet.prestationsSupplementaires.avecPrestations)} `),
-              createBlueText('avec les prestations supplémentaires suivantes : '),
-              createBlueText(data.objet.prestationsSupplementaires.description || ''),
+              createBlackText('3. '),
+              createBlackText(`${createCheckbox(data.objet.prestationsSupplementaires.avecPrestations)} `),
+              createBlackText('avec les prestations supplémentaires suivantes : '),
+              createBlackText(data.objet.prestationsSupplementaires.description || ''),
             ],
             spacing: { after: 200 },
             indent: { left: 360 },
@@ -373,7 +373,7 @@ export const generateActeEngagementWord = async (
           createInstructionParagraph('(Cocher les cases correspondantes.)'),
 
           new Paragraph({
-            children: [createBlueText('Après avoir pris connaissance des pièces constitutives du marché public suivantes,')],
+            children: [createBlackText('Après avoir pris connaissance des pièces constitutives du marché public suivantes,')],
             spacing: { after: 80 },
           }),
 
@@ -381,8 +381,8 @@ export const generateActeEngagementWord = async (
           ...(data.piecesConstitutives.ccatp ? [
             new Paragraph({
               children: [
-                createBlueText(`${createCheckbox(true)} `),
-                createBlueText(`CCATP n° ${data.piecesConstitutives.ccatpNumero}`),
+                createBlackText(`${createCheckbox(true)} `),
+                createBlackText(`CCATP n° ${data.piecesConstitutives.ccatpNumero}`),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
@@ -391,8 +391,8 @@ export const generateActeEngagementWord = async (
           ...(data.piecesConstitutives.ccagFCS ? [
             new Paragraph({
               children: [
-                createBlueText(`${createCheckbox(true)} `),
-                createBlueText('CCAG de Fournitures Courantes et de Services'),
+                createBlackText(`${createCheckbox(true)} `),
+                createBlackText('CCAG de Fournitures Courantes et de Services'),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
@@ -401,8 +401,8 @@ export const generateActeEngagementWord = async (
           ...(data.piecesConstitutives.ccagTravaux ? [
             new Paragraph({
               children: [
-                createBlueText(`${createCheckbox(true)} `),
-                createBlueText('CCAG de Travaux'),
+                createBlackText(`${createCheckbox(true)} `),
+                createBlackText('CCAG de Travaux'),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
@@ -411,8 +411,8 @@ export const generateActeEngagementWord = async (
           ...(data.piecesConstitutives.ccagPI ? [
             new Paragraph({
               children: [
-                createBlueText(`${createCheckbox(true)} `),
-                createBlueText('CCAG de Prestations Intellectuelles'),
+                createBlackText(`${createCheckbox(true)} `),
+                createBlackText('CCAG de Prestations Intellectuelles'),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
@@ -421,8 +421,8 @@ export const generateActeEngagementWord = async (
           ...(data.piecesConstitutives.ccagTIC ? [
             new Paragraph({
               children: [
-                createBlueText(`${createCheckbox(true)} `),
-                createBlueText('CCAG des Technologies de l\'Information et de la Communication'),
+                createBlackText(`${createCheckbox(true)} `),
+                createBlackText('CCAG des Technologies de l\'Information et de la Communication'),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
@@ -431,8 +431,8 @@ export const generateActeEngagementWord = async (
           ...(data.piecesConstitutives.ccagMOE ? [
             new Paragraph({
               children: [
-                createBlueText(`${createCheckbox(true)} `),
-                createBlueText('CCAG de Maîtrise d\'Œuvre'),
+                createBlackText(`${createCheckbox(true)} `),
+                createBlackText('CCAG de Maîtrise d\'Œuvre'),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
@@ -441,8 +441,8 @@ export const generateActeEngagementWord = async (
           ...(data.piecesConstitutives.cctp ? [
             new Paragraph({
               children: [
-                createBlueText(`${createCheckbox(true)} `),
-                createBlueText(`CCTP n° ${data.piecesConstitutives.cctpNumero}`),
+                createBlackText(`${createCheckbox(true)} `),
+                createBlackText(`CCTP n° ${data.piecesConstitutives.cctpNumero}`),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
@@ -451,8 +451,8 @@ export const generateActeEngagementWord = async (
           ...(data.piecesConstitutives.autres ? [
             new Paragraph({
               children: [
-                createBlueText(`${createCheckbox(true)} `),
-                createBlueText(`Autres : ${data.piecesConstitutives.autresDescription}`),
+                createBlackText(`${createCheckbox(true)} `),
+                createBlackText(`Autres : ${data.piecesConstitutives.autresDescription}`),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
@@ -460,16 +460,16 @@ export const generateActeEngagementWord = async (
           ] : []),
 
           new Paragraph({
-            children: [createBlueText('et conformément à leurs clauses,')],
+            children: [createBlackText('et conformément à leurs clauses,')],
             spacing: { before: 120, after: 120 },
           }),
 
           // Le signataire
           new Paragraph({
             children: [
-              createBlueText(`${createCheckbox(data.titulaire.typeEngagement === 'societe')} `),
-              createBlueText('le signataire '),
-              createBlueBoldText(`${data.titulaire.civilite} ${data.titulaire.nomPrenom}`),
+              createBlackText(`${createCheckbox(data.titulaire.typeEngagement === 'societe')} `),
+              createBlackText('le signataire '),
+              createBlackText(`${data.titulaire.civilite} ${data.titulaire.nomPrenom}`, true),
             ],
             spacing: { after: 80 },
           }),
@@ -477,9 +477,9 @@ export const generateActeEngagementWord = async (
           // Type d'engagement - Propre compte
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.titulaire.typeEngagement === 'propre-compte')} `),
-              createBlueBoldText('s\'engage, sur la base de son offre et pour son propre compte'),
-              createBlueText(' ;'),
+              createBlackText(`    ${createCheckbox(data.titulaire.typeEngagement === 'propre-compte')} `),
+              createBlackText('s\'engage, sur la base de son offre et pour son propre compte', true),
+              createBlackText(' ;'),
             ],
             spacing: { after: 60 },
             indent: { left: 360 },
@@ -489,10 +489,10 @@ export const generateActeEngagementWord = async (
           // Type d'engagement - Société
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.titulaire.typeEngagement === 'societe')} `),
-              createBlueBoldText('engage la société '),
-              createBlueBoldText(data.titulaire.nomCommercial || data.titulaire.denominationSociale || ''),
-              createBlueText(' sur la base de son offre ;'),
+              createBlackText(`    ${createCheckbox(data.titulaire.typeEngagement === 'societe')} `),
+              createBlackText('engage la société ', true),
+              createBlackText(data.titulaire.nomCommercial || data.titulaire.denominationSociale || '', true),
+              createBlackText(' sur la base de son offre ;'),
             ],
             spacing: { after: 60 },
             indent: { left: 360 },
@@ -502,19 +502,19 @@ export const generateActeEngagementWord = async (
           // Adresses société
           ...(data.titulaire.typeEngagement === 'societe' && data.titulaire.adresseEtablissement ? [
             new Paragraph({
-              children: [createBlueText(data.titulaire.adresseEtablissement)],
+              children: [createBlackText(data.titulaire.adresseEtablissement)],
               spacing: { after: 40 },
               indent: { left: 720 },
             }),
             new Paragraph({
-              children: [createBlueText(`Tél : ${data.titulaire.telephone} – Siret : ${data.titulaire.siret}`)],
+              children: [createBlackText(`Tél : ${data.titulaire.telephone} – Siret : ${data.titulaire.siret}`)],
               spacing: { after: 60 },
               indent: { left: 720 },
             }),
           ] : []),
           ...(data.titulaire.typeEngagement === 'societe' && data.titulaire.adresseSiegeSocial ? [
             new Paragraph({
-              children: [createBlueText(data.titulaire.adresseSiegeSocial)],
+              children: [createBlackText(data.titulaire.adresseSiegeSocial)],
               spacing: { after: 120 },
               indent: { left: 720 },
             }),
@@ -523,9 +523,9 @@ export const generateActeEngagementWord = async (
           // Type d'engagement - Groupement
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.titulaire.typeEngagement === 'groupement')} `),
-              createBlueBoldText('l\'ensemble des membres du groupement s\'engagent, sur la base de l\'offre du groupement'),
-              createBlueText(' ;'),
+              createBlackText(`    ${createCheckbox(data.titulaire.typeEngagement === 'groupement')} `),
+              createBlackText('l\'ensemble des membres du groupement s\'engagent, sur la base de l\'offre du groupement', true),
+              createBlackText(' ;'),
             ],
             spacing: { after: 60 },
             indent: { left: 360 },
@@ -535,12 +535,12 @@ export const generateActeEngagementWord = async (
           // Membres du groupement
           ...data.membresGroupement.flatMap(membre => [
             new Paragraph({
-              children: [createBlueText(`${membre.nomCommercial} - ${membre.adresseAgence}`)],
+              children: [createBlackText(`${membre.nomCommercial} - ${membre.adresseAgence}`)],
               spacing: { after: 40 },
               indent: { left: 720 },
             }),
             new Paragraph({
-              children: [createBlueText(`Siret : ${membre.siretAgence}`)],
+              children: [createBlackText(`Siret : ${membre.siretAgence}`)],
               spacing: { after: 60 },
               indent: { left: 720 },
             }),
@@ -550,55 +550,55 @@ export const generateActeEngagementWord = async (
 
           // À livrer les fournitures
           new Paragraph({
-            children: [createBlueText('à livrer les fournitures demandées ou à exécuter les prestations demandées :')],
+            children: [createBlackText('à livrer les fournitures demandées ou à exécuter les prestations demandées :')],
             spacing: { after: 80 },
           }),
 
           // Prix
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.prix.typePrix === 'indiques-ci-dessous')} `),
-              createBlueText('aux prix indiqués ci-dessous ;'),
+              createBlackText(`    ${createCheckbox(data.prix.typePrix === 'indiques-ci-dessous')} `),
+              createBlackText('aux prix indiqués ci-dessous ;'),
             ],
             spacing: { after: 60 },
             indent: { left: 360 },
           }),
           ...(data.prix.typePrix === 'indiques-ci-dessous' ? [
             new Paragraph({
-              children: [createBlueText(`        Taux de la TVA : ${data.prix.tauxTVA}%`)],
+              children: [createBlackText(`        Taux de la TVA : ${data.prix.tauxTVA}%`)],
               indent: { left: 720 },
               spacing: { after: 40 },
             }),
             new Paragraph({
-              children: [createBlueText(`        Montant hors taxes arrêté en chiffres à : ${data.prix.montantHTChiffres}`)],
+              children: [createBlackText(`        Montant hors taxes arrêté en chiffres à : ${data.prix.montantHTChiffres}`)],
               indent: { left: 720 },
               spacing: { after: 40 },
             }),
             new Paragraph({
-              children: [createBlueText(`        Montant hors taxes arrêté en lettres à : ${data.prix.montantHTLettres}`)],
+              children: [createBlackText(`        Montant hors taxes arrêté en lettres à : ${data.prix.montantHTLettres}`)],
               indent: { left: 720 },
               spacing: { after: 40 },
             }),
             new Paragraph({
-              children: [createBlueText(`        Montant TTC arrêté en chiffres à : ${data.prix.montantTTCChiffres}`)],
+              children: [createBlackText(`        Montant TTC arrêté en chiffres à : ${data.prix.montantTTCChiffres}`)],
               indent: { left: 720 },
               spacing: { after: 40 },
             }),
             new Paragraph({
-              children: [createBlueText(`        Montant TTC arrêté en lettres à : ${data.prix.montantTTCLettres}`)],
+              children: [createBlackText(`        Montant TTC arrêté en lettres à : ${data.prix.montantTTCLettres}`)],
               indent: { left: 720 },
               spacing: { after: 80 },
             }),
           ] : []),
           new Paragraph({
-            children: [createBlueText('OU')],
+            children: [createBlackText('OU')],
             alignment: AlignmentType.CENTER,
             spacing: { after: 60 },
           }),
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.prix.typePrix === 'annexe-financiere')} `),
-              createBlueText('aux prix indiqués ci-dessous ou dans l\'annexe financière jointe au présent document.'),
+              createBlackText(`    ${createCheckbox(data.prix.typePrix === 'annexe-financiere')} `),
+              createBlackText('aux prix indiqués ci-dessous ou dans l\'annexe financière jointe au présent document.'),
             ],
             spacing: { after: 200 },
             indent: { left: 360 },
@@ -617,18 +617,18 @@ export const generateActeEngagementWord = async (
           createInstructionParagraph('(En cas de groupement d\'opérateurs économiques.)'),
 
           new Paragraph({
-            children: [createBlueText('Pour l\'exécution du marché public, le groupement d\'opérateurs économiques est :')],
+            children: [createBlackText('Pour l\'exécution du marché public, le groupement d\'opérateurs économiques est :')],
             spacing: { after: 80 },
           }),
           createInstructionParagraph('(Cocher la case correspondante.)'),
 
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.groupement.typeGroupement === 'conjoint')} `),
-              createBlueText('conjoint'),
-              createBlueText('          OU          '),
-              createBlueText(`${createCheckbox(data.groupement.typeGroupement === 'solidaire')} `),
-              createBlueText('solidaire'),
+              createBlackText(`    ${createCheckbox(data.groupement.typeGroupement === 'conjoint')} `),
+              createBlackText('conjoint'),
+              createBlackText('          OU          '),
+              createBlackText(`${createCheckbox(data.groupement.typeGroupement === 'solidaire')} `),
+              createBlackText('solidaire'),
             ],
             spacing: { after: 120 },
             indent: { left: 360 },
@@ -662,25 +662,25 @@ export const generateActeEngagementWord = async (
               }),
               ...data.groupement.repartitionPrestations.map(p => new TableRow({
                 children: [
-                  new TableCell({ children: [new Paragraph({ children: [createBlueText(p.designationMembre)] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [createBlueText(p.naturePrestations)] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [createBlueText(p.montantHT)], alignment: AlignmentType.RIGHT })] }),
+                  new TableCell({ children: [new Paragraph({ children: [createBlackText(p.designationMembre)] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [createBlackText(p.naturePrestations)] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [createBlackText(p.montantHT)], alignment: AlignmentType.RIGHT })] }),
                 ],
               })),
               // Lignes vides si pas de données
               ...(data.groupement.repartitionPrestations.length === 0 ? [
                 new TableRow({
                   children: [
-                    new TableCell({ children: [new Paragraph({ children: [createBlueText('')] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [createBlueText('')] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [createBlueText('')] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [createBlackText('')] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [createBlackText('')] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [createBlackText('')] })] }),
                   ],
                 }),
                 new TableRow({
                   children: [
-                    new TableCell({ children: [new Paragraph({ children: [createBlueText('')] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [createBlueText('')] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [createBlueText('')] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [createBlackText('')] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [createBlackText('')] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [createBlackText('')] })] }),
                   ],
                 }),
               ] : []),
@@ -704,17 +704,17 @@ export const generateActeEngagementWord = async (
           ...data.comptesBancaires.flatMap(compte => [
             new Paragraph({
               children: [
-                createBlueText('■ ', true),
-                createBlueText(`Nom de l'établissement bancaire : `),
-                createBlueBoldText(`${compte.nomEtablissement}${compte.codeEtablissement ? ` (${compte.codeEtablissement})` : ''}`),
+                createBlackText('■ ', true),
+                createBlackText(`Nom de l'établissement bancaire : `),
+                createBlackText(`${compte.nomEtablissement}${compte.codeEtablissement ? ` (${compte.codeEtablissement})` : ''}`, true),
               ],
               spacing: { after: 60 },
             }),
             new Paragraph({
               children: [
-                createBlueText('■ ', true),
-                createBlueText('Numéro de compte : '),
-                createBlueBoldText(compte.numeroCompte),
+                createBlackText('■ ', true),
+                createBlackText('Numéro de compte : '),
+                createBlackText(compte.numeroCompte, true),
               ],
               spacing: { after: 120 },
             }),
@@ -734,13 +734,13 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText('Je renonce au bénéfice de l\'avance :'),
-              createBlueText('          '),
-              createBlueText(`${createCheckbox(!data.avance.renonceBenefice)} `),
-              createBlueText('Non'),
-              createBlueText('          '),
-              createBlueText(`${createCheckbox(data.avance.renonceBenefice)} `),
-              createBlueText('Oui'),
+              createBlackText('Je renonce au bénéfice de l\'avance :'),
+              createBlackText('          '),
+              createBlackText(`${createCheckbox(!data.avance.renonceBenefice)} `),
+              createBlackText('Non'),
+              createBlackText('          '),
+              createBlackText(`${createCheckbox(data.avance.renonceBenefice)} `),
+              createBlackText('Oui'),
             ],
             spacing: { after: 80 },
           }),
@@ -759,9 +759,9 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText(`La durée d'exécution du marché public est de `),
-              createBlueBoldText(`${data.dureeExecution.dureeEnMois} mois`),
-              createBlueText(` à compter de :`),
+              createBlackText(`La durée d'exécution du marché public est de `),
+              createBlackText(`${data.dureeExecution.dureeEnMois} mois`, true),
+              createBlackText(` à compter de :`),
             ],
             spacing: { after: 80 },
           }),
@@ -769,24 +769,24 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText(`${createCheckbox(data.dureeExecution.pointDepart === 'notification')} `),
-              createBlueText('la date de notification du marché public ;'),
+              createBlackText(`${createCheckbox(data.dureeExecution.pointDepart === 'notification')} `),
+              createBlackText('la date de notification du marché public ;'),
             ],
             spacing: { after: 60 },
             indent: { left: 360 },
           }),
           new Paragraph({
             children: [
-              createBlueText(`${createCheckbox(data.dureeExecution.pointDepart === 'ordre-service')} `),
-              createBlueText('la date de notification de l\'ordre de service ;'),
+              createBlackText(`${createCheckbox(data.dureeExecution.pointDepart === 'ordre-service')} `),
+              createBlackText('la date de notification de l\'ordre de service ;'),
             ],
             spacing: { after: 60 },
             indent: { left: 360 },
           }),
           new Paragraph({
             children: [
-              createBlueText(`${createCheckbox(data.dureeExecution.pointDepart === 'date-execution')} `),
-              createBlueText('la date de début d\'exécution prévue par le marché public lorsqu\'elle est postérieure à la date de notification.'),
+              createBlackText(`${createCheckbox(data.dureeExecution.pointDepart === 'date-execution')} `),
+              createBlackText('la date de début d\'exécution prévue par le marché public lorsqu\'elle est postérieure à la date de notification.'),
             ],
             spacing: { after: 120 },
             indent: { left: 360 },
@@ -794,13 +794,13 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText('Le marché public est reconductible :'),
-              createBlueText('          '),
-              createBlueText(`${createCheckbox(!data.dureeExecution.estReconductible)} `),
-              createBlueText('Non'),
-              createBlueText('          '),
-              createBlueText(`${createCheckbox(data.dureeExecution.estReconductible)} `),
-              createBlueText('Oui'),
+              createBlackText('Le marché public est reconductible :'),
+              createBlackText('          '),
+              createBlackText(`${createCheckbox(!data.dureeExecution.estReconductible)} `),
+              createBlackText('Non'),
+              createBlackText('          '),
+              createBlackText(`${createCheckbox(data.dureeExecution.estReconductible)} `),
+              createBlackText('Oui'),
             ],
             spacing: { after: 80 },
           }),
@@ -808,23 +808,23 @@ export const generateActeEngagementWord = async (
 
           ...(data.dureeExecution.estReconductible ? [
             new Paragraph({
-              children: [createBlueText('Si oui, préciser :')],
+              children: [createBlackText('Si oui, préciser :')],
               spacing: { after: 60 },
             }),
             new Paragraph({
               children: [
-                createBlueText('■ ', true),
-                createBlueText('Nombre des reconductions : '),
-                createBlueText(data.dureeExecution.nombreReconductions || '…………'),
+                createBlackText('■ ', true),
+                createBlackText('Nombre des reconductions : '),
+                createBlackText(data.dureeExecution.nombreReconductions || '…………'),
               ],
               spacing: { after: 60 },
               indent: { left: 360 },
             }),
             new Paragraph({
               children: [
-                createBlueText('■ ', true),
-                createBlueText('Durée des reconductions : '),
-                createBlueText(data.dureeExecution.dureeReconductions || '…………'),
+                createBlackText('■ ', true),
+                createBlackText('Durée des reconductions : '),
+                createBlackText(data.dureeExecution.dureeReconductions || '…………'),
               ],
               spacing: { after: 120 },
               indent: { left: 360 },
@@ -887,19 +887,19 @@ export const generateActeEngagementWord = async (
                 children: [
                   new TableCell({
                     children: [
-                      new Paragraph({ children: [createBlueText(`${data.signatureTitulaire.nomPrenom} –`)] }),
-                      new Paragraph({ children: [createBlueText(data.signatureTitulaire.qualite)] }),
+                      new Paragraph({ children: [createBlackText(`${data.signatureTitulaire.nomPrenom} –`)] }),
+                      new Paragraph({ children: [createBlackText(data.signatureTitulaire.qualite)] }),
                     ],
                   }),
                   new TableCell({
                     children: [
-                      new Paragraph({ children: [createBlueText(`A ${data.signatureTitulaire.lieuSignature},`)] }),
-                      new Paragraph({ children: [createBlueText(`Le ${data.signatureTitulaire.dateSignature}`)] }),
+                      new Paragraph({ children: [createBlackText(`A ${data.signatureTitulaire.lieuSignature},`)] }),
+                      new Paragraph({ children: [createBlackText(`Le ${data.signatureTitulaire.dateSignature}`)] }),
                     ],
                   }),
                   new TableCell({
-                    children: [new Paragraph({ 
-                      children: [createBlueText(data.signatureTitulaire.signatureElectronique ? 'électronique' : '')],
+                    children: [new Paragraph({
+                      children: [createBlackText(data.signatureTitulaire.signatureElectronique ? 'électronique' : '')],
                       alignment: AlignmentType.CENTER,
                     })],
                     verticalAlign: VerticalAlign.CENTER,
@@ -925,31 +925,31 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText('Les membres du groupement d\'opérateurs économiques désignent le mandataire suivant '),
+              createBlackText('Les membres du groupement d\'opérateurs économiques désignent le mandataire suivant '),
               createItalicText('(article R. 2142-23 ou article R. 2342-12 du code de la commande publique)', FONT_SIZE_NORMAL),
-              createBlueText(' :'),
+              createBlackText(' :'),
             ],
             spacing: { after: 60 },
           }),
           createInstructionParagraph('[Indiquer le nom commercial et la dénomination sociale du mandataire]'),
           new Paragraph({
-            children: [createBlueBoldText(data.mandataireGroupement.nomCommercial || data.mandataireGroupement.denominationSociale || '')],
+            children: [createBlackText(data.mandataireGroupement.nomCommercial || data.mandataireGroupement.denominationSociale || '', true)],
             spacing: { after: 120 },
             indent: { left: 360 },
           }),
 
           new Paragraph({
-            children: [createBlueText('En cas de groupement conjoint, le mandataire du groupement est :')],
+            children: [createBlackText('En cas de groupement conjoint, le mandataire du groupement est :')],
             spacing: { after: 60 },
           }),
           createInstructionParagraph('(Cocher la case correspondante.)'),
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.mandataireGroupement.typeMandataire === 'conjoint')} `),
-              createBlueText('conjoint'),
-              createBlueText('          OU          '),
-              createBlueText(`${createCheckbox(data.mandataireGroupement.typeMandataire === 'solidaire')} `),
-              createBlueText('solidaire'),
+              createBlackText(`    ${createCheckbox(data.mandataireGroupement.typeMandataire === 'conjoint')} `),
+              createBlackText('conjoint'),
+              createBlackText('          OU          '),
+              createBlackText(`${createCheckbox(data.mandataireGroupement.typeMandataire === 'solidaire')} `),
+              createBlackText('solidaire'),
             ],
             spacing: { after: 120 },
             indent: { left: 360 },
@@ -957,8 +957,8 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText(`${createCheckbox(data.mandataireGroupement.mandats.signerActeEngagement || data.mandataireGroupement.mandats.representerAcheteur || data.mandataireGroupement.mandats.coordonnerPrestations)} `),
-              createBlueText('Les membres du groupement ont donné mandat au mandataire, qui signe le présent acte d\'engagement :'),
+              createBlackText(`${createCheckbox(data.mandataireGroupement.mandats.signerActeEngagement || data.mandataireGroupement.mandats.representerAcheteur || data.mandataireGroupement.mandats.coordonnerPrestations)} `),
+              createBlackText('Les membres du groupement ont donné mandat au mandataire, qui signe le présent acte d\'engagement :'),
             ],
             spacing: { after: 80 },
           }),
@@ -966,8 +966,8 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.mandataireGroupement.mandats.signerActeEngagement)} `),
-              createBlueText('pour signer le présent acte d\'engagement en leur nom et pour leur compte, pour les représenter vis-à-vis de l\'acheteur et pour coordonner l\'ensemble des prestations ;'),
+              createBlackText(`    ${createCheckbox(data.mandataireGroupement.mandats.signerActeEngagement)} `),
+              createBlackText('pour signer le présent acte d\'engagement en leur nom et pour leur compte, pour les représenter vis-à-vis de l\'acheteur et pour coordonner l\'ensemble des prestations ;'),
             ],
             spacing: { after: 40 },
             indent: { left: 720 },
@@ -980,8 +980,8 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.mandataireGroupement.mandats.signerModifications)} `),
-              createBlueText('pour signer, en leur nom et pour leur compte, les modifications ultérieures du marché public ;'),
+              createBlackText(`    ${createCheckbox(data.mandataireGroupement.mandats.signerModifications)} `),
+              createBlackText('pour signer, en leur nom et pour leur compte, les modifications ultérieures du marché public ;'),
             ],
             spacing: { after: 40 },
             indent: { left: 720 },
@@ -994,8 +994,8 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText(`    ${createCheckbox(data.mandataireGroupement.mandats.conditionsAnnexe)} `),
-              createBlueText('ont donné mandat au mandataire dans les conditions définies par les pouvoirs joints en annexe.'),
+              createBlackText(`    ${createCheckbox(data.mandataireGroupement.mandats.conditionsAnnexe)} `),
+              createBlackText('ont donné mandat au mandataire dans les conditions définies par les pouvoirs joints en annexe.'),
             ],
             spacing: { after: 40 },
             indent: { left: 720 },
@@ -1035,19 +1035,19 @@ export const generateActeEngagementWord = async (
                   children: [
                     new TableCell({
                       children: [
-                        new Paragraph({ children: [createBlueText(`${sig.nomPrenom} –`)] }),
-                        new Paragraph({ children: [createBlueText(sig.qualite)] }),
+                        new Paragraph({ children: [createBlackText(`${sig.nomPrenom} –`)] }),
+                        new Paragraph({ children: [createBlackText(sig.qualite)] }),
                       ],
                     }),
                     new TableCell({
                       children: [
-                        new Paragraph({ children: [createBlueText(`A ${sig.lieuSignature},`)] }),
-                        new Paragraph({ children: [createBlueText(`Le ${sig.dateSignature}`)] }),
+                        new Paragraph({ children: [createBlackText(`A ${sig.lieuSignature},`)] }),
+                        new Paragraph({ children: [createBlackText(`Le ${sig.dateSignature}`)] }),
                       ],
                     }),
                     new TableCell({
-                      children: [new Paragraph({ 
-                        children: [createBlueText(sig.signatureElectronique ? 'électronique' : '')],
+                      children: [new Paragraph({
+                        children: [createBlackText(sig.signatureElectronique ? 'électronique' : '')],
                         alignment: AlignmentType.CENTER,
                       })],
                       verticalAlign: VerticalAlign.CENTER,
@@ -1075,34 +1075,34 @@ export const generateActeEngagementWord = async (
 
           new Paragraph({
             children: [
-              createBlueText('■ ', true),
+              createBlackText('■ ', true),
               createBlueBoldText('Désignation de l\'acheteur'),
             ],
             spacing: { after: 60 },
           }),
           createInstructionParagraph('(Reprendre le contenu de la mention figurant dans l\'avis d\'appel à la concurrence ou l\'invitation à confirmer l\'intérêt ; en cas de publication d\'une annonce au Journal officiel de l\'Union européenne ou au Bulletin officiel des annonces de marchés publics, la simple indication de la référence à cet avis est suffisante.)'),
           new Paragraph({
-            children: [createBlueText(data.acheteur.designation || '')],
+            children: [createBlackText(data.acheteur.designation || '')],
             spacing: { after: 120 },
           }),
 
           new Paragraph({
             children: [
-              createBlueText('■ ', true),
+              createBlackText('■ ', true),
               createBlueBoldText('Nom, prénom, qualité du signataire du marché public'),
             ],
             spacing: { after: 60 },
           }),
           createInstructionParagraph('(Le signataire doit avoir le pouvoir d\'engager l\'acheteur qu\'il représente.)'),
           new Paragraph({
-            children: [createBlueText(`${data.acheteur.signataire.civilite} ${data.acheteur.signataire.nomPrenom} ${data.acheteur.signataire.qualite}`)],
+            children: [createBlackText(`${data.acheteur.signataire.civilite} ${data.acheteur.signataire.nomPrenom} ${data.acheteur.signataire.qualite}`)],
             spacing: { after: 160 },
           }),
 
           new Paragraph({
             children: [
-              createBlueText(`A : ${data.acheteur.lieuSignature} , le `),
-              createBlueText(data.acheteur.dateSignature || '…………………'),
+              createBlackText(`A : ${data.acheteur.lieuSignature} , le `),
+              createBlackText(data.acheteur.dateSignature || '…………………'),
             ],
             spacing: { after: 200 },
           }),
@@ -1110,7 +1110,7 @@ export const generateActeEngagementWord = async (
           new Paragraph({
             alignment: AlignmentType.RIGHT,
             children: [
-              createBlueBoldText('Signature'),
+              createBlackText('Signature', true),
             ],
             spacing: { after: 40 },
           }),

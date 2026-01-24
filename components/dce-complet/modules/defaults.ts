@@ -191,7 +191,16 @@ export const createDefaultQT = (): QTData => ({
 // Utilitaires pour garantir des valeurs non nulles
 export const ensureReglementConsultation = (data: DCEState['reglementConsultation']) => data || createDefaultReglementConsultation();
 export const ensureActeEngagement = (data: DCEState['acteEngagement']) => data || createDefaultActeEngagement();
-export const ensureCCAP = (data: DCEState['ccap']) => data || createDefaultCCAP();
+export const ensureCCAP = (data: DCEState['ccap']): CCAPData => {
+  const defaults = createDefaultCCAP();
+  if (!data) return defaults;
+  return {
+    dispositionsGenerales: { ...defaults.dispositionsGenerales, ...data.dispositionsGenerales },
+    prixPaiement: { ...defaults.prixPaiement, ...data.prixPaiement },
+    execution: { ...defaults.execution, ...data.execution },
+    sections: data.sections || defaults.sections,
+  };
+};
 export const ensureCCTP = (data: DCEState['cctp']) => data || createDefaultCCTP();
 export const ensureBPU = (data: DCEState['bpu']) => data || createDefaultBPU();
 export const ensureDQE = (data: DCEState['dqe']) => data || createDefaultDQE();
