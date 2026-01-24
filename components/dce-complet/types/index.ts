@@ -71,7 +71,12 @@ export interface ActeEngagementData {
 // CCAP (Cahier des Clauses Administratives Particulières)
 // ============================================
 
+export type CCAPType = 'travaux' | 'tic' | 'mopo' | 'prestations_intellectuelles' | 'maintenance' | 'services';
+
 export interface CCAPData {
+  // Type de CCAP
+  typeCCAP?: CCAPType;
+  
   // Dispositions générales
   dispositionsGenerales: {
     objet: string;
@@ -79,12 +84,14 @@ export interface CCAPData {
     duree: string;
     reconduction: boolean;
     nbReconductions?: string;
+    periodeTransitoire?: string; // Pour TMA/TIC
   };
   
   // Prix et paiement
   prixPaiement: {
     typePrix: string; // 'forfaitaire' | 'unitaire' | 'mixte'
     revision: boolean;
+    formuleRevision?: string; // ex: "SYNTEC", "TP01", etc.
     modalitesPaiement: string;
     delaiPaiement: string;
     avance: boolean;
@@ -96,6 +103,35 @@ export interface CCAPData {
     delaiExecution: string;
     penalitesRetard: string;
     conditionsReception: string;
+    lieuxExecution?: string; // Locaux client, prestataire, mixte
+  };
+  
+  // Clauses spécifiques (optionnelles selon type)
+  clausesSpecifiques?: {
+    // TIC/TMA
+    proprietéIntellectuelle?: string;
+    confidentialite?: string;
+    securite?: string;
+    reversibilite?: string;
+    garantieTechnique?: string;
+    bonCommande?: string;
+    sousTraitance?: string;
+    
+    // Travaux
+    garantieDecennale?: string;
+    garantieBiennale?: string;
+    parfaitAchevement?: string;
+    assurances?: string;
+    
+    // Services/Maintenance
+    sla?: string;
+    astreinte?: string;
+    maintenancePreventive?: string;
+    maintenanceCurative?: string;
+    
+    // RSE (tous types)
+    engagementsRSE?: string;
+    ethique?: string;
   };
   
   // Sections personnalisées

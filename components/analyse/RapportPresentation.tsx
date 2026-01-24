@@ -116,7 +116,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     }
   };
 
-  // Charger les données du DCE depuis la table 'reglements_consultation'
+  // Charger les données du DCE depuis la table 'dce' (nouveau système)
   const loadDCEData = async () => {
     if (!procedureSelectionnee?.NumProc) {
       alert('Aucune procédure sélectionnée');
@@ -134,27 +134,28 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
 
     setLoadingDCE(true);
     try {
+      // Charger depuis la nouvelle table 'dce'
       const { data, error } = await supabase
-        .from('reglements_consultation')
-        .select('data')
+        .from('dce')
+        .select('reglement_consultation')
         .eq('numero_procedure', numero5chiffres)
         .single();
 
       if (error) {
         // Si le DCE n'existe pas encore
         if (error.code === 'PGRST116') {
-          alert(`Aucun DCE trouvé pour la procédure ${numero5chiffres} (${procedureSelectionnee.NumProc}).\n\nVeuillez d'abord créer le DCE dans le module "6. Contenu du DCE".`);
+          alert(`Aucun DCE trouvé pour la procédure ${numero5chiffres} (${procedureSelectionnee.NumProc}).\n\nVeuillez d'abord créer le DCE dans le module "DCE Complet".`);
           return;
         }
         throw error;
       }
 
-      if (!data?.data) {
-        alert(`Le DCE existe mais le Règlement de Consultation n'a pas encore été rempli.\n\nAllez dans le module "DCE Complet" > "6. Contenu du DCE" pour le compléter.`);
+      if (!data?.reglement_consultation) {
+        alert(`Le DCE existe mais le Règlement de Consultation n'a pas encore été rempli.\n\nAllez dans le module "DCE Complet" > "Règlement de Consultation" pour le compléter.`);
         return;
       }
 
-      const rcData = data.data;
+      const rcData = data.reglement_consultation;
       setDceData(rcData);
 
       // Auto-remplir le champ "Dossier de Consultation" avec la liste des documents
