@@ -27,12 +27,7 @@ import {
   excelDateToJSDate
 } from './utils/dateUtils';
 import { DocumentViewer } from './components/DocumentViewer';
-import UploadView from './components/an01/UploadView';
-import Dashboard from './components/an01/Dashboard';
-import LotSelectionView from './components/an01/LotSelectionView';
-import GlobalTableView from './components/an01/GlobalTableView';
-import { parseExcelFile } from './an01-utils/services/excelParser';
-import { AnalysisData } from './components/an01/types';
+import { UploadView, Dashboard, LotSelectionView, GlobalTableView, parseExcelFile, AnalysisData } from './components/an01';
 import 'html2pdf.js';
 import html2canvas from 'html2canvas';
 // Expose for components relying on window globals
@@ -41,7 +36,7 @@ import html2canvas from 'html2canvas';
 // Import Authentication Components
 import Login from './components/auth/Login';
 import AdminDashboard from './components/auth/AdminDashboard';
-import { UserProfile, AuthState } from './types/auth';
+import { AuthState } from './types/auth';
 import { supabase } from './lib/supabase';
 
 // Import Registre Retraits Component
@@ -53,7 +48,7 @@ import LandingPage from './components/LandingPage';
 import ImmobilierPage from './pages/ImmobilierPage';
 import RapportPresentation from './components/analyse/RapportPresentation';
 import { AppVersion } from './components/AppVersion';
-import AnalyseOverview from './components/an01/AnalyseOverview';
+import { AnalyseOverview } from './components/an01';
 import RedactionPlaceholder from './components/redaction/RedactionPlaceholder';
 import DashboardPage from './pages/DashboardPage';
 
@@ -69,7 +64,7 @@ import { DCEComplet } from './components/dce-complet/DCEComplet';
 import { ThemeToggle } from './components/ThemeToggle';
 
 // Import Navigation System
-import { useNavigationHistory, NavigationState } from './hooks';
+import { useNavigationHistory } from './hooks';
 import NavigationControls from './components/NavigationControls';
 
 const BUCKET_NAME = 'Projets DNA';
@@ -350,7 +345,7 @@ const App: React.FC = () => {
     homePage: 'home',
     homeTitle: 'Accueil',
     maxHistorySize: 50,
-    onNavigate: (state: NavigationState) => {
+    onNavigate: (state: any) => {
       // Synchroniser avec les états existants
       setActiveTab(state.tab);
       if (state.subTab) {

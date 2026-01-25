@@ -1,20 +1,7 @@
 import React, { useMemo } from 'react';
 import { useImmobilier } from '@/hooks';
 import { TrendingUp, Home, DollarSign, Percent, MapPin, Users, Target } from 'lucide-react';
-
-const formatNumberFR = (num: number): string => {
-  return new Intl.NumberFormat('fr-FR', { 
-    useGrouping: true,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(num).replace(/\s/g, '\u202F');
-};
-
-const formatKCurrency = (num: number): string => {
-  if (isNaN(num)) return '-';
-  const kValue = Math.round(num / 1000);
-  return `${kValue.toLocaleString('fr-FR')} K€`;
-};
+import { formatNumberFR, formatKCurrency } from '@/utils';
 
 // KPI Tile Component
 const KPITile: React.FC<{ 

@@ -3,6 +3,8 @@ import { Upload, Download, Database, AlertCircle, CheckCircle, X, FileSpreadshee
 import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
 import { downloadTemplate } from '../../utils/templateGenerator';
+import { convertExcelDate } from '@/utils';
+import { Button, Card, Input } from '@/components/ui';
 
 interface ImportedData {
   headers: string[];
@@ -152,45 +154,6 @@ const DATE_COLUMNS: Record<string, string[]> = {
     'date_de_lancement_de_la_consultation',
     'Date de remise des candidatures'
   ]
-};
-
-// Fonction pour convertir les dates Excel en format ISO
-const convertExcelDate = (value: any): string | null => {
-  if (!value) return null;
-  
-  // Si c'est déjà une date ISO, la retourner
-  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-    return value.split('T')[0]; // Retourner juste la partie date
-  }
-  
-  // Si c'est un nombre (format Excel)
-  if (typeof value === 'number') {
-    // Excel date serial number: jours depuis 1900-01-01
-    const excelEpoch = new Date(1900, 0, 1);
-    const date = new Date(excelEpoch.getTime() + (value - 1) * 24 * 60 * 60 * 1000);
-    
-    // Correction pour le bug du 29 février 1900 dans Excel
-    if (value > 60) {
-      date.setDate(date.getDate() + 1);
-    }
-    
-    // Retourner au format ISO (YYYY-MM-DD)
-    return date.toISOString().split('T')[0];
-  }
-  
-  // Si c'est une chaîne, essayer de la parser
-  if (typeof value === 'string') {
-    try {
-      const parsed = new Date(value);
-      if (!isNaN(parsed.getTime())) {
-        return parsed.toISOString().split('T')[0];
-      }
-    } catch (e) {
-      // Continuer
-    }
-  }
-  
-  return null;
 };
 
 export default function DataImport() {
@@ -424,34 +387,34 @@ export default function DataImport() {
             Table de destination
           </label>
           <div className="flex gap-4">
-            <button
+            <Button
               onClick={() => {
                 setSelectedTable('projets');
                 handleReset();
               }}
-              className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
-                selectedTable === 'projets'
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              variant={selectedTable === 'projets' ? 'primary' : 'outline'}
+              size="lg"
+              rounded="lg"
+              icon={<Table className="w-5 h-5" />}
+              fullWidth
+              className={selectedTable === 'projets' ? '' : 'border-gray-200 hover:border-gray-300'}
             >
-              <Table className="w-5 h-5 mx-auto mb-1" />
               <span className="font-medium">Projets</span>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 setSelectedTable('procédures');
                 handleReset();
               }}
-              className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
-                selectedTable === 'procédures'
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              variant={selectedTable === 'procédures' ? 'primary' : 'outline'}
+              size="lg"
+              rounded="lg"
+              icon={<FileSpreadsheet className="w-5 h-5" />}
+              fullWidth
+              className={selectedTable === 'procédures' ? '' : 'border-gray-200 hover:border-gray-300'}
             >
-              <FileSpreadsheet className="w-5 h-5 mx-auto mb-1" />
               <span className="font-medium">Procédures</span>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -582,29 +545,25 @@ export default function DataImport() {
         {/* Actions */}
         {importedData && (
           <div className="flex items-center gap-4">
-            <button
+            <Button
               onClick={handleUploadToSupabase}
               disabled={uploading || !importedData}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
+              variant="info"
+              size="lg"
+              rounded="lg"
+              icon={uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Database className="w-5 h-5" />}
+              loading={uploading}
+              fullWidth
             >
-              {uploading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Import en cours...</span>
-                </>
-              ) : (
-                <>
-                  <Database className="w-5 h-5" />
-                  <span>Importer dans Supabase ({selectedTable})</span>
-                </>
-              )}
-            </button>
-            <button
+              {uploading ? 'Import en cours...' : `Importer dans Supabase (${selectedTable})`}
+            </Button>
+            <Button
               onClick={handleReset}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              variant="outline"
+              size="lg"
+              rounded="lg"
+              icon={<X className="w-5 h-5" />}
+            />
           </div>
         )}
       </div>

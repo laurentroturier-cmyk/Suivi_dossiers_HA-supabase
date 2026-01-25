@@ -17,6 +17,7 @@ import {
   createDefaultQT,
   createDefaultReglementConsultation,
 } from '../modules/defaults';
+import { formatExcelDate } from '@/utils';
 
 /**
  * Mappe automatiquement les données d'une procédure vers toutes les sections du DCE
@@ -134,33 +135,7 @@ export function mapProcedureToDCE(procedure: ProjectData): Omit<DCEState, 'id' |
   };
 }
 
-/**
- * Utilitaire pour formater une date Excel en date française
- */
-function formatExcelDate(dateValue: any): string {
-  if (!dateValue) return '';
-  
-  try {
-    // Si c'est déjà une string de date
-    if (typeof dateValue === 'string') {
-      const date = new Date(dateValue);
-      if (!isNaN(date.getTime())) {
-        return date.toLocaleDateString('fr-FR');
-      }
-    }
-    
-    // Si c'est un nombre Excel (jours depuis 1900)
-    if (typeof dateValue === 'number') {
-      const excelEpoch = new Date(1900, 0, 1);
-      const date = new Date(excelEpoch.getTime() + (dateValue - 2) * 24 * 60 * 60 * 1000);
-      return date.toLocaleDateString('fr-FR');
-    }
-    
-    return String(dateValue);
-  } catch {
-    return String(dateValue);
-  }
-}
+import { formatExcelDate } from '@/utils';
 
 /**
  * Utilitaire pour formater un montant

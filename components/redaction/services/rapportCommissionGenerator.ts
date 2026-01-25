@@ -14,6 +14,7 @@ import {
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type { RapportCommissionData } from '../types/rapportCommission';
+import { formatDateLong } from '@/utils';
 
 export async function generateRapportCommissionWord(data: RapportCommissionData) {
   const doc = new Document({
@@ -76,7 +77,7 @@ export async function generateRapportCommissionWord(data: RapportCommissionData)
         createChapterHeading("2. COMPOSITION DE LA COMMISSION"),
         
         ...(data.commission.dateReunion ? [
-          createLabelValue("Date de réunion", formatDate(data.commission.dateReunion)),
+          createLabelValue("Date de réunion", formatDateLong(data.commission.dateReunion)),
         ] : []),
         
         ...(data.commission.lieuReunion ? [
@@ -121,7 +122,7 @@ export async function generateRapportCommissionWord(data: RapportCommissionData)
         ] : []),
         
         ...(data.objetReunion.dateOuverture ? [
-          createLabelValue("Date d'ouverture", formatDate(data.objetReunion.dateOuverture)),
+          createLabelValue("Date d'ouverture", formatDateLong(data.objetReunion.dateOuverture)),
         ] : []),
         
         ...(data.objetReunion.heureOuverture ? [
@@ -134,11 +135,11 @@ export async function generateRapportCommissionWord(data: RapportCommissionData)
         createChapterHeading("4. RAPPEL DU CONTEXTE"),
         
         ...(data.contexte.publicationDate ? [
-          createLabelValue("Date de publication", formatDate(data.contexte.publicationDate)),
+          createLabelValue("Date de publication", formatDateLong(data.contexte.publicationDate)),
         ] : []),
         
         ...(data.contexte.dateLimiteDepot ? [
-          createLabelValue("Date limite de dépôt", formatDate(data.contexte.dateLimiteDepot)),
+          createLabelValue("Date limite de dépôt", formatDateLong(data.contexte.dateLimiteDepot)),
         ] : []),
 
         new Paragraph({ text: "", spacing: { after: 200 } }),
@@ -280,7 +281,7 @@ export async function generateRapportCommissionWord(data: RapportCommissionData)
         ] : []),
 
         ...(data.decisions.dateNotification ? [
-          createLabelValue("Date de notification prévue", formatDate(data.decisions.dateNotification)),
+          createLabelValue("Date de notification prévue", formatDateLong(data.decisions.dateNotification)),
         ] : []),
 
         new Paragraph({ text: "", spacing: { after: 200 } }),
@@ -344,15 +345,7 @@ function createLabelValue(label: string, value: string): Paragraph {
   });
 }
 
-function formatDate(dateString: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('fr-FR', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-}
+import { formatDateLong } from '@/utils';
 
 function createTableAnalyse(candidats: Array<{ nom: string; noteTechnique: string; noteFinanciere: string; noteGlobale: string }>): Table {
   const rows = [

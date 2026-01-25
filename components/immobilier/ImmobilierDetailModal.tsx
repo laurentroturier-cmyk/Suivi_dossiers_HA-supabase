@@ -1,26 +1,14 @@
 import React from 'react';
 import { Immobilier } from '@/types/immobilier';
 import { Users, MapPin, DollarSign, TrendingUp, Calendar, Download, X, FileText, Euro } from 'lucide-react';
+import { formatCurrency, formatPercent } from '@/utils';
+import { Button, Card } from '@/components/ui';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   projet: Immobilier | null;
 }
-
-const formatCurrency = (value?: string | number) => {
-  if (!value) return '-';
-  const num = typeof value === 'string' ? parseFloat(value.replace(/,/g, '.')) : value;
-  if (isNaN(num)) return String(value);
-  return `${num.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €`;
-};
-
-const formatPercent = (value?: string | number) => {
-  if (!value && value !== 0) return '-';
-  const num = typeof value === 'string' ? parseFloat(value.replace(/,/g, '.')) : (value as number);
-  if (isNaN(num)) return String(value);
-  return `${num.toFixed(2)}%`;
-};
 
 const ImmobilierDetailModal: React.FC<Props> = ({ isOpen, onClose, projet }) => {
   if (!isOpen || !projet) return null;
@@ -85,18 +73,30 @@ const ImmobilierDetailModal: React.FC<Props> = ({ isOpen, onClose, projet }) => 
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
         {/* Header style Contrats */}
-        <div className="bg-[#005c4d] px-6 py-4 flex items-center justify-between">
+        <div className="bg-[var(--accent-green)] px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-white">Projet {projet['Code demande']}</h2>
             <p className="text-sm text-white/70">{projet['Intitulé'] || ''}</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleExportProjet} className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm font-semibold inline-flex items-center gap-2">
-              <Download className="w-4 h-4" /> Exporter
-            </button>
-            <button onClick={onClose} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center">
-              <X className="w-5 h-5 text-white" />
-            </button>
+            <Button 
+              onClick={handleExportProjet} 
+              variant="ghost"
+              size="sm"
+              rounded="lg"
+              icon={<Download className="w-4 h-4" />}
+              className="bg-white/10 hover:bg-white/20 text-white"
+            >
+              Exporter
+            </Button>
+            <Button 
+              onClick={onClose} 
+              variant="ghost"
+              size="sm"
+              rounded="lg"
+              icon={<X className="w-5 h-5" />}
+              className="w-10 h-10 p-0 bg-white/10 hover:bg-white/20 text-white"
+            />
           </div>
         </div>
 
@@ -105,7 +105,7 @@ const ImmobilierDetailModal: React.FC<Props> = ({ isOpen, onClose, projet }) => 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8">
             {/* Informations générales */}
             <div>
-              <h3 className="text-xs font-bold text-[#005c4d] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-[var(--accent-green)] uppercase tracking-wider mb-4 flex items-center gap-2">
                 <FileText className="w-4 h-4" /> Informations générales
               </h3>
               <DetailRow label="Code Demande" value={projet['Code demande']} />
@@ -121,7 +121,7 @@ const ImmobilierDetailModal: React.FC<Props> = ({ isOpen, onClose, projet }) => 
 
             {/* Montants */}
             <div>
-              <h3 className="text-xs font-bold text-[#005c4d] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-[var(--accent-green)] uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Euro className="w-4 h-4" /> Montants
               </h3>
               <DetailRow label="Budget" value={formatCurrency(projet['Budget en €'])} />
@@ -151,13 +151,13 @@ const ImmobilierDetailModal: React.FC<Props> = ({ isOpen, onClose, projet }) => 
 
             {/* Dates & Équipe */}
             <div>
-              <h3 className="text-xs font-bold text-[#005c4d] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-[var(--accent-green)] uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Calendar className="w-4 h-4" /> Dates
               </h3>
               <DetailRow label="Début Travaux" value={projet['Date de démarrage travaux']} />
               <DetailRow label="Fin Travaux" value={projet['Date de fin de travaux']} />
 
-              <h3 className="text-xs font-bold text-[#005c4d] uppercase tracking-wider mb-4 mt-6 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-[var(--accent-green)] uppercase tracking-wider mb-4 mt-6 flex items-center gap-2">
                 <Users className="w-4 h-4" /> Équipe
               </h3>
               <DetailRow label="Chef de Projet" value={projet['Chef de Projet']} />
@@ -168,7 +168,7 @@ const ImmobilierDetailModal: React.FC<Props> = ({ isOpen, onClose, projet }) => 
 
           {/* Description */}
           <div className="mt-6">
-            <h3 className="text-xs font-bold text-[#005c4d] uppercase tracking-wider mb-3">Description du projet</h3>
+            <h3 className="text-xs font-bold text-[var(--accent-green)] uppercase tracking-wider mb-3">Description du projet</h3>
             <p className="text-sm text-gray-700">{projet['Descriptif'] || 'Aucune description'}</p>
           </div>
         </div>

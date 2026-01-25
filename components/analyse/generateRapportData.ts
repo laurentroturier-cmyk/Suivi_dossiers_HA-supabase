@@ -1,5 +1,5 @@
 import { RapportSources, RapportContent, Section1Contexte, Section2Deroulement, Section3DossierConsultation, Section4QuestionsReponses, Section5AnalyseCandidatures, Section6Methodologie, Section7ValeurOffres, Section8Performance, Section9Attribution, Section10Calendrier, DocumentConsultation, CritereAnalyse, OffreClassement, LotPerformanceDetail } from './types';
-import { AnalysisData, Metadata } from '../../an01-utils/types';
+import { AnalysisData, Metadata } from '@/components/an01';
 import { DepotsData } from '../../types/depots';
 import { RetraitsData } from '../../types/retraits';
 

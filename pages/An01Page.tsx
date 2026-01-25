@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-import UploadView from '@/components/an01/UploadView';
-import Dashboard from '@/components/an01/Dashboard';
-import LotSelectionView from '@/components/an01/LotSelectionView';
-import GlobalTableView from '@/components/an01/GlobalTableView';
-import { parseExcelFile } from '@/an01-utils/services/excelParser';
-import { AnalysisData } from '@/components/an01/types';
+import { UploadView, Dashboard, LotSelectionView, GlobalTableView, parseExcelFile, AnalysisData } from '@/components/an01';
 
 /**
  * Page AN01 - Analyse technique des offres
@@ -46,37 +41,28 @@ const An01Page: React.FC = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {!an01Data ? (
         <UploadView
-          onFileSelect={handleAn01FileSelect}
+          onFileUpload={handleAn01FileSelect}
           isLoading={an01IsLoading}
           error={an01Error}
-          procedureNumber={an01ProcedureNumber}
-          onProcedureNumberChange={setAn01ProcedureNumber}
-          loadMode={an01LoadMode}
-          onLoadModeChange={setAn01LoadMode}
         />
       ) : an01SelectedLotIndex !== null ? (
         <Dashboard
-          lot={an01Data.lots[an01SelectedLotIndex]}
-          lotNumber={an01SelectedLotIndex + 1}
-          totalLots={an01Data.lots.length}
-          globalMetadata={an01Data.globalMetadata}
-          procedureNumber={an01ProcedureNumber}
-          onBack={handleAn01Back}
+          data={an01Data.lots[an01SelectedLotIndex]}
+          onReset={handleAn01Back}
         />
       ) : an01ViewMode === 'grid' ? (
         <LotSelectionView
           lots={an01Data.lots}
           onSelectLot={setAn01SelectedLotIndex}
-          onViewModeChange={setAn01ViewMode}
-          onBack={handleAn01Back}
+          onSwitchToTable={() => setAn01ViewMode('table')}
+          onReset={handleAn01Back}
         />
       ) : (
         <GlobalTableView
           lots={an01Data.lots}
           globalMetadata={an01Data.globalMetadata}
-          procedureNumber={an01ProcedureNumber}
-          onViewModeChange={setAn01ViewMode}
           onBack={handleAn01Back}
+          onSelectLot={setAn01SelectedLotIndex}
         />
       )}
     </div>

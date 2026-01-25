@@ -1,0 +1,563 @@
+# Règles de développement - Application React/Supabase
+# Suivi des dossiers HA - GestProjet
+
+## 🎯 Vue d'ensemble du projet
+
+Application React/Vite pour le suivi des dossiers d'achats publics, intégrant Supabase pour l'authentification, la gestion des rôles et le stockage des données. L'UI utilise Tailwind CSS et lucide-react.
+
+---
+
+## 📁 Architecture et structure des fichiers
+
+### Structure de dossiers
+
+```
+/
+├── components/          # Composants React métier
+│   ├── auth/           # Authentification (Login, AdminDashboard, DataImport)
+│   ├── an01/           # Module d'analyse technique
+│   ├── analyse/        # Composants d'analyse
+│   ├── dce-complet/    # Module DCE complet
+│   ├── redaction/      # Module de rédaction (RC, NOTI1, NOTI5, etc.)
+│   └── immobilier/     # Module immobilier
+├── pages/              # Pages principales (routing)
+├── stores/             # Stores Zustand (gestion d'état global)
+├── hooks/              # Hooks personnalisés React
+├── services/           # Services Supabase (couche d'accès aux données)
+│   └── supabase/       # Services par domaine (projects, dossiers, contrats, etc.)
+├── utils/              # Fonctions utilitaires (parsing, formatage, etc.)
+├── design-system/      # Design system (tokens, composants UI, thème)
+│   ├── tokens/         # Design tokens (colors, spacing, typography, radius, shadows)
+│   ├── components/     # Composants UI réutilisables (Button, Card, Input, Modal)
+│   ├── theme/          # Gestion du thème (ThemeProvider, theme.css)
+│   └── hooks/          # Hooks du design system
+├── types/              # Types TypeScript
+├── lib/                # Bibliothèques externes (supabase client)
+└── constants.tsx       # Constantes métier (champs, options, etc.)
+```
+
+### Conventions de nommage
+
+#### Fichiers
+- **Composants React** : `PascalCase.tsx` (ex: `Button.tsx`, `AdminDashboard.tsx`)
+- **Utilitaires** : `camelCase.ts` (ex: `dateUtils.ts`, `csvParser.ts`)
+- **Services** : `camelCase.ts` (ex: `projects.ts`, `dossiers.ts`)
+- **Stores** : `useXxxStore.ts` (ex: `useProjectsStore.ts`, `useAuthStore.ts`)
+- **Hooks** : `useXxx.ts` (ex: `useProjects.ts`, `useAuth.ts`)
+- **Types** : `camelCase.ts` ou `index.ts` dans un dossier `types/`
+- **SQL** : `kebab-case.sql` (ex: `create-tables-import.sql`)
+- **Documentation** : `SCREAMING_SNAKE_CASE.md` (ex: `AUTH_SETUP.md`)
+
+#### Variables et fonctions
+- **Variables** : `camelCase` (ex: `searchQuery`, `isLoading`)
+- **Fonctions** : `camelCase` (ex: `loadProjects`, `formatDisplayDate`)
+- **Composants React** : `PascalCase` (ex: `Button`, `AdminDashboard`)
+- **Interfaces/Types** : `PascalCase` (ex: `ProjectData`, `ButtonProps`)
+- **Constantes** : `SCREAMING_SNAKE_CASE` (ex: `PROJECT_FIELDS`, `DOSSIER_STATUS_OPTIONS`)
+- **Colonnes SQL** : `snake_case` (ex: `numero_procedure_afpa`, `user_id`)
+
+#### Imports
+- **Utiliser l'alias `@/`** pour les imports absolus (configuré dans `tsconfig.json` et `vite.config.ts`)
+  ```typescript
+  import { supabase } from '@/lib/supabase';
+  import { useProjectsStore } from '@/stores';
+  import { Button } from '@/design-system';
+  ```
+- **Éviter les imports relatifs** (`../../`) sauf pour les fichiers très proches
+
+---
+
+## 🎨 Design System et Charte Graphique
+
+### Tokens de design
+
+#### Couleurs
+- **Palette principale** : Vert `#0f8a6a` (primary-500)
+  - Utiliser les tokens du design system : `colors.primary.500`, `colors.primary.600`, etc.
+  - **NE PAS hardcoder** les couleurs : éviter `bg-[#0f8a6a]`, utiliser `bg-primary-500` ou variables CSS
+- **Palette neutre** : Gris (`colors.neutral.*`)
+- **Couleurs sémantiques** : `success`, `error`, `warning`, `info` (définies dans `design-system/tokens/colors.ts`)
+- **Mode clair/sombre** : Utiliser les variables CSS `--color-bg-primary`, `--color-text-primary`, etc.
+
+#### Espacements
+- Utiliser les tokens de spacing : `spacing[1]` (4px), `spacing[4]` (16px), `spacing[6]` (24px), etc.
+- Classes Tailwind préférées : `p-4`, `p-6`, `gap-4`, `gap-6`, etc.
+
+#### Border-radius
+- Tokens disponibles : `sm` (8px), `md` (12px), `lg` (16px), `xl` (24px), `2xl` (32px), `3xl` (40px), `full` (9999px)
+- **Convention** : Utiliser des coins arrondis modernes (xl, 2xl) pour les cartes et sections principales
+
+#### Typographie
+- Police principale : `'Inter', sans-serif`
+- Tailles : `xs` (12px), `sm` (14px), `base` (16px), `lg` (18px), `xl` (20px), `2xl` (24px), etc.
+
+### Composants UI du design system
+
+#### Utilisation
+```typescript
+import { Button, Card, Input, Modal } from '@/design-system';
+
+// Button
+<Button variant="primary" size="md" rounded="lg" icon={<Icon />}>
+  Texte
+</Button>
+
+// Card
+<Card variant="elevated" rounded="xl" padding="md" hover>
+  Contenu
+</Card>
+
+// Input
+<Input label="Email" error={error} helperText="Helper text" />
+```
+
+#### Variantes disponibles
+- **Button** : `primary`, `secondary`, `outline`, `ghost`, `danger`
+- **Card** : `elevated`, `outlined`, `filled`
+- **Modal** : `sm`, `md`, `lg`, `xl`
+
+### Thème (dark/light)
+
+- Utiliser le hook `useTheme` du design system :
+  ```typescript
+  import { useTheme } from '@/design-system';
+  const { resolvedTheme, toggleTheme } = useTheme();
+  ```
+- Les variables CSS s'adaptent automatiquement selon le thème
+- **NE PAS** utiliser de classes hardcodées pour le dark mode : utiliser les variables CSS ou les classes Tailwind avec `dark:`
+
+---
+
+## ⚛️ Patterns React
+
+### Composants
+
+#### Structure d'un composant
+```typescript
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/design-system';
+
+interface ComponentProps {
+  // Props typées
+}
+
+const Component: React.FC<ComponentProps> = ({ prop1, prop2 }) => {
+  // Hooks
+  const [state, setState] = useState();
+  
+  // Effects
+  useEffect(() => {
+    // ...
+  }, []);
+  
+  // Handlers
+  const handleAction = () => {
+    // ...
+  };
+  
+  // Render
+  return (
+    <div>
+      {/* JSX */}
+    </div>
+  );
+};
+
+export default Component;
+```
+
+#### Props
+- Toujours typer les props avec une interface TypeScript
+- Utiliser des valeurs par défaut pour les props optionnelles
+- Préférer la destructuration des props
+
+### Hooks personnalisés
+
+#### Pattern standard
+```typescript
+// hooks/useXxx.ts
+import { useEffect } from 'react';
+import { useXxxStore } from '@/stores';
+
+export const useXxx = (autoLoad = true) => {
+  const { data, loading, error, loadData } = useXxxStore();
+
+  useEffect(() => {
+    if (autoLoad && data.length === 0 && !loading) {
+      loadData();
+    }
+  }, [autoLoad]);
+
+  return { data, loading, error, loadData };
+};
+```
+
+### Gestion d'état
+
+#### Zustand (stores globaux)
+- Pattern standard pour les stores :
+  ```typescript
+  interface XxxState {
+    data: XxxData[];
+    loading: boolean;
+    error: string | null;
+    setData: (data: XxxData[]) => void;
+    setLoading: (loading: boolean) => void;
+    setError: (error: string | null) => void;
+    loadData: () => Promise<void>;
+    createData: (data: Partial<XxxData>) => Promise<void>;
+    updateData: (id: string, updates: Partial<XxxData>) => Promise<void>;
+    deleteData: (id: string) => Promise<void>;
+  }
+
+  export const useXxxStore = create<XxxState>((set, get) => ({
+    data: [],
+    loading: false,
+    error: null,
+    // Setters
+    setData: (data) => set({ data }),
+    setLoading: (loading) => set({ loading }),
+    setError: (error) => set({ error }),
+    // Actions async
+    loadData: async () => {
+      try {
+        set({ loading: true, error: null });
+        const data = await xxxService.getAll();
+        set({ data });
+      } catch (error: any) {
+        set({ error: error.message });
+      } finally {
+        set({ loading: false });
+      }
+    },
+    // ...
+  }));
+  ```
+
+#### État local
+- Utiliser `useState` pour l'état local au composant
+- Utiliser `useReducer` pour l'état complexe avec plusieurs sous-états
+
+---
+
+## 🗄️ Services Supabase
+
+### Pattern standard pour les services
+
+```typescript
+// services/supabase/xxx.ts
+import { supabase } from '@/lib/supabase';
+import { XxxData } from '@/types';
+
+export const xxxService = {
+  /**
+   * Récupérer tous les éléments
+   */
+  async getAll(): Promise<XxxData[]> {
+    const { data, error } = await supabase
+      .from('table_name')
+      .select('*')
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Récupérer un élément par ID
+   */
+  async getById(id: string): Promise<XxxData> {
+    const { data, error } = await supabase
+      .from('table_name')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Créer un nouvel élément
+   */
+  async create(item: Partial<XxxData>): Promise<XxxData> {
+    const { data, error } = await supabase
+      .from('table_name')
+      .insert([item])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Mettre à jour un élément
+   */
+  async update(id: string, updates: Partial<XxxData>): Promise<XxxData> {
+    const { data, error } = await supabase
+      .from('table_name')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Supprimer un élément
+   */
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('table_name')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Rechercher des éléments
+   */
+  async search(query: string, fields: string[] = ['field1', 'field2']): Promise<XxxData[]> {
+    let queryBuilder = supabase.from('table_name').select('*');
+    const orConditions = fields.map(field => `${field}.ilike.%${query}%`).join(',');
+    queryBuilder = queryBuilder.or(orConditions);
+
+    const { data, error } = await queryBuilder.order('id', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Import en masse
+   */
+  async bulkInsert(items: Partial<XxxData>[]): Promise<XxxData[]> {
+    const { data, error } = await supabase
+      .from('table_name')
+      .insert(items)
+      .select();
+
+    if (error) throw error;
+    return data || [];
+  },
+};
+```
+
+### Gestion des erreurs
+- Toujours vérifier `error` après une requête Supabase
+- Lancer l'erreur avec `throw error` pour que le store puisse la gérer
+- Logger les erreurs avec `console.error` dans les stores
+
+---
+
+## 🛠️ Fonctions utilitaires
+
+### Utilitaires de dates (`utils/dateUtils.ts`)
+
+```typescript
+// Conversion Excel → Date JS
+excelDateToJSDate(serial: number | string): Date | null
+
+// Formatage pour affichage (DD/MM/YYYY)
+formatDisplayDate(val: any): string
+
+// Conversion vers format input date (YYYY-MM-DD)
+formatToInputDate(val: any): string
+
+// Conversion input date → stockage (DD/MM/YYYY)
+inputToStoreDate(isoDate: string): string
+
+// Détection si un champ est une date
+isDateField(fieldName: string): boolean
+```
+
+### Parsers (`utils/`)
+
+- `csvParser.ts` : Parsing CSV
+- `depotsParser.ts` : Parsing fichiers dépôts
+- `retraitsParser.ts` : Parsing fichiers retraits
+- `rcParser.ts` : Parsing règlement de consultation
+- `wordTemplateHandler.ts` : Gestion des templates Word
+
+---
+
+## 🎯 Styling avec Tailwind CSS
+
+### Classes Tailwind préférées
+
+#### Layout
+- `flex`, `flex-col`, `flex-row`, `items-center`, `justify-between`, `gap-4`, `gap-6`
+- `grid`, `grid-cols-1`, `grid-cols-2`, `grid-cols-3`
+
+#### Spacing
+- Padding : `p-4`, `p-6`, `px-4`, `py-2`
+- Margin : `m-4`, `mb-6`, `mt-2`
+- Gap : `gap-2`, `gap-4`, `gap-6`
+
+#### Colors
+- **Utiliser les variables CSS** : `bg-[var(--color-bg-primary)]`, `text-[var(--color-text-primary)]`
+- **OU utiliser les classes Tailwind** avec dark mode : `bg-white dark:bg-gray-800`
+- **ÉVITER** les couleurs hardcodées : `bg-[#0f8a6a]` → utiliser `bg-primary-500` ou variable CSS
+
+#### Border-radius
+- `rounded-lg` (16px), `rounded-xl` (24px), `rounded-2xl` (32px)
+
+#### Dark mode
+- Toujours prévoir les variantes dark : `bg-white dark:bg-gray-800`
+- Utiliser les variables CSS pour la compatibilité automatique
+
+### Variables CSS disponibles
+
+```css
+/* Backgrounds */
+--color-bg-primary
+--color-bg-secondary
+--color-bg-tertiary
+
+/* Text */
+--color-text-primary
+--color-text-secondary
+--color-text-tertiary
+
+/* Borders */
+--border-strong
+--border-soft
+--border-subtle
+
+/* Accents */
+--accent-green
+--accent-green-hover
+```
+
+---
+
+## 🔐 Authentification et sécurité
+
+### Supabase Auth
+- Utiliser `useAuthStore` pour l'authentification
+- Vérifier l'utilisateur avec `supabase.auth.getUser()` dans les services
+- Les politiques RLS (Row Level Security) sont gérées côté Supabase
+
+### Rôles
+- Rôles disponibles : `admin`, `user`
+- Vérifier les rôles via `useAuthStore().profile.role`
+
+---
+
+## 📝 Types TypeScript
+
+### Conventions
+- Toujours typer les props de composants
+- Utiliser des interfaces pour les objets complexes
+- Utiliser des types union pour les valeurs limitées : `type Status = 'draft' | 'published'`
+- Exporter les types depuis un fichier `types.ts` ou `types/index.ts`
+
+### Exemples
+```typescript
+// Types de données
+interface ProjectData {
+  IDProjet: string;
+  Objet_court: string;
+  // ...
+}
+
+// Props de composants
+interface ButtonProps {
+  variant?: 'primary' | 'secondary';
+  size?: 'sm' | 'md' | 'lg';
+  children: React.ReactNode;
+}
+
+// État de store
+interface ProjectsState {
+  projects: ProjectData[];
+  loading: boolean;
+  error: string | null;
+}
+```
+
+---
+
+## 🚫 Anti-patterns à éviter
+
+### ❌ Couleurs hardcodées
+```typescript
+// ❌ MAUVAIS
+className="bg-[#0f8a6a] text-[#ffffff]"
+
+// ✅ BON
+className="bg-primary-500 text-white"
+// OU
+className="bg-[var(--accent-green)] text-[var(--text-on-accent)]"
+```
+
+### ❌ Imports relatifs profonds
+```typescript
+// ❌ MAUVAIS
+import { supabase } from '../../../lib/supabase';
+
+// ✅ BON
+import { supabase } from '@/lib/supabase';
+```
+
+### ❌ Logique métier dans les composants
+```typescript
+// ❌ MAUVAIS : Logique dans le composant
+const Component = () => {
+  const [data, setData] = useState([]);
+  useEffect(() => {
+    supabase.from('table').select('*').then(...);
+  }, []);
+};
+
+// ✅ BON : Utiliser un store ou service
+const Component = () => {
+  const { data, loadData } = useProjects();
+  useEffect(() => {
+    loadData();
+  }, []);
+};
+```
+
+### ❌ Duplication de code
+- Extraire les fonctions utilitaires communes
+- Utiliser les composants du design system
+- Réutiliser les hooks personnalisés
+
+### ❌ Gestion d'erreur silencieuse
+```typescript
+// ❌ MAUVAIS
+const { data } = await supabase.from('table').select('*');
+
+// ✅ BON
+const { data, error } = await supabase.from('table').select('*');
+if (error) throw error;
+```
+
+---
+
+## ✅ Bonnes pratiques
+
+1. **Utiliser le design system** : Toujours préférer les composants du design system aux composants custom
+2. **Typer tout** : Pas de `any` sauf cas exceptionnel avec commentaire
+3. **Gérer les erreurs** : Toujours gérer les erreurs dans les try/catch
+4. **Loading states** : Toujours afficher un état de chargement
+5. **Accessibilité** : Utiliser les labels, aria-labels, et la sémantique HTML
+6. **Performance** : Utiliser `useMemo` et `useCallback` pour les calculs coûteux
+7. **Documentation** : Commenter les fonctions complexes avec JSDoc
+
+---
+
+## 📚 Ressources
+
+- Design System : `design-system/README.md`
+- Architecture : `AUDIT_ARCHITECTURE.md`
+- Authentification : `AUTH_SETUP.md`
+- Guide de test : `TEST_GUIDE.md`
+
+---
+
+**Dernière mise à jour** : 2026-01-25

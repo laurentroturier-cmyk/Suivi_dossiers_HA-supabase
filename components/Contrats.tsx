@@ -1,9 +1,3 @@
-// Affiche un montant en milliers d'euros (K€)
-const formatKCurrency = (num: number): string => {
-  if (isNaN(num)) return '-';
-  const kValue = Math.round(num / 1000);
-  return `${kValue.toLocaleString('fr-FR')} K€`;
-};
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   FileText, 
@@ -27,49 +21,8 @@ import {
 import { supabase } from '../lib/supabase';
 import { Contrat, ContratsStats, ContratsFilters } from '../types/contrats';
 import * as XLSX from 'xlsx';
-
-// Helper function to format numbers with French conventions
-const formatNumberFR = (num: number): string => {
-  return new Intl.NumberFormat('fr-FR', { 
-    useGrouping: true,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(num).replace(/\s/g, '\u202F');
-};
-
-const formatCurrency = (num: number): string => {
-  return new Intl.NumberFormat('fr-FR', { 
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(num);
-};
-
-const formatPercent = (num: number): string => {
-  return new Intl.NumberFormat('fr-FR', { 
-    style: 'percent',
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  }).format(num / 100);
-};
-
-const parseDate = (dateStr: string | null): Date | null => {
-  if (!dateStr) return null;
-  const parts = dateStr.split('/');
-  if (parts.length === 3) {
-    const [month, day, year] = parts;
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  }
-  return new Date(dateStr);
-};
-
-const formatDisplayDate = (dateStr: string | null): string => {
-  if (!dateStr) return '-';
-  const date = parseDate(dateStr);
-  if (!date || isNaN(date.getTime())) return dateStr;
-  return date.toLocaleDateString('fr-FR');
-};
+import { formatCurrency, formatPercent, formatNumberFR, formatKCurrency, formatDateFromString, parseDate } from '@/utils';
+import { Button, Card, Input } from '@/components/ui';
 
 // Calcul du pourcentage de temps écoulé
 const calculateTempsConsomme = (dateDebut: string | null, dateFin: string | null): number | null => {
@@ -260,17 +213,19 @@ const ContratDetailModal: React.FC<{
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-[#005c4d] px-6 py-4 flex items-center justify-between">
+        <div className="bg-[var(--accent-green)] px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-white">Contrat {contrat.agreement_number}</h2>
             <p className="text-sm text-white/70">{contrat.description}</p>
           </div>
-          <button
+          <Button
             onClick={onClose}
-            className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
-          >
-            <X className="w-5 h-5 text-white" />
-          </button>
+            variant="ghost"
+            size="sm"
+            rounded="lg"
+            icon={<X className="w-5 h-5" />}
+            className="w-10 h-10 p-0 bg-white/10 hover:bg-white/20 text-white"
+          />
         </div>
 
         {/* Content */}
@@ -278,7 +233,7 @@ const ContratDetailModal: React.FC<{
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8">
             {/* Informations générales */}
             <div>
-              <h3 className="text-xs font-bold text-[#005c4d] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-[var(--accent-green)] uppercase tracking-wider mb-4 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 Informations générales
               </h3>
@@ -301,7 +256,7 @@ const ContratDetailModal: React.FC<{
 
             {/* Montants */}
             <div>
-              <h3 className="text-xs font-bold text-[#005c4d] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-[var(--accent-green)] uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Euro className="w-4 h-4" />
                 Montants
               </h3>
@@ -362,13 +317,13 @@ const ContratDetailModal: React.FC<{
 
             {/* Dates & Fournisseur */}
             <div>
-              <h3 className="text-xs font-bold text-[#005c4d] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <h3 className="text-xs font-bold text-[var(--accent-green)] uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 Dates
               </h3>
-              <DetailRow label="Date de Notification" value={formatDisplayDate(contrat.date_notification)} />
-              <DetailRow label="Date de Début" value={formatDisplayDate(contrat.date_debut)} />
-              <DetailRow label="Date de Fin" value={formatDisplayDate(contrat.date_fin)} />
+              <DetailRow label="Date de Notification" value={formatDateFromString(contrat.date_notification)} />
+              <DetailRow label="Date de Début" value={formatDateFromString(contrat.date_debut)} />
+              <DetailRow label="Date de Fin" value={formatDateFromString(contrat.date_fin)} />
 
               <h3 className="text-xs font-bold text-[#005c4d] uppercase tracking-wider mb-4 mt-6 flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -382,7 +337,7 @@ const ContratDetailModal: React.FC<{
               <DetailRow label="Nom Signataire (fournisseur)" value={contrat.nom_signataire} />
               <DetailRow label="Email Signataire (fournisseur)" value={
                 contrat.mail_signataire ? (
-                  <a href={`mailto:${contrat.mail_signataire}`} className="text-[#005c4d] hover:underline">
+                  <a href={`mailto:${contrat.mail_signataire}`} className="text-[var(--accent-green)] hover:underline">
                     {contrat.mail_signataire}
                   </a>
                 ) : null
@@ -801,7 +756,7 @@ const Contrats: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-lg p-12">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-[#005c4d] rounded-full mb-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-[var(--accent-green)] rounded-full mb-6">
                 <FileText className="w-10 h-10 text-white" />
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
@@ -844,7 +799,7 @@ const Contrats: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-[#005c4d] animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-[var(--accent-green)] animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Chargement des contrats...</p>
         </div>
       </div>
@@ -863,7 +818,7 @@ const Contrats: React.FC = () => {
             <p className="text-gray-600 mb-6">{error}</p>
             <button
               onClick={fetchContrats}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#005c4d] text-white rounded-xl font-medium hover:bg-[#004a3d] transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent-green)] text-white rounded-xl font-medium hover:bg-[var(--accent-green-hover)] transition-colors"
             >
               <RefreshCw className="w-5 h-5" />
               Réessayer
@@ -881,7 +836,7 @@ const Contrats: React.FC = () => {
         <div className="px-8 py-4 w-full">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[#005c4d] rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-[var(--accent-green)] rounded-lg flex items-center justify-center">
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -912,7 +867,7 @@ const Contrats: React.FC = () => {
               </button>
               <button
                 onClick={handleExportExcel}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#005c4d] text-white rounded-lg hover:bg-[#004a3d] transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent-green)] text-white rounded-lg hover:bg-[var(--accent-green-hover)] transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Exporter Excel
@@ -974,7 +929,7 @@ const Contrats: React.FC = () => {
           <SimpleBarChart 
             data={chartDataBySupplier} 
             title="Montant par Fournisseur (Top 8)"
-            color="bg-[#005c4d]"
+            color="bg-[var(--accent-green)]"
             onClick={(supplier) => setFilters(f => ({ ...f, supplier }))}
           />
           <DonutChart 
@@ -986,7 +941,7 @@ const Contrats: React.FC = () => {
           <SimpleBarChart 
             data={chartDataByYear} 
             title="Contrats par Années d'Échéance"
-            color="bg-[#005c4d]"
+            color="bg-[var(--accent-green)]"
             onClick={(year) => setFilters(f => ({ ...f, anneeDebut: year, anneeFin: year }))}
           />
           <SimpleBarChart 
@@ -1191,16 +1146,18 @@ const Contrats: React.FC = () => {
                 {sortedContrats.slice(0, 100).map((contrat, index) => (
                   <tr key={contrat.agreement_number || index} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 py-3 text-center">
-                      <button
+                      <Button
                         onClick={() => handleOpenContrat(contrat)}
-                        className="contrats-view-btn inline-flex items-center justify-center w-7 h-7 bg-[#005c4d] text-white rounded-lg hover:bg-[#004a3d] transition-colors"
+                        variant="primary"
+                        size="sm"
+                        rounded="lg"
+                        icon={<Eye className="w-4 h-4" />}
+                        className="w-7 h-7 p-0"
                         title="Voir les détails"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      />
                     </td>
                     <td className="px-3 py-3">
-                      <span className="text-xs font-bold text-[#005c4d]">{contrat.agreement_number}</span>
+                      <span className="text-xs font-bold text-[var(--accent-green)]">{contrat.agreement_number}</span>
                     </td>
                     <td className="px-3 py-3">
                       <span className="text-xs text-gray-700 max-w-[300px] truncate block" title={contrat.description}>
@@ -1283,12 +1240,12 @@ const Contrats: React.FC = () => {
                     </td>
                     <td className="px-3 py-3">
                       <span className="text-xs text-gray-600 whitespace-nowrap">
-                        {formatDisplayDate(contrat.date_debut)}
+                        {formatDateFromString(contrat.date_debut)}
                       </span>
                     </td>
                     <td className="px-3 py-3">
                       <span className="text-xs text-gray-600 whitespace-nowrap">
-                        {formatDisplayDate(contrat.date_fin)}
+                        {formatDateFromString(contrat.date_fin)}
                       </span>
                     </td>
                     <td className="px-3 py-3">
@@ -1317,7 +1274,7 @@ const Contrats: React.FC = () => {
               {hasActiveFilters && (
                 <button
                   onClick={resetFilters}
-                  className="mt-4 text-sm text-[#005c4d] hover:underline"
+                  className="mt-4 text-sm text-[var(--accent-green)] hover:underline"
                 >
                   Réinitialiser les filtres
                 </button>
