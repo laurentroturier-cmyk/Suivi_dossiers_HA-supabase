@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import RapportPresentation from '../../analyse/RapportPresentation';
+import { RapportPresentation } from '../../analyse';
 
 interface Props {
   an01Data: { lots: any[], globalMetadata: Record<string, string> };

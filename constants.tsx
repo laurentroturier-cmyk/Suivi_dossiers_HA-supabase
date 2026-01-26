@@ -81,7 +81,10 @@ export const PROCEDURE_STATUS_OPTIONS = [
   '1 - Initiée',
   '2 - Rédaction',
   '3 - Publiée',
-  '4 - Analyse en cours',
+  '4.1 - En attente de d\'ouverture',
+  '4.2 - Analyse en cours',
+  '4.3 - Validation RP en cours',
+  '4.4 - Notification en cours',
   '5 - Terminée',
 ];
 

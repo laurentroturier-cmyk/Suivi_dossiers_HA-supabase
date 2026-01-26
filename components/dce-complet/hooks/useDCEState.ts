@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import type { DCEState, DCESectionType, DCEStatut } from '../types';
-import { dceService } from '../services/dceService';
+import { dceService } from '../utils/dceService';
 import { 
   detectConflicts, 
   loadAndMergeProcedureData,
@@ -13,7 +13,7 @@ import {
   type ConflictResolution,
   resolveConflicts as applyConflictResolutions,
   updateProcedure as updateProcedureInDB,
-} from '../services/procedureSyncService';
+} from '../utils/procedureSyncService';
 import type { ProjectData } from '../../../types';
 
 interface UseDCEStateOptions {

@@ -34,8 +34,7 @@ import html2canvas from 'html2canvas';
 (window as any).html2canvas = (window as any).html2canvas || html2canvas;
 
 // Import Authentication Components
-import Login from './components/auth/Login';
-import AdminDashboard from './components/auth/AdminDashboard';
+import { Login, AdminDashboard } from './components/auth';
 import { AuthState } from './types/auth';
 import { supabase } from './lib/supabase';
 
@@ -43,22 +42,24 @@ import { supabase } from './lib/supabase';
 import RegistreRetraits from './components/RegistreRetraits';
 import RegistreDepots from './components/RegistreDepots';
 import Contrats from './components/Contrats';
-import OuverturePlis from './components/analyse/OuverturePlis';
+import { OuverturePlis } from './components/analyse';
 import LandingPage from './components/LandingPage';
 import ImmobilierPage from './pages/ImmobilierPage';
-import RapportPresentation from './components/analyse/RapportPresentation';
+import { RapportPresentation } from './components/analyse';
 import { AppVersion } from './components/AppVersion';
 import { AnalyseOverview } from './components/an01';
-import RedactionPlaceholder from './components/redaction/RedactionPlaceholder';
 import DashboardPage from './pages/DashboardPage';
 
-import DCESection from './components/redaction/DCESection';
-import QuestionnaireTechnique from './components/redaction/questionnaire/QuestionnaireTechnique';
-import ReglementConsultation from './components/redaction/ReglementConsultation';
-import NOTI1Section from './components/redaction/NOTI1Section';
-import NotificationsQuickAccess from './components/redaction/NotificationsQuickAccess';
-import NotiMultiAttributaires from './components/redaction/NotiMultiAttributaires';
-import { DCEComplet } from './components/dce-complet/DCEComplet';
+import {
+  RedactionPlaceholder,
+  DCESection,
+  QuestionnaireTechnique,
+  ReglementConsultation,
+  NOTI1Section,
+  NotificationsQuickAccess,
+  NotiMultiAttributaires
+} from './components/redaction';
+import { DCEComplet } from './components/dce-complet';
 
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
@@ -3797,7 +3798,7 @@ const App: React.FC = () => {
                   <div className="space-y-6">
                     <div className="flex justify-between items-center"><h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Liste des procédures rattachées à ce projet</h4><button onClick={() => { const projId = editingProject.IDProjet; const existingForProject = procedures.filter(p => String(getProp(p, 'IDProjet')) === String(projId)); let maxIdx = 0; existingForProject.forEach(p => { const num = String(getProp(p, 'NumProc')); if (num.includes('-P-')) { const parts = num.split('-P-'); const idx = parseInt(parts[parts.length - 1]); if (!isNaN(idx) && idx > maxIdx) maxIdx = idx; } }); const nextIdx = maxIdx + 1; const newProcId = `${projId}-P-${nextIdx}`; setEditingProcedure({ IDProjet: projId, Acheteur: getProp(editingProject, 'Acheteur'), "Objet court": getProp(editingProject, 'Titre_du_dossier'), NumProc: newProcId }); setEditingProject(null); setActiveSubTab('general'); }} className="px-6 py-3 bg-[#004d3d] hover:bg-[#006d57] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-colors">+ Nouvelle Procédure</button></div>
                     <div className="overflow-x-auto rounded-2xl border border-gray-50">
-                      <table className="themed-table min-w-full divide-y divide-gray-50"><thead className="bg-gray-50/50 dark:bg-[#252525]"><tr><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">N° Afpa</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Nom Procédure</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Statut</th><th className="px-6 py-4 text-right dark:text-[#40E0D0]">Actions</th></tr></thead><tbody className="divide-y divide-gray-50 dark:divide-[#333333]">{associatedProcedures.length === 0 ? <tr><td colSpan={4} className="px-6 py-12 text-center text-xs font-bold text-gray-300 italic">Aucune procédure trouvée</td></tr> : associatedProcedures.map((proc, idx) => (<tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-[#1E1E1E]"><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Numéro de procédure (Afpa)') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Nom de la procédure') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Statut de la consultation') || '-'}</td><td className="px-6 py-4 text-right"><button onClick={() => { setEditingProcedure(proc); setEditingProject(null); setActiveSubTab('general'); }} className="p-2 text-blue-600 bg-blue-50 dark:text-[#40E0D0] dark:bg-cyan-400/10 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button></td></tr>))}</tbody></table>
+                      <table className="themed-table min-w-full divide-y divide-gray-50"><thead className="bg-gray-50/50 dark:bg-[#252525]"><tr><th className="px-6 py-4 text-center text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Actions</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">N° Afpa</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Nom Procédure</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Statut</th></tr></thead><tbody className="divide-y divide-gray-50 dark:divide-[#333333]">{associatedProcedures.length === 0 ? <tr><td colSpan={4} className="px-6 py-12 text-center text-xs font-bold text-gray-300 italic">Aucune procédure trouvée</td></tr> : associatedProcedures.map((proc, idx) => (<tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-[#1E1E1E]"><td className="px-6 py-4 text-center"><button onClick={() => { setEditingProcedure(proc); setEditingProject(null); setActiveSubTab('general'); }} className="p-2 text-[#004d3d] bg-green-50 dark:text-green-400 dark:bg-green-400/10 rounded-lg hover:bg-green-100 dark:hover:bg-green-400/20 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button></td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Numéro de procédure (Afpa)') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Nom de la procédure') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Statut de la consultation') || '-'}</td></tr>))}</tbody></table>
                     </div>
                   </div>
                 )}

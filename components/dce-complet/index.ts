@@ -6,18 +6,24 @@
 // Types
 export * from './types';
 
-// Services
-export { dceService, DCEService } from './services/dceService';
-export { mapProcedureToDCE } from './services/dceMapping';
+// Types
+export * from './types';
+
+// Services (utils)
+export { dceService, DCEService } from './utils/dceService';
+export { mapProcedureToDCE } from './utils/dceMapping';
+export * from './utils/procedureSyncService';
+export { generateActeEngagementWord } from './utils/acteEngagementGenerator';
 
 // Hooks
 export { useDCEState } from './hooks/useDCEState';
 export { useProcedureLoader, useProcedure } from './hooks/useProcedureLoader';
 
 // Composants partagés
-export { ProcedureSelector } from './shared/ProcedureSelector';
-export { ProcedureHeader } from './shared/ProcedureHeader';
-export { DCEStatusBar } from './shared/DCEStatusBar';
+export { ProcedureSelector } from './components/shared/ProcedureSelector';
+export { ProcedureHeader } from './components/shared/ProcedureHeader';
+export { DCEStatusBar } from './components/shared/DCEStatusBar';
+export { ConflictResolverModal } from './components/shared/ConflictResolverModal';
 
 // Composant principal
-export { DCEComplet } from './DCEComplet';
+export { DCEComplet } from './components/DCEComplet';
