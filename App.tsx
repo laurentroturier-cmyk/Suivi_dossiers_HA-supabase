@@ -26,6 +26,7 @@ import {
   isDateField,
   excelDateToJSDate
 } from './utils/dateUtils';
+import { calculateStatutConsultation } from './utils/statutCalculator';
 import { DocumentViewer } from './components/DocumentViewer';
 import { UploadView, Dashboard, LotSelectionView, GlobalTableView, parseExcelFile, AnalysisData } from './components/an01';
 import 'html2pdf.js';
@@ -1488,7 +1489,19 @@ const App: React.FC = () => {
 
   const handleFieldChange = (type: 'project' | 'procedure', key: string, value: any) => {
     if (type === 'project') setEditingProject(prev => ({ ...prev, [key]: value }));
-    else setEditingProcedure(prev => ({ ...prev, [key]: value }));
+    else {
+      setEditingProcedure(prev => {
+        const updated = { ...prev, [key]: value };
+        // Recalculer le statut automatiquement si c'est une procédure
+        if (updated && Object.keys(updated).length > 0) {
+          const calculatedStatut = calculateStatutConsultation(updated as ProjectData);
+          if (calculatedStatut && calculatedStatut !== updated['Statut de la consultation']) {
+            updated['Statut de la consultation'] = calculatedStatut;
+          }
+        }
+        return updated;
+      });
+    }
   };
 
   const resetFilters = () => {
@@ -1754,17 +1767,21 @@ const App: React.FC = () => {
           if (key === "CodesCPVDAE" || key === "Code CPV Principal") return <SearchableSelect key={key} label={label} options={refCpv} value={val} placeholder="CPV..." onChange={v => handleFieldChange(type, key, v)} onRemoteSearch={remoteSearchCpv} />;
           if (key === "Type de procédure" && type === 'procedure') return <SearchableSelect key={key} label={label} options={uniqueTypeProcs} value={val} placeholder="Type..." onChange={v => handleFieldChange(type, key, v)} />;
 
-          if (key === "Statut de la consultation" && type === 'procedure') return (
-            <div key={key} className="flex flex-col gap-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
-              <select value={val} onChange={e => handleFieldChange(type, key, e.target.value)} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-semibold outline-none appearance-none cursor-pointer">
-                <option value="">Sélectionner...</option>
-                {PROCEDURE_STATUS_OPTIONS.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-          );
+          if (key === "Statut de la consultation" && type === 'procedure') {
+            // Calculer le statut automatiquement
+            const calculatedStatut = editingProcedure ? calculateStatutConsultation(editingProcedure as ProjectData) : (val || '1 - Initiée');
+            
+            return (
+              <div key={key} className="flex flex-col gap-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
+                  {label} <span className="text-[8px] text-gray-400 normal-case">(calculé automatiquement)</span>
+                </label>
+                <div className="w-full px-5 py-4 bg-gray-100 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-700 cursor-not-allowed">
+                  {calculatedStatut}
+                </div>
+              </div>
+            );
+          }
 
           if (key === "RP - Statut" && type === 'procedure') return (
             <div key={key} className="flex flex-col gap-2">
@@ -3139,7 +3156,7 @@ const App: React.FC = () => {
                       const matchesAch = selectedAcheteurs.length === 0 || selectedAcheteurs.includes(ach);
                       const matchesCli = selectedClientsInternes.length === 0 || selectedClientsInternes.includes(cli);
                       const matchesPri = selectedPriorities.length === 0 || selectedPriorities.includes(pri);
-                      const matchesStat = selectedStatuses.includes(stat);
+                      const matchesStat = selectedStatuses.length === 0 || selectedStatuses.includes(stat);
                       const matchesType = selectedProcTypes.length === 0 || Array.from(typeSet).some(t => selectedProcTypes.includes(t));
                       const matchesCcag = selectedCcags.length === 0 || Array.from(ccagSet).some(c => selectedCcags.includes(c));
                       const matchesLaunch = inRange(launch, launchFrom, launchTo);
@@ -3275,7 +3292,7 @@ const App: React.FC = () => {
                       const matchesAch = selectedAcheteurs.length === 0 || selectedAcheteurs.includes(ach);
                       const matchesCli = selectedClientsInternes.length === 0 || selectedClientsInternes.includes(cli);
                       const matchesPri = selectedPriorities.length === 0 || selectedPriorities.includes(pri);
-                      const matchesStat = selectedStatuses.includes(stat);
+                      const matchesStat = selectedStatuses.length === 0 || selectedStatuses.includes(stat);
                       const matchesType = selectedProcTypes.length === 0 || Array.from(typeSet).some(t => selectedProcTypes.includes(t));
                       const matchesCcag = selectedCcags.length === 0 || Array.from(ccagSet).some(c => selectedCcags.includes(c));
                       const matchesLaunch = inRange(launch, launchFrom, launchTo);
@@ -3438,13 +3455,22 @@ const App: React.FC = () => {
                     onToggle={toggleAcheteur}
                   />
                   {activeTab === 'dossiers' && (
-                    <FilterDropdown 
-                      id="list-priority"
-                      label="Priorité"
-                      options={priorityOptions}
-                      selected={selectedPriorities}
-                      onToggle={togglePriority}
-                    />
+                    <>
+                      <FilterDropdown 
+                        id="list-priority"
+                        label="Priorité"
+                        options={priorityOptions}
+                        selected={selectedPriorities}
+                        onToggle={togglePriority}
+                      />
+                      <FilterDropdown 
+                        id="list-dossier-status"
+                        label="Statut"
+                        options={DOSSIER_STATUS_OPTIONS}
+                        selected={selectedStatuses}
+                        onToggle={(status) => setSelectedStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status])}
+                      />
+                    </>
                   )}
                   {activeTab === 'procedures' && (
                     <>
@@ -3546,6 +3572,22 @@ const App: React.FC = () => {
                     {activeTab === 'dossiers' ? 'Nouveau Projet' : 'Nouvelle Procédure'}
                   </button>
                 </div>
+                {/* Compteur de résultats filtrés */}
+                {(() => {
+                  const totalCount = activeTab === 'dossiers' ? dossiers.length : procedures.length;
+                  const filteredCount = activeTab === 'dossiers' ? filteredD.length : kpis.filteredProcedures.length;
+                  const hasActiveFilters = activeTab === 'dossiers' 
+                    ? (selectedAcheteurs.length > 0 || selectedPriorities.length > 0 || selectedStatuses.length !== DOSSIER_STATUS_OPTIONS.filter(s => !s.startsWith('4') && !s.startsWith('5')).length || selectedClientsInternes.length > 0 || selectedCcags.length > 0 || selectedProcTypes.length > 0 || projectSearch || launchFrom || launchTo || deployFrom || deployTo)
+                    : (selectedAcheteurs.length > 0 || selectedProcedureStatuses.length > 0 || selectedLaunchYears.length > 0 || selectedOfferYears.length > 0 || procedureSearch);
+                  
+                  return (
+                    <div className="mb-4 px-1">
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        <span className="text-[#004d3d] dark:text-[#40E0D0] font-black">{filteredCount.toLocaleString('fr-FR')}</span> {activeTab === 'dossiers' ? 'projet(s)' : 'procédure(s)'} {hasActiveFilters && filteredCount !== totalCount ? `affiché(s) sur ${totalCount.toLocaleString('fr-FR')} au total` : filteredCount === totalCount && totalCount > 0 ? 'au total' : ''}
+                      </p>
+                    </div>
+                  );
+                })()}
                 <div className="bg-white dark:bg-dark-700 rounded-[2rem] shadow-sm border border-gray-100 dark:border-dark-600 overflow-hidden">
                   <div ref={topScrollRef} className="overflow-x-auto overflow-y-hidden border-b border-gray-200 dark:border-dark-600 bg-gray-50 dark:bg-dark-750" style={{ height: '20px' }}>
                     <div style={{ width: tableScrollWidth || '100%', height: '1px' }} />
