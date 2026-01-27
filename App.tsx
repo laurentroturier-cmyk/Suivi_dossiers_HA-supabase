@@ -3052,26 +3052,50 @@ const App: React.FC = () => {
                     <input type="text" placeholder="N° Procédure, Titre..." value={projectSearch} onChange={e => setProjectSearch(e.target.value)} className="w-full px-6 py-4 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none h-[54px] focus:border-gray-300 transition-colors" />
                   </div>
                   <div className="flex-1 min-w-[220px]">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-1">Date de Lancement</label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-1">
+                      {ganttView === 'procedures' ? 'Lancement procédure' : 'Date de lancement projet'}
+                    </label>
                     <div className="grid grid-cols-2 gap-2">
                       <input type="date" value={launchFrom} onChange={e => setLaunchFrom(e.target.value)} placeholder="Du" className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none h-[54px] focus:border-gray-300 transition-colors" />
                       <input type="date" value={launchTo} onChange={e => setLaunchTo(e.target.value)} placeholder="Au" className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none h-[54px] focus:border-gray-300 transition-colors" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-[220px]">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-1">Date de Déploiement</label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-1">
+                      {ganttView === 'procedures' ? 'Fin de publication (offres / ouverture)' : 'Date de déploiement projet'}
+                    </label>
                     <div className="grid grid-cols-2 gap-2">
                       <input type="date" value={deployFrom} onChange={e => setDeployFrom(e.target.value)} placeholder="Du" className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none h-[54px] focus:border-gray-300 transition-colors" />
                       <input type="date" value={deployTo} onChange={e => setDeployTo(e.target.value)} placeholder="Au" className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none h-[54px] focus:border-gray-300 transition-colors" />
                     </div>
                   </div>
-                  <FilterDropdown 
-                    id="gantt-statut"
-                    label="Statut"
-                    options={DOSSIER_STATUS_OPTIONS}
-                    selected={selectedStatuses}
-                    onToggle={(opt) => setSelectedStatuses(prev => prev.includes(opt) ? prev.filter(s => s !== opt) : [...prev, opt])}
-                  />
+                  {(() => {
+                    const isProceduresView = ganttView === 'procedures';
+                    const statusLabel = isProceduresView ? 'Statut procédure' : 'Statut dossier';
+                    const statusOptions = isProceduresView ? PROCEDURE_STATUS_OPTIONS : DOSSIER_STATUS_OPTIONS;
+                    const selectedStatusArray = isProceduresView ? selectedProcedureStatuses : selectedStatuses;
+                    const onToggleStatus = (opt: string) => {
+                      if (isProceduresView) {
+                        setSelectedProcedureStatuses(prev =>
+                          prev.includes(opt) ? prev.filter(s => s !== opt) : [...prev, opt]
+                        );
+                      } else {
+                        setSelectedStatuses(prev =>
+                          prev.includes(opt) ? prev.filter(s => s !== opt) : [...prev, opt]
+                        );
+                      }
+                    };
+
+                    return (
+                      <FilterDropdown
+                        id="gantt-statut"
+                        label={statusLabel}
+                        options={statusOptions}
+                        selected={selectedStatusArray}
+                        onToggle={onToggleStatus}
+                      />
+                    );
+                  })()}
                   <FilterDropdown 
                     id="gantt-acheteur"
                     label="Acheteur"
@@ -3654,11 +3678,51 @@ const App: React.FC = () => {
                         const pid = String(getProp(p, 'IDProjet') || '');
                         const type = String(getProp(p, 'Type de procédure') || '');
                         const ccag = String(getProp(p, 'CCAG') || '');
+                        const statut = String(getProp(p, 'Statut de la consultation') || '');
+                        const launch = toDate(getProp(p, 'date_de_lancement_de_la_consultation'));
+                        const fin =
+                          toDate(getProp(p, 'Date d\'ouverture des offres')) ||
+                          toDate(getProp(p, 'Date de remise des offres finales')) ||
+                          toDate(getProp(p, 'Date de remise des offres')) ||
+                          launch;
+
                         const achOk = selectedAcheteurs.length === 0 || selectedAcheteurs.includes(ach);
                         const typeOk = selectedProcTypes.length === 0 || selectedProcTypes.includes(type);
                         const ccagOk = selectedCcags.length === 0 || selectedCcags.includes(ccag);
-                        const textOk = !projectSearch || pid.toLowerCase().includes(projectSearch.toLowerCase()) || String(getProp(p, 'Nom de la procédure') || '').toLowerCase().includes(projectSearch.toLowerCase());
-                        return achOk && typeOk && ccagOk && textOk;
+                        const statutOk = selectedProcedureStatuses.length === 0 || selectedProcedureStatuses.includes(statut);
+
+                        const textNeedle = projectSearch.toLowerCase();
+                        const textOk =
+                          !projectSearch ||
+                          pid.toLowerCase().includes(textNeedle) ||
+                          String(getProp(p, 'Nom de la procédure') || '').toLowerCase().includes(textNeedle) ||
+                          String(getProp(p, 'Objet court') || '').toLowerCase().includes(textNeedle) ||
+                          String(getProp(p, 'Numéro de procédure (Afpa') || '').toLowerCase().includes(textNeedle);
+
+                        const inRangeLocal = (dt: Date | null, fromStr: string, toStr: string) => {
+                          if (!fromStr && !toStr) return true;
+                          if (!dt) return false;
+                          const normalize = (d: Date) => {
+                            const n = new Date(d);
+                            n.setHours(0, 0, 0, 0);
+                            return n;
+                          };
+                          const nd = normalize(dt);
+                          if (fromStr) {
+                            const f = normalize(new Date(fromStr));
+                            if (!isNaN(f.getTime()) && nd < f) return false;
+                          }
+                          if (toStr) {
+                            const t = normalize(new Date(toStr));
+                            if (!isNaN(t.getTime()) && nd > t) return false;
+                          }
+                          return true;
+                        };
+
+                        const launchOk = inRangeLocal(launch, launchFrom, launchTo);
+                        const finOk = inRangeLocal(fin, deployFrom, deployTo);
+
+                        return achOk && typeOk && ccagOk && statutOk && textOk && launchOk && finOk;
                       });
 
                       const items = filteredProcedures
