@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Save, Loader2, CheckCircle2, XCircle, FolderOpen, Plus, Trash2 } from 'lucide-react';
+import { FileText, Download, Save, Loader2, CheckCircle2, XCircle, FolderOpen, Plus, Trash2, Eye } from 'lucide-react';
 import { saveNoti1, loadNoti1 } from '../utils/noti1Storage';
-import { generateNoti1Word } from '../utils/noti1Generator';
+import { exportNoti1Html } from '../utils/noti1HtmlGenerator';
+import Noti1Viewer from './Noti1Viewer';
 import type { Noti1Data } from '../types/noti1';
 
 interface NOTI1SectionProps {
@@ -52,6 +53,7 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showViewer, setShowViewer] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({
     type: null,
     message: '',
@@ -105,13 +107,13 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
     }
   };
 
-  const handleExportWord = async () => {
+  const handleExportHtml = async () => {
     setIsExporting(true);
     try {
-      await generateNoti1Word(formData);
+      await exportNoti1Html(formData);
     } catch (error) {
-      console.error('Erreur export Word:', error);
-      alert('Erreur lors de l\'export Word');
+      console.error('Erreur export HTML:', error);
+      alert('Erreur lors de l\'export HTML');
     } finally {
       setIsExporting(false);
     }
@@ -203,7 +205,15 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
             </button>
 
             <button
-              onClick={handleExportWord}
+              onClick={() => setShowViewer(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              Aperçu
+            </button>
+
+            <button
+              onClick={handleExportHtml}
               disabled={isExporting}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
@@ -212,7 +222,7 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
               ) : (
                 <Download className="w-4 h-4" />
               )}
-              Export Word
+              Export HTML
             </button>
           </div>
         </div>
@@ -849,6 +859,11 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
           </div>
         </div>
       </div>
+
+      {/* Visionneuse */}
+      {showViewer && (
+        <Noti1Viewer data={formData} onClose={() => setShowViewer(false)} />
+      )}
     </div>
   );
 };

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import type { Noti3Data } from "../types/noti3";
-import { generateNoti3Word } from "../utils/noti3Generator";
-import { FileText } from 'lucide-react';
+import { exportNoti3Html } from "../utils/noti3HtmlGenerator";
+import Noti3Viewer from "./Noti3Viewer";
+import { FileText, Eye, Download } from 'lucide-react';
 
 interface NOTI3SectionProps {
   initialData: Noti3Data;
@@ -9,13 +10,23 @@ interface NOTI3SectionProps {
 
 export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
   const [formData, setFormData] = useState<Noti3Data>(initialData);
+  const [showViewer, setShowViewer] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     setFormData(initialData);
   }, [initialData]);
 
-  const handleExport = () => {
-    generateNoti3Word(formData);
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await exportNoti3Html(formData);
+    } catch (error) {
+      console.error('Erreur export HTML:', error);
+      alert('Erreur lors de l\'export HTML');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const updateField = (path: string, value: any) => {
@@ -44,13 +55,23 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
             Candidat : {formData.candidat.denomination}
           </p>
         </div>
-        <button
-          onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-        >
-          <FileText className="w-4 h-4" />
-          Exporter Word
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowViewer(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+            Aperçu
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            {isExporting ? 'Export...' : 'Export HTML'}
+          </button>
+        </div>
       </div>
 
       {/* Section A - Pouvoir adjudicateur */}
@@ -256,6 +277,11 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
           className="md:col-span-2"
         />
       </div>
+
+      {/* Visionneuse */}
+      {showViewer && (
+        <Noti3Viewer data={formData} onClose={() => setShowViewer(false)} />
+      )}
     </div>
   );
 }

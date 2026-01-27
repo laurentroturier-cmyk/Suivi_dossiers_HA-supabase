@@ -7,9 +7,9 @@ import type { Noti5Data } from '../types/noti5';
 import type { Noti3Data } from '../types/noti3';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { generateNoti1WordAsBlob } from '../utils/noti1Generator';
-import { generateNoti5WordAsBlob } from '../utils/noti5Generator';
-import { generateNoti3WordAsBlob } from '../utils/noti3Generator';
+import { generateNoti1HtmlAsBlob } from '../utils/noti1HtmlGenerator';
+import { generateNoti5HtmlAsBlob } from '../utils/noti5HtmlGenerator';
+import { generateNoti3HtmlAsBlob } from '../utils/noti3HtmlGenerator';
 
 interface MultiLotsDashboardProps {
   analysis: MultiLotsAnalysis;
@@ -72,8 +72,8 @@ export default function MultiLotsDashboard({
 
       for (const candidat of candidatsAvecLots) {
         const noti1Data = buildNoti1Data(candidat);
-        const blob = await generateNoti1WordAsBlob(noti1Data);
-        const fileName = `NOTI1_${sanitizeFileName(candidat.nom)}.docx`;
+        const blob = await generateNoti1HtmlAsBlob(noti1Data);
+        const fileName = `NOTI1_${sanitizeFileName(candidat.nom)}.html`;
         zip.file(fileName, blob);
       }
 
@@ -97,8 +97,8 @@ export default function MultiLotsDashboard({
 
       for (const candidat of candidatsAvecLots) {
         const noti5Data = buildNoti5Data(candidat);
-        const blob = await generateNoti5WordAsBlob(noti5Data);
-        const fileName = `NOTI5_${sanitizeFileName(candidat.nom)}.docx`;
+        const blob = await generateNoti5HtmlAsBlob(noti5Data);
+        const fileName = `NOTI5_${sanitizeFileName(candidat.nom)}.html`;
         zip.file(fileName, blob);
       }
 
@@ -124,8 +124,8 @@ export default function MultiLotsDashboard({
         // 1 document par lot perdu
         for (const lotPerdu of candidat.lotsPerdus) {
           const noti3Data = buildNoti3DataForLot(candidat, lotPerdu);
-          const blob = await generateNoti3WordAsBlob(noti3Data);
-          const fileName = `NOTI3_Lot${lotPerdu.numero}_${sanitizeFileName(candidat.nom)}.docx`;
+          const blob = await generateNoti3HtmlAsBlob(noti3Data);
+          const fileName = `NOTI3_Lot${lotPerdu.numero}_${sanitizeFileName(candidat.nom)}.html`;
           zip.file(fileName, blob);
         }
       }
