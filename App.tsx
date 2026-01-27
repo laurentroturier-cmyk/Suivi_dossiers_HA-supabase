@@ -51,7 +51,7 @@ import { AppVersion } from './components/AppVersion';
 import { AnalyseOverview } from './components/an01';
 import DashboardPage from './pages/DashboardPage';
 
-import {
+import { 
   RedactionPlaceholder,
   DCESection,
   QuestionnaireTechnique,
@@ -61,6 +61,8 @@ import {
   NotiMultiAttributaires
 } from './components/redaction';
 import { DCEComplet } from './components/dce-complet';
+import { ProcedureDetailsModal } from './components/dce-complet/components/shared/ProcedureDetailsModal';
+import { ProjectDetailsModal } from './components/dce-complet/components/shared/ProjectDetailsModal';
 
 // Import Theme Toggle
 import { ThemeToggle } from './components/ThemeToggle';
@@ -408,6 +410,8 @@ const App: React.FC = () => {
   const [selectedTimeStatuses, setSelectedTimeStatuses] = useState<string[]>([]);
   const [ganttView, setGanttView] = useState<'synthese' | 'projets' | 'procedures'>('synthese');
   const [ganttLimitToCurrentPeriod, setGanttLimitToCurrentPeriod] = useState<boolean>(true);
+  const [ganttSelectedProcedure, setGanttSelectedProcedure] = useState<ProjectData | null>(null);
+  const [ganttSelectedProject, setGanttSelectedProject] = useState<DossierData | null>(null);
   const [launchFrom, setLaunchFrom] = useState<string>('');
   const [launchTo, setLaunchTo] = useState<string>('');
   const [deployFrom, setDeployFrom] = useState<string>('');
@@ -3550,16 +3554,22 @@ const App: React.FC = () => {
                       });
 
                       const totalMonths = Math.max(months.length, 1);
+                      const startMonthKey = monthKey(startMonth);
+                      const endMonthKey = monthKey(endMonth);
 
                       // Position de la date du jour (trait vertical)
                       const todayMonthKey = monthKey(new Date(today.getFullYear(), today.getMonth(), 1));
-                      const startMonthKey = monthKey(startMonth);
-                      const endMonthKey = monthKey(endMonth);
                       let todayPct: number | null = null;
                       if (todayMonthKey >= startMonthKey && todayMonthKey <= endMonthKey) {
                         const idx = todayMonthKey - startMonthKey + 0.5; // centre du mois
                         todayPct = (idx / totalMonths) * 100;
                       }
+
+                      const positionForDate = (d: Date | null) => {
+                        if (!d) return null;
+                        const idx = monthKey(d) - startMonthKey;
+                        return Math.min(Math.max(idx, 0), totalMonths - 1) + 0.5; // milieu du mois
+                      };
 
                       return (
                         <>
@@ -3604,7 +3614,7 @@ const App: React.FC = () => {
                               </div>
 
                               {/* Lignes projets */}
-                              <div className="space-y-2">
+                              <div className="space-y-3">
                                 {visibleItems.map(item => {
                                   const startIdx = monthKey(item.start) - startMonthKey;
                                   const endIdx = monthKey(item.end) - startMonthKey;
@@ -3612,31 +3622,76 @@ const App: React.FC = () => {
                                   const leftPct = (startIdx / totalMonths) * 100;
                                   const widthPct = (span / totalMonths) * 100;
 
+                                  const posLancement = positionForDate(item.start);
+                                  const posDeploiement = positionForDate(item.end);
+
+                                  const markerStyle = (pos: number | null, color: string) =>
+                                    pos == null
+                                      ? { display: 'none' }
+                                      : { left: `${(pos / totalMonths) * 100}%`, backgroundColor: color };
+
+                                  const project = dossiers.find(d => String(getProp(d, 'IDProjet') || '') === item.id) || null;
+
                                   return (
-                                    <div
+                                    <button
                                       key={item.id + item.title + item.start.toISOString()}
-                                      className="grid grid-cols-[220px_1fr] items-center gap-2"
+                                      type="button"
+                                      onClick={() => setGanttSelectedProject(project)}
+                                      className="w-full text-left"
                                     >
-                                      <div className="pr-2 text-xs font-semibold text-gray-800 truncate">
-                                        {item.title}
-                                      </div>
-                                      <div className="relative h-6 bg-gray-50 rounded-xl overflow-hidden">
-                                        {/* Trait vertical date du jour */}
-                                        {todayPct !== null && (
+                                      <div className="grid grid-cols-[260px_1fr] items-center gap-2 hover:bg-slate-800/40 rounded-xl px-1 py-1">
+                                        <div className="pr-2 text-xs font-semibold text-gray-900">
+                                          <div className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">
+                                            ID Projet
+                                          </div>
+                                          <div className="inline-flex px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-bold text-blue-700 max-w-full truncate">
+                                            {item.id || 'N/C'}
+                                          </div>
+                                          <div className="mt-1 text-[11px] font-medium text-gray-900 truncate">
+                                            {item.title}
+                                          </div>
+                                        </div>
+                                        <div className="relative h-8 bg-slate-900/40 rounded-xl overflow-hidden border border-slate-700/60">
+                                          {/* Trait vertical date du jour */}
+                                          {todayPct !== null && (
+                                            <div
+                                              className="absolute inset-y-0 w-px bg-red-400/80"
+                                              style={{ left: `${todayPct}%` }}
+                                            />
+                                          )}
+                                          {/* Bande principale : période du projet */}
                                           <div
-                                            className="absolute inset-y-0 w-px bg-red-500/70"
-                                            style={{ left: `${todayPct}%` }}
+                                            className="absolute top-1/2 -translate-y-1/2 h-3 rounded-full bg-gradient-to-r from-cyan-400 to-sky-500"
+                                            style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
                                           />
-                                        )}
-                                        <div
-                                          className="absolute top-1/2 -translate-y-1/2 h-3 rounded-full bg-gradient-to-r from-emerald-300 to-emerald-500 shadow-sm"
-                                          style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-                                        />
+
+                                          {/* Jalons projet */}
+                                          <div
+                                            className="absolute top-0 h-full w-[3px]"
+                                            style={markerStyle(posLancement, '#6ee7b7')}
+                                            title="Lancement"
+                                          />
+                                          <div
+                                            className="absolute top-0 h-full w-[3px]"
+                                            style={markerStyle(posDeploiement, '#a5b4fc')}
+                                            title="Déploiement"
+                                          />
+                                        </div>
                                       </div>
-                                    </div>
+                                    </button>
                                   );
                                 })}
                               </div>
+                            </div>
+                          </div>
+
+                          {/* Légende jalons projets */}
+                          <div className="flex flex-wrap gap-4 mt-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            <div className="flex items-center gap-1">
+                              <span className="w-4 h-1 rounded-full bg-emerald-300" /> <span>Lancement</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="w-4 h-1 rounded-full bg-indigo-300" /> <span>Déploiement</span>
                             </div>
                           </div>
                         </>
@@ -3880,59 +3935,69 @@ const App: React.FC = () => {
                                       ? { display: 'none' }
                                       : { left: `${(pos / totalMonths) * 100}%`, backgroundColor: color };
 
-                                  return (
-                                    <div
-                                      key={item.id + item.title + item.start.toISOString()}
-                                      className="grid grid-cols-[260px_1fr] items-center gap-2"
-                                    >
-                                      <div className="pr-2 text-xs font-semibold text-gray-900">
-                                        <div className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">
-                                          N° Afpa
-                                        </div>
-                                        <div className="inline-flex px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-bold text-blue-700 max-w-full truncate">
-                                          {item.afpa || item.id || 'N/C'}
-                                        </div>
-                                        <div className="mt-1 text-[11px] font-medium text-gray-900 truncate">
-                                          {item.title}
-                                        </div>
-                                      </div>
-                                      <div className="relative h-8 bg-slate-900/40 rounded-xl overflow-hidden border border-slate-700/60">
-                                        {/* Trait vertical date du jour */}
-                                        {todayPct !== null && (
-                                          <div
-                                            className="absolute inset-y-0 w-px bg-red-400/80"
-                                            style={{ left: `${todayPct}%` }}
-                                          />
-                                        )}
-                                        {/* Bande principale : période de publication */}
-                                        <div
-                                          className="absolute top-1/2 -translate-y-1/2 h-3 rounded-full bg-gradient-to-r from-cyan-400 to-sky-500"
-                                          style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-                                        />
+                                  const fullProcedure = procedures.find(p => {
+                                    const afpa = String(getProp(p, 'Numéro de procédure (Afpa)') || '');
+                                    const id = String(getProp(p, 'NumProc') || '');
+                                    return afpa === item.afpa || id === item.id;
+                                  }) || null;
 
-                                        {/* Jalons */}
-                                        <div
-                                          className="absolute top-0 h-full w-[3px] bg-emerald-300"
-                                          style={markerStyle(positionForDate(item.dates.lancement), '#6ee7b7')}
-                                        />
-                                        <div
-                                          className="absolute top-0 h-full w-[3px] bg-amber-300"
-                                          style={markerStyle(posCandid, '#facc15')}
-                                        />
-                                        <div
-                                          className="absolute top-0 h-full w-[3px] bg-orange-400"
-                                          style={markerStyle(posOffres, '#fb923c')}
-                                        />
-                                        <div
-                                          className="absolute top-0 h-full w-[3px] bg-pink-400"
-                                          style={markerStyle(posOffresFinales, '#fb7185')}
-                                        />
-                                        <div
-                                          className="absolute top-0 h-full w-[3px] bg-indigo-300"
-                                          style={markerStyle(posOuverture, '#a5b4fc')}
-                                        />
+                                  return (
+                                    <button
+                                      key={item.id + item.title + item.start.toISOString()}
+                                      type="button"
+                                      onClick={() => setGanttSelectedProcedure(fullProcedure)}
+                                      className="w-full text-left"
+                                    >
+                                      <div className="grid grid-cols-[260px_1fr] items-center gap-2 hover:bg-slate-800/40 rounded-xl px-1 py-1">
+                                        <div className="pr-2 text-xs font-semibold text-gray-900">
+                                          <div className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">
+                                            N° Afpa
+                                          </div>
+                                          <div className="inline-flex px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-bold text-blue-700 max-w-full truncate">
+                                            {item.afpa || item.id || 'N/C'}
+                                          </div>
+                                          <div className="mt-1 text-[11px] font-medium text-gray-900 truncate">
+                                            {item.title}
+                                          </div>
+                                        </div>
+                                        <div className="relative h-8 bg-slate-900/40 rounded-xl overflow-hidden border border-slate-700/60">
+                                          {/* Trait vertical date du jour */}
+                                          {todayPct !== null && (
+                                            <div
+                                              className="absolute inset-y-0 w-px bg-red-400/80"
+                                              style={{ left: `${todayPct}%` }}
+                                            />
+                                          )}
+                                          {/* Bande principale : période de publication */}
+                                          <div
+                                            className="absolute top-1/2 -translate-y-1/2 h-3 rounded-full bg-gradient-to-r from-cyan-400 to-sky-500"
+                                            style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                                          />
+
+                                          {/* Jalons */}
+                                          <div
+                                            className="absolute top-0 h-full w-[3px] bg-emerald-300"
+                                            style={markerStyle(positionForDate(item.dates.lancement), '#6ee7b7')}
+                                          />
+                                          <div
+                                            className="absolute top-0 h-full w-[3px] bg-amber-300"
+                                            style={markerStyle(posCandid, '#facc15')}
+                                          />
+                                          <div
+                                            className="absolute top-0 h-full w-[3px] bg-orange-400"
+                                            style={markerStyle(posOffres, '#fb923c')}
+                                          />
+                                          <div
+                                            className="absolute top-0 h-full w-[3px] bg-pink-400"
+                                            style={markerStyle(posOffresFinales, '#fb7185')}
+                                          />
+                                          <div
+                                            className="absolute top-0 h-full w-[3px] bg-indigo-300"
+                                            style={markerStyle(posOuverture, '#a5b4fc')}
+                                          />
+                                        </div>
                                       </div>
-                                    </div>
+                                    </button>
                                   );
                                 })}
                               </div>
@@ -4181,10 +4246,21 @@ const App: React.FC = () => {
                                     <div className="text-[10px] font-black text-gray-700 uppercase tracking-widest">{numProc || 'N° N/C'} — {amountTxt}</div>
                                   </div>
                                 ) : (
-                                  <div className="h-10 rounded-xl bg-gradient-to-r from-emerald-200 to-emerald-500 relative flex items-center justify-between px-4" style={{ width: `${widthPct}%` }}>
-                                    <div className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">{diffDays}j</div>
-                                    <div className="text-[10px] font-black text-white uppercase tracking-widest">{numProc || 'N° N/C'} — {amountTxt}</div>
-                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const proc = procedures.find(p => String(getProp(p, 'IDProjet') || '') === pid) || null;
+                                      setGanttSelectedProcedure(proc);
+                                    }}
+                                    className="h-10 w-full rounded-xl bg-gradient-to-r from-emerald-200 to-emerald-500 relative flex items-center justify-between px-4 text-left hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                  >
+                                    <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">
+                                      {diffDays}j
+                                    </span>
+                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                                      {numProc || 'N° N/C'} — {amountTxt}
+                                    </span>
+                                  </button>
                                 )}
                               </div>
                               <div className="absolute right-6 top-3 text-[10px] font-black text-gray-300 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Fin: {deployTxt}</div>
@@ -4195,6 +4271,22 @@ const App: React.FC = () => {
                     });
                   })()}
                 </div>
+                )}
+
+                {/* Modals de détail pour le Gantt */}
+                {ganttSelectedProcedure && (
+                  <ProcedureDetailsModal
+                    procedure={ganttSelectedProcedure}
+                    isOpen={!!ganttSelectedProcedure}
+                    onClose={() => setGanttSelectedProcedure(null)}
+                  />
+                )}
+                {ganttSelectedProject && (
+                  <ProjectDetailsModal
+                    project={ganttSelectedProject}
+                    isOpen={!!ganttSelectedProject}
+                    onClose={() => setGanttSelectedProject(null)}
+                  />
                 )}
               </div>
             )}
