@@ -3162,8 +3162,8 @@ const App: React.FC = () => {
                       onClick={() => setGanttView('synthese')}
                       className={`px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
                         ganttView === 'synthese'
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                          ? 'bg-[#004d3d] text-white border-[#004d3d]'
+                          : 'bg-white text-gray-600 border-gray-200 hover:bg-emerald-50 hover:text-[#004d3d] hover:border-[#004d3d]/30'
                       }`}
                     >
                       Synthèse
@@ -3173,8 +3173,8 @@ const App: React.FC = () => {
                       onClick={() => setGanttView('projets')}
                       className={`px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
                         ganttView === 'projets'
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                          ? 'bg-[#004d3d] text-white border-[#004d3d]'
+                          : 'bg-white text-gray-600 border-gray-200 hover:bg-emerald-50 hover:text-[#004d3d] hover:border-[#004d3d]/30'
                       }`}
                     >
                       Projets
@@ -3184,8 +3184,8 @@ const App: React.FC = () => {
                       onClick={() => setGanttView('procedures')}
                       className={`px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
                         ganttView === 'procedures'
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                          ? 'bg-[#004d3d] text-white border-[#004d3d]'
+                          : 'bg-white text-gray-600 border-gray-200 hover:bg-emerald-50 hover:text-[#004d3d] hover:border-[#004d3d]/30'
                       }`}
                     >
                       Procédures
@@ -3496,22 +3496,30 @@ const App: React.FC = () => {
                         return matchesText && matchesAch && matchesCli && matchesPri && matchesStat && matchesType && matchesCcag && matchesLaunch && matchesDeploy;
                       });
 
+                      const totalFilteredProjects = filtered.length;
+
                       const items = filtered
                         .map(d => {
-                          const start = toDate(getProp(d, 'Date_de_lancement_de_la_consultation'));
-                          const end = toDate(getProp(d, 'Date_de_deploiement_previsionnelle_du_marche')) || start;
-                          if (!start || !end) return null;
+                          const launch = toDate(getProp(d, 'Date_de_lancement_de_la_consultation'));
+                          const deploy = toDate(getProp(d, 'Date_de_deploiement_previsionnelle_du_marche'));
+
+                          // Au minimum, on garde le premier jalon disponible
+                          const start = launch || deploy;
+                          const end = deploy || launch || start;
+
+                          if (!start) return null; // impossible de positionner sans aucune date
+
                           return {
                             id: String(getProp(d, 'IDProjet') || ''),
                             title: String(getProp(d, 'Titre_du_dossier') || getProp(d, 'Nom de la procédure') || 'Sans titre'),
                             start,
-                            end,
+                            end: end || start,
                           };
                         })
                         .filter(Boolean) as { id: string; title: string; start: Date; end: Date; }[];
 
                       if (items.length === 0) {
-                        return <p className="text-xs text-gray-500 px-1">Aucun projet ne correspond aux filtres sélectionnés.</p>;
+                        return <p className="text-xs text-gray-500 px-1">Aucun projet ne peut être positionné sur la frise (dates manquantes).</p>;
                       }
 
                       const today = new Date();
@@ -3575,8 +3583,15 @@ const App: React.FC = () => {
                         <>
                           <div className="flex items-center justify-between mb-4">
                             <div>
-                              <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">Projets (vue mensuelle)</p>
-                              <p className="text-lg font-bold text-gray-900">{items.length} projet{items.length > 1 ? 's' : ''}</p>
+                              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Projets (vue mensuelle)</p>
+                              <p className="text-lg font-bold text-gray-900">
+                                {items.length} projet{items.length > 1 ? 's' : ''} sur {totalFilteredProjects}
+                              </p>
+                              {items.length < totalFilteredProjects && (
+                                <p className="text-[11px] text-gray-500">
+                                  Certains projets filtrés n&apos;ont pas de date de lancement ou de déploiement et ne peuvent pas être affichés sur le Gantt.
+                                </p>
+                              )}
                             </div>
                           </div>
 
@@ -3641,10 +3656,10 @@ const App: React.FC = () => {
                                     >
                                       <div className="grid grid-cols-[260px_1fr] items-center gap-2 hover:bg-slate-800/40 rounded-xl px-1 py-1">
                                         <div className="pr-2 text-xs font-semibold text-gray-900">
-                                          <div className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">
+                                          <div className="text-[10px] uppercase tracking-widest text-emerald-600 mb-1">
                                             ID Projet
                                           </div>
-                                          <div className="inline-flex px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-bold text-blue-700 max-w-full truncate">
+                                          <div className="inline-flex px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-700 max-w-full truncate">
                                             {item.id || 'N/C'}
                                           </div>
                                           <div className="mt-1 text-[11px] font-medium text-gray-900 truncate">
@@ -3780,27 +3795,47 @@ const App: React.FC = () => {
                         return achOk && typeOk && ccagOk && statutOk && textOk && launchOk && finOk;
                       });
 
+                      const totalFilteredProcedures = filteredProcedures.length;
+
                       const items = filteredProcedures
                         .map(p => {
-                          const start = toDate(getProp(p, 'date_de_lancement_de_la_consultation'));
+                          const lancement = toDate(getProp(p, 'date_de_lancement_de_la_consultation'));
+                          const candidatures = toDate(getProp(p, 'Date de remise des candidatures'));
+                          const offres = toDate(getProp(p, 'Date de remise des offres'));
+                          const offresFinales = toDate(getProp(p, 'Date de remise des offres finales'));
+                          const ouverture = toDate(getProp(p, 'Date d\'ouverture des offres'));
+
+                          // Premier jalon disponible pour le début
+                          const start =
+                            lancement ||
+                            candidatures ||
+                            offres ||
+                            offresFinales ||
+                            ouverture;
+
+                          // Dernier jalon disponible pour la fin
                           const end =
-                            toDate(getProp(p, 'Date d\'ouverture des offres')) ||
-                            toDate(getProp(p, 'Date de remise des offres finales')) ||
-                            toDate(getProp(p, 'Date de remise des offres')) ||
+                            ouverture ||
+                            offresFinales ||
+                            offres ||
+                            candidatures ||
+                            lancement ||
                             start;
-                          if (!start || !end) return null;
+
+                          if (!start) return null; // aucune date exploitable
+
                           return {
                             id: String(getProp(p, 'NumProc') || ''),
                             afpa: String(getProp(p, 'Numéro de procédure (Afpa)') || ''),
                             title: String(getProp(p, 'Nom de la procédure') || getProp(p, 'Objet court') || 'Sans titre'),
                             start,
-                            end,
+                            end: end || start,
                             dates: {
-                              lancement: start,
-                              candidatures: toDate(getProp(p, 'Date de remise des candidatures')),
-                              offres: toDate(getProp(p, 'Date de remise des offres')),
-                              offresFinales: toDate(getProp(p, 'Date de remise des offres finales')),
-                              ouverture: toDate(getProp(p, 'Date d\'ouverture des offres')),
+                              lancement,
+                              candidatures,
+                              offres,
+                              offresFinales,
+                              ouverture,
                             },
                           };
                         })
@@ -3820,7 +3855,7 @@ const App: React.FC = () => {
                         }[];
 
                       if (items.length === 0) {
-                        return <p className="text-xs text-gray-500 px-1">Aucune procédure ne correspond aux filtres sélectionnés.</p>;
+                        return <p className="text-xs text-gray-500 px-1">Aucune procédure ne peut être positionnée sur la frise (dates manquantes).</p>;
                       }
 
                       const today = new Date();
@@ -3878,8 +3913,15 @@ const App: React.FC = () => {
                         <>
                           <div className="flex items-center justify-between mb-4">
                             <div>
-                              <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">Procédures (jalons de publication)</p>
-                              <p className="text-lg font-bold text-gray-900">{items.length} procédure{items.length > 1 ? 's' : ''}</p>
+                              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Procédures (jalons de publication)</p>
+                              <p className="text-lg font-bold text-gray-900">
+                                {items.length} procédure{items.length > 1 ? 's' : ''} sur {totalFilteredProcedures}
+                              </p>
+                              {items.length < totalFilteredProcedures && (
+                                <p className="text-[11px] text-gray-500">
+                                  Certaines procédures filtrées n&apos;ont pas de dates suffisantes pour être affichées sur le Gantt.
+                                </p>
+                              )}
                             </div>
                           </div>
 
@@ -3949,11 +3991,11 @@ const App: React.FC = () => {
                                       className="w-full text-left"
                                     >
                                       <div className="grid grid-cols-[260px_1fr] items-center gap-2 hover:bg-slate-800/40 rounded-xl px-1 py-1">
-                                        <div className="pr-2 text-xs font-semibold text-gray-900">
-                                          <div className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">
+                                      <div className="pr-2 text-xs font-semibold text-gray-900">
+                                        <div className="text-[10px] uppercase tracking-widest text-emerald-600 mb-1">
                                             N° Afpa
                                           </div>
-                                          <div className="inline-flex px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-bold text-blue-700 max-w-full truncate">
+                                        <div className="inline-flex px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-700 max-w-full truncate">
                                             {item.afpa || item.id || 'N/C'}
                                           </div>
                                           <div className="mt-1 text-[11px] font-medium text-gray-900 truncate">
