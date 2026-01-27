@@ -405,6 +405,7 @@ const App: React.FC = () => {
   const [selectedOfferYears, setSelectedOfferYears] = useState<string[]>([]);
   const [selectedClientsInternes, setSelectedClientsInternes] = useState<string[]>([]);
   const [selectedCcags, setSelectedCcags] = useState<string[]>([]);
+  const [selectedTimeStatuses, setSelectedTimeStatuses] = useState<string[]>([]);
   const [launchFrom, setLaunchFrom] = useState<string>('');
   const [launchTo, setLaunchTo] = useState<string>('');
   const [deployFrom, setDeployFrom] = useState<string>('');
@@ -1518,9 +1519,11 @@ const App: React.FC = () => {
     setSelectedOfferYears([]);
     setSelectedClientsInternes([]);
     setSelectedCcags([]);
+    setSelectedTimeStatuses([]);
     setLaunchFrom('');
     setLaunchTo('');
     setDeployFrom('');
+    setDeployTo('');
   };
 
   // Fonction de reset spécifique aux filtres PROJETS
@@ -2208,7 +2211,13 @@ const App: React.FC = () => {
           }
 
           if (key === "Durée de publication" && type === 'procedure') {
-            const dateRemiseOffres = getProp(data, 'Date de remise des offres');
+            // Pour la durée de publication, on doit utiliser en priorité la
+            // date de remise des offres finales si elle est renseignée pour
+            // les types de procédures qui la prévoient, sinon la date
+            // de remise des offres initiales.
+            const dateRemiseOffresFinales = getProp(data, 'Date de remise des offres finales');
+            const dateRemiseOffresInitiales = getProp(data, 'Date de remise des offres');
+            const dateRemiseOffres = dateRemiseOffresFinales || dateRemiseOffresInitiales;
             const dateLancementConsultation = getProp(data, 'date_de_lancement_de_la_consultation');
             const typeProcedure = String(getProp(data, 'Type de procédure') || '');
             
@@ -2303,7 +2312,11 @@ const App: React.FC = () => {
           }
 
           if (key === "Date de validité des offres (calculée)" && type === 'procedure') {
-            const dateRemise = getProp(data, 'Date de remise des offres');
+            // Utiliser en priorité la date de remise des offres finales si elle est renseignée,
+            // sinon retomber sur la date de remise des offres initiales.
+            const dateRemiseFinales = getProp(data, 'Date de remise des offres finales');
+            const dateRemiseInitiales = getProp(data, 'Date de remise des offres');
+            const dateRemise = dateRemiseFinales || dateRemiseInitiales;
             const duree = getProp(data, 'Durée de validité des offres (en jours)');
             
             let dateCalculee = '';
@@ -2365,7 +2378,10 @@ const App: React.FC = () => {
           }
 
           if (key === "Date_limite_validite_offres calculee" && type === 'procedure') {
-            const dateRemise = getProp(data, 'Date de remise des offres');
+            // Même logique que ci-dessus : priorité aux offres finales si présentes
+            const dateRemiseFinales = getProp(data, 'Date de remise des offres finales');
+            const dateRemiseInitiales = getProp(data, 'Date de remise des offres');
+            const dateRemise = dateRemiseFinales || dateRemiseInitiales;
             const duree = getProp(data, 'Durée de validité des offres (en jours)');
             
             let dateCalculee = '';
@@ -3093,7 +3109,14 @@ const App: React.FC = () => {
                     selected={selectedCcags}
                     onToggle={(opt) => setSelectedCcags(prev => prev.includes(opt) ? prev.filter(c => c !== opt) : [...prev, opt])}
                   />
-                  {(selectedAcheteurs.length > 0 || selectedClientsInternes.length > 0 || selectedStatuses.length > 0 || selectedPriorities.length > 0 || selectedCcags.length > 0 || selectedProcTypes.length > 0 || projectSearch || launchFrom || launchTo || deployFrom || deployTo) && (
+                  <FilterDropdown 
+                    id="gantt-timestatus"
+                    label="Statut temporel"
+                    options={['retard', 'en cours', 'sans date']}
+                    selected={selectedTimeStatuses}
+                    onToggle={(opt) => setSelectedTimeStatuses(prev => prev.includes(opt) ? prev.filter(s => s !== opt) : [...prev, opt])}
+                  />
+                  {(selectedAcheteurs.length > 0 || selectedClientsInternes.length > 0 || selectedStatuses.length > 0 || selectedPriorities.length > 0 || selectedCcags.length > 0 || selectedProcTypes.length > 0 || selectedTimeStatuses.length > 0 || projectSearch || launchFrom || launchTo || deployFrom || deployTo) && (
                     <button onClick={resetFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-2xl transition-all flex items-center gap-2 h-[54px]">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>Reset
                     </button>
@@ -3114,30 +3137,88 @@ const App: React.FC = () => {
                     const toDate = (s: any) => {
                       if (!s && s !== 0) return null;
                       const str = String(s).trim();
-                      if (/^\d{5}(\.\d+)?$/.test(str)) {
-                        const d = excelDateToJSDate(parseFloat(str));
-                        return d && !isNaN(d.getTime()) ? d : null;
+                      
+                      // Détecter les dates Excel (nombres entre 10000 et 1000000 environ, correspondant à des dates entre 1927 et 2173)
+                      // Format Excel : nombre de jours depuis le 1er janvier 1900
+                      const numValue = parseFloat(str);
+                      if (!isNaN(numValue) && numValue >= 10000 && numValue < 1000000 && /^\d+(\.\d+)?$/.test(str)) {
+                        const d = excelDateToJSDate(numValue);
+                        if (d && !isNaN(d.getTime())) {
+                          // Vérifier que la date convertie est raisonnable (entre 1900 et 2200)
+                          const year = d.getFullYear();
+                          if (year >= 1900 && year <= 2200) {
+                            return d;
+                          }
+                        }
                       }
+                      
+                      // Parser les dates au format DD/MM/YYYY ou YYYY-MM-DD
                       const parts = str.includes('/') ? str.split('/') : str.split('-');
                       if (parts.length === 3) {
                         const [a, b, c] = parts;
                         if (str.includes('/')) {
+                          // Format DD/MM/YYYY
                           const y = parseInt(c, 10), m = parseInt(b, 10) - 1, d = parseInt(a, 10);
-                          if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m, d);
+                          if (!isNaN(y) && !isNaN(m) && !isNaN(d) && y >= 1900 && y <= 2200) {
+                            return new Date(y, m, d);
+                          }
                         } else {
+                          // Format YYYY-MM-DD
                           const y = parseInt(a, 10), m = parseInt(b, 10) - 1, d = parseInt(c, 10);
-                          if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m, d);
+                          if (!isNaN(y) && !isNaN(m) && !isNaN(d) && y >= 1900 && y <= 2200) {
+                            return new Date(y, m, d);
+                          }
                         }
                       }
+                      
+                      // Dernier recours : essayer de parser directement
                       const dt = new Date(str);
-                      return isNaN(dt.getTime()) ? null : dt;
+                      if (!isNaN(dt.getTime())) {
+                        const year = dt.getFullYear();
+                        if (year >= 1900 && year <= 2200) {
+                          return dt;
+                        }
+                      }
+                      
+                      return null;
                     };
                     const inRange = (dt: Date | null, fromStr: string, toStr: string) => {
-                      if (!dt) return true;
-                      const f = fromStr ? new Date(fromStr) : null;
-                      const t = toStr ? new Date(toStr) : null;
-                      if (f && dt < f) return false;
-                      if (t && dt > t) return false;
+                      // Si aucun filtre n'est défini, accepter toutes les dates
+                      if (!fromStr && !toStr) return true;
+                      
+                      // Si pas de date dans les données et qu'un filtre est défini, exclure
+                      if (!dt) return false;
+                      
+                      // Normaliser les dates pour comparer seulement les jours (sans heures)
+                      const normalizeDate = (d: Date) => {
+                        const normalized = new Date(d);
+                        normalized.setHours(0, 0, 0, 0);
+                        return normalized;
+                      };
+                      
+                      const normalizedDt = normalizeDate(dt);
+                      
+                      // Vérifier la date de début (>=)
+                      if (fromStr) {
+                        const f = normalizeDate(new Date(fromStr));
+                        if (isNaN(f.getTime())) {
+                          // Si la date de début est invalide, ignorer ce filtre
+                        } else {
+                          if (normalizedDt < f) return false;
+                        }
+                      }
+                      
+                      // Vérifier la date de fin (<=) - inclure toute la journée de fin
+                      if (toStr) {
+                        const t = normalizeDate(new Date(toStr));
+                        if (isNaN(t.getTime())) {
+                          // Si la date de fin est invalide, ignorer ce filtre
+                        } else {
+                          // Comparer avec <= pour inclure la date de fin
+                          if (normalizedDt > t) return false;
+                        }
+                      }
+                      
                       return true;
                     };
                     
@@ -3159,9 +3240,28 @@ const App: React.FC = () => {
                       const matchesStat = selectedStatuses.length === 0 || selectedStatuses.includes(stat);
                       const matchesType = selectedProcTypes.length === 0 || Array.from(typeSet).some(t => selectedProcTypes.includes(t));
                       const matchesCcag = selectedCcags.length === 0 || Array.from(ccagSet).some(c => selectedCcags.includes(c));
+                      
                       const matchesLaunch = inRange(launch, launchFrom, launchTo);
                       const matchesDeploy = inRange(deploy, deployFrom, deployTo);
-                      return matchesText && matchesAch && matchesCli && matchesPri && matchesStat && matchesType && matchesCcag && matchesLaunch && matchesDeploy;
+                      
+                      // Filtre de statut temporel
+                      let matchesTimeStatus = true;
+                      if (selectedTimeStatuses.length > 0) {
+                        const timeStatuses: string[] = [];
+                        if (!deploy) {
+                          timeStatuses.push('sans date');
+                        } else {
+                          const diffDays = Math.ceil((deploy.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                          if (diffDays <= 0) {
+                            timeStatuses.push('retard');
+                          } else {
+                            timeStatuses.push('en cours');
+                          }
+                        }
+                        matchesTimeStatus = timeStatuses.some(status => selectedTimeStatuses.includes(status));
+                      }
+                      
+                      return matchesText && matchesAch && matchesCli && matchesPri && matchesStat && matchesType && matchesCcag && matchesLaunch && matchesDeploy && matchesTimeStatus;
                     });
                     
                     const late = filtered.filter(d => {
@@ -3239,31 +3339,88 @@ const App: React.FC = () => {
                     const toDate = (s: any) => {
                       if (!s && s !== 0) return null;
                       const str = String(s).trim();
-                      // Excel 5 chiffres (numéro de série)
-                      if (/^\d{5}(\.\d+)?$/.test(str)) {
-                        const d = excelDateToJSDate(parseFloat(str));
-                        return d && !isNaN(d.getTime()) ? d : null;
+                      
+                      // Détecter les dates Excel (nombres entre 10000 et 1000000 environ, correspondant à des dates entre 1927 et 2173)
+                      // Format Excel : nombre de jours depuis le 1er janvier 1900
+                      const numValue = parseFloat(str);
+                      if (!isNaN(numValue) && numValue >= 10000 && numValue < 1000000 && /^\d+(\.\d+)?$/.test(str)) {
+                        const d = excelDateToJSDate(numValue);
+                        if (d && !isNaN(d.getTime())) {
+                          // Vérifier que la date convertie est raisonnable (entre 1900 et 2200)
+                          const year = d.getFullYear();
+                          if (year >= 1900 && year <= 2200) {
+                            return d;
+                          }
+                        }
                       }
+                      
+                      // Parser les dates au format DD/MM/YYYY ou YYYY-MM-DD
                       const parts = str.includes('/') ? str.split('/') : str.split('-');
                       if (parts.length === 3) {
                         const [a, b, c] = parts;
-                        if (str.includes('/')) { // jj/mm/aaaa
+                        if (str.includes('/')) {
+                          // Format DD/MM/YYYY
                           const y = parseInt(c, 10), m = parseInt(b, 10) - 1, d = parseInt(a, 10);
-                          if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m, d);
-                        } else { // yyyy-mm-dd
+                          if (!isNaN(y) && !isNaN(m) && !isNaN(d) && y >= 1900 && y <= 2200) {
+                            return new Date(y, m, d);
+                          }
+                        } else {
+                          // Format YYYY-MM-DD
                           const y = parseInt(a, 10), m = parseInt(b, 10) - 1, d = parseInt(c, 10);
-                          if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m, d);
+                          if (!isNaN(y) && !isNaN(m) && !isNaN(d) && y >= 1900 && y <= 2200) {
+                            return new Date(y, m, d);
+                          }
                         }
                       }
+                      
+                      // Dernier recours : essayer de parser directement
                       const dt = new Date(str);
-                      return isNaN(dt.getTime()) ? null : dt;
+                      if (!isNaN(dt.getTime())) {
+                        const year = dt.getFullYear();
+                        if (year >= 1900 && year <= 2200) {
+                          return dt;
+                        }
+                      }
+                      
+                      return null;
                     };
                     const inRange = (dt: Date | null, fromStr: string, toStr: string) => {
-                      if (!dt) return true;
-                      const f = fromStr ? new Date(fromStr) : null;
-                      const t = toStr ? new Date(toStr) : null;
-                      if (f && dt < f) return false;
-                      if (t && dt > t) return false;
+                      // Si aucun filtre n'est défini, accepter toutes les dates
+                      if (!fromStr && !toStr) return true;
+                      
+                      // Si pas de date dans les données et qu'un filtre est défini, exclure
+                      if (!dt) return false;
+                      
+                      // Normaliser les dates pour comparer seulement les jours (sans heures)
+                      const normalizeDate = (d: Date) => {
+                        const normalized = new Date(d);
+                        normalized.setHours(0, 0, 0, 0);
+                        return normalized;
+                      };
+                      
+                      const normalizedDt = normalizeDate(dt);
+                      
+                      // Vérifier la date de début (>=)
+                      if (fromStr) {
+                        const f = normalizeDate(new Date(fromStr));
+                        if (isNaN(f.getTime())) {
+                          // Si la date de début est invalide, ignorer ce filtre
+                        } else {
+                          if (normalizedDt < f) return false;
+                        }
+                      }
+                      
+                      // Vérifier la date de fin (<=) - inclure toute la journée de fin
+                      if (toStr) {
+                        const t = normalizeDate(new Date(toStr));
+                        if (isNaN(t.getTime())) {
+                          // Si la date de fin est invalide, ignorer ce filtre
+                        } else {
+                          // Comparer avec <= pour inclure la date de fin
+                          if (normalizedDt > t) return false;
+                        }
+                      }
+                      
                       return true;
                     };
 
@@ -3295,9 +3452,29 @@ const App: React.FC = () => {
                       const matchesStat = selectedStatuses.length === 0 || selectedStatuses.includes(stat);
                       const matchesType = selectedProcTypes.length === 0 || Array.from(typeSet).some(t => selectedProcTypes.includes(t));
                       const matchesCcag = selectedCcags.length === 0 || Array.from(ccagSet).some(c => selectedCcags.includes(c));
+                      
                       const matchesLaunch = inRange(launch, launchFrom, launchTo);
                       const matchesDeploy = inRange(deploy, deployFrom, deployTo);
-                      return matchesText && matchesAch && matchesCli && matchesPri && matchesStat && matchesType && matchesCcag && matchesLaunch && matchesDeploy;
+                      
+                      // Filtre de statut temporel
+                      let matchesTimeStatus = true;
+                      if (selectedTimeStatuses.length > 0) {
+                        const now = new Date();
+                        const timeStatuses: string[] = [];
+                        if (!deploy) {
+                          timeStatuses.push('sans date');
+                        } else {
+                          const diffDays = Math.ceil((deploy.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                          if (diffDays <= 0) {
+                            timeStatuses.push('retard');
+                          } else {
+                            timeStatuses.push('en cours');
+                          }
+                        }
+                        matchesTimeStatus = timeStatuses.some(status => selectedTimeStatuses.includes(status));
+                      }
+                      
+                      return matchesText && matchesAch && matchesCli && matchesPri && matchesStat && matchesType && matchesCcag && matchesLaunch && matchesDeploy && matchesTimeStatus;
                     };
 
                     const now = new Date();
@@ -3796,10 +3973,88 @@ const App: React.FC = () => {
                     {renderFormFields('procedure', editingProcedure, (k) => rseFields.has(k))}
                   </>
                 )}
-                {editingProcedure && activeSubTab === 'publication' && renderFormFields('procedure', editingProcedure, (k) => PROCEDURE_GROUPS.publication.fields.includes(k))}
+                {editingProcedure && activeSubTab === 'publication' && renderFormFields(
+                  'procedure',
+                  editingProcedure,
+                  (k) => {
+                    if (!PROCEDURE_GROUPS.publication.fields.includes(k)) return false;
+
+                    // Règles d'affichage conditionnel selon le type de procédure
+                    const rawType = String(getProp(editingProcedure, 'Type de procédure') || '');
+                    const normalizedType = rawType
+                      .normalize('NFD')
+                      .replace(/[\u0300-\u036f]/g, '')
+                      .toLowerCase()
+                      .trim();
+
+                    const isAOO =
+                      normalizedType === "appel d'offre ouvert" ||
+                      normalizedType === "appel d offres ouvert" ||
+                      normalizedType === "appel d offre ouverte" ||
+                      normalizedType === "appel d'offres ouvert";
+
+                    const isAOR =
+                      normalizedType === "appel d'offre restreint" ||
+                      normalizedType === "appel d offres restreint" ||
+                      normalizedType === "appel d'offre restreinte" ||
+                      normalizedType === "appel d'offres restreint";
+
+                    const isDevis =
+                      normalizedType === "3demande de devis" ||
+                      normalizedType === "demande de devis" ||
+                      normalizedType === "3 demande de devis";
+
+                    const isMAPA =
+                      normalizedType === "marche a procedure adaptee" ||
+                      normalizedType === "marche a procedure adaptee (mapa)" ||
+                      normalizedType === "marche a procedure adpatee" ||
+                      normalizedType === "marches a procedure adaptee";
+
+                    // 1) Ne pas afficher "Date de remise des offres finales" si AOO ou AOR
+                    if (
+                      (k === 'Date de remise des offres finales') &&
+                      (isAOO || isAOR)
+                    ) {
+                      return false;
+                    }
+
+                    // 2) Ne pas afficher "Date de remise des candidatures" si Devis, MAPA ou AOO
+                    if (
+                      (k === 'Date de remise des candidatures') &&
+                      (isDevis || isMAPA || isAOO)
+                    ) {
+                      return false;
+                    }
+
+                    return true;
+                  }
+                )}
                 {editingProcedure && activeSubTab === 'offres' && renderFormFields('procedure', editingProcedure, (k) => PROCEDURE_GROUPS.offres.fields.includes(k))}
                 {editingProcedure && activeSubTab === 'rapport' && renderFormFields('procedure', editingProcedure, (k) => PROCEDURE_GROUPS.rapport.fields.includes(k))}
-                {editingProcedure && activeSubTab === 'attribution' && renderFormFields('procedure', editingProcedure, (k) => PROCEDURE_GROUPS.attribution.fields.includes(k))}
+                {editingProcedure && activeSubTab === 'attribution' && renderFormFields(
+                  'procedure',
+                  editingProcedure,
+                  (k) => {
+                    if (!PROCEDURE_GROUPS.attribution.fields.includes(k)) return false;
+
+                    // Règle : n'afficher "Données essentielles" que si la finalité contient "Attribué"
+                    if (k === 'Données essentielles') {
+                      const finaliteRaw = String(getProp(editingProcedure, 'Finalité de la consultation') || '');
+                      const finaliteNorm = finaliteRaw
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase();
+
+                      // Exemple de valeurs : "Attribuée", "Attribuée;#Infructueuse"
+                      const contientAttribue = finaliteNorm.includes('attribu');
+                      if (!contientAttribue) {
+                        return false;
+                      }
+                    }
+
+                    return true;
+                  }
+                )}
                 {activeSubTab === 'documents' && (
                   <div className="space-y-10">
                     <div className="flex flex-col items-center justify-center border-4 border-dashed rounded-[3rem] p-16 transition-all hover:border-[#004d3d]/20 hover:bg-emerald-50/10 group relative border-gray-50 bg-white">

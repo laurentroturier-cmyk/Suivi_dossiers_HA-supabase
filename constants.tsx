@@ -29,6 +29,8 @@ export const DOSSIER_FIELDS = [
   { id: 'Acheteur', label: 'Acheteur' },
   { id: 'Client_Interne', label: 'Client Interne' },
   { id: 'Priorite', label: 'Priorité' },
+  { id: 'Programme', label: 'Programme' },
+  { id: 'Operation', label: 'Opération' },
   { id: 'CodesCPVDAE', label: 'Codes CPV DAE' },
   { id: 'Prescripteur', label: 'Prescripteur' },
   { id: 'Statut_du_Dossier', label: 'Statut Dossier' },
@@ -39,6 +41,7 @@ export const DOSSIER_FIELDS = [
   { id: 'Date_de_deploiement_previsionnelle_du_marche', label: 'Date déploiement prév.' },
   { id: 'Perf_achat_previsionnelle_(en_%)', label: 'Perf. achat prév. (%)' },
   { id: 'Origine_du_montant_pour_le_calcul_de_l\'economie', label: 'Origine montant économie', type: 'select', options: 'ORIGINE_ECONOMIE_OPTIONS' },
+  { id: 'Commentaire général sur le projet', label: 'Commentaire' },
 ];
 
 // Liste déroulante pour le champ "Origine_du_montant_pour_le_calcul_de_l'economie"
@@ -154,8 +157,8 @@ export const PROCEDURE_GROUPS: Record<string, { label: string; fields: string[] 
     label: 'Attribution',
     fields: [
       'Date des Rejets',
-      'Avis d\'attribution',
       'Date de Notification',
+      'Avis d\'attribution',
       'Données essentielles',
       'Finalité de la consultation',
     ],
