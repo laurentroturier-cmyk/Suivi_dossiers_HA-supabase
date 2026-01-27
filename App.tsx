@@ -406,6 +406,8 @@ const App: React.FC = () => {
   const [selectedClientsInternes, setSelectedClientsInternes] = useState<string[]>([]);
   const [selectedCcags, setSelectedCcags] = useState<string[]>([]);
   const [selectedTimeStatuses, setSelectedTimeStatuses] = useState<string[]>([]);
+  const [ganttView, setGanttView] = useState<'synthese' | 'projets' | 'procedures'>('synthese');
+  const [ganttLimitToCurrentPeriod, setGanttLimitToCurrentPeriod] = useState<boolean>(true);
   const [launchFrom, setLaunchFrom] = useState<string>('');
   const [launchTo, setLaunchTo] = useState<string>('');
   const [deployFrom, setDeployFrom] = useState<string>('');
@@ -3122,6 +3124,68 @@ const App: React.FC = () => {
                     </button>
                   )}
                 </div>
+                
+                {/* Sélecteur de vue Gantt (synthèse / projets / procédures) + option de période */}
+                <div className="flex flex-wrap items-center justify-between gap-4 px-1">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    <span>Vue Gantt :</span>
+                    <button
+                      type="button"
+                      onClick={() => setGanttView('synthese')}
+                      className={`px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                        ganttView === 'synthese'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      Synthèse
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGanttView('projets')}
+                      className={`px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                        ganttView === 'projets'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      Projets
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGanttView('procedures')}
+                      className={`px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                        ganttView === 'procedures'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      Procédures
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setGanttView(prev => prev)}
+                    className="hidden"
+                  >
+                    {/* noop button to keep lint happy if needed */}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGanttLimitToCurrentPeriod(v => !v)}
+                    className={`ml-auto inline-flex items-center gap-2 px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                      ganttLimitToCurrentPeriod
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                        : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: ganttLimitToCurrentPeriod ? '#10b981' : '#d1d5db' }} />
+                    {ganttLimitToCurrentPeriod ? 'Période actuelle (M-1 → ...)' : 'Toutes les périodes'}
+                  </button>
+                </div>
+
+                {/* Vue Gantt - Synthèse existante */}
+                {ganttView === 'synthese' && (
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 p-6 rounded-[2rem] shadow-sm">
                   {(() => {
                     const procByProject: Record<string, { types: Set<string>; ccags: Set<string>; }> = {};
@@ -3310,14 +3374,533 @@ const App: React.FC = () => {
                     );
                   })()}
                 </div>
+                )}
 
+                {ganttView === 'synthese' && (
                 <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
                   <div className="flex items-center gap-2"><span className="w-8 h-3 bg-gradient-to-r from-emerald-200 to-emerald-500 rounded"></span> <span>En cours (futur)</span></div>
                   <div className="flex items-center gap-2"><span className="w-8 h-3 rounded" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fee2e2, #fee2e2 8px, #fecaca 8px, #fecaca 16px)' }}></span> <span>Retard</span></div>
                   <div className="flex items-center gap-2"><span className="w-8 h-3 rounded" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #e5e7eb, #e5e7eb 8px, #d1d5db 8px, #d1d5db 16px)' }}></span> <span>Sans date</span></div>
                   <div className="ml-auto text-gray-300">Repère: Aujourd'hui</div>
                 </div>
+                )}
 
+                {/* Vue Gantt - Projets (mensuelle) */}
+                {ganttView === 'projets' && (
+                  <div className="bg-white border border-gray-100 rounded-[2rem] shadow-sm p-6 space-y-4">
+                    {(() => {
+                      const toDate = (s: any): Date | null => {
+                        if (!s && s !== 0) return null;
+                        const str = String(s).trim();
+                        const numValue = parseFloat(str);
+                        if (!isNaN(numValue) && numValue >= 10000 && numValue < 1000000 && /^\d+(\.\d+)?$/.test(str)) {
+                          const d = excelDateToJSDate(numValue);
+                          if (d && !isNaN(d.getTime())) return d;
+                        }
+                        const parts = str.includes('/') ? str.split('/') : str.split('-');
+                        if (parts.length === 3) {
+                          const [a, b, c] = parts;
+                          if (str.includes('/')) {
+                            const y = parseInt(c, 10), m = parseInt(b, 10) - 1, d = parseInt(a, 10);
+                            if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m, d);
+                          } else {
+                            const y = parseInt(a, 10), m = parseInt(b, 10) - 1, d = parseInt(c, 10);
+                            if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m, d);
+                          }
+                        }
+                        const dt = new Date(str);
+                        return isNaN(dt.getTime()) ? null : dt;
+                      };
+
+                      const monthKey = (d: Date) => d.getFullYear() * 12 + d.getMonth();
+
+                      // Reprendre le même filtrage que la synthèse
+                      const procByProject: Record<string, { types: Set<string>; ccags: Set<string>; }> = {};
+                      procedures.forEach(p => {
+                        const pid = String(getProp(p, 'IDProjet') || '');
+                        if (!pid) return;
+                        const types = getProp(p, 'Type de procédure') || '';
+                        const ccag = getProp(p, 'CCAG') || '';
+                        procByProject[pid] = procByProject[pid] || { types: new Set(), ccags: new Set() };
+                        procByProject[pid].types.add(types);
+                        if (ccag) procByProject[pid].ccags.add(ccag);
+                      });
+
+                      const inRangeLocal = (dt: Date | null, fromStr: string, toStr: string) => {
+                        if (!fromStr && !toStr) return true;
+                        if (!dt) return false;
+                        const normalize = (d: Date) => {
+                          const n = new Date(d);
+                          n.setHours(0, 0, 0, 0);
+                          return n;
+                        };
+                        const nd = normalize(dt);
+                        if (fromStr) {
+                          const f = normalize(new Date(fromStr));
+                          if (!isNaN(f.getTime()) && nd < f) return false;
+                        }
+                        if (toStr) {
+                          const t = normalize(new Date(toStr));
+                          if (!isNaN(t.getTime()) && nd > t) return false;
+                        }
+                        return true;
+                      };
+
+                      const filtered = dossiers.filter(d => {
+                        const ach = String(getProp(d, 'Acheteur') || '');
+                        const cli = String(getProp(d, 'Client_Interne') || '');
+                        const pri = String(getProp(d, 'Priorite') || '');
+                        const stat = String(getProp(d, 'Statut_du_Dossier') || '');
+                        const pid = String(getProp(d, 'IDProjet') || '');
+                        const typeSet = procByProject[pid]?.types || new Set<string>();
+                        const ccagSet = procByProject[pid]?.ccags || new Set<string>();
+                        const launch = toDate(getProp(d, 'Date_de_lancement_de_la_consultation'));
+                        const deploy = toDate(getProp(d, 'Date_de_deploiement_previsionnelle_du_marche'));
+                        const matchesText = !projectSearch || (String(getProp(d, 'Titre_du_dossier') || '').toLowerCase().includes(projectSearch.toLowerCase()) || String(pid).toLowerCase().includes(projectSearch.toLowerCase()));
+                        const matchesAch = selectedAcheteurs.length === 0 || selectedAcheteurs.includes(ach);
+                        const matchesCli = selectedClientsInternes.length === 0 || selectedClientsInternes.includes(cli);
+                        const matchesPri = selectedPriorities.length === 0 || selectedPriorities.includes(pri);
+                        const matchesStat = selectedStatuses.length === 0 || selectedStatuses.includes(stat);
+                        const matchesType = selectedProcTypes.length === 0 || Array.from(typeSet).some(t => selectedProcTypes.includes(t));
+                        const matchesCcag = selectedCcags.length === 0 || Array.from(ccagSet).some(c => selectedCcags.includes(c));
+                        const matchesLaunch = inRangeLocal(launch, launchFrom, launchTo);
+                        const matchesDeploy = inRangeLocal(deploy, deployFrom, deployTo);
+                        return matchesText && matchesAch && matchesCli && matchesPri && matchesStat && matchesType && matchesCcag && matchesLaunch && matchesDeploy;
+                      });
+
+                      const items = filtered
+                        .map(d => {
+                          const start = toDate(getProp(d, 'Date_de_lancement_de_la_consultation'));
+                          const end = toDate(getProp(d, 'Date_de_deploiement_previsionnelle_du_marche')) || start;
+                          if (!start || !end) return null;
+                          return {
+                            id: String(getProp(d, 'IDProjet') || ''),
+                            title: String(getProp(d, 'Titre_du_dossier') || getProp(d, 'Nom de la procédure') || 'Sans titre'),
+                            start,
+                            end,
+                          };
+                        })
+                        .filter(Boolean) as { id: string; title: string; start: Date; end: Date; }[];
+
+                      if (items.length === 0) {
+                        return <p className="text-xs text-gray-500 px-1">Aucun projet ne correspond aux filtres sélectionnés.</p>;
+                      }
+
+                      const today = new Date();
+
+                      // Option : limiter ou non à la période actuelle (M-1 → ...)
+                      const cutoff = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                      const visibleItems = ganttLimitToCurrentPeriod
+                        ? items.filter(i => i.end >= cutoff)
+                        : items;
+
+                      if (visibleItems.length === 0) {
+                        return <p className="text-xs text-gray-500 px-1">Aucun projet à afficher pour les filtres sélectionnés.</p>;
+                      }
+
+                      const minStart = new Date(Math.min(...visibleItems.map(i => i.start.getTime())));
+                      const maxEnd = new Date(Math.max(...visibleItems.map(i => i.end.getTime())));
+
+                      // Normaliser sur le premier jour du mois, en ne montrant que depuis cutoff (M-1) minimum si la limitation est active
+                      const rawStartMonth = new Date(minStart.getFullYear(), minStart.getMonth(), 1);
+                      const startMonth = ganttLimitToCurrentPeriod && rawStartMonth < cutoff ? cutoff : rawStartMonth;
+                      const endMonth = new Date(maxEnd.getFullYear(), maxEnd.getMonth(), 1);
+
+                      const months: Date[] = [];
+                      let cursor = new Date(startMonth);
+                      while (cursor <= endMonth) {
+                        months.push(new Date(cursor));
+                        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+                      }
+
+                      // Groupes d'années pour l'en-tête supérieur
+                      const yearGroups: { year: number; count: number }[] = [];
+                      months.forEach(m => {
+                        const y = m.getFullYear();
+                        const last = yearGroups[yearGroups.length - 1];
+                        if (!last || last.year !== y) {
+                          yearGroups.push({ year: y, count: 1 });
+                        } else {
+                          last.count += 1;
+                        }
+                      });
+
+                      const totalMonths = Math.max(months.length, 1);
+
+                      // Position de la date du jour (trait vertical)
+                      const todayMonthKey = monthKey(new Date(today.getFullYear(), today.getMonth(), 1));
+                      const startMonthKey = monthKey(startMonth);
+                      const endMonthKey = monthKey(endMonth);
+                      let todayPct: number | null = null;
+                      if (todayMonthKey >= startMonthKey && todayMonthKey <= endMonthKey) {
+                        const idx = todayMonthKey - startMonthKey + 0.5; // centre du mois
+                        todayPct = (idx / totalMonths) * 100;
+                      }
+
+                      return (
+                        <>
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">Projets (vue mensuelle)</p>
+                              <p className="text-lg font-bold text-gray-900">{items.length} projet{items.length > 1 ? 's' : ''}</p>
+                            </div>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <div className="min-w-[800px]">
+                              {/* En-tête années */}
+                              <div className="grid grid-cols-[220px_1fr] text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                <div className="px-2" />
+                                <div className="flex">
+                                  {yearGroups.map(group => (
+                                    <div
+                                      key={group.year}
+                                      className="text-center border-l border-gray-100 first:border-l-0 flex items-center justify-center"
+                                      style={{ flex: group.count }}
+                                    >
+                                      {group.year}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* En-tête des mois */}
+                              <div className="grid grid-cols-[220px_1fr] mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-1">
+                                <div className="px-2">Projet</div>
+                                <div className="flex">
+                                  {months.map((m, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex-1 text-center border-l border-gray-100 first:border-l-0"
+                                    >
+                                      {m.toLocaleString('fr-FR', { month: 'short' })}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Lignes projets */}
+                              <div className="space-y-2">
+                                {visibleItems.map(item => {
+                                  const startIdx = monthKey(item.start) - startMonthKey;
+                                  const endIdx = monthKey(item.end) - startMonthKey;
+                                  const span = Math.max(1, endIdx - startIdx + 1);
+                                  const leftPct = (startIdx / totalMonths) * 100;
+                                  const widthPct = (span / totalMonths) * 100;
+
+                                  return (
+                                    <div
+                                      key={item.id + item.title + item.start.toISOString()}
+                                      className="grid grid-cols-[220px_1fr] items-center gap-2"
+                                    >
+                                      <div className="pr-2 text-xs font-semibold text-gray-800 truncate">
+                                        {item.title}
+                                      </div>
+                                      <div className="relative h-6 bg-gray-50 rounded-xl overflow-hidden">
+                                        {/* Trait vertical date du jour */}
+                                        {todayPct !== null && (
+                                          <div
+                                            className="absolute inset-y-0 w-px bg-red-500/70"
+                                            style={{ left: `${todayPct}%` }}
+                                          />
+                                        )}
+                                        <div
+                                          className="absolute top-1/2 -translate-y-1/2 h-3 rounded-full bg-gradient-to-r from-emerald-300 to-emerald-500 shadow-sm"
+                                          style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Vue Gantt - Procédures (jalons de publication) */}
+                {ganttView === 'procedures' && (
+                  <div className="bg-white border border-gray-100 rounded-[2rem] shadow-sm p-6 space-y-4">
+                    {(() => {
+                      const toDate = (s: any): Date | null => {
+                        if (!s && s !== 0) return null;
+                        const str = String(s).trim();
+                        const numValue = parseFloat(str);
+                        if (!isNaN(numValue) && numValue >= 10000 && numValue < 1000000 && /^\d+(\.\d+)?$/.test(str)) {
+                          const d = excelDateToJSDate(numValue);
+                          if (d && !isNaN(d.getTime())) return d;
+                        }
+                        const parts = str.includes('/') ? str.split('/') : str.split('-');
+                        if (parts.length === 3) {
+                          const [a, b, c] = parts;
+                          if (str.includes('/')) {
+                            const y = parseInt(c, 10), m = parseInt(b, 10) - 1, d = parseInt(a, 10);
+                            if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m, d);
+                          } else {
+                            const y = parseInt(a, 10), m = parseInt(b, 10) - 1, d = parseInt(c, 10);
+                            if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m, d);
+                          }
+                        }
+                        const dt = new Date(str);
+                        return isNaN(dt.getTime()) ? null : dt;
+                      };
+                      const monthKey = (d: Date) => d.getFullYear() * 12 + d.getMonth();
+
+                      const filteredProcedures = procedures.filter(p => {
+                        const ach = String(getProp(p, 'Acheteur') || '');
+                        const pid = String(getProp(p, 'IDProjet') || '');
+                        const type = String(getProp(p, 'Type de procédure') || '');
+                        const ccag = String(getProp(p, 'CCAG') || '');
+                        const achOk = selectedAcheteurs.length === 0 || selectedAcheteurs.includes(ach);
+                        const typeOk = selectedProcTypes.length === 0 || selectedProcTypes.includes(type);
+                        const ccagOk = selectedCcags.length === 0 || selectedCcags.includes(ccag);
+                        const textOk = !projectSearch || pid.toLowerCase().includes(projectSearch.toLowerCase()) || String(getProp(p, 'Nom de la procédure') || '').toLowerCase().includes(projectSearch.toLowerCase());
+                        return achOk && typeOk && ccagOk && textOk;
+                      });
+
+                      const items = filteredProcedures
+                        .map(p => {
+                          const start = toDate(getProp(p, 'date_de_lancement_de_la_consultation'));
+                          const end =
+                            toDate(getProp(p, 'Date d\'ouverture des offres')) ||
+                            toDate(getProp(p, 'Date de remise des offres finales')) ||
+                            toDate(getProp(p, 'Date de remise des offres')) ||
+                            start;
+                          if (!start || !end) return null;
+                          return {
+                            id: String(getProp(p, 'NumProc') || ''),
+                            afpa: String(getProp(p, 'Numéro de procédure (Afpa)') || ''),
+                            title: String(getProp(p, 'Nom de la procédure') || getProp(p, 'Objet court') || 'Sans titre'),
+                            start,
+                            end,
+                            dates: {
+                              lancement: start,
+                              candidatures: toDate(getProp(p, 'Date de remise des candidatures')),
+                              offres: toDate(getProp(p, 'Date de remise des offres')),
+                              offresFinales: toDate(getProp(p, 'Date de remise des offres finales')),
+                              ouverture: toDate(getProp(p, 'Date d\'ouverture des offres')),
+                            },
+                          };
+                        })
+                        .filter(Boolean) as {
+                          id: string;
+                          afpa: string;
+                          title: string;
+                          start: Date;
+                          end: Date;
+                          dates: {
+                            lancement: Date | null;
+                            candidatures: Date | null;
+                            offres: Date | null;
+                            offresFinales: Date | null;
+                            ouverture: Date | null;
+                          };
+                        }[];
+
+                      if (items.length === 0) {
+                        return <p className="text-xs text-gray-500 px-1">Aucune procédure ne correspond aux filtres sélectionnés.</p>;
+                      }
+
+                      const today = new Date();
+                      const cutoff = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                      const visibleItems = ganttLimitToCurrentPeriod
+                        ? items.filter(i => i.end >= cutoff)
+                        : items;
+
+                      if (visibleItems.length === 0) {
+                        return <p className="text-xs text-gray-500 px-1">Aucune procédure à afficher pour les filtres sélectionnés.</p>;
+                      }
+
+                      const minStart = new Date(Math.min(...visibleItems.map(i => i.start.getTime())));
+                      const maxEnd = new Date(Math.max(...visibleItems.map(i => i.end.getTime())));
+                      const rawStartMonth = new Date(minStart.getFullYear(), minStart.getMonth(), 1);
+                      const startMonth = ganttLimitToCurrentPeriod && rawStartMonth < cutoff ? cutoff : rawStartMonth;
+                      const endMonth = new Date(maxEnd.getFullYear(), maxEnd.getMonth(), 1);
+
+                      const months: Date[] = [];
+                      let cursor = new Date(startMonth);
+                      while (cursor <= endMonth) {
+                        months.push(new Date(cursor));
+                        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+                      }
+
+                      const yearGroups: { year: number; count: number }[] = [];
+                      months.forEach(m => {
+                        const y = m.getFullYear();
+                        const last = yearGroups[yearGroups.length - 1];
+                        if (!last || last.year !== y) {
+                          yearGroups.push({ year: y, count: 1 });
+                        } else {
+                          last.count += 1;
+                        }
+                      });
+
+                      const totalMonths = Math.max(months.length, 1);
+                      const startMonthKey = monthKey(startMonth);
+
+                      // Position de la date du jour pour le trait vertical
+                      const todayMonthKey = monthKey(new Date(today.getFullYear(), today.getMonth(), 1));
+                      let todayPct: number | null = null;
+                      if (todayMonthKey >= startMonthKey && todayMonthKey <= monthKey(endMonth)) {
+                        const idx = todayMonthKey - startMonthKey + 0.5;
+                        todayPct = (idx / totalMonths) * 100;
+                      }
+
+                      const positionForDate = (d: Date | null) => {
+                        if (!d) return null;
+                        const idx = monthKey(d) - startMonthKey;
+                        return Math.min(Math.max(idx, 0), totalMonths - 1) + 0.5; // milieu du mois
+                      };
+
+                      return (
+                        <>
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">Procédures (jalons de publication)</p>
+                              <p className="text-lg font-bold text-gray-900">{items.length} procédure{items.length > 1 ? 's' : ''}</p>
+                            </div>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <div className="min-w-[900px]">
+                              {/* En-tête années */}
+                              <div className="grid grid-cols-[260px_1fr] text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                <div className="px-2" />
+                                <div className="flex">
+                                  {yearGroups.map(group => (
+                                    <div
+                                      key={group.year}
+                                      className="text-center border-l border-gray-100 first:border-l-0 flex items-center justify-center"
+                                      style={{ flex: group.count }}
+                                    >
+                                      {group.year}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* En-tête des mois */}
+                              <div className="grid grid-cols-[260px_1fr] mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-1">
+                                <div className="px-2">Procédure</div>
+                                <div className="flex">
+                                  {months.map((m, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex-1 text-center border-l border-gray-100 first:border-l-0"
+                                    >
+                                      {m.toLocaleString('fr-FR', { month: 'short' })}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Lignes procédures */}
+                              <div className="space-y-3">
+                                {visibleItems.map(item => {
+                                  const startIdx = monthKey(item.start) - startMonthKey;
+                                  const endIdx = monthKey(item.end) - startMonthKey;
+                                  const span = Math.max(1, endIdx - startIdx + 1);
+                                  const leftPct = (startIdx / totalMonths) * 100;
+                                  const widthPct = (span / totalMonths) * 100;
+
+                                  const posCandid = positionForDate(item.dates.candidatures);
+                                  const posOffres = positionForDate(item.dates.offres);
+                                  const posOffresFinales = positionForDate(item.dates.offresFinales);
+                                  const posOuverture = positionForDate(item.dates.ouverture);
+
+                                  const markerStyle = (pos: number | null, color: string) =>
+                                    pos == null
+                                      ? { display: 'none' }
+                                      : { left: `${(pos / totalMonths) * 100}%`, backgroundColor: color };
+
+                                  return (
+                                    <div
+                                      key={item.id + item.title + item.start.toISOString()}
+                                      className="grid grid-cols-[260px_1fr] items-center gap-2"
+                                    >
+                                      <div className="pr-2 text-xs font-semibold text-gray-900">
+                                        <div className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">
+                                          N° Afpa
+                                        </div>
+                                        <div className="inline-flex px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-bold text-blue-700 max-w-full truncate">
+                                          {item.afpa || item.id || 'N/C'}
+                                        </div>
+                                        <div className="mt-1 text-[11px] font-medium text-gray-900 truncate">
+                                          {item.title}
+                                        </div>
+                                      </div>
+                                      <div className="relative h-8 bg-slate-900/40 rounded-xl overflow-hidden border border-slate-700/60">
+                                        {/* Trait vertical date du jour */}
+                                        {todayPct !== null && (
+                                          <div
+                                            className="absolute inset-y-0 w-px bg-red-400/80"
+                                            style={{ left: `${todayPct}%` }}
+                                          />
+                                        )}
+                                        {/* Bande principale : période de publication */}
+                                        <div
+                                          className="absolute top-1/2 -translate-y-1/2 h-3 rounded-full bg-gradient-to-r from-cyan-400 to-sky-500"
+                                          style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                                        />
+
+                                        {/* Jalons */}
+                                        <div
+                                          className="absolute top-0 h-full w-[3px] bg-emerald-300"
+                                          style={markerStyle(positionForDate(item.dates.lancement), '#6ee7b7')}
+                                        />
+                                        <div
+                                          className="absolute top-0 h-full w-[3px] bg-amber-300"
+                                          style={markerStyle(posCandid, '#facc15')}
+                                        />
+                                        <div
+                                          className="absolute top-0 h-full w-[3px] bg-orange-400"
+                                          style={markerStyle(posOffres, '#fb923c')}
+                                        />
+                                        <div
+                                          className="absolute top-0 h-full w-[3px] bg-pink-400"
+                                          style={markerStyle(posOffresFinales, '#fb7185')}
+                                        />
+                                        <div
+                                          className="absolute top-0 h-full w-[3px] bg-indigo-300"
+                                          style={markerStyle(posOuverture, '#a5b4fc')}
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Légende jalons */}
+                          <div className="flex flex-wrap gap-4 mt-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            <div className="flex items-center gap-1">
+                              <span className="w-4 h-1 rounded-full bg-emerald-300" /> <span>Lancement</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="w-4 h-1 rounded-full bg-amber-300" /> <span>Candidatures</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="w-4 h-1 rounded-full bg-orange-400" /> <span>Offres</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="w-4 h-1 rounded-full bg-pink-400" /> <span>Offres finales</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="w-4 h-1 rounded-full bg-indigo-300" /> <span>Ouverture</span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Vue Gantt - liste détaillée synthèse existante */}
+                {ganttView === 'synthese' && (
                 <div className="space-y-4">
                   {(() => {
                     const procByProject: Record<string, { types: Set<string>; ccags: Set<string>; numProc?: string; montant?: number; }> = {};
@@ -3548,6 +4131,7 @@ const App: React.FC = () => {
                     });
                   })()}
                 </div>
+                )}
               </div>
             )}
             {(activeTab === 'dossiers' || activeTab === 'procedures') && (
