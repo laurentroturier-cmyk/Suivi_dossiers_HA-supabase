@@ -431,23 +431,50 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
     setShowNoti3Modal(true);
   };
 
+  const resetToProcedureSelection = () => {
+    setDataLoaded(false);
+    setCachedData(null);
+    setSelectedProcedure('');
+    setSearchTerm('');
+    setShowMultiLotsDashboard(false);
+    setMultiLotsAnalysis(null);
+    setNoti1Data(null);
+    setNoti5Data(null);
+    setNoti3Data([]);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Notifications rapides (NOTI1, NOTI5, NOTI3)
-          </h2>
+      {/* Conteneur principal : format paysage sur desktop, plein écran léger */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl px-6 py-4 w-full mx-4 max-w-6xl h-[90vh] flex flex-col">
+        {/* Barre de titre globale */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            {dataLoaded && (
+              <button
+                type="button"
+                onClick={resetToProcedureSelection}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <span className="text-lg leading-none">←</span>
+                <span>Choisir une autre procédure</span>
+              </button>
+            )}
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Notifications rapides (NOTI1, NOTI5, NOTI3)
+            </h2>
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            aria-label="Fermer"
           >
             <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
         {!dataLoaded ? (
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-y-auto">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Sélectionnez une procédure pour charger les données nécessaires aux notifications
             </p>
@@ -505,26 +532,21 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
             </button>
           </div>
         ) : showMultiLotsDashboard && multiLotsAnalysis && cachedData ? (
-          <MultiLotsDashboard
-            analysis={multiLotsAnalysis}
-            procedureInfo={{
-              numeroAfpa: cachedData.procedure['Numéro de procédure (Afpa)'] || '',
-              numProc: cachedData.procedure.NumProc || '',
-              objet: cachedData.procedure['Nom de la procédure'] || '',
-            }}
-            procedureData={cachedData.procedure}
-            rapportData={cachedData.rapportData}
-            onClose={() => {
-              setDataLoaded(false);
-              setCachedData(null);
-              setSelectedProcedure('');
-              setSearchTerm('');
-              setShowMultiLotsDashboard(false);
-              setMultiLotsAnalysis(null);
-            }}
-          />
+          <div className="flex-1 min-h-0">
+            <MultiLotsDashboard
+              analysis={multiLotsAnalysis}
+              procedureInfo={{
+                numeroAfpa: cachedData.procedure['Numéro de procédure (Afpa)'] || '',
+                numProc: cachedData.procedure.NumProc || '',
+                objet: cachedData.procedure['Nom de la procédure'] || '',
+              }}
+              procedureData={cachedData.procedure}
+              rapportData={cachedData.rapportData}
+              onClose={resetToProcedureSelection}
+            />
+          </div>
         ) : cachedData ? (
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-y-auto">
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
               <p className="text-sm font-medium text-green-800 dark:text-green-200">
                 ✓ Données chargées pour : {cachedData.procedure['Nom de la procédure']}
@@ -563,17 +585,7 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
               </button>
             </div>
 
-            <button
-              onClick={() => {
-                setDataLoaded(false);
-                setCachedData(null);
-                setSelectedProcedure('');
-                setSearchTerm('');
-              }}
-              className="w-full py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
-            >
-              ← Changer de procédure
-            </button>
+            {/* Le changement de procédure se fait maintenant via le bouton Retour dans la barre de titre */}
           </div>
         ) : null}
       </div>
