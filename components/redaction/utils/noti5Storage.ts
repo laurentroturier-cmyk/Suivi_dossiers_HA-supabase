@@ -1,12 +1,11 @@
 import { supabase } from '../../../lib/supabase';
-import type { Noti5Data } from '../types';
+import type { Noti5Data } from '../types/noti5';
 
 export interface Noti5Record {
-  id: string;
-  user_id: string;
   numero_procedure: string;
-  titre_marche: string | null;
-  data: Noti5Data;
+  noti1: any | null;
+  noti3: any | null;
+  noti5: Noti5Data | null;
   created_at: string;
   updated_at: string;
 }
@@ -19,54 +18,26 @@ export async function saveNoti5(
   data: Noti5Data
 ): Promise<{ success: boolean; error?: string; id?: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: 'Utilisateur non authentifié' };
-    }
-
     if (!numeroProcedure || numeroProcedure.length < 5) {
       return { success: false, error: 'Numéro de procédure invalide' };
     }
 
-    // Vérifier si un NOTI5 existe déjà pour cette procédure
-    const { data: existing } = await supabase
-      .from('noti5_documents')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('numero_procedure', numeroProcedure)
+    const record = {
+      numero_procedure: numeroProcedure,
+      noti5: data,
+    };
+
+    const { data: result, error } = await supabase
+      .from('noti_documents')
+      .upsert(record, {
+        onConflict: 'numero_procedure',
+        ignoreDuplicates: false,
+      })
+      .select()
       .single();
 
-    const titreMarche = data.objetConsultation || null;
-
-    if (existing) {
-      // Mise à jour
-      const { error } = await supabase
-        .from('noti5_documents')
-        .update({
-          titre_marche: titreMarche,
-          data: data,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id);
-
-      if (error) throw error;
-      return { success: true, id: existing.id };
-    } else {
-      // Création
-      const { data: newRecord, error } = await supabase
-        .from('noti5_documents')
-        .insert({
-          user_id: user.id,
-          numero_procedure: numeroProcedure,
-          titre_marche: titreMarche,
-          data: data,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return { success: true, id: newRecord.id };
-    }
+    if (error) throw error;
+    return { success: true, id: result?.numero_procedure };
   } catch (error: any) {
     console.error('Erreur saveNoti5:', error);
     return { success: false, error: error.message };
@@ -80,15 +51,9 @@ export async function loadNoti5(
   numeroProcedure: string
 ): Promise<{ success: boolean; data?: Noti5Data; error?: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: 'Utilisateur non authentifié' };
-    }
-
     const { data: record, error } = await supabase
-      .from('noti5_documents')
-      .select('data')
-      .eq('user_id', user.id)
+      .from('noti_documents')
+      .select('noti5')
       .eq('numero_procedure', numeroProcedure)
       .single();
 
@@ -99,7 +64,11 @@ export async function loadNoti5(
       throw error;
     }
 
-    return { success: true, data: record.data as Noti5Data };
+    if (!record?.noti5) {
+      return { success: false, error: 'Aucun NOTI5 enregistré pour cette procédure' };
+    }
+
+    return { success: true, data: record.noti5 as Noti5Data };
   } catch (error: any) {
     console.error('Erreur loadNoti5:', error);
     return { success: false, error: error.message };
@@ -111,16 +80,11 @@ export async function loadNoti5(
  */
 export async function listNoti5(): Promise<{ success: boolean; data?: Noti5Record[]; error?: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: 'Utilisateur non authentifié' };
-    }
-
     const { data: records, error } = await supabase
-      .from('noti5_documents')
+      .from('noti_documents')
       .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .not('noti5', 'is', null)
+      .order('updated_at', { ascending: false });
 
     if (error) throw error;
 
@@ -138,15 +102,9 @@ export async function deleteNoti5(
   numeroProcedure: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: 'Utilisateur non authentifié' };
-    }
-
     const { error } = await supabase
-      .from('noti5_documents')
-      .delete()
-      .eq('user_id', user.id)
+      .from('noti_documents')
+      .update({ noti5: null })
       .eq('numero_procedure', numeroProcedure);
 
     if (error) throw error;

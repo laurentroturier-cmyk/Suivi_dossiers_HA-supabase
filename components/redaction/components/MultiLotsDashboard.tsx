@@ -22,6 +22,9 @@ import {
   generateNoti3HtmlAsBlob,
   generateNoti3PdfAsBlob,
 } from '../utils/noti3HtmlGenerator';
+import { loadNoti1 } from '../utils/noti1Storage';
+import { loadNoti5 } from '../utils/noti5Storage';
+import { loadNoti3 } from '../utils/noti3Storage';
 
 interface MultiLotsDashboardProps {
   analysis: MultiLotsAnalysis;
@@ -52,6 +55,7 @@ export default function MultiLotsDashboard({
   const [previewHtml, setPreviewHtml] = useState<string>('');
   const [previewLabel, setPreviewLabel] = useState<string>('Aucun document sélectionné');
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [isOpeningNoti, setIsOpeningNoti] = useState(false);
 
   // Modals
   const [showNoti1Modal, setShowNoti1Modal] = useState(false);
@@ -244,7 +248,16 @@ export default function MultiLotsDashboard({
     setIsPreviewLoading(true);
     setPreviewLabel(`NOTI1 – ${candidat.nom}`);
     try {
-      const data = buildNoti1Data(candidat);
+      const numeroKey = getNumeroProcedureKey();
+
+      let data = buildNoti1Data(candidat);
+      if (numeroKey) {
+        const loaded = await loadNoti1(numeroKey);
+        if (loaded.success && loaded.data) {
+          data = loaded.data;
+        }
+      }
+
       const html = await generateNoti1Html(data);
       setPreviewHtml(html);
     } catch (error) {
@@ -259,7 +272,16 @@ export default function MultiLotsDashboard({
     setIsPreviewLoading(true);
     setPreviewLabel(`NOTI5 – ${candidat.nom}`);
     try {
-      const data = buildNoti5Data(candidat);
+      const numeroKey = getNumeroProcedureKey();
+
+      let data = buildNoti5Data(candidat);
+      if (numeroKey) {
+        const loaded = await loadNoti5(numeroKey);
+        if (loaded.success && loaded.data) {
+          data = loaded.data;
+        }
+      }
+
       const html = await generateNoti5Html(data);
       setPreviewHtml(html);
     } catch (error) {
@@ -274,7 +296,16 @@ export default function MultiLotsDashboard({
     setIsPreviewLoading(true);
     setPreviewLabel(`NOTI3 – ${candidat.nom} (Lot ${lotPerdu.numero})`);
     try {
-      const data = buildNoti3DataForLot(candidat, lotPerdu);
+      const numeroKey = getNumeroProcedureKey();
+
+      let data = buildNoti3DataForLot(candidat, lotPerdu);
+      if (numeroKey) {
+        const loaded = await loadNoti3(numeroKey, candidat.nom, lotPerdu.numero);
+        if (loaded.success && loaded.data) {
+          data = loaded.data;
+        }
+      }
+
       const html = await generateNoti3Html(data);
       setPreviewHtml(html);
     } catch (error) {
@@ -283,6 +314,12 @@ export default function MultiLotsDashboard({
     } finally {
       setIsPreviewLoading(false);
     }
+  };
+
+  const getNumeroProcedureKey = (): string => {
+    const full = procedureInfo.numeroAfpa || '';
+    const match = full.match(/^(\d{5})/);
+    return match ? match[1] : full.slice(0, 5);
   };
 
   // Construction des données NOTI (helpers)
@@ -643,9 +680,22 @@ export default function MultiLotsDashboard({
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <button
-                            onClick={() => {
-                              setCurrentNoti1(buildNoti1Data(candidat));
-                              setShowNoti1Modal(true);
+                            onClick={async () => {
+                              setIsOpeningNoti(true);
+                              try {
+                                const numeroKey = getNumeroProcedureKey();
+                                let notiData = buildNoti1Data(candidat);
+                                if (numeroKey) {
+                                  const loaded = await loadNoti1(numeroKey);
+                                  if (loaded.success && loaded.data) {
+                                    notiData = loaded.data;
+                                  }
+                                }
+                                setCurrentNoti1(notiData);
+                                setShowNoti1Modal(true);
+                              } finally {
+                                setIsOpeningNoti(false);
+                              }
                             }}
                             className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded"
                           >
@@ -658,9 +708,22 @@ export default function MultiLotsDashboard({
                             Aperçu NOTI1
                           </button>
                           <button
-                            onClick={() => {
-                              setCurrentNoti5(buildNoti5Data(candidat));
-                              setShowNoti5Modal(true);
+                            onClick={async () => {
+                              setIsOpeningNoti(true);
+                              try {
+                                const numeroKey = getNumeroProcedureKey();
+                                let notiData = buildNoti5Data(candidat);
+                                if (numeroKey) {
+                                  const loaded = await loadNoti5(numeroKey);
+                                  if (loaded.success && loaded.data) {
+                                    notiData = loaded.data;
+                                  }
+                                }
+                                setCurrentNoti5(notiData);
+                                setShowNoti5Modal(true);
+                              } finally {
+                                setIsOpeningNoti(false);
+                              }
                             }}
                             className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded"
                           >
@@ -695,10 +758,22 @@ export default function MultiLotsDashboard({
                           {candidat.lotsPerdus.map((lot) => (
                             <div key={lot.numero} className="flex flex-wrap items-center gap-2 mb-2">
                               <button
-                                onClick={() => {
-                                  const noti3 = buildNoti3DataForLot(candidat, lot);
-                                  setCurrentNoti3([noti3]);
-                                  setShowNoti3Modal(true);
+                                onClick={async () => {
+                                  setIsOpeningNoti(true);
+                                  try {
+                                    const numeroKey = getNumeroProcedureKey();
+                                    let noti3 = buildNoti3DataForLot(candidat, lot);
+                                    if (numeroKey) {
+                                      const loaded = await loadNoti3(numeroKey, candidat.nom, lot.numero);
+                                      if (loaded.success && loaded.data) {
+                                        noti3 = loaded.data;
+                                      }
+                                    }
+                                    setCurrentNoti3([noti3]);
+                                    setShowNoti3Modal(true);
+                                  } finally {
+                                    setIsOpeningNoti(false);
+                                  }
                                 }}
                                 className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
                               >

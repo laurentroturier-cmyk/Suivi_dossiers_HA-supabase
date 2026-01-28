@@ -82,6 +82,11 @@ const NOTI5Section: React.FC<NOTI5SectionProps> = ({ initialData }) => {
       setFormData((prev) => ({
         ...prev,
         ...initialData,
+        // Pré-remplir automatiquement le numéro de procédure avec les 5 premiers chiffres si nécessaire
+        numeroProcedure:
+          initialData.numeroProcedure && initialData.numeroProcedure.length > 5
+            ? String(initialData.numeroProcedure).slice(0, 5)
+            : initialData.numeroProcedure || prev.numeroProcedure,
         pouvoirAdjudicateur: {
           ...prev.pouvoirAdjudicateur,
           ...(initialData.pouvoirAdjudicateur || {}),

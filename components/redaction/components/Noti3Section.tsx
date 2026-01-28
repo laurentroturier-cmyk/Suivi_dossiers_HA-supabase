@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import type { Noti3Data } from "../types/noti3";
 import { exportNoti3Html, exportNoti3Pdf } from "../utils/noti3HtmlGenerator";
+import { saveNoti3, loadNoti3 } from "../utils/noti3Storage";
 import Noti3Viewer from "./Noti3Viewer";
-import { FileText, Eye, Download, Loader2 } from 'lucide-react';
+import { FileText, Eye, Download, Loader2, Save, FolderOpen, CheckCircle2, XCircle } from 'lucide-react';
 
 interface NOTI3SectionProps {
   initialData: Noti3Data;
@@ -13,10 +14,73 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
   const [showViewer, setShowViewer] = useState(false);
   const [isExportingHtml, setIsExportingHtml] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({
+    type: null,
+    message: '',
+  });
 
   useEffect(() => {
     setFormData(initialData);
   }, [initialData]);
+
+  const getNumeroProcedureKey = (): string => {
+    const match = formData.numeroProcedure?.match(/^(\d{5})/);
+    return match ? match[1] : formData.numeroProcedure?.slice(0, 5) || '';
+  };
+
+  const handleSave = async () => {
+    const numeroKey = getNumeroProcedureKey();
+    if (!/^\d{5}$/.test(numeroKey)) {
+      setStatus({ type: 'error', message: 'Numéro de procédure invalide (doit commencer par 5 chiffres)' });
+      setTimeout(() => setStatus({ type: null, message: '' }), 3000);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const result = await saveNoti3(numeroKey, formData);
+      if (!result.success) {
+        setStatus({ type: 'error', message: result.error || 'Erreur lors de la sauvegarde du NOTI3' });
+      } else {
+        setStatus({ type: 'success', message: 'NOTI3 sauvegardé pour ce candidat/lot' });
+      }
+    } catch (error) {
+      console.error('Erreur handleSave NOTI3:', error);
+      setStatus({ type: 'error', message: 'Erreur inattendue lors de la sauvegarde' });
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setStatus({ type: null, message: '' }), 3000);
+    }
+  };
+
+  const handleLoad = async () => {
+    const numeroKey = getNumeroProcedureKey();
+    if (!/^\d{5}$/.test(numeroKey)) {
+      setStatus({ type: 'error', message: 'Numéro de procédure invalide (doit commencer par 5 chiffres)' });
+      setTimeout(() => setStatus({ type: null, message: '' }), 3000);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const lotNumero = formData.notification.lots?.[0]?.numero;
+      const result = await loadNoti3(numeroKey, formData.candidat.denomination, lotNumero);
+      if (!result.success || !result.data) {
+        setStatus({ type: 'error', message: result.error || 'Aucun NOTI3 sauvegardé pour ce candidat/lot' });
+      } else {
+        setFormData(result.data);
+        setStatus({ type: 'success', message: 'NOTI3 chargé depuis la sauvegarde' });
+      }
+    } catch (error) {
+      console.error('Erreur handleLoad NOTI3:', error);
+      setStatus({ type: 'error', message: 'Erreur inattendue lors du chargement' });
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => setStatus({ type: null, message: '' }), 3000);
+    }
+  };
 
   const handleExportHtml = async () => {
     setIsExportingHtml(true);
@@ -58,8 +122,8 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
 
   return (
     <div className="space-y-6">
-      {/* En-tête avec bouton export */}
-      <div className="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700">
+      {/* En-tête avec boutons actions */}
+      <div className="flex justify-between items-start pb-4 border-b border-gray-200 dark:border-gray-700 gap-4">
         <div>
           <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300">
             NOTI3 – Notification de rejet de candidature ou d'offre
@@ -68,10 +132,27 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
             Candidat : {formData.candidat.denomination}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
+          <button
+            onClick={handleLoad}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-60"
+            title="Charger un NOTI3 sauvegardé pour ce candidat/lot"
+          >
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderOpen className="w-4 h-4" />}
+            Charger
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-60"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Sauvegarder
+          </button>
           <button
             onClick={() => setShowViewer(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg transition-colors"
           >
             <Eye className="w-4 h-4" />
             Aperçu
@@ -79,7 +160,7 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
           <button
             onClick={handleExportHtml}
             disabled={isExportingHtml || isExportingPdf}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
           >
             {isExportingHtml ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -91,7 +172,7 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
           <button
             onClick={handleExportPdf}
             disabled={isExportingHtml || isExportingPdf}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
           >
             {isExportingPdf ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -102,6 +183,24 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
           </button>
         </div>
       </div>
+
+      {/* Statut de sauvegarde/chargement */}
+      {status.type && (
+        <div
+          className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg ${
+            status.type === 'success'
+              ? 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-200'
+              : 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-200'
+          }`}
+        >
+          {status.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4" />
+          ) : (
+            <XCircle className="w-4 h-4" />
+          )}
+          <span>{status.message}</span>
+        </div>
+      )}
 
       {/* Section A - Pouvoir adjudicateur */}
       <SectionHeader title="A - Identification du pouvoir adjudicateur" />
