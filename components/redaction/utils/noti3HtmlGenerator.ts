@@ -1,6 +1,7 @@
 import { saveAs } from 'file-saver';
 import type { Noti3Data } from '../types';
 import { loadNotiLogos, generateHeaderWithLogos } from './logoLoader';
+import { exportHtmlToPdf, htmlToPdfBlob } from './pdfExport';
 
 /**
  * Génère un document HTML pour NOTI3
@@ -20,7 +21,7 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
     /* Mise en page A4 pour impression */
     @page {
       size: A4;
-      margin: 2cm;
+      margin: 2cm 2cm 2.5cm 2cm; /* haut droite bas gauche - plus d'espace en bas pour le pied de page */
     }
 
     body {
@@ -83,6 +84,7 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
       border-collapse: collapse;
       margin-bottom: 20px;
       border: 1px solid #d0d7de;
+      page-break-inside: avoid;
     }
     
     .title-table td {
@@ -138,6 +140,9 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
       margin: 24px 0 0 0;
       border: 1px solid #d0d7de;
       border-radius: 4px 4px 0 0;
+      page-break-after: avoid;
+      orphans: 3;
+      widows: 3;
     }
     
     .section-content {
@@ -147,6 +152,15 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
       padding: 10px 14px 14px;
       margin-bottom: 10px;
       background-color: #ffffff;
+      page-break-inside: avoid;
+      orphans: 3;
+      widows: 3;
+    }
+    
+    /* Groupe section-header + section-content pour éviter les coupures */
+    .section-group {
+      page-break-inside: avoid;
+      margin-bottom: 16px;
     }
     
     .field-label {
@@ -162,11 +176,21 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
     
     .checkbox-item {
       margin: 6px 0;
+      page-break-inside: avoid;
+    }
+    
+    /* Éviter les coupures dans les paragraphes */
+    p {
+      orphans: 3;
+      widows: 3;
+      page-break-inside: avoid;
     }
     
     .signature-block {
       text-align: right;
       margin-top: 24px;
+      page-break-inside: avoid;
+      page-break-before: auto;
     }
     
     .signature-block p {
@@ -192,26 +216,99 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
       body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        orphans: 3;
+        widows: 3;
       }
 
       .document {
         max-width: none;
         margin: 0;
       }
+      
+      /* Masquer les éléments non nécessaires */
+      .header-logos {
+        page-break-after: avoid;
+      }
+      
+      .header {
+        page-break-after: avoid;
+        margin-bottom: 15px;
+      }
+      
+      .title-table {
+        page-break-after: avoid;
+        margin-bottom: 15px;
+      }
+      
+      .intro {
+        page-break-after: avoid;
+        margin-bottom: 20px;
+      }
 
+      /* Sections : éviter les coupures */
       .section-header {
         page-break-after: avoid;
+        page-break-inside: avoid;
+        margin-top: 20px;
       }
 
       .section-content {
         page-break-inside: avoid;
+        page-break-before: avoid;
       }
-
+      
+      .section-group {
+        page-break-inside: avoid;
+      }
+      
+      /* Tableaux : éviter les coupures */
+      table {
+        page-break-inside: avoid;
+      }
+      
+      tr {
+        page-break-inside: avoid;
+      }
+      
+      /* Paragraphes et listes */
+      p {
+        orphans: 3;
+        widows: 3;
+        page-break-inside: avoid;
+      }
+      
+      .checkbox-item {
+        page-break-inside: avoid;
+      }
+      
+      /* Signature : toujours sur une nouvelle page si possible */
+      .signature-block {
+        page-break-inside: avoid;
+        margin-top: 30px;
+      }
+      
+      /* Footer fixe en bas de page */
       .footer {
         position: fixed;
         bottom: 0.5cm;
-        left: 0;
-        right: 0;
+        left: 2cm;
+        right: 2cm;
+        text-align: center;
+        font-size: 8pt;
+        padding-top: 4px;
+        border-top: 1px solid #d1d5db;
+        color: #6b7280;
+        background-color: #ffffff;
+      }
+      
+      /* Éviter les pages presque vides */
+      .section-content:first-child {
+        page-break-before: auto;
+      }
+      
+      /* Espacement optimal entre sections */
+      .section-group + .section-group {
+        margin-top: 20px;
       }
     }
   </style>
@@ -242,17 +339,20 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
   </p>
   
   <!-- Section A -->
-  <div class="section-header">A - Identification du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
-  <div class="section-content">
-    <div class="field-label">AFPA</div>
-    <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.nom)}</div>
-    <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.adresseVoie)}</div>
-    <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.codePostal)} ${escapeHtml(data.pouvoirAdjudicateur.ville)}</div>
+  <div class="section-group">
+    <div class="section-header">A - Identification du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
+    <div class="section-content">
+      <div class="field-label">AFPA</div>
+      <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.nom)}</div>
+      <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.adresseVoie)}</div>
+      <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.codePostal)} ${escapeHtml(data.pouvoirAdjudicateur.ville)}</div>
+    </div>
   </div>
   
   <!-- Section B -->
-  <div class="section-header">B - Objet de la notification</div>
-  <div class="section-content">
+  <div class="section-group">
+    <div class="section-header">B - Objet de la notification</div>
+    <div class="section-content">
     <div class="field-label">Objet de la consultation</div>
     <div class="field-value">${escapeHtml(data.objetConsultation)}</div>
     
@@ -267,81 +367,92 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
       ☒ au lot n° ${lot.numero} : ${escapeHtml(lot.intitule)}
     </div>
     `).join('') : ''}
+    </div>
   </div>
   
   <!-- Section C -->
-  <div class="section-header">C - Identification du candidat ou du soumissionnaire</div>
-  <div class="section-content">
-    <div class="field-value"><strong>${escapeHtml(data.candidat.denomination)}</strong></div>
-    <div class="field-value">${escapeHtml(data.candidat.adresse1)}</div>
-    ${data.candidat.adresse2 ? `<div class="field-value">${escapeHtml(data.candidat.adresse2)}</div>` : ''}
-    <div class="field-value">${escapeHtml(data.candidat.codePostal)} ${escapeHtml(data.candidat.ville)}</div>
-    <div class="field-value">SIRET : ${escapeHtml(data.candidat.siret)}</div>
-    <div class="field-value">Email : ${escapeHtml(data.candidat.email)}</div>
-    <div class="field-value">Téléphone : ${escapeHtml(data.candidat.telephone)}</div>
+  <div class="section-group">
+    <div class="section-header">C - Identification du candidat ou du soumissionnaire</div>
+    <div class="section-content">
+      <div class="field-value"><strong>${escapeHtml(data.candidat.denomination)}</strong></div>
+      <div class="field-value">${escapeHtml(data.candidat.adresse1)}</div>
+      ${data.candidat.adresse2 ? `<div class="field-value">${escapeHtml(data.candidat.adresse2)}</div>` : ''}
+      <div class="field-value">${escapeHtml(data.candidat.codePostal)} ${escapeHtml(data.candidat.ville)}</div>
+      <div class="field-value">SIRET : ${escapeHtml(data.candidat.siret)}</div>
+      <div class="field-value">Email : ${escapeHtml(data.candidat.email)}</div>
+      <div class="field-value">Téléphone : ${escapeHtml(data.candidat.telephone)}</div>
+    </div>
   </div>
   
   <!-- Section D -->
-  <div class="section-header">D - Notification de rejet de la candidature ou de l'offre</div>
-  <div class="section-content">
-    <p>J'ai le regret de vous faire connaître que, dans le cadre de la consultation rappelée ci-dessus :</p>
-    
-    <div class="checkbox-item">
-      ${data.rejet.type === 'candidature' ? '☒' : '☐'} votre candidature n'a pas été retenue.
+  <div class="section-group">
+    <div class="section-header">D - Notification de rejet de la candidature ou de l'offre</div>
+    <div class="section-content">
+      <p>J'ai le regret de vous faire connaître que, dans le cadre de la consultation rappelée ci-dessus :</p>
+      
+      <div class="checkbox-item">
+        ${data.rejet.type === 'candidature' ? '☒' : '☐'} votre candidature n'a pas été retenue.
+      </div>
+      
+      <div class="checkbox-item">
+        ${data.rejet.type === 'offre' ? '☒' : '☐'} votre offre n'a pas été retenue.
+      </div>
+      
+      <p><strong>pour les motifs suivants :</strong></p>
+      <div class="field-value">${escapeHtml(data.rejet.motifs)}</div>
+      
+      <p>En considération des critères de choix définis dans le Règlement de la Consultation, votre offre a obtenu ${escapeHtml(data.rejet.total)} points sur un total de 100.</p>
+      
+      <div class="field-value">Note économique : ${escapeHtml(data.rejet.noteEco)} / ${escapeHtml(data.rejet.maxEco || '60')} points</div>
+      <div class="field-value">Note technique : ${escapeHtml(data.rejet.noteTech)} / ${escapeHtml(data.rejet.maxTech || '40')} points</div>
+      
+      <p>Au classement final, votre offre se classe au rang ${escapeHtml(data.rejet.classement)}.</p>
     </div>
-    
-    <div class="checkbox-item">
-      ${data.rejet.type === 'offre' ? '☒' : '☐'} votre offre n'a pas été retenue.
-    </div>
-    
-    <p><strong>pour les motifs suivants :</strong></p>
-    <div class="field-value">${escapeHtml(data.rejet.motifs)}</div>
-    
-    <p>En considération des critères de choix définis dans le Règlement de la Consultation, votre offre a obtenu ${escapeHtml(data.rejet.total)} points sur un total de 100.</p>
-    
-    <div class="field-value">Note économique : ${escapeHtml(data.rejet.noteEco)} / ${escapeHtml(data.rejet.maxEco || '60')} points</div>
-    <div class="field-value">Note technique : ${escapeHtml(data.rejet.noteTech)} / ${escapeHtml(data.rejet.maxTech || '40')} points</div>
-    
-    <p>Au classement final, votre offre se classe au rang ${escapeHtml(data.rejet.classement)}.</p>
   </div>
   
   <!-- Section E -->
-  <div class="section-header">E - Identification de l'attributaire</div>
-  <div class="section-content">
-    <p>Le marché public ou l'accord-cadre est attribué à :</p>
-    
-    <div class="field-value"><strong>${escapeHtml(data.attributaire.denomination)}</strong></div>
-    
-    <p>En effet, en considération des critères de choix définis dans le Règlement de la Consultation, son offre a obtenu ${escapeHtml(data.attributaire.total)} points sur un total de 100.</p>
-    
-    <div class="field-value">Note économique : ${escapeHtml(data.attributaire.noteEco)} / ${escapeHtml(data.attributaire.maxEco || '60')} points</div>
-    <div class="field-value">Note technique : ${escapeHtml(data.attributaire.noteTech)} / ${escapeHtml(data.attributaire.maxTech || '40')} points</div>
-    
-    <p><strong>Pour les motifs suivants :</strong></p>
-    <div class="field-value">${escapeHtml(data.attributaire.motifs)}</div>
+  <div class="section-group">
+    <div class="section-header">E - Identification de l'attributaire</div>
+    <div class="section-content">
+      <p>Le marché public ou l'accord-cadre est attribué à :</p>
+      
+      <div class="field-value"><strong>${escapeHtml(data.attributaire.denomination)}</strong></div>
+      
+      <p>En effet, en considération des critères de choix définis dans le Règlement de la Consultation, son offre a obtenu ${escapeHtml(data.attributaire.total)} points sur un total de 100.</p>
+      
+      <div class="field-value">Note économique : ${escapeHtml(data.attributaire.noteEco)} / ${escapeHtml(data.attributaire.maxEco || '60')} points</div>
+      <div class="field-value">Note technique : ${escapeHtml(data.attributaire.noteTech)} / ${escapeHtml(data.attributaire.maxTech || '40')} points</div>
+      
+      <p><strong>Pour les motifs suivants :</strong></p>
+      <div class="field-value">${escapeHtml(data.attributaire.motifs)}</div>
+    </div>
   </div>
   
   <!-- Section F -->
-  <div class="section-header">F - Délais et voies de recours</div>
-  <div class="section-content">
-    <p>Le délai de suspension de la signature du marché public ou de l'accord-cadre est de ${escapeHtml(data.delaiStandstill)} jours, à compter de la date d'envoi de la présente notification.</p>
-    
-    <p><strong>Référé précontractuel :</strong> Le candidat peut, s'il le souhaite, exercer un référé précontractuel contre la présente procédure de passation, devant le président du tribunal administratif, avant la signature du marché public ou de l'accord-cadre.</p>
-    
-    <p><strong>Recours pour excès de pouvoir :</strong> Dans l'hypothèse d'une déclaration d'infructuosité de la procédure, le candidat peut, s'il le souhaite, exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif. Le juge doit être saisi dans un délai de deux mois à compter de la notification du présent courrier.</p>
+  <div class="section-group">
+    <div class="section-header">F - Délais et voies de recours</div>
+    <div class="section-content">
+      <p>Le délai de suspension de la signature du marché public ou de l'accord-cadre est de ${escapeHtml(data.delaiStandstill)} jours, à compter de la date d'envoi de la présente notification.</p>
+      
+      <p><strong>Référé précontractuel :</strong> Le candidat peut, s'il le souhaite, exercer un référé précontractuel contre la présente procédure de passation, devant le président du tribunal administratif, avant la signature du marché public ou de l'accord-cadre.</p>
+      
+      <p><strong>Recours pour excès de pouvoir :</strong> Dans l'hypothèse d'une déclaration d'infructuosité de la procédure, le candidat peut, s'il le souhaite, exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif. Le juge doit être saisi dans un délai de deux mois à compter de la notification du présent courrier.</p>
+    </div>
   </div>
   
   <!-- Section G -->
-  <div class="section-header">G - Signature du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
-  <div class="section-content">
-    <div class="signature-block">
-      <p>À ${escapeHtml(data.signature.lieu)}, le ${escapeHtml(data.signature.date)}</p>
-      <p><strong>Signature</strong></p>
-      <p class="signature-note">(représentant du pouvoir adjudicateur ou de l'entité adjudicatrice habilité à signer le marché public)</p>
-      <p>${escapeHtml(data.signature.signataireTitre)}</p>
+  <div class="section-group">
+    <div class="section-header">G - Signature du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
+    <div class="section-content">
+      <div class="signature-block">
+        <p>À ${escapeHtml(data.signature.lieu)}, le ${escapeHtml(data.signature.date)}</p>
+        <p><strong>Signature</strong></p>
+        <p class="signature-note">(représentant du pouvoir adjudicateur ou de l'entité adjudicatrice habilité à signer le marché public)</p>
+        <p>${escapeHtml(data.signature.signataireTitre)}</p>
+      </div>
+      
+      <p style="margin-top: 30px;"><strong>Pour la Direction Nationale des Achats</strong></p>
     </div>
-    
-    <p style="margin-top: 30px;"><strong>Pour la Direction Nationale des Achats</strong></p>
   </div>
   
   <!-- Footer -->
@@ -366,11 +477,29 @@ export async function exportNoti3Html(data: Noti3Data): Promise<void> {
 }
 
 /**
+ * Exporte le NOTI3 directement en PDF
+ */
+export async function exportNoti3Pdf(data: Noti3Data): Promise<void> {
+  const html = await generateNoti3Html(data);
+  const fileName = `NOTI3_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.candidat.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  await exportHtmlToPdf(html, fileName);
+}
+
+/**
  * Génère le HTML comme Blob pour utilisation dans ZIP
  */
 export async function generateNoti3HtmlAsBlob(data: Noti3Data): Promise<Blob> {
   const html = await generateNoti3Html(data);
   return new Blob([html], { type: 'text/html;charset=utf-8' });
+}
+
+/**
+ * Génère un Blob PDF pour usage dans les ZIP multi-lots
+ */
+export async function generateNoti3PdfAsBlob(data: Noti3Data): Promise<Blob> {
+  const html = await generateNoti3Html(data);
+  const fileName = `NOTI3_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.candidat.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  return htmlToPdfBlob(html, fileName);
 }
 
 /**

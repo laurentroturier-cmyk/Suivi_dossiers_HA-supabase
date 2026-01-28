@@ -7,9 +7,9 @@ import type { Noti5Data } from '../types/noti5';
 import type { Noti3Data } from '../types/noti3';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { generateNoti1HtmlAsBlob } from '../utils/noti1HtmlGenerator';
-import { generateNoti5HtmlAsBlob } from '../utils/noti5HtmlGenerator';
-import { generateNoti3HtmlAsBlob } from '../utils/noti3HtmlGenerator';
+import { generateNoti1HtmlAsBlob, generateNoti1PdfAsBlob } from '../utils/noti1HtmlGenerator';
+import { generateNoti5HtmlAsBlob, generateNoti5PdfAsBlob } from '../utils/noti5HtmlGenerator';
+import { generateNoti3HtmlAsBlob, generateNoti3PdfAsBlob } from '../utils/noti3HtmlGenerator';
 
 interface MultiLotsDashboardProps {
   analysis: MultiLotsAnalysis;
@@ -88,6 +88,31 @@ export default function MultiLotsDashboard({
     }
   };
 
+  // Génération massive NOTI1 en PDF
+  const generateAllNoti1Pdf = async () => {
+    setIsGenerating(true);
+    try {
+      const zip = new JSZip();
+      const candidatsAvecLots = [...analysis.candidatsGagnants, ...analysis.candidatsMixtes];
+
+      for (const candidat of candidatsAvecLots) {
+        const noti1Data = buildNoti1Data(candidat);
+        const blob = await generateNoti1PdfAsBlob(noti1Data);
+        const fileName = `NOTI1_${sanitizeFileName(candidat.nom)}.pdf`;
+        zip.file(fileName, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      saveAs(zipBlob, `NOTI1_PDF_${procedureInfo.numeroAfpa.replace(/\//g, '-')}.zip`);
+      alert(`${candidatsAvecLots.length} PDF NOTI1 générés avec succès !`);
+    } catch (error) {
+      console.error('Erreur génération NOTI1 PDF:', error);
+      alert('Erreur lors de la génération des NOTI1 PDF');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // Génération massive NOTI5
   const generateAllNoti5 = async () => {
     setIsGenerating(true);
@@ -108,6 +133,31 @@ export default function MultiLotsDashboard({
     } catch (error) {
       console.error('Erreur génération NOTI5:', error);
       alert('Erreur lors de la génération des NOTI5');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Génération massive NOTI5 en PDF
+  const generateAllNoti5Pdf = async () => {
+    setIsGenerating(true);
+    try {
+      const zip = new JSZip();
+      const candidatsAvecLots = [...analysis.candidatsGagnants, ...analysis.candidatsMixtes];
+
+      for (const candidat of candidatsAvecLots) {
+        const noti5Data = buildNoti5Data(candidat);
+        const blob = await generateNoti5PdfAsBlob(noti5Data);
+        const fileName = `NOTI5_${sanitizeFileName(candidat.nom)}.pdf`;
+        zip.file(fileName, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      saveAs(zipBlob, `NOTI5_PDF_${procedureInfo.numeroAfpa.replace(/\//g, '-')}.zip`);
+      alert(`${candidatsAvecLots.length} PDF NOTI5 générés avec succès !`);
+    } catch (error) {
+      console.error('Erreur génération NOTI5 PDF:', error);
+      alert('Erreur lors de la génération des NOTI5 PDF');
     } finally {
       setIsGenerating(false);
     }
@@ -137,6 +187,35 @@ export default function MultiLotsDashboard({
     } catch (error) {
       console.error('Erreur génération NOTI3:', error);
       alert('Erreur lors de la génération des NOTI3');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Génération massive NOTI3 en PDF
+  const generateAllNoti3Pdf = async () => {
+    setIsGenerating(true);
+    try {
+      const zip = new JSZip();
+      const candidatsAvecPerdus = [...analysis.candidatsPerdants, ...analysis.candidatsMixtes];
+
+      for (const candidat of candidatsAvecPerdus) {
+        // 1 document par lot perdu
+        for (const lotPerdu of candidat.lotsPerdus) {
+          const noti3Data = buildNoti3DataForLot(candidat, lotPerdu);
+          const blob = await generateNoti3PdfAsBlob(noti3Data);
+          const fileName = `NOTI3_Lot${lotPerdu.numero}_${sanitizeFileName(candidat.nom)}.pdf`;
+          zip.file(fileName, blob);
+        }
+      }
+
+      const totalDocs = candidatsAvecPerdus.reduce((sum, c) => sum + c.lotsPerdus.length, 0);
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      saveAs(zipBlob, `NOTI3_PDF_${procedureInfo.numeroAfpa.replace(/\//g, '-')}.zip`);
+      alert(`${totalDocs} PDF NOTI3 générés avec succès !`);
+    } catch (error) {
+      console.error('Erreur génération NOTI3 PDF:', error);
+      alert('Erreur lors de la génération des NOTI3 PDF');
     } finally {
       setIsGenerating(false);
     }
@@ -394,6 +473,35 @@ export default function MultiLotsDashboard({
           >
             <FileText className="w-5 h-5" />
             NOTI3 ({analysis.candidatsPerdants.reduce((sum, c) => sum + c.lotsPerdus.length, 0) + analysis.candidatsMixtes.reduce((sum, c) => sum + c.lotsPerdus.length, 0)} docs)
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+          <button
+            onClick={generateAllNoti1Pdf}
+            disabled={isGenerating || (analysis.candidatsGagnants.length + analysis.candidatsMixtes.length === 0)}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
+          >
+            <FileText className="w-5 h-5" />
+            NOTI1 PDF ({analysis.candidatsGagnants.length + analysis.candidatsMixtes.length})
+          </button>
+
+          <button
+            onClick={generateAllNoti5Pdf}
+            disabled={isGenerating || (analysis.candidatsGagnants.length + analysis.candidatsMixtes.length === 0)}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
+          >
+            <FileText className="w-5 h-5" />
+            NOTI5 PDF ({analysis.candidatsGagnants.length + analysis.candidatsMixtes.length})
+          </button>
+
+          <button
+            onClick={generateAllNoti3Pdf}
+            disabled={isGenerating || (analysis.candidatsPerdants.length + analysis.candidatsMixtes.length === 0)}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
+          >
+            <FileText className="w-5 h-5" />
+            NOTI3 PDF ({analysis.candidatsPerdants.reduce((sum, c) => sum + c.lotsPerdus.length, 0) + analysis.candidatsMixtes.reduce((sum, c) => sum + c.lotsPerdus.length, 0)} docs)
           </button>
         </div>
       </div>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import type { Noti3Data } from "../types/noti3";
-import { exportNoti3Html } from "../utils/noti3HtmlGenerator";
+import { exportNoti3Html, exportNoti3Pdf } from "../utils/noti3HtmlGenerator";
 import Noti3Viewer from "./Noti3Viewer";
-import { FileText, Eye, Download } from 'lucide-react';
+import { FileText, Eye, Download, Loader2 } from 'lucide-react';
 
 interface NOTI3SectionProps {
   initialData: Noti3Data;
@@ -11,21 +11,34 @@ interface NOTI3SectionProps {
 export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
   const [formData, setFormData] = useState<Noti3Data>(initialData);
   const [showViewer, setShowViewer] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [isExportingHtml, setIsExportingHtml] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   useEffect(() => {
     setFormData(initialData);
   }, [initialData]);
 
-  const handleExport = async () => {
-    setIsExporting(true);
+  const handleExportHtml = async () => {
+    setIsExportingHtml(true);
     try {
       await exportNoti3Html(formData);
     } catch (error) {
       console.error('Erreur export HTML:', error);
       alert('Erreur lors de l\'export HTML');
     } finally {
-      setIsExporting(false);
+      setIsExportingHtml(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+    try {
+      await exportNoti3Pdf(formData);
+    } catch (error) {
+      console.error('Erreur export PDF:', error);
+      alert('Erreur lors de l\'export PDF');
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -64,12 +77,28 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
             Aperçu
           </button>
           <button
-            onClick={handleExport}
-            disabled={isExporting}
+            onClick={handleExportHtml}
+            disabled={isExportingHtml || isExportingPdf}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
           >
-            <Download className="w-4 h-4" />
-            {isExporting ? 'Export...' : 'Export HTML'}
+            {isExportingHtml ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            Export HTML
+          </button>
+          <button
+            onClick={handleExportPdf}
+            disabled={isExportingHtml || isExportingPdf}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+          >
+            {isExportingPdf ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            Export PDF
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Save, Loader2, CheckCircle2, XCircle, FolderOpen, Plus, Trash2, Eye } from 'lucide-react';
 import { saveNoti1, loadNoti1 } from '../utils/noti1Storage';
-import { exportNoti1Html } from '../utils/noti1HtmlGenerator';
+import { exportNoti1Html, exportNoti1Pdf } from '../utils/noti1HtmlGenerator';
 import Noti1Viewer from './Noti1Viewer';
 import type { Noti1Data } from '../types/noti1';
 
@@ -52,7 +52,8 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [isExportingHtml, setIsExportingHtml] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({
     type: null,
@@ -108,14 +109,26 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
   };
 
   const handleExportHtml = async () => {
-    setIsExporting(true);
+    setIsExportingHtml(true);
     try {
       await exportNoti1Html(formData);
     } catch (error) {
       console.error('Erreur export HTML:', error);
       alert('Erreur lors de l\'export HTML');
     } finally {
-      setIsExporting(false);
+      setIsExportingHtml(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+    try {
+      await exportNoti1Pdf(formData);
+    } catch (error) {
+      console.error('Erreur export PDF:', error);
+      alert('Erreur lors de l\'export PDF');
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -214,15 +227,28 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
 
             <button
               onClick={handleExportHtml}
-              disabled={isExporting}
+              disabled={isExportingHtml || isExportingPdf}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
-              {isExporting ? (
+              {isExportingHtml ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Download className="w-4 h-4" />
               )}
               Export HTML
+            </button>
+
+            <button
+              onClick={handleExportPdf}
+              disabled={isExportingHtml || isExportingPdf}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              Export PDF
             </button>
           </div>
         </div>

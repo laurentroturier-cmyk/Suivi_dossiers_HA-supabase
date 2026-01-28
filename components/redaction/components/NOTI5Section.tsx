@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Save, Loader2, CheckCircle2, XCircle, FolderOpen, Eye } from 'lucide-react';
 import { saveNoti5, loadNoti5 } from '../utils/noti5Storage';
-import { exportNoti5Html } from '../utils/noti5HtmlGenerator';
+import { exportNoti5Html, exportNoti5Pdf } from '../utils/noti5HtmlGenerator';
 import Noti5Viewer from './Noti5Viewer';
 import type { Noti5Data } from '../types/noti5';
 
@@ -67,7 +67,8 @@ const NOTI5Section: React.FC<NOTI5SectionProps> = ({ initialData }) => {
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [isExportingHtml, setIsExportingHtml] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({
     type: null,
@@ -131,14 +132,26 @@ const NOTI5Section: React.FC<NOTI5SectionProps> = ({ initialData }) => {
   };
 
   const handleExportHtml = async () => {
-    setIsExporting(true);
+    setIsExportingHtml(true);
     try {
       await exportNoti5Html(formData);
     } catch (error) {
       console.error('Erreur export HTML:', error);
-      alert('Erreur lors de l\'export HTML');
+      alert("Erreur lors de l'export HTML");
     } finally {
-      setIsExporting(false);
+      setIsExportingHtml(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+    try {
+      await exportNoti5Pdf(formData);
+    } catch (error) {
+      console.error('Erreur export PDF:', error);
+      alert("Erreur lors de l'export PDF");
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -243,10 +256,10 @@ const NOTI5Section: React.FC<NOTI5SectionProps> = ({ initialData }) => {
 
             <button
               onClick={handleExportHtml}
-              disabled={isExporting}
+              disabled={isExportingHtml || isExportingPdf}
               className="py-2 px-4 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold rounded-lg flex items-center gap-2"
             >
-              {isExporting ? (
+              {isExportingHtml ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Export...
@@ -255,6 +268,24 @@ const NOTI5Section: React.FC<NOTI5SectionProps> = ({ initialData }) => {
                 <>
                   <Download className="w-4 h-4" />
                   Export HTML
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleExportPdf}
+              disabled={isExportingHtml || isExportingPdf}
+              className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-semibold rounded-lg flex items-center gap-2"
+            >
+              {isExportingPdf ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Export...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  Export PDF
                 </>
               )}
             </button>

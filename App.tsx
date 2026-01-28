@@ -29,9 +29,10 @@ import {
 import { calculateStatutConsultation } from './utils/statutCalculator';
 import { DocumentViewer } from './components/DocumentViewer';
 import { UploadView, Dashboard, LotSelectionView, GlobalTableView, parseExcelFile, AnalysisData } from './components/an01';
-import 'html2pdf.js';
+import html2pdf from 'html2pdf.js';
 import html2canvas from 'html2canvas';
 // Expose for components relying on window globals
+(window as any).html2pdf = (window as any).html2pdf || html2pdf;
 (window as any).html2canvas = (window as any).html2canvas || html2canvas;
 
 // Import Authentication Components

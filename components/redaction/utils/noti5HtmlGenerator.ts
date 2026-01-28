@@ -1,6 +1,7 @@
 import { saveAs } from 'file-saver';
 import type { Noti5Data } from '../types';
 import { loadNotiLogos, generateHeaderWithLogos } from './logoLoader';
+import { exportHtmlToPdf, htmlToPdfBlob } from './pdfExport';
 
 /**
  * Génère un document HTML pour NOTI5
@@ -20,7 +21,7 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
     /* Mise en page A4 pour impression */
     @page {
       size: A4;
-      margin: 2cm;
+      margin: 2cm 2cm 2.5cm 2cm; /* haut droite bas gauche - plus d'espace en bas pour le pied de page */
     }
     
     body {
@@ -83,6 +84,7 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
       border-collapse: collapse;
       margin-bottom: 20px;
       border: 1px solid #d0d7de;
+      page-break-inside: avoid;
     }
     
     .title-table td {
@@ -138,6 +140,9 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
       margin: 24px 0 0 0;
       border: 1px solid #d0d7de;
       border-radius: 4px 4px 0 0;
+      page-break-after: avoid;
+      orphans: 3;
+      widows: 3;
     }
     
     .section-content {
@@ -147,6 +152,15 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
       padding: 10px 14px 14px;
       margin-bottom: 10px;
       background-color: #ffffff;
+      page-break-inside: avoid;
+      orphans: 3;
+      widows: 3;
+    }
+    
+    /* Groupe section-header + section-content pour éviter les coupures */
+    .section-group {
+      page-break-inside: avoid;
+      margin-bottom: 16px;
     }
     
     .field-label {
@@ -169,15 +183,26 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
     
     .checkbox-item {
       margin: 6px 0;
+      page-break-inside: avoid;
     }
     
     .checkbox-item-indented {
       margin: 4px 0 4px 26px;
+      page-break-inside: avoid;
+    }
+    
+    /* Éviter les coupures dans les paragraphes */
+    p {
+      orphans: 3;
+      widows: 3;
+      page-break-inside: avoid;
     }
     
     .signature-block {
       text-align: right;
       margin-top: 24px;
+      page-break-inside: avoid;
+      page-break-before: auto;
     }
     
     .signature-block p {
@@ -203,26 +228,100 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
       body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        orphans: 3;
+        widows: 3;
       }
 
       .document {
         max-width: none;
         margin: 0;
       }
+      
+      /* Masquer les éléments non nécessaires */
+      .header-logos {
+        page-break-after: avoid;
+      }
+      
+      .header {
+        page-break-after: avoid;
+        margin-bottom: 15px;
+      }
+      
+      .title-table {
+        page-break-after: avoid;
+        margin-bottom: 15px;
+      }
+      
+      .intro {
+        page-break-after: avoid;
+        margin-bottom: 20px;
+      }
 
+      /* Sections : éviter les coupures */
       .section-header {
         page-break-after: avoid;
+        page-break-inside: avoid;
+        margin-top: 20px;
       }
 
       .section-content {
         page-break-inside: avoid;
+        page-break-before: avoid;
       }
-
+      
+      .section-group {
+        page-break-inside: avoid;
+      }
+      
+      /* Tableaux : éviter les coupures */
+      table {
+        page-break-inside: avoid;
+      }
+      
+      tr {
+        page-break-inside: avoid;
+      }
+      
+      /* Paragraphes et listes */
+      p {
+        orphans: 3;
+        widows: 3;
+        page-break-inside: avoid;
+      }
+      
+      .checkbox-item,
+      .checkbox-item-indented {
+        page-break-inside: avoid;
+      }
+      
+      /* Signature : toujours sur une nouvelle page si possible */
+      .signature-block {
+        page-break-inside: avoid;
+        margin-top: 30px;
+      }
+      
+      /* Footer fixe en bas de page */
       .footer {
         position: fixed;
         bottom: 0.5cm;
-        left: 0;
-        right: 0;
+        left: 2cm;
+        right: 2cm;
+        text-align: center;
+        font-size: 8pt;
+        padding-top: 4px;
+        border-top: 1px solid #d1d5db;
+        color: #6b7280;
+        background-color: #ffffff;
+      }
+      
+      /* Éviter les pages presque vides */
+      .section-content:first-child {
+        page-break-before: auto;
+      }
+      
+      /* Espacement optimal entre sections */
+      .section-group + .section-group {
+        margin-top: 20px;
       }
     }
   </style>
@@ -253,152 +352,168 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
   </p>
   
   <!-- Section A -->
-  <div class="section-header">A - Identification du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
-  <div class="section-content">
-    <p class="field-note">(Reprendre le contenu de la mention figurant dans les documents de la consultation.)</p>
-    <div class="field-label">AFPA</div>
-    <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.nom)}</div>
-    <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.adresseVoie)}</div>
-    <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.codePostal)} ${escapeHtml(data.pouvoirAdjudicateur.ville)}</div>
+  <div class="section-group">
+    <div class="section-header">A - Identification du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
+    <div class="section-content">
+      <p class="field-note">(Reprendre le contenu de la mention figurant dans les documents de la consultation.)</p>
+      <div class="field-label">AFPA</div>
+      <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.nom)}</div>
+      <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.adresseVoie)}</div>
+      <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.codePostal)} ${escapeHtml(data.pouvoirAdjudicateur.ville)}</div>
+    </div>
   </div>
   
   <!-- Section B -->
-  <div class="section-header">B - Objet de la consultation</div>
-  <div class="section-content">
-    <p class="field-note">(Reprendre le contenu de la mention figurant dans les documents de la consultation.)</p>
-    <div class="field-label">Objet de la consultation</div>
-    <div class="field-value">${escapeHtml(data.objetConsultation)}</div>
+  <div class="section-group">
+    <div class="section-header">B - Objet de la consultation</div>
+    <div class="section-content">
+      <p class="field-note">(Reprendre le contenu de la mention figurant dans les documents de la consultation.)</p>
+      <div class="field-label">Objet de la consultation</div>
+      <div class="field-value">${escapeHtml(data.objetConsultation)}</div>
+    </div>
   </div>
   
   <!-- Section C -->
-  <div class="section-header">C - Identification de l'attributaire</div>
-  <div class="section-content">
-    <p class="field-note">[Indiquer le nom commercial et la dénomination sociale de l'attributaire individuel ou de chaque membre du groupement d'entreprises attributaire, les adresses de son établissement et de son siège social (si elle est différente de celle de l'établissement), son adresse électronique, ses numéros de téléphone et de télécopie et son numéro SIRET. En cas de groupement d'entreprises attributaire, identifier précisément le mandataire du groupement.]</p>
-    
-    <div class="field-label">Entreprise</div>
-    <div class="field-value">${escapeHtml(data.attributaire.denomination)}</div>
-    
-    <div class="field-label">Adresse 1</div>
-    <div class="field-value">${escapeHtml(data.attributaire.adresse1)}</div>
-    
-    ${data.attributaire.adresse2 ? `
-    <div class="field-label">Adresse 2</div>
-    <div class="field-value">${escapeHtml(data.attributaire.adresse2)}</div>
-    ` : ''}
-    
-    <div class="field-value">${escapeHtml(data.attributaire.codePostal)} ${escapeHtml(data.attributaire.ville)}</div>
-    
-    <div class="field-label">SIRET</div>
-    <div class="field-value">${escapeHtml(data.attributaire.siret)}</div>
-    
-    <div class="field-label">Email</div>
-    <div class="field-value">${escapeHtml(data.attributaire.email)}</div>
+  <div class="section-group">
+    <div class="section-header">C - Identification de l'attributaire</div>
+    <div class="section-content">
+      <p class="field-note">[Indiquer le nom commercial et la dénomination sociale de l'attributaire individuel ou de chaque membre du groupement d'entreprises attributaire, les adresses de son établissement et de son siège social (si elle est différente de celle de l'établissement), son adresse électronique, ses numéros de téléphone et de télécopie et son numéro SIRET. En cas de groupement d'entreprises attributaire, identifier précisément le mandataire du groupement.]</p>
+      
+      <div class="field-label">Entreprise</div>
+      <div class="field-value">${escapeHtml(data.attributaire.denomination)}</div>
+      
+      <div class="field-label">Adresse 1</div>
+      <div class="field-value">${escapeHtml(data.attributaire.adresse1)}</div>
+      
+      ${data.attributaire.adresse2 ? `
+      <div class="field-label">Adresse 2</div>
+      <div class="field-value">${escapeHtml(data.attributaire.adresse2)}</div>
+      ` : ''}
+      
+      <div class="field-value">${escapeHtml(data.attributaire.codePostal)} ${escapeHtml(data.attributaire.ville)}</div>
+      
+      <div class="field-label">SIRET</div>
+      <div class="field-value">${escapeHtml(data.attributaire.siret)}</div>
+      
+      <div class="field-label">Email</div>
+      <div class="field-value">${escapeHtml(data.attributaire.email)}</div>
+    </div>
   </div>
   
   <!-- Section D -->
-  <div class="section-header">D - Notification de l'attribution</div>
-  <div class="section-content">
-    <p>Je vous informe que l'offre que vous avez faite au titre de la consultation désignée ci-dessus a été retenue :</p>
-    
-    <p class="field-note">(Cocher la case correspondante.)</p>
-    
-    <div class="checkbox-item">
-      ${data.notification.type === 'ensemble' ? '☒' : '☐'} pour l'ensemble du marché public (en cas de non allotissement).
-    </div>
-    
-    ${data.notification.type === 'lots' ? `
-    <div class="checkbox-item">
-      ☒ pour le(s) lot(s) n° ${data.notification.lots.map(l => `${l.numero}:${l.intitule}`).join(', ')}
-    </div>
-    ` : `
-    <div class="checkbox-item">
-      ☐ pour le(s) lot(s) n°
-    </div>
-    `}
-    
-    <p>de la procédure de passation du marché public ou de l'accord cadre (en cas d'allotissement.)</p>
-    
-    <p>L'exécution des prestations commencera :</p>
-    
-    <p class="field-note">(Cocher la case correspondante.)</p>
-    
-    <div class="checkbox-item">
-      ${data.executionPrestations.type === 'immediate' ? '☒' : '☐'} dès réception de la présente notification.
-    </div>
-    
-    <div class="checkbox-item">
-      ${data.executionPrestations.type === 'sur_commande' ? '☒' : '☐'} à réception d'un bon de commande ou d'un ordre de service que j'émettrai ultérieurement.
+  <div class="section-group">
+    <div class="section-header">D - Notification de l'attribution</div>
+    <div class="section-content">
+      <p>Je vous informe que l'offre que vous avez faite au titre de la consultation désignée ci-dessus a été retenue :</p>
+      
+      <p class="field-note">(Cocher la case correspondante.)</p>
+      
+      <div class="checkbox-item">
+        ${data.notification.type === 'ensemble' ? '☒' : '☐'} pour l'ensemble du marché public (en cas de non allotissement).
+      </div>
+      
+      ${data.notification.type === 'lots' ? `
+      <div class="checkbox-item">
+        ☒ pour le(s) lot(s) n° ${data.notification.lots.map(l => `${l.numero}:${l.intitule}`).join(', ')}
+      </div>
+      ` : `
+      <div class="checkbox-item">
+        ☐ pour le(s) lot(s) n°
+      </div>
+      `}
+      
+      <p>de la procédure de passation du marché public ou de l'accord cadre (en cas d'allotissement.)</p>
+      
+      <p>L'exécution des prestations commencera :</p>
+      
+      <p class="field-note">(Cocher la case correspondante.)</p>
+      
+      <div class="checkbox-item">
+        ${data.executionPrestations.type === 'immediate' ? '☒' : '☐'} dès réception de la présente notification.
+      </div>
+      
+      <div class="checkbox-item">
+        ${data.executionPrestations.type === 'sur_commande' ? '☒' : '☐'} à réception d'un bon de commande ou d'un ordre de service que j'émettrai ultérieurement.
+      </div>
     </div>
   </div>
   
   <!-- Section E -->
-  <div class="section-header">E - Retenue de garantie ou garantie à première demande</div>
-  <div class="section-content">
-    <p>Le marché public qui vous est notifié comporte :</p>
-    
-    <div class="checkbox-item">
-      ${data.garanties.aucuneGarantie ? '☒' : '☐'} aucune retenue de garantie ou garantie à première demande.
+  <div class="section-group">
+    <div class="section-header">E - Retenue de garantie ou garantie à première demande</div>
+    <div class="section-content">
+      <p>Le marché public qui vous est notifié comporte :</p>
+      
+      <div class="checkbox-item">
+        ${data.garanties.aucuneGarantie ? '☒' : '☐'} aucune retenue de garantie ou garantie à première demande.
+      </div>
+      
+      <div class="checkbox-item">
+        ${data.garanties.retenue.active ? '☒' : '☐'} une retenue de garantie d'un montant de ${data.garanties.retenue.pourcentage} % du montant initial du marché public ou de l'accord-cadre, que vous pouvez remplacer par :
+      </div>
+      
+      ${data.garanties.retenue.active ? `
+      <div class="checkbox-item-indented">
+        ${data.garanties.retenue.remplacablePar.garantiePremieredemande ? '☒' : '☐'} une garantie à première demande.
+      </div>
+      <div class="checkbox-item-indented">
+        ${data.garanties.retenue.remplacablePar.cautionPersonnelle ? '☒' : '☐'} une caution personnelle et solidaire.
+      </div>
+      ` : ''}
+      
+      <div class="checkbox-item">
+        ${data.garanties.garantieAvanceSuperieure30 ? '☒' : '☐'} une garantie à première demande en garantie du remboursement d'une avance supérieure à 30%. Vous ne pourrez recevoir cette avance qu'après avoir constitué cette garantie.
+      </div>
+      
+      <div class="checkbox-item">
+        ${data.garanties.garantieAvanceInferieure30.active ? '☒' : '☐'} (pour les collectivités territoriales uniquement.) une garantie à première demande en garantie du remboursement de toute ou partie d'une avance inférieure ou égale à 30%.
+      </div>
+      
+      ${data.garanties.garantieAvanceInferieure30.active ? `
+      <div class="checkbox-item-indented">
+        ${data.garanties.garantieAvanceInferieure30.remplacableParCaution ? '☒' : '☐'} vous pouvez remplacer cette garantie à première demande par une caution personnelle et solidaire.
+      </div>
+      ` : ''}
     </div>
-    
-    <div class="checkbox-item">
-      ${data.garanties.retenue.active ? '☒' : '☐'} une retenue de garantie d'un montant de ${data.garanties.retenue.pourcentage} % du montant initial du marché public ou de l'accord-cadre, que vous pouvez remplacer par :
-    </div>
-    
-    ${data.garanties.retenue.active ? `
-    <div class="checkbox-item-indented">
-      ${data.garanties.retenue.remplacablePar.garantiePremieredemande ? '☒' : '☐'} une garantie à première demande.
-    </div>
-    <div class="checkbox-item-indented">
-      ${data.garanties.retenue.remplacablePar.cautionPersonnelle ? '☒' : '☐'} une caution personnelle et solidaire.
-    </div>
-    ` : ''}
-    
-    <div class="checkbox-item">
-      ${data.garanties.garantieAvanceSuperieure30 ? '☒' : '☐'} une garantie à première demande en garantie du remboursement d'une avance supérieure à 30%. Vous ne pourrez recevoir cette avance qu'après avoir constitué cette garantie.
-    </div>
-    
-    <div class="checkbox-item">
-      ${data.garanties.garantieAvanceInferieure30.active ? '☒' : '☐'} (pour les collectivités territoriales uniquement.) une garantie à première demande en garantie du remboursement de toute ou partie d'une avance inférieure ou égale à 30%.
-    </div>
-    
-    ${data.garanties.garantieAvanceInferieure30.active ? `
-    <div class="checkbox-item-indented">
-      ${data.garanties.garantieAvanceInferieure30.remplacableParCaution ? '☒' : '☐'} vous pouvez remplacer cette garantie à première demande par une caution personnelle et solidaire.
-    </div>
-    ` : ''}
   </div>
   
   <!-- Section F -->
-  <div class="section-header">F - Pièces jointes à la présente notification</div>
-  <div class="section-content">
-    <p>Vous trouverez ci-joints :</p>
-    
-    <div class="checkbox-item">
-      ${data.piecesJointes.actEngagementPapier ? '☒' : '☐'} deux photocopies de l'acte d'engagement avec ses annexes, dont l'une est revêtue de la formule dite « d'exemplaire unique ». Cet exemplaire est destiné à être remis à l'établissement de crédit en cas de cession ou de nantissement de toute ou partie de votre créance. J'attire votre attention sur le fait qu'il n'est pas possible, en cas de perte, de délivrer un duplicata de l'exemplaire unique.
-    </div>
-    
-    <div class="checkbox-item">
-      ${data.piecesJointes.actEngagementPDF ? '☒' : '☐'} une copie au format électronique Adobe PDF de l'acte d'engagement.
+  <div class="section-group">
+    <div class="section-header">F - Pièces jointes à la présente notification</div>
+    <div class="section-content">
+      <p>Vous trouverez ci-joints :</p>
+      
+      <div class="checkbox-item">
+        ${data.piecesJointes.actEngagementPapier ? '☒' : '☐'} deux photocopies de l'acte d'engagement avec ses annexes, dont l'une est revêtue de la formule dite « d'exemplaire unique ». Cet exemplaire est destiné à être remis à l'établissement de crédit en cas de cession ou de nantissement de toute ou partie de votre créance. J'attire votre attention sur le fait qu'il n'est pas possible, en cas de perte, de délivrer un duplicata de l'exemplaire unique.
+      </div>
+      
+      <div class="checkbox-item">
+        ${data.piecesJointes.actEngagementPDF ? '☒' : '☐'} une copie au format électronique Adobe PDF de l'acte d'engagement.
+      </div>
     </div>
   </div>
   
   <!-- Section G -->
-  <div class="section-header">G - Signature du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
-  <div class="section-content">
-    <div class="signature-block">
-      <p>À ${escapeHtml(data.signature.lieu)}, le ${escapeHtml(data.signature.date)}</p>
-      <p><strong>Signature</strong></p>
-      <p class="signature-note">(représentant du pouvoir adjudicateur ou de l'entité adjudicatrice habilité à signer le marché public)</p>
-      <p>${escapeHtml(data.signature.signataireTitre)}</p>
+  <div class="section-group">
+    <div class="section-header">G - Signature du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
+    <div class="section-content">
+      <div class="signature-block">
+        <p>À ${escapeHtml(data.signature.lieu)}, le ${escapeHtml(data.signature.date)}</p>
+        <p><strong>Signature</strong></p>
+        <p class="signature-note">(représentant du pouvoir adjudicateur ou de l'entité adjudicatrice habilité à signer le marché public)</p>
+        <p>${escapeHtml(data.signature.signataireTitre)}</p>
+      </div>
     </div>
   </div>
   
   <!-- Section H -->
-  <div class="section-header">H - Notification du marché public au titulaire</div>
-  <div class="section-content">
-    <p class="field-note">Cette rubrique comprend tous les éléments relatifs à la réception de la notification du marché public, que cette notification soit remise contre récépissé, ou qu'elle soit transmise par courrier (lettre recommandée avec accusé de réception) ou par voie électronique (profil d'acheteur).</p>
-    
-    <p><strong>La date d'effet du marché public court à compter de la réception de cette notification par l'attributaire, qui devient alors le titulaire du marché public et responsable de sa bonne exécution.</strong></p>
+  <div class="section-group">
+    <div class="section-header">H - Notification du marché public au titulaire</div>
+    <div class="section-content">
+      <p class="field-note">Cette rubrique comprend tous les éléments relatifs à la réception de la notification du marché public, que cette notification soit remise contre récépissé, ou qu'elle soit transmise par courrier (lettre recommandée avec accusé de réception) ou par voie électronique (profil d'acheteur).</p>
+      
+      <p><strong>La date d'effet du marché public court à compter de la réception de cette notification par l'attributaire, qui devient alors le titulaire du marché public et responsable de sa bonne exécution.</strong></p>
+    </div>
   </div>
   
   <!-- Footer -->
@@ -423,11 +538,29 @@ export async function exportNoti5Html(data: Noti5Data): Promise<void> {
 }
 
 /**
+ * Exporte le NOTI5 directement en PDF
+ */
+export async function exportNoti5Pdf(data: Noti5Data): Promise<void> {
+  const html = await generateNoti5Html(data);
+  const fileName = `NOTI5_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.attributaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  await exportHtmlToPdf(html, fileName);
+}
+
+/**
  * Génère le HTML comme Blob pour utilisation dans ZIP
  */
 export async function generateNoti5HtmlAsBlob(data: Noti5Data): Promise<Blob> {
   const html = await generateNoti5Html(data);
   return new Blob([html], { type: 'text/html;charset=utf-8' });
+}
+
+/**
+ * Génère un Blob PDF pour usage dans les ZIP multi-lots
+ */
+export async function generateNoti5PdfAsBlob(data: Noti5Data): Promise<Blob> {
+  const html = await generateNoti5Html(data);
+  const fileName = `NOTI5_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.attributaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  return htmlToPdfBlob(html, fileName);
 }
 
 /**
