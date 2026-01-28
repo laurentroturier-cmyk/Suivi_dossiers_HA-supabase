@@ -74,6 +74,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       borderHover: 'hover:border-amber-400 dark:hover:border-amber-400',
       btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
       btnText: 'text-gray-700 dark:text-gray-200',
+      isExperimental: true,
       actions: [
         { label: 'DCE Complet ✨', tab: 'dce-complet', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400', badge: 'NOUVEAU' },
         { label: 'Accès rapide NOTI', tab: 'notifications-quick', isAdmin: false, icon: Bell, color: 'text-indigo-600 dark:text-indigo-400' },
@@ -91,6 +92,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       borderHover: 'hover:border-emerald-400 dark:hover:border-emerald-400',
       btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
       btnText: 'text-gray-700 dark:text-gray-200',
+      isExperimental: true,
       actions: [
         { 
           label: 'Registres', 
@@ -216,14 +218,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
                 className={`bg-white dark:bg-[#1E1E1E] rounded-3xl border-2 ${domaine.borderColor} ${domaine.borderHover} shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 overflow-hidden`}
               >
                 {/* Header de la carte */}
-                <div className="p-6">
+                <div className="p-6 pb-4">
                   <div className="flex items-start gap-4">
                     <div className={`w-14 h-14 rounded-2xl ${domaine.iconBg} flex items-center justify-center flex-shrink-0`}>
                       <Icon className={`w-7 h-7 ${domaine.iconColor}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1">{domaine.titre}</h3>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{domaine.description}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1">{domaine.titre}</h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{domaine.description}</p>
+                        </div>
+                        {domaine.isExperimental && (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200 border border-amber-200 dark:border-amber-500/60">
+                            ⚠️ En évolution
+                          </span>
+                        )}
+                      </div>
+                      {domaine.isExperimental && (
+                        <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-300 font-medium">
+                          Certaines fonctionnalités sont en cours de développement ou en phase bêta.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
