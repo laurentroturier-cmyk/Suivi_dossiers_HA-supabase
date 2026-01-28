@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import type { Noti3Data } from "../types/noti3";
 import { exportNoti3Html, exportNoti3Pdf } from "../utils/noti3HtmlGenerator";
+import { exportNoti3PdfReact } from "../utils/noti3PdfReactExport";
 import { saveNoti3, loadNoti3 } from "../utils/noti3Storage";
 import Noti3Viewer from "./Noti3Viewer";
 import { FileText, Eye, Download, Loader2, Save, FolderOpen, CheckCircle2, XCircle } from 'lucide-react';
@@ -97,7 +98,8 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
   const handleExportPdf = async () => {
     setIsExportingPdf(true);
     try {
-      await exportNoti3Pdf(formData);
+      // Utilise @react-pdf/renderer pour un PDF de meilleure qualité
+      await exportNoti3PdfReact(formData);
     } catch (error) {
       console.error('Erreur export PDF:', error);
       alert('Erreur lors de l\'export PDF');

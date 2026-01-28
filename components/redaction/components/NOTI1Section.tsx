@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Download, Save, Loader2, CheckCircle2, XCircle, FolderOpen, Plus, Trash2, Eye } from 'lucide-react';
 import { saveNoti1, loadNoti1 } from '../utils/noti1Storage';
 import { exportNoti1Html, exportNoti1Pdf } from '../utils/noti1HtmlGenerator';
+import { exportNoti1PdfReact } from '../utils/noti1PdfReactExport';
 import Noti1Viewer from './Noti1Viewer';
 import type { Noti1Data } from '../types/noti1';
 
@@ -128,7 +129,8 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
   const handleExportPdf = async () => {
     setIsExportingPdf(true);
     try {
-      await exportNoti1Pdf(formData);
+      // Utilise @react-pdf/renderer pour un PDF de meilleure qualité
+      await exportNoti1PdfReact(formData);
     } catch (error) {
       console.error('Erreur export PDF:', error);
       alert('Erreur lors de l\'export PDF');
