@@ -237,6 +237,67 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
         onChange={(v) => updateField('objetConsultation', v)}
         rows={3}
       />
+      <InputField
+        label="Numéro de procédure"
+        value={formData.numeroProcedure}
+        onChange={(v) => updateField('numeroProcedure', v)}
+        className="mt-4"
+      />
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Type de marché
+        </label>
+        <div className="flex gap-4">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              checked={formData.notification.type === 'ensemble'}
+              onChange={() => updateField('notification.type', 'ensemble')}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Ensemble du marché</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              checked={formData.notification.type === 'lots'}
+              onChange={() => updateField('notification.type', 'lots')}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Lot(s) spécifique(s)</span>
+          </label>
+        </div>
+      </div>
+      {formData.notification.type === 'lots' && formData.notification.lots.length > 0 && (
+        <div className="mt-4 space-y-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Lots concernés
+          </label>
+          {formData.notification.lots.map((lot, index) => (
+            <div key={index} className="flex gap-2">
+              <InputField
+                label={`Lot ${index + 1} - Numéro`}
+                value={lot.numero}
+                onChange={(v) => {
+                  const newLots = [...formData.notification.lots];
+                  newLots[index] = { ...newLots[index], numero: v };
+                  updateField('notification.lots', newLots);
+                }}
+              />
+              <InputField
+                label="Intitulé"
+                value={lot.intitule}
+                onChange={(v) => {
+                  const newLots = [...formData.notification.lots];
+                  newLots[index] = { ...newLots[index], intitule: v };
+                  updateField('notification.lots', newLots);
+                }}
+                className="flex-1"
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Section C - Candidat non retenu */}
       <SectionHeader title="C - Identification du candidat ou du soumissionnaire" />
@@ -298,7 +359,7 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
                 onChange={() => updateField('rejet.type', 'candidature')}
                 className="mr-2"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Candidature</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Candidature non retenue</span>
             </label>
             <label className="flex items-center">
               <input
@@ -307,7 +368,7 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
                 onChange={() => updateField('rejet.type', 'offre')}
                 className="mr-2"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Offre</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Offre non retenue</span>
             </label>
           </div>
         </div>
@@ -316,17 +377,31 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
           label="Motifs du rejet"
           value={formData.rejet.motifs}
           onChange={(v) => updateField('rejet.motifs', v)}
-          rows={3}
+          rows={4}
+          placeholder="En considération des critères de choix définis dans le Règlement de la Consultation..."
         />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <InputField
+            label="Pondération maximale économique (ex: 60)"
+            value={formData.rejet.maxEco || '60'}
+            onChange={(v) => updateField('rejet.maxEco', v)}
+          />
+          <InputField
+            label="Pondération maximale technique (ex: 40)"
+            value={formData.rejet.maxTech || '40'}
+            onChange={(v) => updateField('rejet.maxTech', v)}
+          />
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <InputField
-            label="Note économique / 60"
+            label={`Note économique / ${formData.rejet.maxEco || '60'}`}
             value={formData.rejet.noteEco}
             onChange={(v) => updateField('rejet.noteEco', v)}
           />
           <InputField
-            label="Note technique / 40"
+            label={`Note technique / ${formData.rejet.maxTech || '40'}`}
             value={formData.rejet.noteTech}
             onChange={(v) => updateField('rejet.noteTech', v)}
           />
@@ -338,9 +413,10 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
         </div>
         
         <InputField
-          label="Classement"
+          label="Classement (rang)"
           value={formData.rejet.classement}
           onChange={(v) => updateField('rejet.classement', v)}
+          placeholder="2"
         />
       </div>
 
@@ -353,14 +429,27 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
           onChange={(v) => updateField('attributaire.denomination', v)}
         />
         
+        <div className="grid grid-cols-2 gap-4">
+          <InputField
+            label="Pondération maximale économique (ex: 60)"
+            value={formData.attributaire.maxEco || '60'}
+            onChange={(v) => updateField('attributaire.maxEco', v)}
+          />
+          <InputField
+            label="Pondération maximale technique (ex: 40)"
+            value={formData.attributaire.maxTech || '40'}
+            onChange={(v) => updateField('attributaire.maxTech', v)}
+          />
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <InputField
-            label="Note économique / 60"
+            label={`Note économique / ${formData.attributaire.maxEco || '60'}`}
             value={formData.attributaire.noteEco}
             onChange={(v) => updateField('attributaire.noteEco', v)}
           />
           <InputField
-            label="Note technique / 40"
+            label={`Note technique / ${formData.attributaire.maxTech || '40'}`}
             value={formData.attributaire.noteTech}
             onChange={(v) => updateField('attributaire.noteTech', v)}
           />
@@ -375,17 +464,38 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
           label="Motifs de l'attribution"
           value={formData.attributaire.motifs}
           onChange={(v) => updateField('attributaire.motifs', v)}
-          rows={3}
+          rows={4}
+          placeholder="En effet, en considération des critères de choix définis dans le Règlement de la Consultation..."
         />
       </div>
 
       {/* Section F - Délai standstill */}
       <SectionHeader title="F - Délais et voies de recours" />
-      <InputField
-        label="Délai de suspension (jours)"
-        value={formData.delaiStandstill}
-        onChange={(v) => updateField('delaiStandstill', v)}
-      />
+      <div className="space-y-4">
+        <InputField
+          label="Délai de suspension (jours)"
+          value={formData.delaiStandstill}
+          onChange={(v) => updateField('delaiStandstill', v)}
+          placeholder="11"
+        />
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+          <div>
+            <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-200 mb-1">📋 Référé précontractuel</h4>
+            <p className="text-xs text-gray-700 dark:text-gray-300">
+              Le candidat peut, s'il le souhaite, exercer un référé précontractuel contre la présente procédure de passation, 
+              devant le président du tribunal administratif, avant la signature du marché public ou de l'accord-cadre.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-200 mb-1">⚖️ Recours pour excès de pouvoir</h4>
+            <p className="text-xs text-gray-700 dark:text-gray-300">
+              Dans l'hypothèse d'une déclaration d'infructuosité de la procédure, le candidat peut, s'il le souhaite, 
+              exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif. 
+              Le juge doit être saisi dans un délai de deux mois à compter de la notification du présent courrier.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Section G - Signature */}
       <SectionHeader title="G - Signature" />
@@ -394,17 +504,25 @@ export default function NOTI3Section({ initialData }: NOTI3SectionProps) {
           label="Lieu"
           value={formData.signature.lieu}
           onChange={(v) => updateField('signature.lieu', v)}
+          placeholder="Montreuil"
         />
         <InputField
           label="Date"
           value={formData.signature.date}
           onChange={(v) => updateField('signature.date', v)}
+          placeholder="02/12/2025"
         />
         <InputField
-          label="Signataire / Titre"
+          label="Titre du signataire"
           value={formData.signature.signataireTitre}
           onChange={(v) => updateField('signature.signataireTitre', v)}
-          className="md:col-span-2"
+          placeholder="Pour la Direction Nationale des Achats"
+        />
+        <InputField
+          label="Nom du signataire"
+          value={formData.signature.signataireNom}
+          onChange={(v) => updateField('signature.signataireNom', v)}
+          placeholder="Nom et prénom"
         />
       </div>
 
@@ -430,9 +548,10 @@ interface InputFieldProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  placeholder?: string;
 }
 
-function InputField({ label, value, onChange, className = '' }: InputFieldProps) {
+function InputField({ label, value, onChange, className = '', placeholder }: InputFieldProps) {
   return (
     <div className={className}>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -442,6 +561,7 @@ function InputField({ label, value, onChange, className = '' }: InputFieldProps)
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       />
     </div>
@@ -453,9 +573,10 @@ interface TextareaFieldProps {
   value: string;
   onChange: (value: string) => void;
   rows?: number;
+  placeholder?: string;
 }
 
-function TextareaField({ label, value, onChange, rows = 4 }: TextareaFieldProps) {
+function TextareaField({ label, value, onChange, rows = 4, placeholder }: TextareaFieldProps) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -465,6 +586,7 @@ function TextareaField({ label, value, onChange, rows = 4 }: TextareaFieldProps)
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
+        placeholder={placeholder}
         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       />
     </div>

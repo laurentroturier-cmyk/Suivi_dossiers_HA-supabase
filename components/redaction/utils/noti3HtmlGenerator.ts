@@ -153,14 +153,30 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
       margin-bottom: 10px;
       background-color: #ffffff;
       page-break-inside: avoid;
-      orphans: 3;
-      widows: 3;
+      orphans: 4;
+      widows: 4;
     }
     
     /* Groupe section-header + section-content pour éviter les coupures */
     .section-group {
       page-break-inside: avoid;
       margin-bottom: 16px;
+      orphans: 4;
+      widows: 4;
+    }
+    
+    /* Éviter les coupures dans les sous-sections */
+    .checkbox-item,
+    .field-value {
+      page-break-inside: avoid;
+      orphans: 3;
+      widows: 3;
+    }
+    
+    /* Conteneurs de texte long */
+    .section-content > div,
+    .section-content > p {
+      page-break-inside: avoid;
     }
     
     .field-label {
@@ -250,14 +266,25 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
         page-break-after: avoid;
         page-break-inside: avoid;
         margin-top: 20px;
+        orphans: 4;
+        widows: 4;
       }
 
       .section-content {
         page-break-inside: avoid;
         page-break-before: avoid;
+        orphans: 4;
+        widows: 4;
       }
       
       .section-group {
+        page-break-inside: avoid;
+        orphans: 4;
+        widows: 4;
+      }
+      
+      /* Forcer la cohésion des sous-sections */
+      .section-content > div {
         page-break-inside: avoid;
       }
       
@@ -272,13 +299,27 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
       
       /* Paragraphes et listes */
       p {
-        orphans: 3;
-        widows: 3;
+        orphans: 4;
+        widows: 4;
         page-break-inside: avoid;
       }
       
       .checkbox-item {
         page-break-inside: avoid;
+        orphans: 3;
+        widows: 3;
+      }
+      
+      .field-value {
+        page-break-inside: avoid;
+        orphans: 3;
+        widows: 3;
+      }
+      
+      /* Groupes de contenu texte */
+      .section-content p + p,
+      .section-content p + .field-value {
+        margin-top: 8px;
       }
       
       /* Signature : toujours sur une nouvelle page si possible */
@@ -352,18 +393,20 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
   <div class="section-group">
     <div class="section-header">B - Objet de la notification</div>
     <div class="section-content">
-    <div class="field-label">Objet de la consultation</div>
-    <div class="field-value">${escapeHtml(data.objetConsultation)}</div>
+    <div class="field-label">Objet de la consultation :</div>
+    <div class="field-value" style="white-space: pre-line;">${escapeHtml(data.objetConsultation)}</div>
+    <div class="field-value" style="margin-top: 8px;"><strong>${escapeHtml(data.numeroProcedure)}</strong></div>
     
-    <p><strong>La présente notification correspond :</strong></p>
+    <p style="margin-top: 16px;"><strong>La présente notification correspond :</strong></p>
     
     <div class="checkbox-item">
-      ${data.notification.type === 'ensemble' ? '☒' : '☐'} à l'ensemble du marché public
+      ${data.notification.type === 'ensemble' ? '☒' : '☐'} à l'ensemble du marché public ou de l'accord-cadre
     </div>
     
-    ${data.notification.type === 'lots' ? data.notification.lots.map(lot => `
+    ${data.notification.type === 'lots' && data.notification.lots.length > 0 ? data.notification.lots.map(lot => `
     <div class="checkbox-item">
-      ☒ au lot n° ${lot.numero} : ${escapeHtml(lot.intitule)}
+      ☒ au lot n° ${escapeHtml(lot.numero)} de la procédure de passation du marché public ou de l'accord-cadre (en cas d'allotissement) :
+      <div style="margin-left: 24px; font-style: italic;">${escapeHtml(lot.intitule)}</div>
     </div>
     `).join('') : ''}
     </div>
@@ -387,6 +430,14 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
   <div class="section-group">
     <div class="section-header">D - Notification de rejet de la candidature ou de l'offre</div>
     <div class="section-content">
+      ${data.notification.type === 'lots' && data.notification.lots.length > 0 ? `
+      <p style="font-style: italic; color: #6b7280; margin-bottom: 12px;">
+        (En cas d'allotissement, cette rubrique est à renseigner pour chacun des lots de la procédure de passation du marché public ou 
+        de l'accord-cadre pour lesquels la candidature ou l'offre est rejetée. Préciser pour chaque lot, son numéro et son intitulé tels 
+        qu'ils figurent dans les documents de la consultation.)
+      </p>
+      ` : ''}
+      
       <p>J'ai le regret de vous faire connaître que, dans le cadre de la consultation rappelée ci-dessus :</p>
       
       <div class="checkbox-item">
@@ -397,15 +448,16 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
         ${data.rejet.type === 'offre' ? '☒' : '☐'} votre offre n'a pas été retenue.
       </div>
       
-      <p><strong>pour les motifs suivants :</strong></p>
-      <div class="field-value">${escapeHtml(data.rejet.motifs)}</div>
+      <p style="margin-top: 12px;"><strong>pour les motifs suivants :</strong></p>
+      <div class="field-value" style="white-space: pre-line; margin-bottom: 12px;">${escapeHtml(data.rejet.motifs)}</div>
       
-      <p>En considération des critères de choix définis dans le Règlement de la Consultation, votre offre a obtenu ${escapeHtml(data.rejet.total)} points sur un total de 100.</p>
+      <p>En considération des critères de choix définis dans le Règlement de la Consultation, votre offre a obtenu <strong>${escapeHtml(data.rejet.total)} points</strong> sur un total de 100.</p>
       
-      <div class="field-value">Note économique : ${escapeHtml(data.rejet.noteEco)} / ${escapeHtml(data.rejet.maxEco || '60')} points</div>
-      <div class="field-value">Note technique : ${escapeHtml(data.rejet.noteTech)} / ${escapeHtml(data.rejet.maxTech || '40')} points</div>
+      <p style="margin-top: 8px;"><strong>Le détail est le suivant :</strong></p>
+      <div class="field-value">Note économique : <strong>${escapeHtml(data.rejet.noteEco)} / ${escapeHtml(data.rejet.maxEco || '60')} points</strong></div>
+      <div class="field-value">Note technique : <strong>${escapeHtml(data.rejet.noteTech)} / ${escapeHtml(data.rejet.maxTech || '40')} points</strong></div>
       
-      <p>Au classement final, votre offre se classe au rang ${escapeHtml(data.rejet.classement)}.</p>
+      <p style="margin-top: 12px;">Au classement final, votre offre se classe au <strong>rang ${escapeHtml(data.rejet.classement)}</strong>.</p>
     </div>
   </div>
   
@@ -413,44 +465,75 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
   <div class="section-group">
     <div class="section-header">E - Identification de l'attributaire</div>
     <div class="section-content">
+      ${data.notification.type === 'lots' && data.notification.lots.length > 0 ? `
+      <p style="font-style: italic; color: #6b7280; margin-bottom: 12px;">
+        (En cas d'allotissement, cette rubrique est à renseigner pour chacun des lots de la procédure de passation du marché public ou 
+        de l'accord-cadre pour lesquels une offre a été retenue. Préciser pour chaque lot, son numéro et son intitulé tels qu'ils figurent 
+        dans les documents de la consultation.)
+      </p>
+      <p style="font-style: italic; color: #6b7280; margin-bottom: 12px;">
+        (En cas d'infructuosité de la procédure, mention en est faite à cette rubrique, justifiant l'absence de désignation de tout 
+        attributaire).
+      </p>
+      ` : ''}
+      
+      <p><strong>Désignation de l'attributaire :</strong></p>
       <p>Le marché public ou l'accord-cadre est attribué à :</p>
       
-      <div class="field-value"><strong>${escapeHtml(data.attributaire.denomination)}</strong></div>
+      <div class="field-value" style="margin: 12px 0;"><strong>${escapeHtml(data.attributaire.denomination)}</strong></div>
       
-      <p>En effet, en considération des critères de choix définis dans le Règlement de la Consultation, son offre a obtenu ${escapeHtml(data.attributaire.total)} points sur un total de 100.</p>
+      <p>En effet, en considération des critères de choix définis dans le Règlement de la Consultation, son offre a obtenu <strong>${escapeHtml(data.attributaire.total)} points</strong> sur un total de 100.</p>
       
-      <div class="field-value">Note économique : ${escapeHtml(data.attributaire.noteEco)} / ${escapeHtml(data.attributaire.maxEco || '60')} points</div>
-      <div class="field-value">Note technique : ${escapeHtml(data.attributaire.noteTech)} / ${escapeHtml(data.attributaire.maxTech || '40')} points</div>
+      <p style="margin-top: 8px;"><strong>Le détail est le suivant :</strong></p>
+      <div class="field-value">Note économique : <strong>${escapeHtml(data.attributaire.noteEco)} / ${escapeHtml(data.attributaire.maxEco || '60')} points</strong></div>
+      <div class="field-value">Note technique : <strong>${escapeHtml(data.attributaire.noteTech)} / ${escapeHtml(data.attributaire.maxTech || '40')} points</strong></div>
       
-      <p><strong>Pour les motifs suivants :</strong></p>
-      <div class="field-value">${escapeHtml(data.attributaire.motifs)}</div>
+      ${data.attributaire.motifs ? `
+      <p style="margin-top: 12px;"><strong>Pour les motifs suivants :</strong></p>
+      <div class="field-value" style="white-space: pre-line;">${escapeHtml(data.attributaire.motifs)}</div>
+      ` : ''}
     </div>
   </div>
   
   <!-- Section F -->
-  <div class="section-group">
+  <div class="section-group" style="page-break-inside: avoid;">
     <div class="section-header">F - Délais et voies de recours</div>
     <div class="section-content">
-      <p>Le délai de suspension de la signature du marché public ou de l'accord-cadre est de ${escapeHtml(data.delaiStandstill)} jours, à compter de la date d'envoi de la présente notification.</p>
+      <p style="margin-bottom: 12px; page-break-inside: avoid;">
+        ☐ Le délai de suspension de la signature du marché public ou de l'accord-cadre est de <strong>${escapeHtml(data.delaiStandstill)} jours</strong>, 
+        à compter de la date d'envoi de la présente notification.
+      </p>
       
-      <p><strong>Référé précontractuel :</strong> Le candidat peut, s'il le souhaite, exercer un référé précontractuel contre la présente procédure de passation, devant le président du tribunal administratif, avant la signature du marché public ou de l'accord-cadre.</p>
+      <div style="margin-top: 16px; page-break-inside: avoid;">
+        <p><strong>☐ Référé précontractuel :</strong></p>
+        <p style="margin-left: 16px; margin-top: 4px;">
+          Le candidat peut, s'il le souhaite, exercer un référé précontractuel contre la présente procédure de passation, 
+          devant le président du tribunal administratif, avant la signature du marché public ou de l'accord-cadre.
+        </p>
+      </div>
       
-      <p><strong>Recours pour excès de pouvoir :</strong> Dans l'hypothèse d'une déclaration d'infructuosité de la procédure, le candidat peut, s'il le souhaite, exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif. Le juge doit être saisi dans un délai de deux mois à compter de la notification du présent courrier.</p>
+      <div style="margin-top: 16px; page-break-inside: avoid;">
+        <p><strong>☐ Recours pour excès de pouvoir en cas de déclaration d'infructuosité de la procédure :</strong></p>
+        <p style="margin-left: 16px; margin-top: 4px;">
+          Dans l'hypothèse d'une déclaration d'infructuosité de la procédure, le candidat peut, s'il le souhaite, 
+          exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif. 
+          Le juge doit être saisi dans un délai de deux mois à compter de la notification du présent courrier.
+        </p>
+      </div>
     </div>
   </div>
   
   <!-- Section G -->
-  <div class="section-group">
+  <div class="section-group" style="page-break-inside: avoid;">
     <div class="section-header">G - Signature du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
     <div class="section-content">
       <div class="signature-block">
         <p>À ${escapeHtml(data.signature.lieu)}, le ${escapeHtml(data.signature.date)}</p>
-        <p><strong>Signature</strong></p>
-        <p class="signature-note">(représentant du pouvoir adjudicateur ou de l'entité adjudicatrice habilité à signer le marché public)</p>
-        <p>${escapeHtml(data.signature.signataireTitre)}</p>
+        <p style="margin-top: 20px;"><strong>Signature</strong></p>
+        <p class="signature-note" style="margin-top: 4px;">(représentant du pouvoir adjudicateur ou de l'entité adjudicatrice habilité à signer le marché public)</p>
+        ${data.signature.signataireNom ? `<p style="margin-top: 30px;"><strong>${escapeHtml(data.signature.signataireNom)}</strong></p>` : ''}
+        ${data.signature.signataireTitre ? `<p style="margin-top: 8px;">${escapeHtml(data.signature.signataireTitre)}</p>` : ''}
       </div>
-      
-      <p style="margin-top: 30px;"><strong>Pour la Direction Nationale des Achats</strong></p>
     </div>
   </div>
   

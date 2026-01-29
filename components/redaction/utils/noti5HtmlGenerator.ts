@@ -153,14 +153,16 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
       margin-bottom: 10px;
       background-color: #ffffff;
       page-break-inside: avoid;
-      orphans: 3;
-      widows: 3;
+      orphans: 4;
+      widows: 4;
     }
     
     /* Groupe section-header + section-content pour éviter les coupures */
     .section-group {
       page-break-inside: avoid;
       margin-bottom: 16px;
+      orphans: 4;
+      widows: 4;
     }
     
     .field-label {
@@ -172,6 +174,7 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
     
     .field-value {
       margin-bottom: 6px;
+      page-break-inside: avoid;
     }
     
     .field-note {
@@ -184,17 +187,27 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
     .checkbox-item {
       margin: 6px 0;
       page-break-inside: avoid;
+      orphans: 3;
+      widows: 3;
     }
     
     .checkbox-item-indented {
       margin: 4px 0 4px 26px;
       page-break-inside: avoid;
+      orphans: 3;
+      widows: 3;
     }
     
     /* Éviter les coupures dans les paragraphes */
     p {
-      orphans: 3;
-      widows: 3;
+      orphans: 4;
+      widows: 4;
+      page-break-inside: avoid;
+    }
+    
+    /* Conteneurs de texte long */
+    .section-content > div,
+    .section-content > p {
       page-break-inside: avoid;
     }
     
@@ -262,14 +275,25 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
         page-break-after: avoid;
         page-break-inside: avoid;
         margin-top: 20px;
+        orphans: 4;
+        widows: 4;
       }
 
       .section-content {
         page-break-inside: avoid;
         page-break-before: avoid;
+        orphans: 4;
+        widows: 4;
       }
       
       .section-group {
+        page-break-inside: avoid;
+        orphans: 4;
+        widows: 4;
+      }
+      
+      /* Forcer la cohésion des sous-sections */
+      .section-content > div {
         page-break-inside: avoid;
       }
       
@@ -284,14 +308,28 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
       
       /* Paragraphes et listes */
       p {
-        orphans: 3;
-        widows: 3;
+        orphans: 4;
+        widows: 4;
         page-break-inside: avoid;
       }
       
       .checkbox-item,
       .checkbox-item-indented {
         page-break-inside: avoid;
+        orphans: 3;
+        widows: 3;
+      }
+      
+      .field-value {
+        page-break-inside: avoid;
+        orphans: 3;
+        widows: 3;
+      }
+      
+      /* Groupes de contenu texte */
+      .section-content p + p,
+      .section-content p + .field-value {
+        margin-top: 8px;
       }
       
       /* Signature : toujours sur une nouvelle page si possible */
@@ -357,7 +395,7 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
     <div class="section-content">
       <p class="field-note">(Reprendre le contenu de la mention figurant dans les documents de la consultation.)</p>
       <div class="field-label">AFPA</div>
-      <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.nom)}</div>
+      <div class="field-value"><strong>Agence nationale pour la formation professionnelle des adultes</strong></div>
       <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.adresseVoie)}</div>
       <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.codePostal)} ${escapeHtml(data.pouvoirAdjudicateur.ville)}</div>
     </div>
@@ -368,8 +406,8 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
     <div class="section-header">B - Objet de la consultation</div>
     <div class="section-content">
       <p class="field-note">(Reprendre le contenu de la mention figurant dans les documents de la consultation.)</p>
-      <div class="field-label">Objet de la consultation</div>
-      <div class="field-value">${escapeHtml(data.objetConsultation)}</div>
+      <div class="field-value" style="white-space: pre-line;">${escapeHtml(data.objetConsultation)}</div>
+      <div class="field-value" style="margin-top: 8px;"><strong>${escapeHtml(data.numeroProcedure)}</strong></div>
     </div>
   </div>
   
@@ -401,7 +439,7 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
   </div>
   
   <!-- Section D -->
-  <div class="section-group">
+  <div class="section-group" style="page-break-inside: avoid;">
     <div class="section-header">D - Notification de l'attribution</div>
     <div class="section-content">
       <p>Je vous informe que l'offre que vous avez faite au titre de la consultation désignée ci-dessus a été retenue :</p>
@@ -409,99 +447,126 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
       <p class="field-note">(Cocher la case correspondante.)</p>
       
       <div class="checkbox-item">
-        ${data.notification.type === 'ensemble' ? '☒' : '☐'} pour l'ensemble du marché public (en cas de non allotissement).
+        ${data.notification.type === 'ensemble' ? '🗹' : '☐'} pour l'ensemble du marché public (en cas de non allotissement).
       </div>
       
-      ${data.notification.type === 'lots' ? `
       <div class="checkbox-item">
-        ☒ pour le(s) lot(s) n° ${data.notification.lots.map(l => `${l.numero}:${l.intitule}`).join(', ')}
+        ${data.notification.type === 'lots' ? '🗹' : '☐'} pour le(s) lot(s) n° ${data.notification.type === 'lots' && data.notification.lots.length > 0 ? data.notification.lots.map(l => escapeHtml(l.numero)).join(', ') : '_____'}
       </div>
-      ` : `
-      <div class="checkbox-item">
-        ☐ pour le(s) lot(s) n°
-      </div>
-      `}
       
-      <p>de la procédure de passation du marché public ou de l'accord cadre (en cas d'allotissement.)</p>
+      <p style="margin-left: 24px; font-size: 9pt;">de la procédure de passation du marché public ou de l'accord-cadre (en cas d'allotissement.) :</p>
       
-      <p>L'exécution des prestations commencera :</p>
+      ${data.notification.type === 'lots' && data.notification.lots.length > 0 ? data.notification.lots.map(lot => `
+      <p style="margin-left: 24px; font-style: italic; font-size: 9pt;">(Indiquer l'intitulé du ou des lots concernés tel qu'il figure dans l'avis d'appel public à la concurrence ou la lettre de consultation.)</p>
+      <p style="margin-left: 24px;">${escapeHtml(lot.intitule)}</p>
+      `).join('') : ''}
+      
+      <p style="margin-top: 16px;">L'exécution des prestations commencera :</p>
       
       <p class="field-note">(Cocher la case correspondante.)</p>
       
       <div class="checkbox-item">
-        ${data.executionPrestations.type === 'immediate' ? '☒' : '☐'} dès réception de la présente notification.
+        ${data.notification?.executionImmediateChecked || data.executionPrestations?.type === 'immediate' ? '🗹' : '☐'} L'exécution commencera à compter de la date de notification et selon les modalités prévues aux documents de la consultation.
       </div>
       
       <div class="checkbox-item">
-        ${data.executionPrestations.type === 'sur_commande' ? '☒' : '☐'} à réception d'un bon de commande ou d'un ordre de service que j'émettrai ultérieurement.
+        ${data.notification?.executionOrdreServiceChecked || data.executionPrestations?.type === 'sur_commande' ? '🗹' : '☐'} L'exécution commencera à compter de la réception de l'ordre de service qui vous sera adressé dans les conditions prévues par les documents de la consultation.
       </div>
     </div>
   </div>
   
-  <!-- Section E -->
-  <div class="section-group">
+  <!-- Section E -->}
+  <div class="section-group" style="page-break-inside: avoid;">
     <div class="section-header">E - Retenue de garantie ou garantie à première demande</div>
     <div class="section-content">
-      <p>Le marché public qui vous est notifié comporte :</p>
+      <p class="field-note">[La retenue de garantie peut être remplacée, au choix du titulaire, soit par une garantie à première demande, soit par une caution personnelle et solidaire.
+      Celle-ci ne s'applique pas en cas d'allotissement lorsque le montant du marché public est inférieur à 90 000 € HT.
+      Les documents de la consultation précisent si elle a été prévue ou non ainsi que son éventuel taux et ses modalités.]</p>
       
-      <div class="checkbox-item">
-        ${data.garanties.aucuneGarantie ? '☒' : '☐'} aucune retenue de garantie ou garantie à première demande.
+      <div class="checkbox-item" style="page-break-inside: avoid;">
+        ${data.garantie?.pasPrevue || data.garanties?.aucuneGarantie ? '🗹' : '☐'} Les documents de la consultation ne prévoient pas de retenue de garantie ou de garantie à première demande.
       </div>
       
-      <div class="checkbox-item">
-        ${data.garanties.retenue.active ? '☒' : '☐'} une retenue de garantie d'un montant de ${data.garanties.retenue.pourcentage} % du montant initial du marché public ou de l'accord-cadre, que vous pouvez remplacer par :
+      <div style="page-break-inside: avoid;">
+        <div class="checkbox-item">
+          ${data.garantie?.prevueSansAllotissement ? '🗹' : '☐'} En l'absence d'allotissement de ce marché public :
+        </div>
+        ${data.garantie?.prevueSansAllotissement ? `
+        <div class="checkbox-item-indented">
+          ${data.garantie?.retenueGarantieSansAllotissement ? '🗹' : '☐'} Une retenue de garantie est prévue par les documents de la consultation (préciser son taux et ses modalités).
+        </div>
+        <div class="checkbox-item-indented">
+          ${data.garantie?.garantiePremiereDemandeOuCautionSansAllotissement ? '🗹' : '☐'} Une garantie à première demande ou une caution personnelle et solidaire est prévue par les documents de la consultation (préciser son taux et ses modalités).
+        </div>
+        ` : ''}
       </div>
       
-      ${data.garanties.retenue.active ? `
-      <div class="checkbox-item-indented">
-        ${data.garanties.retenue.remplacablePar.garantiePremieredemande ? '☒' : '☐'} une garantie à première demande.
+      <div style="page-break-inside: avoid;">
+        <div class="checkbox-item">
+          ${data.garantie?.prevueAvecAllotissement ? '🗹' : '☐'} En cas d'allotissement de ce marché public :
+        </div>
+        ${data.garantie?.prevueAvecAllotissement ? `
+        <div class="checkbox-item-indented">
+          ${data.garantie?.montantInferieur90k ? '🗹' : '☐'} Le montant de votre offre est inférieur à 90 000 € HT. Aucune retenue de garantie ou garantie à première demande n'est exigée pour le(s) lot(s) dont vous êtes attributaire.
+        </div>
+        <div class="checkbox-item-indented">
+          ${data.garantie?.montantSuperieur90kRetenue ? '🗹' : '☐'} Le montant de votre offre est supérieur ou égal à 90 000 € HT. Une retenue de garantie est prévue par les documents de la consultation pour le(s) lot(s) dont vous êtes attributaire (préciser son taux et ses modalités).
+        </div>
+        <div class="checkbox-item-indented">
+          ${data.garantie?.montantSuperieur90kGarantie ? '🗹' : '☐'} Le montant de votre offre est supérieur ou égal à 90 000 € HT. Une garantie à première demande ou une caution personnelle et solidaire est prévue par les documents de la consultation pour le(s) lot(s) dont vous êtes attributaire (préciser son taux et ses modalités).
+        </div>
+        ` : ''}
       </div>
-      <div class="checkbox-item-indented">
-        ${data.garanties.retenue.remplacablePar.cautionPersonnelle ? '☒' : '☐'} une caution personnelle et solidaire.
+      
+      ${data.garantie?.modalites ? `
+      <div style="margin-top: 16px; padding: 12px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px;">
+        <p style="font-weight: bold; margin-bottom: 4px;">Modalités :</p>
+        <p>${escapeHtml(data.garantie.modalites)}</p>
       </div>
       ` : ''}
       
-      <div class="checkbox-item">
-        ${data.garanties.garantieAvanceSuperieure30 ? '☒' : '☐'} une garantie à première demande en garantie du remboursement d'une avance supérieure à 30%. Vous ne pourrez recevoir cette avance qu'après avoir constitué cette garantie.
-      </div>
-      
-      <div class="checkbox-item">
-        ${data.garanties.garantieAvanceInferieure30.active ? '☒' : '☐'} (pour les collectivités territoriales uniquement.) une garantie à première demande en garantie du remboursement de toute ou partie d'une avance inférieure ou égale à 30%.
-      </div>
-      
-      ${data.garanties.garantieAvanceInferieure30.active ? `
-      <div class="checkbox-item-indented">
-        ${data.garanties.garantieAvanceInferieure30.remplacableParCaution ? '☒' : '☐'} vous pouvez remplacer cette garantie à première demande par une caution personnelle et solidaire.
+      <!-- Rétro-compatibilité avec ancienne structure -->
+      ${data.garanties?.retenue?.active ? `
+      <div style="margin-top: 16px; padding: 12px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px;">
+        <p style="font-weight: bold; margin-bottom: 4px;">Retenue de garantie :</p>
+        <p>${data.garanties.retenue.pourcentage}%</p>
+        ${data.garanties.retenue.remplacablePar.garantiePremieredemande ? '<p>• Remplaçable par garantie à première demande</p>' : ''}
+        ${data.garanties.retenue.remplacablePar.cautionPersonnelle ? '<p>• Remplaçable par caution personnelle et solidaire</p>' : ''}
       </div>
       ` : ''}
     </div>
   </div>
   
   <!-- Section F -->
-  <div class="section-group">
+  <div class="section-group" style="page-break-inside: avoid;">
     <div class="section-header">F - Pièces jointes à la présente notification</div>
     <div class="section-content">
+      <p class="field-note">(En cas d'allotissement, cette rubrique est à renseigner pour chacun des lots de la procédure de passation du marché public ou de l'accord-cadre qui est notifié. Préciser pour chaque lot, son numéro et son intitulé tels qu'ils figurent dans les documents de la consultation.)</p>
+      
       <p>Vous trouverez ci-joints :</p>
       
-      <div class="checkbox-item">
-        ${data.piecesJointes.actEngagementPapier ? '☒' : '☐'} deux photocopies de l'acte d'engagement avec ses annexes, dont l'une est revêtue de la formule dite « d'exemplaire unique ». Cet exemplaire est destiné à être remis à l'établissement de crédit en cas de cession ou de nantissement de toute ou partie de votre créance. J'attire votre attention sur le fait qu'il n'est pas possible, en cas de perte, de délivrer un duplicata de l'exemplaire unique.
+      <p class="field-note">(Cocher la case correspondante.)</p>
+      
+      <div class="checkbox-item" style="page-break-inside: avoid;">
+        ${data.piecesJointes.actEngagementPapier ? '☐' : '☐'} deux photocopies de l'acte d'engagement avec ses annexes, dont l'une est revêtue de la formule dite « d'exemplaire unique ». Cet exemplaire est destiné à être remis à l'établissement de crédit en cas de cession ou de nantissement de toute ou partie de votre créance. J'attire votre attention sur le fait qu'il n'est pas possible, en cas de perte, de délivrer un duplicata de l'exemplaire unique.
       </div>
       
       <div class="checkbox-item">
-        ${data.piecesJointes.actEngagementPDF ? '☒' : '☐'} une copie au format électronique Adobe PDF de l'acte d'engagement.
+        ${data.piecesJointes.actEngagementPDF ? '☐' : '☐'} une copie au format électronique Adobe PDF de l'acte d'engagement.
       </div>
     </div>
   </div>
   
   <!-- Section G -->
-  <div class="section-group">
+  <div class="section-group" style="page-break-inside: avoid;">
     <div class="section-header">G - Signature du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
     <div class="section-content">
       <div class="signature-block">
         <p>À ${escapeHtml(data.signature.lieu)}, le ${escapeHtml(data.signature.date)}</p>
-        <p><strong>Signature</strong></p>
-        <p class="signature-note">(représentant du pouvoir adjudicateur ou de l'entité adjudicatrice habilité à signer le marché public)</p>
-        <p>${escapeHtml(data.signature.signataireTitre)}</p>
+        <p style="margin-top: 20px;"><strong>Signature</strong></p>
+        <p class="signature-note" style="margin-top: 4px;">(représentant du pouvoir adjudicateur ou de l'entité adjudicatrice habilité à signer le marché public)</p>
+        ${data.signature.signataireNom ? `<p style="margin-top: 30px;"><strong>${escapeHtml(data.signature.signataireNom)}</strong></p>` : ''}
+        ${data.signature.signataireTitre ? `<p style="margin-top: 8px;">${escapeHtml(data.signature.signataireTitre)}</p>` : ''}
       </div>
     </div>
   </div>

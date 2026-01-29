@@ -29,15 +29,28 @@ export interface Noti5Data {
       numero: string;
       intitule: string;
     }>;
+    executionImmediateChecked: boolean; // L'exécution commencera à compter de la date de notification
+    executionOrdreServiceChecked: boolean; // L'exécution commencera à la réception de l'ordre de service
   };
   
-  executionPrestations: {
+  garantie: {
+    pasPrevue: boolean; // Les documents ne prévoient pas de retenue de garantie
+    prevueSansAllotissement: boolean; // En l'absence d'allotissement
+    retenueGarantieSansAllotissement: boolean; // Retenue de garantie prévue
+    garantiePremiereDemandeOuCautionSansAllotissement: boolean; // Garantie à première demande ou caution
+    prevueAvecAllotissement: boolean; // En cas d'allotissement
+    montantInferieur90k: boolean; // Montant < 90 000 € HT
+    montantSuperieur90kRetenue: boolean; // Montant >= 90 000 € HT avec retenue
+    montantSuperieur90kGarantie: boolean; // Montant >= 90 000 € HT avec garantie
+    modalites: string; // Précisions sur les modalités
+  };
+  
+  // Anciennes propriétés conservées pour rétro-compatibilité
+  executionPrestations?: {
     type: 'immediate' | 'sur_commande';
-    // 'immediate' = dès réception de la notification
-    // 'sur_commande' = à réception d'un bon de commande ou ordre de service
   };
   
-  garanties: {
+  garanties?: {
     aucuneGarantie: boolean;
     retenue: {
       active: boolean;
@@ -55,8 +68,8 @@ export interface Noti5Data {
   };
   
   piecesJointes: {
-    actEngagementPapier: boolean; // 2 photocopies dont 1 avec formule "exemplaire unique"
-    actEngagementPDF: boolean; // Copie format électronique PDF
+    actEngagementPapier: boolean; // 2 exemplaires papier dont 1 avec "exemplaire unique"
+    actEngagementPDF: boolean; // 1 copie électronique PDF
   };
   
   signature: {

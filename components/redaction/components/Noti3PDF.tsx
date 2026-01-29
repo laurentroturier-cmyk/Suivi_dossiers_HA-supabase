@@ -170,6 +170,7 @@ const styles = StyleSheet.create({
   // Sections
   section: {
     marginBottom: 12,
+    breakInside: 'avoid',
   },
   
   sectionHeader: {
@@ -181,6 +182,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     borderTopLeftRadius: 4,
     borderTopRightRadius: 4,
+    breakAfter: 'avoid',
   },
   
   sectionContent: {
@@ -191,6 +193,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
     padding: 12,
     backgroundColor: '#fffbeb',
+    breakInside: 'avoid',
   },
   
   // Champs
@@ -223,6 +226,7 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 6,
     lineHeight: 1.5,
+    breakInside: 'avoid',
   },
   
   // Checkboxes
@@ -231,6 +235,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginVertical: 4,
     paddingLeft: 8,
+    breakInside: 'avoid',
   },
   
   checkboxIcon: {
@@ -404,7 +409,7 @@ export const Noti3PDF = ({
         <View style={styles.titleBanner}>
           <View style={styles.titleBannerLeft}>
             <Text style={styles.titleH1}>MARCHÉS PUBLICS</Text>
-            <Text style={styles.titleH2}>Lettre de rejet d'une candidature ou d'une offre</Text>
+            <Text style={styles.titleH2}>NOTIFICATION DE REJET DE CANDIDATURE OU D'OFFRE</Text>
           </View>
           <View style={styles.titleBannerRight}>
             <Text style={styles.notiCode}>NOTI3</Text>
@@ -413,13 +418,17 @@ export const Noti3PDF = ({
 
         {/* Intro */}
         <Text style={styles.intro}>
-          Le formulaire NOTI3 est un modèle de lettre qui peut être utilisé par le pouvoir adjudicateur pour informer un candidat du rejet de sa candidature ou de son offre.
+          Le formulaire NOTI3 est un modèle de lettre qui peut être utilisé par le pouvoir adjudicateur ou l'entité adjudicatrice pour notifier 
+          au candidat non retenu, le rejet de sa candidature ou de son offre et l'attribution du marché public ou en cas d'abandon de la procédure.
         </Text>
 
         {/* Section A */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>A – Identification du pouvoir adjudicateur</Text>
+          <Text style={styles.sectionHeader}>A – Identification du pouvoir adjudicateur ou de l'entité adjudicatrice</Text>
           <View style={styles.sectionContent}>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#78350f', marginBottom: 8 }]}>
+              (Reprendre le contenu de la mention figurant dans les documents de la consultation.)
+            </Text>
             {data.pouvoirAdjudicateur.nom.split('\n').map((line, index) => (
               <Text key={index} style={[styles.fieldValueFull, index === 0 && { fontWeight: 'bold' }]}>{line}</Text>
             ))}
@@ -430,24 +439,61 @@ export const Noti3PDF = ({
 
         {/* Section B */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>B – Objet de la consultation</Text>
+          <Text style={styles.sectionHeader}>B – Objet de la notification</Text>
           <View style={styles.sectionContent}>
-            <Text style={styles.fieldValueFull}>{data.objetConsultation || '—'}</Text>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#78350f', marginBottom: 8 }]}>
+              (Reprendre le contenu de la mention figurant dans les documents de la consultation.)
+            </Text>
+            <Text style={[styles.paragraph, { fontWeight: 'bold', marginBottom: 4 }]}>Objet de la consultation :</Text>
+            <Text style={[styles.fieldValueFull, { marginBottom: 8 }]}>{data.objetConsultation || '—'}</Text>
+            <Text style={[styles.fieldValueFull, { fontWeight: 'bold' }]}>{data.numeroProcedure}</Text>
+            
+            <Text style={[styles.paragraph, { marginTop: 12, fontWeight: 'bold' }]}>La présente notification correspond :</Text>
+            <Checkbox 
+              checked={data.notification.type === 'ensemble'} 
+              label="à l'ensemble du marché public ou de l'accord-cadre" 
+            />
+            {data.notification.type === 'lots' && data.notification.lots.length > 0 && data.notification.lots.map((lot, index) => (
+              <View key={index} style={{ marginTop: 6 }}>
+                <Checkbox 
+                  checked={true} 
+                  label={`au lot n° ${lot.numero}`} 
+                />
+                <Text style={[styles.paragraph, { marginLeft: 20, fontSize: 7, fontStyle: 'italic' }]}>
+                  de la procédure de passation du marché public ou de l'accord-cadre (en cas d'allotissement) :
+                </Text>
+                <Text style={[styles.paragraph, { marginLeft: 20, fontSize: 7 }]}>
+                  {lot.intitule}
+                </Text>
+              </View>
+            ))}
           </View>
         </View>
 
         {/* Section C */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>C – Identification du candidat évincé</Text>
+          <Text style={styles.sectionHeader}>C – Identification du candidat ou du soumissionnaire</Text>
           <View style={styles.sectionContent}>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#78350f', marginBottom: 8 }]}>
+              [Indiquer le nom commercial et la dénomination sociale du candidat ou soumissionnaire individuel ou de chaque membre du groupement 
+              d'entreprises candidat, les adresses de son établissement et de son siège social (si elle est différente de celle de l'établissement), son adresse 
+              électronique, ses numéros de téléphone et de télécopie et son numéro SIRET. En cas de candidature groupée, identifier précisément le 
+              mandataire du groupement.
+            </Text>
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Entreprise :</Text>
-              <Text style={styles.fieldValue}>{data.candidat.denomination || '—'}</Text>
+              <Text style={[styles.fieldValue, { fontWeight: 'bold' }]}>{data.candidat.denomination || '—'}</Text>
             </View>
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Adresse :</Text>
               <Text style={styles.fieldValue}>{data.candidat.adresse1 || '—'}</Text>
             </View>
+            {data.candidat.adresse2 && (
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}></Text>
+                <Text style={styles.fieldValue}>{data.candidat.adresse2}</Text>
+              </View>
+            )}
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>CP / Ville :</Text>
               <Text style={styles.fieldValue}>{data.candidat.codePostal} {data.candidat.ville}</Text>
@@ -460,89 +506,159 @@ export const Noti3PDF = ({
               <Text style={styles.fieldLabel}>Email :</Text>
               <Text style={styles.fieldValue}>{data.candidat.email || '—'}</Text>
             </View>
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>Téléphone :</Text>
+              <Text style={styles.fieldValue}>{data.candidat.telephone || '—'}</Text>
+            </View>
+            {data.candidat.fax && (
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>Fax :</Text>
+                <Text style={styles.fieldValue}>{data.candidat.fax}</Text>
+              </View>
+            )}
           </View>
         </View>
 
         {/* Section D */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>D – Motif du rejet</Text>
+        <View style={styles.section} wrap={false}>
+          <Text style={styles.sectionHeader}>D – Notification de rejet de la candidature ou de l'offre</Text>
           <View style={styles.sectionContent}>
-            <Checkbox checked={data.rejet.type === 'candidature'} label="Rejet de la candidature" />
-            <Checkbox checked={data.rejet.type === 'offre'} label="Rejet de l'offre" />
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#78350f', marginBottom: 8 }]}>
+              (En cas d'allotissement, cette rubrique est à renseigner pour chacun des lots de la procédure de passation du marché public ou 
+              de l'accord-cadre pour lesquels la candidature ou l'offre est rejetée. Préciser pour chaque lot, son numéro et son intitulé tels 
+              qu'ils figurent dans les documents de la consultation.)
+            </Text>
             
-            <Text style={[styles.paragraph, { marginTop: 10, fontWeight: 'bold' }]}>Motifs du rejet :</Text>
-            <Text style={styles.fieldValueFull}>{data.rejet.motifs || '—'}</Text>
+            <Text style={styles.paragraph}>
+              J'ai le regret de vous faire connaître que, dans le cadre de la consultation rappelée ci-dessus :
+            </Text>
+            
+            <Checkbox checked={data.rejet.type === 'candidature'} label="votre candidature n'a pas été retenue." />
+            <Checkbox checked={data.rejet.type === 'offre'} label="votre offre n'a pas été retenue." />
+            
+            <Text style={[styles.paragraph, { marginTop: 10, fontWeight: 'bold' }]}>pour les motifs suivants :</Text>
+            <Text style={[styles.fieldValueFull, { marginBottom: 8 }]}>{data.rejet.motifs || '—'}</Text>
+            
+            <Text style={styles.paragraph}>
+              En considération des critères de choix définis dans le Règlement de la Consultation, votre offre a obtenu{' '}
+              <Text style={{ fontWeight: 'bold' }}>{data.rejet.total} points</Text> sur un total de 100.
+            </Text>
+            
+            <Text style={[styles.paragraph, { marginTop: 8, fontWeight: 'bold' }]}>Le détail est le suivant :</Text>
+            <Text style={styles.fieldValueFull}>
+              Note économique : <Text style={{ fontWeight: 'bold' }}>{data.rejet.noteEco} / {data.rejet.maxEco || '60'} points</Text>
+            </Text>
+            <Text style={styles.fieldValueFull}>
+              Note technique : <Text style={{ fontWeight: 'bold' }}>{data.rejet.noteTech} / {data.rejet.maxTech || '40'} points</Text>
+            </Text>
             
             <Text style={[styles.paragraph, { marginTop: 8 }]}>
-              Classement de votre offre : <Text style={{ fontWeight: 'bold' }}>{data.rejet.classement || '—'}</Text>
+              Au classement final, votre offre se classe au <Text style={{ fontWeight: 'bold' }}>rang {data.rejet.classement || '—'}</Text>.
             </Text>
-
-            {/* Tableau des notes */}
-            <View style={styles.notesTable}>
-              <View style={[styles.notesTableRow, styles.notesTableRowBorder, styles.notesTableHeader]}>
-                <Text style={[styles.notesTableCell, styles.notesTableCellHeader]}>Critère</Text>
-                <Text style={[styles.notesTableCell, styles.notesTableCellHeader]}>Votre note</Text>
-                <Text style={[styles.notesTableCell, styles.notesTableCellHeader]}>Attributaire</Text>
-                <Text style={[styles.notesTableCellLast, styles.notesTableCellHeader]}>Max</Text>
-              </View>
-              <View style={[styles.notesTableRow, styles.notesTableRowBorder]}>
-                <Text style={styles.notesTableCell}>Technique</Text>
-                <Text style={styles.notesTableCell}>{data.rejet.noteTech || '—'}</Text>
-                <Text style={styles.notesTableCell}>{data.attributaire.noteTech || '—'}</Text>
-                <Text style={styles.notesTableCellLast}>{data.rejet.maxTech || '—'}</Text>
-              </View>
-              <View style={[styles.notesTableRow, styles.notesTableRowBorder]}>
-                <Text style={styles.notesTableCell}>Économique</Text>
-                <Text style={styles.notesTableCell}>{data.rejet.noteEco || '—'}</Text>
-                <Text style={styles.notesTableCell}>{data.attributaire.noteEco || '—'}</Text>
-                <Text style={styles.notesTableCellLast}>{data.rejet.maxEco || '—'}</Text>
-              </View>
-              <View style={styles.notesTableRow}>
-                <Text style={[styles.notesTableCell, { fontWeight: 'bold' }]}>TOTAL</Text>
-                <Text style={[styles.notesTableCell, { fontWeight: 'bold' }]}>{data.rejet.total || '—'}</Text>
-                <Text style={[styles.notesTableCell, { fontWeight: 'bold' }]}>{data.attributaire.total || '—'}</Text>
-                <Text style={[styles.notesTableCellLast, { fontWeight: 'bold' }]}>100</Text>
-              </View>
-            </View>
           </View>
         </View>
 
         {/* Section E */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>E – Attributaire retenu</Text>
+        <View style={styles.section} wrap={false}>
+          <Text style={styles.sectionHeader}>E – Identification de l'attributaire</Text>
           <View style={styles.sectionContent}>
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Entreprise :</Text>
-              <Text style={[styles.fieldValue, { fontWeight: 'bold' }]}>{data.attributaire.denomination || '—'}</Text>
-            </View>
-            <Text style={[styles.paragraph, { marginTop: 8 }]}>
-              <Text style={{ fontWeight: 'bold' }}>Caractéristiques et avantages de l'offre retenue :</Text>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#78350f', marginBottom: 8 }]}>
+              (En cas d'allotissement, cette rubrique est à renseigner pour chacun des lots de la procédure de passation du marché public ou 
+              de l'accord-cadre pour lesquels une offre a été retenue. Préciser pour chaque lot, son numéro et son intitulé tels qu'ils figurent 
+              dans les documents de la consultation.)
             </Text>
-            <Text style={styles.fieldValueFull}>{data.attributaire.motifs || '—'}</Text>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#78350f', marginBottom: 8 }]}>
+              (En cas d'infructuosité de la procédure, mention en est faite à cette rubrique, justifiant l'absence de désignation de tout 
+              attributaire).
+            </Text>
+            
+            <Text style={[styles.paragraph, { fontWeight: 'bold', marginBottom: 4 }]}>Désignation de l'attributaire :</Text>
+            <Text style={styles.paragraph}>Le marché public ou l'accord-cadre est attribué à :</Text>
+            
+            <Text style={[styles.paragraph, { fontWeight: 'bold', marginTop: 8, marginBottom: 8 }]}>
+              {data.attributaire.denomination || '—'}
+            </Text>
+            
+            <Text style={styles.paragraph}>
+              En effet, en considération des critères de choix définis dans le Règlement de la Consultation, son offre a obtenu{' '}
+              <Text style={{ fontWeight: 'bold' }}>{data.attributaire.total} points</Text> sur un total de 100.
+            </Text>
+            
+            <Text style={[styles.paragraph, { marginTop: 8, fontWeight: 'bold' }]}>Le détail est le suivant :</Text>
+            <Text style={styles.fieldValueFull}>
+              Note économique : <Text style={{ fontWeight: 'bold' }}>{data.attributaire.noteEco} / {data.attributaire.maxEco || '60'} points</Text>
+            </Text>
+            <Text style={styles.fieldValueFull}>
+              Note technique : <Text style={{ fontWeight: 'bold' }}>{data.attributaire.noteTech} / {data.attributaire.maxTech || '40'} points</Text>
+            </Text>
+            
+            {data.attributaire.motifs && (
+              <>
+                <Text style={[styles.paragraph, { marginTop: 10, fontWeight: 'bold' }]}>Pour les motifs suivants :</Text>
+                <Text style={styles.fieldValueFull}>{data.attributaire.motifs}</Text>
+              </>
+            )}
           </View>
         </View>
 
-        {/* Standstill */}
-        <View style={styles.standstillBox}>
-          <Text style={styles.standstillTitle}>⚠ Délai de standstill</Text>
-          <Text style={styles.standstillText}>
-            Conformément à l'article R. 2182-1 du CCP, vous disposez d'un délai de {data.delaiStandstill || '11'} jours à compter de la notification de la présente décision pour exercer un recours.
-          </Text>
+        {/* Section F - Délais et voies de recours */}
+        <View style={styles.section} wrap={false}>
+          <Text style={styles.sectionHeader}>F – Délais et voies de recours</Text>
+          <View style={styles.sectionContent}>
+            <Checkbox 
+              checked={true} 
+              label={`Le délai de suspension de la signature du marché public ou de l'accord-cadre est de ${data.delaiStandstill || '11'} jours, à compter de la date d'envoi de la présente notification.`} 
+            />
+            
+            <View style={{ marginTop: 12, breakInside: 'avoid' }}>
+              <Checkbox 
+                checked={true} 
+                label="Référé précontractuel :" 
+              />
+              <Text style={[styles.paragraph, { marginLeft: 20, marginTop: 4, fontSize: 7 }]}>
+                Le candidat peut, s'il le souhaite, exercer un référé précontractuel contre la présente procédure de passation, 
+                devant le président du tribunal administratif, avant la signature du marché public ou de l'accord-cadre.
+              </Text>
+            </View>
+            
+            <View style={{ marginTop: 12, breakInside: 'avoid' }}>
+              <Checkbox 
+                checked={true} 
+                label="Recours pour excès de pouvoir en cas de déclaration d'infructuosité de la procédure :" 
+              />
+              <Text style={[styles.paragraph, { marginLeft: 20, marginTop: 4, fontSize: 7 }]}>
+                Dans l'hypothèse d'une déclaration d'infructuosité de la procédure, le candidat peut, s'il le souhaite, 
+                exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif. 
+                Le juge doit être saisi dans un délai de deux mois à compter de la notification du présent courrier.
+              </Text>
+            </View>
+          </View>
         </View>
 
-        {/* Section F - Signature */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>F – Signature</Text>
+        {/* Section G - Signature */}
+        <View style={styles.section} wrap={false}>
+          <Text style={styles.sectionHeader}>G – Signature du pouvoir adjudicateur ou de l'entité adjudicatrice</Text>
           <View style={styles.sectionContent}>
             <View style={styles.signatureBlock}>
               <Text style={styles.signatureText}>
                 À {data.signature.lieu || 'Montreuil'}, le {data.signature.date || new Date().toLocaleDateString('fr-FR')}
               </Text>
-              <Text style={[styles.signatureText, { marginTop: 8 }]}>
-                {data.signature.signataireTitre || 'Direction Nationale des Achats'}
+              <Text style={[styles.signatureText, { marginTop: 20, fontWeight: 'bold' }]}>
+                Signature
               </Text>
-              <View style={styles.signatureLine} />
-              <Text style={styles.signatureLabel}>Signature du représentant habilité</Text>
+              <Text style={[styles.signatureLabel, { marginTop: 4 }]}>
+                (représentant du pouvoir adjudicateur ou de l'entité adjudicatrice habilité à signer le marché public)
+              </Text>
+              {data.signature.signataireNom && (
+                <Text style={[styles.signatureText, { marginTop: 30, fontWeight: 'bold' }]}>
+                  {data.signature.signataireNom}
+                </Text>
+              )}
+              {data.signature.signataireTitre && (
+                <Text style={[styles.signatureText, { marginTop: 8 }]}>
+                  {data.signature.signataireTitre}
+                </Text>
+              )}
             </View>
           </View>
         </View>
@@ -552,8 +668,8 @@ export const Noti3PDF = ({
       {/* ===== FOOTER FIXE ===== */}
       <View style={styles.footerFixed} fixed>
         <View style={styles.footerContent}>
-          <Text style={styles.footerLeft}>NOTI3 – Lettre de rejet</Text>
-          <Text style={styles.footerCenter}>N° {data.numeroProcedure || '—'}</Text>
+          <Text style={styles.footerLeft}>NOTI3 – Notification de rejet de candidature ou d'offre</Text>
+          <Text style={styles.footerCenter}>N° de procédure: {data.numeroProcedure || '—'}</Text>
           <Text 
             style={styles.footerRight}
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} / ${totalPages}`}

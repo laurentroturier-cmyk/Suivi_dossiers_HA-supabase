@@ -170,6 +170,7 @@ const styles = StyleSheet.create({
   // Sections
   section: {
     marginBottom: 12,
+    breakInside: 'avoid',
   },
   
   sectionHeader: {
@@ -181,6 +182,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     borderTopLeftRadius: 4,
     borderTopRightRadius: 4,
+    breakAfter: 'avoid',
   },
   
   sectionContent: {
@@ -191,6 +193,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
     padding: 12,
     backgroundColor: '#f0fdf4',
+    breakInside: 'avoid',
   },
   
   // Champs
@@ -223,6 +226,7 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 6,
     lineHeight: 1.5,
+    breakInside: 'avoid',
   },
   
   // Checkboxes
@@ -231,6 +235,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginVertical: 4,
     paddingLeft: 8,
+    breakInside: 'avoid',
   },
   
   checkboxIcon: {
@@ -368,7 +373,7 @@ export const Noti5PDF = ({
         <View style={styles.titleBanner}>
           <View style={styles.titleBannerLeft}>
             <Text style={styles.titleH1}>MARCHÉS PUBLICS</Text>
-            <Text style={styles.titleH2}>Notification d'un marché public ou accord-cadre</Text>
+            <Text style={styles.titleH2}>NOTIFICATION DU MARCHÉ PUBLIC</Text>
           </View>
           <View style={styles.titleBannerRight}>
             <Text style={styles.notiCode}>NOTI5</Text>
@@ -377,14 +382,18 @@ export const Noti5PDF = ({
 
         {/* Intro */}
         <Text style={styles.intro}>
-          Le formulaire NOTI5 est un modèle de lettre qui peut être utilisé pour notifier au titulaire l'attribution définitive du marché public ou de l'accord-cadre.
+          Le formulaire NOTI5 est un modèle de lettre qui peut être utilisé, par le pouvoir adjudicateur ou l'entité adjudicatrice, après qu'il ou elle ait signé le marché public, pour le notifier à l'attributaire.
         </Text>
 
         {/* Section A */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>A – Identification du pouvoir adjudicateur</Text>
+          <Text style={styles.sectionHeader}>A – Identification du pouvoir adjudicateur ou de l'entité adjudicatrice</Text>
           <View style={styles.sectionContent}>
-            <Text style={[styles.fieldValueFull, { fontWeight: 'bold' }]}>{data.pouvoirAdjudicateur.nom}</Text>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#14532d', marginBottom: 8 }]}>
+              (Reprendre le contenu de la mention figurant dans les documents de la consultation.)
+            </Text>
+            <Text style={[styles.paragraph, { fontWeight: 'bold', marginBottom: 4 }]}>AFPA</Text>
+            <Text style={[styles.fieldValueFull, { fontWeight: 'bold' }]}>Agence nationale pour la formation professionnelle des adultes</Text>
             <Text style={styles.fieldValueFull}>{data.pouvoirAdjudicateur.adresseVoie}</Text>
             <Text style={styles.fieldValueFull}>{data.pouvoirAdjudicateur.codePostal} {data.pouvoirAdjudicateur.ville}</Text>
           </View>
@@ -394,7 +403,11 @@ export const Noti5PDF = ({
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>B – Objet de la consultation</Text>
           <View style={styles.sectionContent}>
-            <Text style={styles.fieldValueFull}>{data.objetConsultation || '—'}</Text>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#14532d', marginBottom: 8 }]}>
+              (Reprendre le contenu de la mention figurant dans les documents de la consultation.)
+            </Text>
+            <Text style={[styles.fieldValueFull, { marginBottom: 8 }]}>{data.objetConsultation || '—'}</Text>
+            <Text style={[styles.fieldValueFull, { fontWeight: 'bold' }]}>{data.numeroProcedure}</Text>
           </View>
         </View>
 
@@ -402,6 +415,12 @@ export const Noti5PDF = ({
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>C – Identification de l'attributaire</Text>
           <View style={styles.sectionContent}>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#14532d', marginBottom: 8 }]}>
+              [Indiquer le nom commercial et la dénomination sociale de l'attributaire individuel ou de chaque membre du groupement
+              d'entreprises attributaire, les adresses de son établissement et de son siège social (si elle est différente de celle de l'établissement), son adresse
+              électronique, ses numéros de téléphone et de télécopie et son numéro SIRET. En cas de groupement d'entreprises attributaire, identifier précisément le
+              mandataire du groupement.]
+            </Text>
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Entreprise :</Text>
               <Text style={[styles.fieldValue, { fontWeight: 'bold' }]}>{data.attributaire.denomination || '—'}</Text>
@@ -428,6 +447,18 @@ export const Noti5PDF = ({
               <Text style={styles.fieldLabel}>Email :</Text>
               <Text style={styles.fieldValue}>{data.attributaire.email || '—'}</Text>
             </View>
+            {data.attributaire.telephone && (
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>Téléphone :</Text>
+                <Text style={styles.fieldValue}>{data.attributaire.telephone}</Text>
+              </View>
+            )}
+            {data.attributaire.fax && (
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>Fax :</Text>
+                <Text style={styles.fieldValue}>{data.attributaire.fax}</Text>
+              </View>
+            )}
             {data.attributaire.estMandataire && (
               <Text style={[styles.fieldValueFull, { fontStyle: 'italic', marginTop: 5 }]}>
                 (Mandataire du groupement)
@@ -437,9 +468,13 @@ export const Noti5PDF = ({
         </View>
 
         {/* Section D */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>D – Attribution</Text>
+        <View style={styles.section} wrap={false}>
+          <Text style={styles.sectionHeader}>D – Notification de l'attribution du marché public ou de l'accord-cadre</Text>
           <View style={styles.sectionContent}>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#14532d', marginBottom: 8 }]}>
+              [Étant entendu qu'un attributaire ne peut recevoir qu'une seule notification de l'attribution du marché public ou de l'accord-cadre,
+              il faut faire autant de lettres qu'il y a d'attributaires. Plusieurs lots peuvent être précisés si un seul attributaire est titulaire de plusieurs lots.]
+            </Text>
             <Text style={styles.paragraph}>Je vous notifie l'attribution de :</Text>
             <Checkbox 
               checked={data.notification.type === 'ensemble'} 
@@ -447,94 +482,138 @@ export const Noti5PDF = ({
             />
             <Checkbox 
               checked={data.notification.type === 'lots'} 
-              label={`Le(s) lot(s) n° ${data.notification.type === 'lots' && data.notification.lots?.length 
-                ? data.notification.lots.map(l => `${l.numero}: ${l.intitule}`).join(', ')
-                : '________________'}`}
+              label="Le(s) lot(s) suivant(s) :"
+            />
+            {data.notification.type === 'lots' && data.notification.lots && data.notification.lots.length > 0 && (
+              <View style={{ paddingLeft: 20, marginTop: 6 }}>
+                {data.notification.lots.map((lot, index) => (
+                  <Text key={index} style={[styles.paragraph, { marginBottom: 4 }]}>
+                    • Lot n°{lot.numero} : {lot.intitule}
+                  </Text>
+                ))}
+              </View>
+            )}
+            
+            <Text style={[styles.paragraph, { marginTop: 12, marginBottom: 6 }]}>Début d'exécution :</Text>
+            <Checkbox 
+              checked={data.notification.executionImmediateChecked || data.executionPrestations?.type === 'immediate' || false} 
+              label="L'exécution commencera à compter de la date de notification et selon les modalités prévues aux documents de la consultation."
+            />
+            <Checkbox 
+              checked={data.notification.executionOrdreServiceChecked || data.executionPrestations?.type === 'sur_commande' || false} 
+              label="L'exécution commencera à compter de la réception de l'ordre de service qui vous sera adressé dans les conditions prévues par les documents de la consultation."
             />
           </View>
         </View>
 
         {/* Section E */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>E – Exécution des prestations</Text>
+        <View style={styles.section} wrap={false}>
+          <Text style={styles.sectionHeader}>E – Retenue de garantie ou garantie à première demande</Text>
           <View style={styles.sectionContent}>
-            <Text style={styles.paragraph}>L'exécution des prestations débutera :</Text>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#14532d', marginBottom: 8 }]}>
+              [La retenue de garantie peut être remplacée, au choix du titulaire, soit par une garantie à première demande, soit par une caution personnelle et solidaire.
+              Celle-ci ne s'applique pas en cas d'allotissement lorsque le montant du marché public est inférieur à 90 000 € HT.
+              Les documents de la consultation précisent si elle a été prévue ou non ainsi que son éventuel taux et ses modalités.]
+            </Text>
             <Checkbox 
-              checked={data.executionPrestations.type === 'immediate'} 
-              label="Dès réception de la présente notification"
+              checked={data.garantie?.pasPrevue || data.garanties?.aucuneGarantie || false} 
+              label="Les documents de la consultation ne prévoient pas de retenue de garantie ou de garantie à première demande."
             />
             <Checkbox 
-              checked={data.executionPrestations.type === 'sur_commande'} 
-              label="À réception d'un bon de commande ou ordre de service"
+              checked={data.garantie?.prevueSansAllotissement || false} 
+              label="En l'absence d'allotissement de ce marché public :"
             />
+            {data.garantie?.prevueSansAllotissement && (
+              <View style={{ paddingLeft: 20, marginTop: 4 }}>
+                <Checkbox 
+                  checked={data.garantie?.retenueGarantieSansAllotissement || false} 
+                  label="Une retenue de garantie est prévue par les documents de la consultation (préciser son taux et ses modalités)."
+                  sub
+                />
+                <Checkbox 
+                  checked={data.garantie?.garantiePremiereDemandeOuCautionSansAllotissement || false} 
+                  label="Une garantie à première demande ou une caution personnelle et solidaire est prévue par les documents de la consultation (préciser son taux et ses modalités)."
+                  sub
+                />
+              </View>
+            )}
+            <Checkbox 
+              checked={data.garantie?.prevueAvecAllotissement || false} 
+              label="En cas d'allotissement de ce marché public :"
+            />
+            {data.garantie?.prevueAvecAllotissement && (
+              <View style={{ paddingLeft: 20, marginTop: 4 }}>
+                <Checkbox 
+                  checked={data.garantie?.montantInferieur90k || false} 
+                  label="Le montant de votre offre est inférieur à 90 000 € HT. Aucune retenue de garantie ou garantie à première demande n'est exigée pour le(s) lot(s) dont vous êtes attributaire."
+                  sub
+                />
+                <Checkbox 
+                  checked={data.garantie?.montantSuperieur90kRetenue || false} 
+                  label="Le montant de votre offre est supérieur ou égal à 90 000 € HT. Une retenue de garantie est prévue par les documents de la consultation pour le(s) lot(s) dont vous êtes attributaire (préciser son taux et ses modalités)."
+                  sub
+                />
+                <Checkbox 
+                  checked={data.garantie?.montantSuperieur90kGarantie || false} 
+                  label="Le montant de votre offre est supérieur ou égal à 90 000 € HT. Une garantie à première demande ou une caution personnelle et solidaire est prévue par les documents de la consultation pour le(s) lot(s) dont vous êtes attributaire (préciser son taux et ses modalités)."
+                  sub
+                />
+              </View>
+            )}
+            
+            {/* Rétro-compatibilité avec l'ancienne structure */}
+            {data.garanties?.retenue?.active && (
+              <View style={{ marginTop: 10, padding: 8, backgroundColor: '#f0fdf4', borderRadius: 4, borderWidth: 1, borderColor: '#bbf7d0' }}>
+                <Text style={[styles.paragraph, { fontWeight: 'bold', marginBottom: 4 }]}>Retenue de garantie :</Text>
+                <Text style={styles.paragraph}>{data.garanties.retenue.pourcentage}%</Text>
+                {data.garanties.retenue.remplacablePar.garantiePremieredemande && (
+                  <Text style={styles.paragraph}>• Remplaçable par garantie à première demande</Text>
+                )}
+                {data.garanties.retenue.remplacablePar.cautionPersonnelle && (
+                  <Text style={styles.paragraph}>• Remplaçable par caution personnelle et solidaire</Text>
+                )}
+              </View>
+            )}
+            
+            {data.garantie?.modalites && (
+              <View style={{ marginTop: 10, padding: 8, backgroundColor: '#f0fdf4', borderRadius: 4, borderWidth: 1, borderColor: '#bbf7d0' }}>
+                <Text style={[styles.paragraph, { fontWeight: 'bold', marginBottom: 4 }]}>Modalités :</Text>
+                <Text style={styles.paragraph}>{data.garantie.modalites}</Text>
+              </View>
+            )}
           </View>
         </View>
 
         {/* Section F */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>F – Garanties demandées</Text>
+        <View style={styles.section} wrap={false}>
+          <Text style={styles.sectionHeader}>F – Pièces jointes</Text>
           <View style={styles.sectionContent}>
-            <Checkbox 
-              checked={data.garanties.aucuneGarantie} 
-              label="Aucune garantie n'est exigée"
-            />
-            <Checkbox 
-              checked={data.garanties.retenue?.active || false} 
-              label={`Retenue de garantie de ${data.garanties.retenue?.pourcentage || 5}%`}
-            />
-            {data.garanties.retenue?.active && (
-              <>
-                <Checkbox 
-                  checked={data.garanties.retenue?.remplacablePar?.garantiePremieredemande || false} 
-                  label="Remplaçable par garantie à première demande"
-                  sub
-                />
-                <Checkbox 
-                  checked={data.garanties.retenue?.remplacablePar?.cautionPersonnelle || false} 
-                  label="Remplaçable par caution personnelle et solidaire"
-                  sub
-                />
-              </>
-            )}
-            <Checkbox 
-              checked={data.garanties.garantieAvanceSuperieure30} 
-              label="Garantie à première demande pour avance > 30%"
-            />
-          </View>
-        </View>
-
-        {/* Section G */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>G – Pièces jointes</Text>
-          <View style={styles.sectionContent}>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#14532d', marginBottom: 8 }]}>
+              [Indiquer les pièces à fournir par le titulaire pour compléter le marché public.]
+            </Text>
             <Checkbox 
               checked={data.piecesJointes.actEngagementPapier} 
-              label="2 photocopies de l'acte d'engagement (1 avec mention « exemplaire unique »)"
+              label="2 exemplaires papier de l'acte d'engagement signés en original, un exemplaire comportant au verso du dernier feuillet la mention manuscrite « exemplaire unique »."
             />
             <Checkbox 
               checked={data.piecesJointes.actEngagementPDF} 
-              label="Copie électronique de l'acte d'engagement (PDF)"
+              label="1 copie électronique de l'acte d'engagement (PDF)."
             />
           </View>
         </View>
 
-        {/* Success box */}
-        <View style={styles.successBox}>
-          <Text style={styles.successTitle}>✓ Notification effective</Text>
-          <Text style={styles.successText}>
-            La présente notification vaut ordre de service pour l'exécution du marché conformément aux stipulations contractuelles.
-          </Text>
-        </View>
-
-        {/* Section H - Signature */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>H – Signature</Text>
+        {/* Section G - Signature */}
+        <View style={styles.section} wrap={false}>
+          <Text style={styles.sectionHeader}>G – Signature</Text>
           <View style={styles.sectionContent}>
             <View style={styles.signatureBlock}>
               <Text style={styles.signatureText}>
                 À {data.signature.lieu || 'Montreuil'}, le {data.signature.date || new Date().toLocaleDateString('fr-FR')}
               </Text>
               <Text style={[styles.signatureText, { marginTop: 8 }]}>
+                {data.signature.signataireNom || ''}
+              </Text>
+              <Text style={[styles.signatureText, { marginTop: 2 }]}>
                 {data.signature.signataireTitre || 'Direction Nationale des Achats'}
               </Text>
               <View style={styles.signatureLine} />
