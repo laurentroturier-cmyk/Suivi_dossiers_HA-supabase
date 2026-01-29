@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Upload, Check, X, FileSpreadsheet, FileCog, Download, Edit2, Eye, AlertCircle, Save, FolderOpen, Clock, FileSignature, FileCheck, Construction } from 'lucide-react';
 import { RapportContent, RapportState } from '../types';
 import { generateRapportData } from '../utils/generateRapportData';
-import { parseDepotsFile } from '../../../utils/depotsParser';
-import { parseRetraitsFile } from '../../../utils/retraitsParser';
 import { parseExcelFile, AnalysisData } from '@/components/an01';
+import { exportRapportPresentationPdf } from '../utils/rapportPresentationPdfExport';
 import { DepotsData } from '../../types/depots';
 import { RetraitsData } from '../../types/retraits';
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, HeadingLevel, AlignmentType, Footer, Header, PageNumber, NumberFormat, ImageRun, TableOfContents } from "docx";
@@ -68,6 +67,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   
   // Gestion des rapports sauvegardés
   const [rapportsSauvegardes, setRapportsSauvegardes] = useState<RapportSauvegarde[]>([]);
@@ -111,6 +111,59 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
       setRapportsSauvegardes(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des rapports:', error);
+    }
+  };
+
+  // Charger les données depots/retraits depuis la table procédures
+  const loadDepotsRetraitsFromDB = async () => {
+    if (!procedureSelectionnee?.NumProc) {
+      return;
+    }
+
+    try {
+      // Récupérer les colonnes depots et retraits de la procédure
+      const { data, error } = await supabase
+        .from('procédures')
+        .select('depots, retraits')
+        .eq('NumProc', procedureSelectionnee.NumProc)
+        .single();
+
+      if (error) {
+        console.error('Erreur lors du chargement des depots/retraits:', error);
+        return;
+      }
+
+      // Parser et charger les données depots
+      if (data?.depots) {
+        const depotsDataParsed = typeof data.depots === 'string' 
+          ? JSON.parse(data.depots) 
+          : data.depots;
+        setDepotsData(depotsDataParsed);
+        setState(prev => ({
+          ...prev,
+          fichiersCharges: { ...prev.fichiersCharges, depots: true },
+        }));
+        console.log('✅ Données dépôts chargées depuis Supabase');
+      }
+
+      // Parser et charger les données retraits
+      if (data?.retraits) {
+        const retraitsDataParsed = typeof data.retraits === 'string'
+          ? JSON.parse(data.retraits)
+          : data.retraits;
+        setRetraitsData(retraitsDataParsed);
+        setState(prev => ({
+          ...prev,
+          fichiersCharges: { ...prev.fichiersCharges, retraits: true },
+        }));
+        console.log('✅ Données retraits chargées depuis Supabase');
+      }
+
+      if (!data?.depots && !data?.retraits) {
+        console.warn('⚠️ Aucune donnée depots/retraits trouvée pour cette procédure');
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des depots/retraits:', error);
     }
   };
 
@@ -437,41 +490,15 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     setAn01Data(null);
   };
 
-  // Handler pour l'upload du fichier Dépôts (Excel/PDF)
-  const handleDepotsUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const parsed = await parseDepotsFile(file);
-      setDepotsData(parsed);
-      setState(prev => ({
-        ...prev,
-        fichiersCharges: { ...prev.fichiersCharges, depots: true },
-      }));
-    } catch (error) {
-      console.error('Erreur lors du parsing du fichier Dépôts:', error);
-      alert('Erreur lors du chargement du fichier Dépôts');
+  // Charger automatiquement les depots/retraits quand une procédure est sélectionnée
+  useEffect(() => {
+    if (procedureSelectionnee?.NumProc) {
+      loadDepotsRetraitsFromDB();
     }
-  };
+  }, [procedureSelectionnee?.NumProc]);
 
-  // Handler pour l'upload du fichier Retraits (Excel/PDF)
-  const handleRetraitsUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const parsed = await parseRetraitsFile(file);
-      setRetraitsData(parsed);
-      setState(prev => ({
-        ...prev,
-        fichiersCharges: { ...prev.fichiersCharges, retraits: true },
-      }));
-    } catch (error) {
-      console.error('Erreur lors du parsing du fichier Retraits:', error);
-      alert('Erreur lors du chargement du fichier Retraits');
-    }
-  };
+  // Les données depots/retraits sont maintenant chargées automatiquement depuis Supabase
+  // (voir fonction loadDepotsRetraitsFromDB)
 
   // Handler pour l'upload du fichier AN01 (Excel)
   const handleAn01Upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1295,6 +1322,36 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     }
   };
 
+  // Export PDF
+  const handleExportPDF = async () => {
+    if (!state.rapportGenere) return;
+    
+    setIsExportingPdf(true);
+    
+    try {
+      // Préparer les données pour le PDF
+      const pdfData = {
+        ...state.rapportGenere,
+        numeroProcedure: procedureSelectionnee?.['Numéro de procédure (Afpa)'] || '',
+        procedureSelectionnee,
+        contenuChapitre3,
+        contenuChapitre4,
+        chapitre10,
+      };
+
+      // Générer et télécharger le PDF
+      await exportRapportPresentationPdf(
+        pdfData,
+        `Rapport_Presentation_${procedureSelectionnee?.['Numéro de procédure (Afpa)'] || 'export'}.pdf`
+      );
+    } catch (error) {
+      console.error('Erreur lors de l\'export PDF:', error);
+      alert('Erreur lors de l\'export PDF');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   const formatCurrency = (val: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
 
   const tousLesFileursCharges = state.fichiersCharges.depots && state.fichiersCharges.retraits && state.fichiersCharges.an01;
@@ -1359,14 +1416,15 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
           )}
         </div>
 
-        {/* Upload des fichiers */}
+        {/* Données automatiquement chargées */}
         {state.procedureSelectionnee && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">2. Charger les fichiers nécessaires</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">2. Données de la procédure</h2>
+            <p className="text-sm text-gray-600 mb-4">📊 Les données des registres sont chargées automatiquement depuis la base de données.</p>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Registre Dépôts */}
-              <div className={`border-2 border-dashed rounded-lg p-4 ${state.fichiersCharges.depots ? 'border-green-400 bg-green-50' : 'border-gray-300'}`}>
+              <div className={`border-2 rounded-lg p-4 ${state.fichiersCharges.depots ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <FileSpreadsheet className="w-5 h-5 text-gray-600" />
@@ -1374,21 +1432,17 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   </div>
                   {state.fichiersCharges.depots && <Check className="w-5 h-5 text-green-600" />}
                 </div>
-                <label className="block">
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls,.pdf"
-                    onChange={handleDepotsUpload}
-                    className="hidden"
-                  />
-                  <div className="cursor-pointer text-center py-2 px-4 bg-blue-100 hover:bg-blue-200 rounded text-sm text-blue-700 font-medium">
-                    {state.fichiersCharges.depots ? 'Remplacer' : 'Charger Excel/PDF'}
-                  </div>
-                </label>
+                <div className="text-center py-2 px-4 rounded text-sm">
+                  {state.fichiersCharges.depots ? (
+                    <span className="text-green-700 font-medium">✓ Chargé depuis Supabase</span>
+                  ) : (
+                    <span className="text-gray-500 italic">Aucune donnée disponible</span>
+                  )}
+                </div>
               </div>
 
               {/* Registre Retraits */}
-              <div className={`border-2 border-dashed rounded-lg p-4 ${state.fichiersCharges.retraits ? 'border-green-400 bg-green-50' : 'border-gray-300'}`}>
+              <div className={`border-2 rounded-lg p-4 ${state.fichiersCharges.retraits ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <FileSpreadsheet className="w-5 h-5 text-gray-600" />
@@ -1396,17 +1450,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   </div>
                   {state.fichiersCharges.retraits && <Check className="w-5 h-5 text-green-600" />}
                 </div>
-                <label className="block">
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls,.pdf"
-                    onChange={handleRetraitsUpload}
-                    className="hidden"
-                  />
-                  <div className="cursor-pointer text-center py-2 px-4 bg-blue-100 hover:bg-blue-200 rounded text-sm text-blue-700 font-medium">
-                    {state.fichiersCharges.retraits ? 'Remplacer' : 'Charger Excel/PDF'}
-                  </div>
-                </label>
+                <div className="text-center py-2 px-4 rounded text-sm">
+                  {state.fichiersCharges.retraits ? (
+                    <span className="text-green-700 font-medium">✓ Chargé depuis Supabase</span>
+                  ) : (
+                    <span className="text-gray-500 italic">Aucune donnée disponible</span>
+                  )}
+                </div>
               </div>
 
               {/* AN01 */}
@@ -1601,7 +1651,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                 Charger ({rapportsSauvegardes.length})
               </button>
 
-              {/* Bouton Exporter */}
+              {/* Bouton Exporter DOCX */}
               {state.rapportGenere && (
                 <>
                   <button
@@ -1618,6 +1668,25 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                       <>
                         <Download className="w-4 h-4" />
                         Exporter en DOCX
+                      </>
+                    )}
+                  </button>
+
+                  {/* Bouton Exporter PDF */}
+                  <button
+                    onClick={handleExportPDF}
+                    disabled={isExportingPdf}
+                    className="py-2 px-4 min-w-[120px] bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isExportingPdf ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Export...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4" />
+                        Exporter en PDF
                       </>
                     )}
                   </button>
