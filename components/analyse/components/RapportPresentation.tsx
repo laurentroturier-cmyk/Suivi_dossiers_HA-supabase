@@ -233,15 +233,21 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
 
   // Sauvegarder le rapport actuel
   const handleSaveRapport = async () => {
+    console.log('🔵 handleSaveRapport appelée');
+    
     if (!procedureSelectionnee?.NumProc) {
+      console.log('❌ Aucune procédure sélectionnée');
       alert('Aucune procédure sélectionnée');
       return;
     }
 
     if (!titreRapport.trim()) {
+      console.log('❌ Aucun titre saisi');
       alert('Veuillez saisir un titre pour le rapport');
       return;
     }
+
+    console.log('✅ Validation OK, début de la sauvegarde...');
 
     try {
       setSaveMessage(null);
@@ -261,8 +267,16 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         an01: state.fichiersCharges.an01,
       };
 
+      console.log('📦 Sauvegarde du rapport...', { 
+        rapportActuelId, 
+        titreRapport, 
+        numProc: procedureSelectionnee.NumProc,
+        hasRapportData: !!state.rapportGenere
+      });
+
       if (rapportActuelId) {
         // Mise à jour d'un rapport existant
+        console.log('🔄 Mise à jour du rapport existant ID:', rapportActuelId);
         const { error } = await supabase
           .from('rapports_presentation')
           .update({
@@ -274,8 +288,12 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
           })
           .eq('id', rapportActuelId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Erreur mise à jour:', error);
+          throw error;
+        }
         setSaveMessage('Rapport mis à jour avec succès');
+        console.log('✅ Rapport mis à jour avec succès');
       } else {
         // Création d'un nouveau rapport
         // Déterminer le numéro de version
@@ -283,7 +301,8 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
           ? Math.max(...rapportsSauvegardes.map(r => r.version))
           : 0;
 
-        const { error } = await supabase
+        console.log('➕ Création d\'un nouveau rapport, version:', maxVersion + 1);
+        const { data: insertedData, error } = await supabase
           .from('rapports_presentation')
           .insert({
             num_proc: procedureSelectionnee.NumProc,
@@ -293,10 +312,20 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             notes: notesRapport,
             version: maxVersion + 1,
             statut: 'brouillon',
-          });
+          })
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Erreur insertion:', error);
+          throw error;
+        }
         setSaveMessage('Rapport enregistré avec succès');
+        console.log('✅ Rapport enregistré avec succès', insertedData);
+        
+        // Mettre à jour l'ID du rapport actuel
+        if (insertedData && insertedData.length > 0) {
+          setRapportActuelId(insertedData[0].id);
+        }
       }
 
       // Recharger la liste des rapports
@@ -307,9 +336,15 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         setShowSaveDialog(false);
         setSaveMessage(null);
       }, 2000);
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
-      setSaveMessage('Erreur lors de la sauvegarde du rapport');
+    } catch (error: any) {
+      console.error('❌ Erreur lors de la sauvegarde:', error);
+      console.error('❌ Détails de l\'erreur:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      setSaveMessage(`Erreur lors de la sauvegarde: ${error.message || 'Erreur inconnue'}`);
     }
   };
 
@@ -1424,17 +1459,17 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Registre Dépôts */}
-              <div className={`border-2 rounded-lg p-4 ${state.fichiersCharges.depots ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
+              <div className={`border-2 rounded-lg p-4 ${state.fichiersCharges.depots ? 'border-teal-400 bg-teal-50' : 'border-gray-300 bg-gray-50'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <FileSpreadsheet className="w-5 h-5 text-gray-600" />
                     <span className="font-medium text-gray-900">Registre Dépôts</span>
                   </div>
-                  {state.fichiersCharges.depots && <Check className="w-5 h-5 text-green-600" />}
+                  {state.fichiersCharges.depots && <Check className="w-5 h-5 text-teal-700" />}
                 </div>
                 <div className="text-center py-2 px-4 rounded text-sm">
                   {state.fichiersCharges.depots ? (
-                    <span className="text-green-700 font-medium">✓ Chargé depuis Supabase</span>
+                    <span className="text-teal-700 font-medium">✓ Chargé depuis Supabase</span>
                   ) : (
                     <span className="text-gray-500 italic">Aucune donnée disponible</span>
                   )}
@@ -1442,17 +1477,17 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               </div>
 
               {/* Registre Retraits */}
-              <div className={`border-2 rounded-lg p-4 ${state.fichiersCharges.retraits ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
+              <div className={`border-2 rounded-lg p-4 ${state.fichiersCharges.retraits ? 'border-teal-400 bg-teal-50' : 'border-gray-300 bg-gray-50'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <FileSpreadsheet className="w-5 h-5 text-gray-600" />
                     <span className="font-medium text-gray-900">Registre Retraits</span>
                   </div>
-                  {state.fichiersCharges.retraits && <Check className="w-5 h-5 text-green-600" />}
+                  {state.fichiersCharges.retraits && <Check className="w-5 h-5 text-teal-700" />}
                 </div>
                 <div className="text-center py-2 px-4 rounded text-sm">
                   {state.fichiersCharges.retraits ? (
-                    <span className="text-green-700 font-medium">✓ Chargé depuis Supabase</span>
+                    <span className="text-teal-700 font-medium">✓ Chargé depuis Supabase</span>
                   ) : (
                     <span className="text-gray-500 italic">Aucune donnée disponible</span>
                   )}
@@ -1460,13 +1495,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               </div>
 
               {/* AN01 */}
-              <div className={`border-2 border-dashed rounded-lg p-4 ${state.fichiersCharges.an01 ? 'border-green-400 bg-green-50' : 'border-gray-300'}`}>
+              <div className={`border-2 border-dashed rounded-lg p-4 ${state.fichiersCharges.an01 ? 'border-teal-400 bg-teal-50' : 'border-gray-300'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <FileCog className="w-5 h-5 text-gray-600" />
                     <span className="font-medium text-gray-900">Analyse AN01</span>
                   </div>
-                  {state.fichiersCharges.an01 && <Check className="w-5 h-5 text-green-600" />}
+                  {state.fichiersCharges.an01 && <Check className="w-5 h-5 text-teal-700" />}
                 </div>
                 <label className="block">
                   <input
@@ -1536,7 +1571,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                         <p className="text-blue-600">📊 1 lot sélectionné</p>
                       )}
                       {selectedLots.length > 1 && selectedLots.length < an01GlobalData.lots.length && (
-                        <p className="text-green-600">📊 {selectedLots.length} lots sélectionnés (synthèse multi-lots)</p>
+                        <p className="text-teal-700">📊 {selectedLots.length} lots sélectionnés (synthèse multi-lots)</p>
                       )}
                       {selectedLots.length === an01GlobalData.lots.length && (
                         <p className="text-purple-600">📊 Tous les lots sélectionnés (synthèse globale)</p>
@@ -1557,8 +1592,8 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             </div>
             
             {tousLesFileursCharges && (
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
+              <div className="mt-4 p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-center gap-2">
+                <Check className="w-5 h-5 text-teal-700" />
                 <span className="text-sm text-green-800 font-medium">Tous les fichiers sont chargés !</span>
               </div>
             )}
@@ -1609,7 +1644,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     }
                     setModeEdition(!modeEdition);
                   }}
-                  className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2"
+                  className="py-2 px-4 min-w-[120px] bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg flex items-center justify-center gap-2"
                 >
                   <Edit2 className="w-4 h-4" />
                   {modeEdition ? 'Quitter l\'édition' : 'Modifier'}
@@ -1624,7 +1659,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     setModeEdition(false);
                     alert('Modifications enregistrées dans le rapport');
                   }}
-                  className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2"
+                  className="py-2 px-4 min-w-[120px] bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg flex items-center justify-center gap-2"
                 >
                   <Check className="w-4 h-4" />
                   Valider les modifications
@@ -1635,7 +1670,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               <button
                 onClick={() => setShowSaveDialog(true)}
                 disabled={!state.rapportGenere || modeEdition}
-                className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="py-2 px-4 min-w-[120px] bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" />
                 Sauvegarder
@@ -1645,7 +1680,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               <button
                 onClick={() => setShowLoadDialog(true)}
                 disabled={rapportsSauvegardes.length === 0}
-                className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="py-2 px-4 min-w-[120px] bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <FolderOpen className="w-4 h-4" />
                 Charger ({rapportsSauvegardes.length})
@@ -1657,7 +1692,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   <button
                     onClick={handleExportDOCX}
                     disabled={isExporting}
-                    className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="py-2 px-4 min-w-[120px] bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isExporting ? (
                       <>
@@ -1694,7 +1729,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   {/* Bouton unique pour générer les NOTI */}
                   <button
                     onClick={() => setShowNotificationsQuickAccess(true)}
-                    className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2"
+                    className="py-2 px-4 min-w-[120px] bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg flex items-center justify-center gap-2"
                     title="Générer les notifications (NOTI1, NOTI5, NOTI3) avec fonctionnalités avancées"
                   >
                     <FileText className="w-4 h-4" />
@@ -1704,7 +1739,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   {/* Bouton NOTI Multi-Attributaires (en construction) */}
                   <button
                     onClick={() => setShowNotiMultiAttributaires(true)}
-                    className="py-2 px-4 min-w-[120px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2 opacity-70"
+                    className="py-2 px-4 min-w-[120px] bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg flex items-center justify-center gap-2 opacity-70"
                     title="NOTI Multi-Attributaires (en construction)"
                   >
                     <Construction className="w-4 h-4" />
@@ -1909,7 +1944,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 {contenuChapitre3 && (
-                  <p className="text-xs text-green-600">✓ {contenuChapitre3.length} caractères saisis</p>
+                  <p className="text-xs text-teal-700">✓ {contenuChapitre3.length} caractères saisis</p>
                 )}
                 {dceData && (
                   <div className="mt-2 p-2 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg">
@@ -1938,7 +1973,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 {contenuChapitre4 && (
-                  <p className="text-xs text-green-600">✓ {contenuChapitre4.length} caractères saisis</p>
+                  <p className="text-xs text-teal-700">✓ {contenuChapitre4.length} caractères saisis</p>
                 )}
               </div>
             </ChapterPreview>
@@ -2061,7 +2096,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     <>
                       {state.rapportGenere.section7_2_syntheseLots.lots.map((lot: any, idx: number) => (
                         <div key={idx} className="mb-6">
-                          <p className="font-bold mb-2 text-green-700 bg-green-50 px-2 py-1 rounded inline-block">
+                          <p className="font-bold mb-2 text-teal-700 bg-green-50 px-2 py-1 rounded inline-block">
                             {lot.nomLot}
                           </p>
                           <div className="mt-2 overflow-x-auto">
@@ -2179,13 +2214,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                                 <td className="px-2 py-1 border-b text-right">{formatCurrency(lot.moyenneTTC)}</td>
                                 <td className="px-2 py-1 border-b text-right">{formatCurrency(lot.offreRetenueHT)}</td>
                                 <td className="px-2 py-1 border-b text-right">{formatCurrency(lot.offreRetenueTTC)}</td>
-                                <td className={`px-2 py-1 border-b text-right font-semibold ${lot.gainsHT < 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <td className={`px-2 py-1 border-b text-right font-semibold ${lot.gainsHT < 0 ? 'text-teal-700' : 'text-red-600'}`}>
                                   {formatCurrency(lot.gainsHT)}
                                 </td>
-                                <td className={`px-2 py-1 border-b text-right font-semibold ${lot.gainsTTC < 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <td className={`px-2 py-1 border-b text-right font-semibold ${lot.gainsTTC < 0 ? 'text-teal-700' : 'text-red-600'}`}>
                                   {formatCurrency(lot.gainsTTC)}
                                 </td>
-                                <td className={`px-2 py-1 border-b text-right font-bold ${lot.gainsPourcent < 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <td className={`px-2 py-1 border-b text-right font-bold ${lot.gainsPourcent < 0 ? 'text-teal-700' : 'text-red-600'}`}>
                                   {lot.gainsPourcent.toFixed(1)}%
                                 </td>
                               </tr>
@@ -2298,11 +2333,11 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     </>
                   ) : (
                     // Mode lot unique
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
                       <p className="font-semibold text-green-900 text-lg">
                         ✅ Attributaire pressenti : {state.rapportGenere.section9_attribution.attributairePressenti}
                       </p>
-                      <p className="text-sm text-green-700 mt-2">
+                      <p className="text-sm text-teal-700 mt-2">
                         Candidat ayant obtenu la meilleure note finale
                       </p>
                     </div>
@@ -2329,7 +2364,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                 <p className="text-sm text-gray-700 font-medium">✏️ Complétez les informations :</p>
                 
                 {/* Validation de la proposition d'attribution du marché */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
                   <label className="text-sm font-semibold text-gray-900">
                     Validation de la proposition d'attribution du marché :
                   </label>
@@ -2384,7 +2419,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                 {/* Aperçu */}
                 {(chapitre10.attributionMarche || chapitre10.autresElements) && (
                   <div className="bg-gray-50 border border-gray-300 rounded-lg p-3">
-                    <p className="text-xs text-green-600 mb-2">✓ Données saisies</p>
+                    <p className="text-xs text-teal-700 mb-2">✓ Données saisies</p>
                     <div className="space-y-1 text-xs text-gray-700 font-mono">
                       <p><strong>Validation :</strong> {chapitre10.validationAttribution}</p>
                       <p><strong>Rejet :</strong> {chapitre10.envoiRejet}</p>
@@ -2441,7 +2476,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               </div>
 
               {saveMessage && (
-                <div className={`p-3 rounded-lg ${saveMessage.includes('succès') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                <div className={`p-3 rounded-lg ${saveMessage.includes('succès') ? 'bg-teal-100 text-teal-800' : 'bg-red-100 text-red-800'}`}>
                   {saveMessage}
                 </div>
               )}
@@ -2499,7 +2534,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                           <span className={`text-xs px-2 py-1 rounded-full ${
                             rapport.statut === 'brouillon' ? 'bg-gray-200 text-gray-700' :
                             rapport.statut === 'en_revision' ? 'bg-blue-200 text-blue-700' :
-                            rapport.statut === 'valide' ? 'bg-green-200 text-green-700' :
+                            rapport.statut === 'valide' ? 'bg-green-200 text-teal-700' :
                             'bg-purple-200 text-purple-700'
                           }`}>
                             {rapport.statut === 'brouillon' ? 'Brouillon' :

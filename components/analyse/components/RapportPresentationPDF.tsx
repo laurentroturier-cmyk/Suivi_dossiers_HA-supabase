@@ -5,7 +5,8 @@ import {
   Text, 
   View, 
   Image, 
-  StyleSheet
+  StyleSheet,
+  Link
 } from '@react-pdf/renderer';
 
 // Styles professionnels du Rapport de Présentation
@@ -319,45 +320,35 @@ export const RapportPresentationPDF = ({
           <View style={styles.chapter} id="sommaire">
             <Text style={styles.chapterHeader}>SOMMAIRE</Text>
             <View style={{ marginTop: 10 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
-                <Text style={styles.tocItem}>1. CONTEXTE</Text>
-                <Text style={styles.tocPage}>2</Text>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+                <Link src="#chapitre1" style={styles.tocItem}>1. CONTEXTE</Link>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
-                <Text style={styles.tocItem}>2. DÉROULEMENT DE LA PROCÉDURE</Text>
-                <Text style={styles.tocPage}>2</Text>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+                <Link src="#chapitre2" style={styles.tocItem}>2. DÉROULEMENT DE LA PROCÉDURE</Link>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
-                <Text style={styles.tocItem}>3. DOSSIER DE CONSULTATION</Text>
-                <Text style={styles.tocPage}>3</Text>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+                <Link src="#chapitre3" style={styles.tocItem}>3. DOSSIER DE CONSULTATION</Link>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
-                <Text style={styles.tocItem}>4. QUESTIONS - RÉPONSES</Text>
-                <Text style={styles.tocPage}>3</Text>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+                <Link src="#chapitre4" style={styles.tocItem}>4. QUESTIONS - RÉPONSES</Link>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
-                <Text style={styles.tocItem}>5. ANALYSE DES CANDIDATURES</Text>
-                <Text style={styles.tocPage}>3</Text>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+                <Link src="#chapitre5" style={styles.tocItem}>5. ANALYSE DES CANDIDATURES</Link>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
-                <Text style={styles.tocItem}>6. MÉTHODOLOGIE D'ANALYSE DES OFFRES</Text>
-                <Text style={styles.tocPage}>4</Text>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+                <Link src="#chapitre6" style={styles.tocItem}>6. MÉTHODOLOGIE D'ANALYSE DES OFFRES</Link>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
-                <Text style={styles.tocItem}>7. ANALYSE DE LA VALEUR DES OFFRES</Text>
-                <Text style={styles.tocPage}>4</Text>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+                <Link src="#chapitre7" style={styles.tocItem}>7. ANALYSE DE LA VALEUR DES OFFRES</Link>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
-                <Text style={styles.tocItem}>8. ANALYSE DE LA PERFORMANCE DU DOSSIER</Text>
-                <Text style={styles.tocPage}>5</Text>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+                <Link src="#chapitre8" style={styles.tocItem}>8. ANALYSE DE LA PERFORMANCE DU DOSSIER</Link>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
-                <Text style={styles.tocItem}>9. PROPOSITION D'ATTRIBUTION</Text>
-                <Text style={styles.tocPage}>6</Text>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+                <Link src="#chapitre9" style={styles.tocItem}>9. PROPOSITION D'ATTRIBUTION</Link>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
-                <Text style={styles.tocItem}>10. PROPOSITION DE CALENDRIER DE MISE EN ŒUVRE</Text>
-                <Text style={styles.tocPage}>6</Text>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+                <Link src="#chapitre10" style={styles.tocItem}>10. PROPOSITION DE CALENDRIER DE MISE EN ŒUVRE</Link>
               </View>
             </View>
           </View>
