@@ -33,9 +33,13 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
   const [error, setError] = useState<string | null>(null);
   const [exportingZip, setExportingZip] = useState(false);
 
-  // 🆕 Utiliser les lots de la Configuration Globale si disponibles
+  // 🆕 Utiliser les lots du Règlement de Consultation (Conditions) en priorité, sinon Configuration Globale
+  const rcLots = reglementConsultation?.conditions?.lots || [];
+  const hasRcLots = rcLots.length > 0;
   const hasConfigGlobale = configurationGlobale && configurationGlobale.lots && configurationGlobale.lots.length > 0;
-  const configLots = hasConfigGlobale ? configurationGlobale!.lots : [];
+  // Priorité : RC lots > Config Globale lots
+  const configLots = hasRcLots ? rcLots : (hasConfigGlobale ? configurationGlobale!.lots : []);
+  const hasLots = hasRcLots || hasConfigGlobale;
 
   // Charger les données au montage et à chaque changement de lot
   useEffect(() => {
@@ -44,8 +48,8 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
 
   // Charger le nombre total de lots
   useEffect(() => {
-    // 🆕 Si Configuration Globale disponible, utiliser ses lots
-    if (hasConfigGlobale) {
+    // 🆕 Si lots configurés (RC ou Config Globale), utiliser ces données
+    if (hasLots) {
       setTotalLots(configLots.length);
       // Mettre à jour le libellé du lot depuis la config
       const currentConfigLot = configLots.find(l => parseInt(l.numero) === currentLot);
@@ -56,7 +60,7 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
       // Sinon, charger depuis la base de données (ancien comportement)
       loadTotalLots();
     }
-  }, [procedureId, configurationGlobale, currentLot]);
+  }, [procedureId, configurationGlobale, reglementConsultation, currentLot]);
 
   /**
    * Charge le nombre total de lots pour cette procédure
@@ -71,23 +75,62 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
   };
 
   /**
+   * Récupère l'intitulé du lot depuis la configuration (RC ou Config Globale)
+   */
+  const getLotIntituleFromConfig = (lotNumber: number): string => {
+    const configLot = configLots.find(l => parseInt(l.numero) === lotNumber);
+    return configLot?.intitule || '';
+  };
+
+  /**
    * Charge les données du lot actuel
    */
   const loadLotData = async () => {
     setLoading(true);
     setError(null);
-    
+
+    // Récupérer l'intitulé depuis la config RC/Globale
+    const intituleFromConfig = getLotIntituleFromConfig(currentLot);
+
     try {
       const lot = await lotService.getLot(procedureId, currentLot, 'ae');
-      
+
       if (lot && lot.data) {
         // Charger les données ATTRI1
-        setFormDataATTRI1(lot.data as ActeEngagementATTRI1Data);
-        setLotLibelle(lot.libelle_lot || `Lot ${currentLot}`);
+        const loadedData = lot.data as ActeEngagementATTRI1Data;
+
+        // 🆕 Auto-remplir intituleLot depuis la config RC si vide
+        if (!loadedData.objet?.typeActe?.intituleLot && intituleFromConfig) {
+          loadedData.objet = {
+            ...loadedData.objet,
+            typeActe: {
+              ...loadedData.objet?.typeActe,
+              lotSpecifique: true,
+              numeroLot: String(currentLot),
+              intituleLot: intituleFromConfig,
+            }
+          };
+        }
+
+        setFormDataATTRI1(loadedData);
+        setLotLibelle(lot.libelle_lot || intituleFromConfig || `Lot ${currentLot}`);
       } else {
         // Lot n'existe pas encore, créer avec données ATTRI1 par défaut
-        setFormDataATTRI1(createDefaultActeEngagementATTRI1());
-        setLotLibelle(`Lot ${currentLot}`);
+        const defaultData = createDefaultActeEngagementATTRI1();
+
+        // 🆕 Pré-remplir avec les données du lot depuis RC
+        if (intituleFromConfig) {
+          defaultData.objet.typeActe = {
+            ...defaultData.objet.typeActe,
+            lotSpecifique: true,
+            ensembleMarche: false,
+            numeroLot: String(currentLot),
+            intituleLot: intituleFromConfig,
+          };
+        }
+
+        setFormDataATTRI1(defaultData);
+        setLotLibelle(intituleFromConfig || `Lot ${currentLot}`);
       }
     } catch (err) {
       console.error('Erreur lors du chargement du lot:', err);
@@ -322,12 +365,12 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
-      {/* Message d'info si Configuration Globale active */}
-      {hasConfigGlobale && (
+      {/* Message d'info si lots configurés (RC ou Config Globale) */}
+      {hasLots && (
         <div className="mx-6 mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
           <Info className="w-5 h-5 text-[#2F5B58] mt-0.5 flex-shrink-0" />
           <div className="text-sm text-green-800">
-            <strong>Configuration Globale active :</strong> Les lots sont gérés depuis l'onglet "⚙️ Configuration Globale".
+            <strong>{hasRcLots ? 'Configuration RC active' : 'Configuration Globale active'} :</strong> Les lots sont gérés depuis l'onglet "{hasRcLots ? 'Règlement de Consultation' : '⚙️ Configuration Globale'}".
             Vous travaillez sur <strong>{configLots.length} lot{configLots.length > 1 ? 's' : ''}</strong> configuré{configLots.length > 1 ? 's' : ''}.
           </div>
         </div>
@@ -339,9 +382,9 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
         totalLots={totalLots}
         currentLot={currentLot}
         onLotChange={handleLotChange}
-        onAddLot={hasConfigGlobale ? undefined : handleAddLot}
-        onDuplicateLot={hasConfigGlobale ? undefined : handleDuplicateLot}
-        onDeleteLot={hasConfigGlobale ? undefined : handleDeleteLot}
+        onAddLot={hasLots ? undefined : handleAddLot}
+        onDuplicateLot={hasLots ? undefined : handleDuplicateLot}
+        onDeleteLot={hasLots ? undefined : handleDeleteLot}
         loading={loading}
         disabled={saving}
         lotLibelle={lotLibelle}
