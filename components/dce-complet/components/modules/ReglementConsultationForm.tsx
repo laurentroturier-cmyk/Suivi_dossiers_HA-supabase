@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Settings2, Download, Upload } from 'lucide-react';
 import type { RapportCommissionData } from '../../../redaction/types/rapportCommission';
+import { LotsConfigurationModal } from './LotsConfigurationModal';
+import { exportLotsToExcel, importLotsFromExcel, type LotExcel } from '../../utils/lotsExcelService';
 
 interface Props {
   data: RapportCommissionData;
@@ -18,6 +21,71 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
   const [cpvSecondairesText, setCpvSecondairesText] = useState('');
   const [lotsText, setLotsText] = useState('');
   const [sousCriteresText, setSousCriteresText] = useState('');
+  const [isLotsModalOpen, setIsLotsModalOpen] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Parser le nombre de lots depuis le formulaire
+  const nbLotsValue = parseInt(form.conditions.nbLots) || 0;
+
+  // Parser les lots depuis le textarea
+  const getCurrentLots = (): LotExcel[] => {
+    return lotsText
+      .split('\n')
+      .filter(line => line.trim())
+      .map(line => {
+        const [numero = '', intitule = '', montantMax = ''] = line.split('|').map(v => v.trim());
+        return { numero, intitule, montantMax };
+      });
+  };
+
+  // Fonction pour mettre à jour les lots (utilisée par modale et import Excel)
+  const updateLotsFromArray = (lots: LotExcel[]) => {
+    const newLotsText = lots
+      .map(l => `${l.numero} | ${l.intitule} | ${l.montantMax}`)
+      .join('\n');
+    setLotsText(newLotsText);
+
+    // Mettre à jour aussi le nombre de lots si différent
+    if (lots.length !== nbLotsValue) {
+      setForm(prev => ({
+        ...prev,
+        conditions: { ...prev.conditions, nbLots: String(lots.length) }
+      }));
+    }
+  };
+
+  // Fonction pour mettre à jour les lots depuis la modale
+  const handleLotsFromModal = (lots: Array<{ numero: string; intitule: string; montantMax: string }>) => {
+    updateLotsFromArray(lots);
+  };
+
+  // Export Excel
+  const handleExportExcel = () => {
+    const lots = getCurrentLots();
+    const procedureNum = form.enTete.numeroProcedure || 'procedure';
+    exportLotsToExcel(lots, nbLotsValue, `lots_${procedureNum}`);
+  };
+
+  // Import Excel
+  const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportError(null);
+
+    try {
+      const lots = await importLotsFromExcel(file);
+      updateLotsFromArray(lots);
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : 'Erreur lors de l\'import');
+    }
+
+    // Reset l'input file pour permettre de réimporter le même fichier
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     setForm(data);
@@ -185,13 +253,6 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
       </section>
 
       <section className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Lots ("numéro | intitulé | montant max" par ligne)</label>
-        <textarea
-          value={lotsText}
-          onChange={e => setLotsText(e.target.value)}
-          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[80px] font-mono text-sm"
-          placeholder="1 | Lot principal | 50000"
-        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mode de passation</label>
@@ -212,6 +273,74 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
             />
           </div>
         </div>
+
+        {/* Section Lots avec boutons de configuration */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Lots ("numéro | intitulé | montant max" par ligne)
+          </label>
+          {nbLotsValue > 1 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setIsLotsModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition"
+              >
+                <Settings2 size={16} />
+                Configurer
+              </button>
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#2F5B58] text-[#2F5B58] rounded-lg hover:bg-[#2F5B58]/10 transition"
+                title="Exporter les lots vers Excel"
+              >
+                <Download size={16} />
+                Export Excel
+              </button>
+              <label className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#2F5B58] text-[#2F5B58] rounded-lg hover:bg-[#2F5B58]/10 transition cursor-pointer">
+                <Upload size={16} />
+                Import Excel
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleImportExcel}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* Message d'erreur d'import */}
+        {importError && (
+          <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+            {importError}
+          </div>
+        )}
+
+        <textarea
+          value={lotsText}
+          onChange={e => setLotsText(e.target.value)}
+          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[80px] font-mono text-sm"
+          placeholder="1 | Lot principal | 50000"
+        />
+
+        {/* Modale de configuration des lots */}
+        <LotsConfigurationModal
+          isOpen={isLotsModalOpen}
+          onClose={() => setIsLotsModalOpen(false)}
+          lots={lotsText
+            .split('\n')
+            .filter(line => line.trim())
+            .map(line => {
+              const [numero = '', intitule = '', montantMax = ''] = line.split('|').map(v => v.trim());
+              return { numero, intitule, montantMax };
+            })}
+          nbLots={nbLotsValue}
+          onSave={handleLotsFromModal}
+        />
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
