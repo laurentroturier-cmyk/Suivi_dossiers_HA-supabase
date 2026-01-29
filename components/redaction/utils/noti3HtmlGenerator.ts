@@ -342,8 +342,7 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
   <div class="section-group">
     <div class="section-header">A - Identification du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
     <div class="section-content">
-      <div class="field-label">AFPA</div>
-      <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.nom)}</div>
+      <div class="field-value" style="white-space: pre-line;">${escapeHtml(data.pouvoirAdjudicateur.nom)}</div>
       <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.adresseVoie)}</div>
       <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.codePostal)} ${escapeHtml(data.pouvoirAdjudicateur.ville)}</div>
     </div>

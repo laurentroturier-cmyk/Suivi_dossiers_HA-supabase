@@ -198,7 +198,10 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
               NOTI1 - Information au titulaire pressenti
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Formulaire de notification du titulaire pressenti dans le cadre d'un marché public
+              Le formulaire NOTI1 peut être utilisé par le pouvoir adjudicateur ou l'entité adjudicatrice pour informer le soumissionnaire auquel il est envisagé d'attribuer le marché public que son offre a été retenue.
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Il permet aussi de réclamer au titulaire pressenti l'ensemble des documents prouvant qu'il a satisfait à ses obligations fiscales et sociales et à ses obligations d'assurance décennale s'il y est soumis, dans le délai fixé par l'acheteur.
             </p>
           </div>
 
@@ -296,10 +299,16 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
       {/* Section A - Pouvoir adjudicateur */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-white bg-blue-600 dark:bg-blue-700 px-4 py-3 rounded-lg mb-4">
-          A - Identification du pouvoir adjudicateur
+          A - Identification du pouvoir adjudicateur ou de l'entité adjudicatrice
         </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 italic mb-4">
+          (Reprendre le contenu de la mention figurant dans les documents de la consultation.)
+        </p>
 
         <div className="space-y-4">
+          <div className="text-sm font-bold text-gray-900 dark:text-white mb-2">
+            AFPA
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Nom de l'organisme
@@ -377,18 +386,31 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
         <h3 className="text-lg font-semibold text-white bg-blue-600 dark:bg-blue-700 px-4 py-3 rounded-lg mb-4">
           B - Objet de la consultation
         </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 italic mb-4">
+          (Reprendre le contenu de la mention figurant dans les documents de la consultation.)
+        </p>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Objet de la consultation *
-          </label>
-          <textarea
-            value={formData.objetConsultation}
-            onChange={(e) => setFormData({ ...formData, objetConsultation: e.target.value })}
-            rows={3}
-            className="w-full px-4 py-2 border-2 border-yellow-400 bg-yellow-50 dark:border-yellow-600 dark:bg-yellow-900/20 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
-            placeholder="Indiquer l'objet de la consultation"
-          />
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Objet de la consultation *
+            </label>
+            <textarea
+              value={formData.objetConsultation}
+              onChange={(e) => setFormData({ ...formData, objetConsultation: e.target.value })}
+              rows={3}
+              className="w-full px-4 py-2 border-2 border-yellow-400 bg-yellow-50 dark:border-yellow-600 dark:bg-yellow-900/20 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+              placeholder="Prestations de tierce maintenance applicative (TMA) de l'application EPM (Oracle)"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Numéro de procédure (affiché)
+            </label>
+            <div className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">
+              {formData.numeroProcedure || '—'}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -397,6 +419,9 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
         <h3 className="text-lg font-semibold text-white bg-blue-600 dark:bg-blue-700 px-4 py-3 rounded-lg mb-4">
           C - Identification du titulaire pressenti
         </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 italic mb-4">
+          [Indiquer le nom commercial et la dénomination sociale du candidat individuel ou de chaque membre du groupement d'entreprises candidat, les adresses de son établissement et de son siège social (si elle est différente de celle de l'établissement), son adresse électronique, ses numéros de téléphone et de télécopie et son numéro SIRET. En cas de candidature groupée, identifier précisément le mandataire du groupement.]
+        </p>
 
         <div className="space-y-4">
           <div>
@@ -583,13 +608,16 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
       {/* Section D - Attribution */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-white bg-blue-600 dark:bg-blue-700 px-4 py-3 rounded-lg mb-4">
-          D - Attribution
+          D - Information au titulaire pressenti
         </h3>
 
         <div className="space-y-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+            Je vous informe que l'offre que vous avez faite, au titre de la consultation désignée ci-dessus, a été retenue :
+          </p>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Type d'attribution
+              (Cocher la case correspondante.)
             </label>
             <div className="space-y-2">
               <label className="flex items-center gap-2">
@@ -605,7 +633,7 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
                   className="w-4 h-4 text-blue-600"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Pour l'ensemble du marché public (non alloti)
+                  pour l'ensemble du marché public (en cas de non allotissement).
                 </span>
               </label>
 
@@ -622,7 +650,7 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
                   className="w-4 h-4 text-blue-600"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Pour un ou plusieurs lots
+                  pour le(s) lot(s) n° (voir ci-dessous) de la procédure de passation du marché public (en cas d'allotissement.)
                 </span>
               </label>
             </div>
@@ -632,7 +660,7 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Lots attribués
+                  Lots attribués - (Indiquer l'intitulé du ou des lots concernés tel qu'il figure dans les documents de la consultation.)
                 </label>
                 <button
                   onClick={addLot}
@@ -672,17 +700,15 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
         </div>
       </div>
 
-      {/* Section E - Documents à fournir */}
+      {/* Section E - Délai de transmission */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-white bg-blue-600 dark:bg-blue-700 px-4 py-3 rounded-lg mb-4">
-          E - Documents à fournir
+          E - Délai de transmission, par le titulaire pressenti, des attestations sociales et fiscales et, s'il y est soumis, de l'attestation d'assurance de responsabilité décennale
         </h3>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Date de signature du marché
-            </label>
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Pour permettre la signature et la notification du marché public, vous devez me transmettre, avant le {' '}
             <input
               type="date"
               value={formData.documents.dateSignature}
@@ -692,50 +718,64 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
                   documents: { ...formData.documents, dateSignature: e.target.value },
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="inline-block w-40 px-2 py-1 border-2 border-yellow-400 bg-yellow-50 dark:border-yellow-600 dark:bg-yellow-900/20 rounded text-gray-900 dark:text-white"
             />
-          </div>
+            , les documents figurant :
+          </p>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Le candidat est établi en :
+              (Cocher la ou les cases correspondantes.)
             </label>
             <div className="space-y-2">
               <label className="flex items-center gap-2">
                 <input
-                  type="radio"
+                  type="checkbox"
                   checked={formData.documents.candidatFrance}
-                  onChange={() =>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
-                      documents: { ...formData.documents, candidatFrance: true, candidatEtranger: false },
+                      documents: { ...formData.documents, candidatFrance: e.target.checked },
                     })
                   }
                   className="w-4 h-4 text-blue-600"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">France</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">en rubrique F (candidat individuel ou membre du groupement établi en France)</span>
               </label>
 
               <label className="flex items-center gap-2">
                 <input
-                  type="radio"
+                  type="checkbox"
                   checked={formData.documents.candidatEtranger}
-                  onChange={() =>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
-                      documents: { ...formData.documents, candidatFrance: false, candidatEtranger: true },
+                      documents: { ...formData.documents, candidatEtranger: e.target.checked },
                     })
                   }
                   className="w-4 h-4 text-blue-600"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Étranger</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">en rubrique G (candidat individuel ou membre du groupement établi ou domicilié à l'étranger)</span>
               </label>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Section F - Candidat France */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-white bg-blue-600 dark:bg-blue-700 px-4 py-3 rounded-lg mb-4">
+          F - Candidat individuel ou membre du groupement établi en France
+        </h3>
+
+        <div className="space-y-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300 italic">
+            Uniquement si les informations permettant d'accéder aux documents de preuve n'ont pas été fournis à l'occasion de la présentation des candidatures ou s'ils n'ont pas déjà été fournis par l'opérateur concerné :
+          </p>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Documents de preuve à fournir
+              Les documents à produire sont : (Lister les documents de preuve exigés)
             </label>
             <textarea
               value={formData.documents.documentsPreuve}
@@ -745,77 +785,90 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
                   documents: { ...formData.documents, documentsPreuve: e.target.value },
                 })
               }
-              rows={3}
+              rows={4}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="Liste des documents à fournir"
+              placeholder="• Attestation fiscale\n• Attestation URSSAF\n• ..."
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Délai de réponse (en jours)
+              Délai pour répondre à la demande (en nombre de jours), à défaut de quoi l'offre sera rejetée :
             </label>
-            <input
-              type="text"
-              value={formData.documents.delaiReponse}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  documents: { ...formData.documents, delaiReponse: e.target.value },
-                })
-              }
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="Ex: 10 jours"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Décompte à partir de :
-            </label>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
                 <input
-                  type="radio"
-                  checked={formData.documents.decompteA === 'réception'}
-                  onChange={() =>
+                  type="number"
+                  min="1"
+                  value={formData.documents.delaiReponse}
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
-                      documents: { ...formData.documents, decompteA: 'réception' },
+                      documents: { ...formData.documents, delaiReponse: e.target.value },
                     })
                   }
-                  className="w-4 h-4 text-blue-600"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Ex: 10"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  La réception de la présente information
-                </span>
-              </label>
-
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={formData.documents.decompteA === 'transmission'}
-                  onChange={() =>
-                    setFormData({
-                      ...formData,
-                      documents: { ...formData.documents, decompteA: 'transmission' },
-                    })
-                  }
-                  className="w-4 h-4 text-blue-600"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  La transmission des documents complémentaires
-                </span>
-              </label>
+              </div>
+              {formData.documents.delaiReponse && (
+                <div className="flex-1 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-600 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Date calculée : </span>
+                  <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                    {(() => {
+                      const today = new Date();
+                      const jours = parseInt(formData.documents.delaiReponse) || 0;
+                      const dateCalculee = new Date(today);
+                      dateCalculee.setDate(today.getDate() + jours);
+                      return dateCalculee.toLocaleDateString('fr-FR');
+                    })()}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Section F - Signature */}
+      {/* Section G - Candidat étranger */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-white bg-blue-600 dark:bg-blue-700 px-4 py-3 rounded-lg mb-4">
-          F - Signature du pouvoir adjudicateur
+          G - Candidat individuel ou membre du groupement établi ou domicilié à l'étranger
+        </h3>
+
+        <div className="space-y-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300 italic">
+            Uniquement si les informations permettant d'accéder aux documents de preuve n'ont pas été fournis à l'occasion de la présentation des candidatures ou s'ils n'ont pas déjà été fournis par l'opérateur concerné :
+          </p>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              (Lister les documents de preuve exigés)
+            </label>
+            <textarea
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Documents équivalents selon la législation du pays d'établissement..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Délai pour répondre à la demande, à défaut de quoi l'offre sera rejetée :
+            </label>
+            <input
+              type="text"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="jj/mm/aaaa"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Section H - Signature */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-white bg-blue-600 dark:bg-blue-700 px-4 py-3 rounded-lg mb-4">
+          H - Signature du pouvoir adjudicateur ou de l'entité adjudicatrice
         </h3>
 
         <div className="space-y-4">
@@ -842,7 +895,7 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
                 Date
               </label>
               <input
-                type="text"
+                type="date"
                 value={formData.signature.date}
                 onChange={(e) =>
                   setFormData({
@@ -851,7 +904,6 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
                   })
                 }
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                placeholder="jj/mm/aaaa"
               />
             </div>
           </div>

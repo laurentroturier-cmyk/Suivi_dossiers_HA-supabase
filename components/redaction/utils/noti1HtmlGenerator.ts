@@ -339,7 +339,7 @@ export async function generateNoti1Html(data: Noti1Data): Promise<string> {
     <tr>
       <td>
         <h2>MARCHÉS PUBLICS</h2>
-        <h3>INFORMATION DU TITULAIRE PRESSENTI</h3>
+        <h3>INFORMATION AU TITULAIRE PRESSENTI <sup>1</sup></h3>
       </td>
       <td>
         <div class="noti-code">NOTI1</div>
@@ -348,13 +348,15 @@ export async function generateNoti1Html(data: Noti1Data): Promise<string> {
   </table>
   
   <p class="intro">
-    Le formulaire NOTI1 est un modèle de lettre qui peut être utilisé, par le pouvoir adjudicateur ou l'entité adjudicatrice, pour informer le titulaire pressenti de son intention de lui attribuer le marché public.
+    Le formulaire NOTI1 peut être utilisé par le pouvoir adjudicateur ou l'entité adjudicatrice pour informer le soumissionnaire auquel il est envisagé d'attribuer le marché public que son offre a été retenue.
+    Il permet aussi de réclamer au titulaire pressenti l'ensemble des documents prouvant qu'il a satisfait à ses obligations fiscales et sociales et à ses obligations d'assurance décennale s'il y est soumis, dans le délai fixé par l'acheteur.
   </p>
   
   <!-- Section A -->
   <div class="section-group">
     <div class="section-header">A - Identification du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
     <div class="section-content">
+      <p style="font-size: 8pt; font-style: italic; color: #6b7280; margin-bottom: 8px;">(Reprendre le contenu de la mention figurant dans les documents de la consultation.)</p>
       <div class="field-label">AFPA</div>
       <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.nom)}</div>
       <div class="field-value">${escapeHtml(data.pouvoirAdjudicateur.adresseVoie)}</div>
@@ -366,8 +368,9 @@ export async function generateNoti1Html(data: Noti1Data): Promise<string> {
   <div class="section-group">
     <div class="section-header">B - Objet de la consultation</div>
     <div class="section-content">
-      <div class="field-label">Objet de la consultation</div>
+      <p style="font-size: 8pt; font-style: italic; color: #6b7280; margin-bottom: 8px;">(Reprendre le contenu de la mention figurant dans les documents de la consultation.)</p>
       <div class="field-value">${escapeHtml(data.objetConsultation)}</div>
+      <div class="field-value" style="margin-top: 8px;">${escapeHtml(data.numeroProcedure)}</div>
     </div>
   </div>
   
@@ -375,84 +378,95 @@ export async function generateNoti1Html(data: Noti1Data): Promise<string> {
   <div class="section-group">
     <div class="section-header">C - Identification du titulaire pressenti</div>
     <div class="section-content">
-      <div class="field-label">Entreprise</div>
-      <div class="field-value">${escapeHtml(data.titulaire.denomination)}</div>
-      
-      <div class="field-label">Adresse 1</div>
+      <p style="font-size: 8pt; font-style: italic; color: #6b7280; margin-bottom: 8px;">[Indiquer le nom commercial et la dénomination sociale du candidat individuel ou de chaque membre du groupement d'entreprises candidat, les adresses de son établissement et de son siège social (si elle est différente de celle de l'établissement), son adresse électronique, ses numéros de téléphone et de télécopie et son numéro SIRET. En cas de candidature groupée, identifier précisément le mandataire du groupement.]</p>
+      <div class="field-value" style="font-weight: bold;">${escapeHtml(data.titulaire.denomination)}</div>
       <div class="field-value">${escapeHtml(data.titulaire.adresse1)}</div>
-      
-      ${data.titulaire.adresse2 ? `
-      <div class="field-label">Adresse 2</div>
-      <div class="field-value">${escapeHtml(data.titulaire.adresse2)}</div>
-      ` : ''}
-      
+      ${data.titulaire.adresse2 ? `<div class="field-value">${escapeHtml(data.titulaire.adresse2)}</div>` : ''}
       <div class="field-value">${escapeHtml(data.titulaire.codePostal)} ${escapeHtml(data.titulaire.ville)}</div>
-      
-      <div class="field-label">SIRET</div>
-      <div class="field-value">${escapeHtml(data.titulaire.siret)}</div>
-      
-      <div class="field-label">Email</div>
+      <div class="field-value">SIRET : ${escapeHtml(data.titulaire.siret)}</div>
       <div class="field-value">${escapeHtml(data.titulaire.email)}</div>
     </div>
   </div>
   
   <!-- Section D -->
   <div class="section-group">
-    <div class="section-header">D - Information sur l'attribution envisagée</div>
+    <div class="section-header">D - Information au titulaire pressenti</div>
     <div class="section-content">
-      <p>Je vous informe que je compte vous attribuer :</p>
+      <p>Je vous informe que l'offre que vous avez faite, au titre de la consultation désignée ci-dessus, a été retenue :</p>
+      <p style="font-size: 9pt; font-style: italic; color: #6b7280; margin: 8px 0;">(Cocher la case correspondante.)</p>
       
       <div class="checkbox-item">
-        ${data.attribution.type === 'ensemble' ? '☒' : '☐'} l'ensemble du marché public (en cas de non allotissement).
+        ${data.attribution.type === 'ensemble' ? '☑' : '☐'} pour l'ensemble du marché public (en cas de non allotissement).
       </div>
       
       ${data.attribution.type === 'lots' ? `
       <div class="checkbox-item">
-        ☒ le(s) lot(s) n° ${data.attribution.lots.map(l => `${l.numero}:${l.intitule}`).join(', ')}
+        ☑ pour le(s) lot(s) n° ${data.attribution.lots.map(l => `${l.numero}`).join(', ')} de la procédure de passation du marché public (en cas d'allotissement.) :
       </div>
+      <p style="font-size: 9pt; font-style: italic; color: #6b7280; margin: 4px 0 8px 24px;">(Indiquer l'intitulé du ou des lots concernés tel qu'il figure dans les documents de la consultation.)</p>
+      ${data.attribution.lots.map(l => `<div style="margin-left: 24px;">${escapeHtml(l.intitule)}</div>`).join('')}
       ` : `
       <div class="checkbox-item">
-        ☐ le(s) lot(s) n°
+        ☐ pour le(s) lot(s) n° __________ de la procédure de passation du marché public (en cas d'allotissement.)
       </div>
       `}
-      
-      <p>de la procédure de passation du marché public ou de l'accord cadre (en cas d'allotissement).</p>
     </div>
   </div>
   
   <!-- Section E -->
   <div class="section-group">
-    <div class="section-header">E - Documents à fournir</div>
+    <div class="section-header">E - Délai de transmission, par le titulaire pressenti, des attestations sociales et fiscales et, s'il y est soumis, de l'attestation d'assurance de responsabilité décennale</div>
     <div class="section-content">
-      <p>En application de l'article R. 2144-1 du code de la commande publique, je vous demande de me transmettre les pièces suivantes, datées et signées, avant le ${data.documents.dateSignature || '[DATE]'} :</p>
+      <p>Pour permettre la signature et la notification du marché public, vous devez me transmettre, avant le <strong>${escapeHtml(data.documents.dateSignature || '________')}</strong>, les documents figurant :</p>
+      <p style="font-size: 9pt; font-style: italic; color: #6b7280; margin: 8px 0;">(Cocher la ou les cases correspondantes.)</p>
       
       <div class="checkbox-item">
-        ${data.documents.candidatFrance ? '☒' : '☐'} <strong>Si vous êtes établi en France :</strong>
-      </div>
-      <div class="field-value">${escapeHtml(data.documents.documentsPreuve || 'Liste des documents à fournir selon le règlement de consultation')}</div>
-      
-      <div class="checkbox-item">
-        ${data.documents.candidatEtranger ? '☒' : '☐'} <strong>Si vous êtes établi à l'étranger :</strong>
-      </div>
-      <div class="field-value">Documents équivalents selon la législation du pays d'établissement</div>
-      
-      <p>Vous disposez d'un délai de ${data.documents.delaiReponse || '[NOMBRE]'} jours pour me transmettre ces documents.</p>
-      
-      <p>Ce délai court à compter de :</p>
-      
-      <div class="checkbox-item">
-        ${data.documents.decompteA === 'réception' ? '☒' : '☐'} la réception de la présente information.
+        ${data.documents.candidatFrance ? '☑' : '☐'} en rubrique F (candidat individuel ou membre du groupement établi en France) ;
       </div>
       
       <div class="checkbox-item">
-        ${data.documents.decompteA === 'transmission' ? '☒' : '☐'} la transmission par mes soins des documents complémentaires.
+        ${data.documents.candidatEtranger ? '☑' : '☐'} en rubrique G (candidat individuel ou membre du groupement établi ou domicilié à l'étranger).
       </div>
     </div>
   </div>
-  
+
   <!-- Section F -->
   <div class="section-group">
-    <div class="section-header">F - Signature du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
+    <div class="section-header">F - Candidat individuel ou membre du groupement établi en France</div>
+    <div class="section-content">
+      <p style="font-size: 9pt; font-style: italic; color: #6b7280; margin-bottom: 8px;">Uniquement si les informations permettant d'accéder aux documents de preuve n'ont pas été fournis à l'occasion de la présentation des candidatures ou s'ils n'ont pas déjà été fournis par l'opérateur concerné :</p>
+      <p style="font-size: 9pt; font-style: italic; color: #6b7280; margin-bottom: 4px;">(Lister les documents de preuve exigés)</p>
+      <div class="field-label">Les documents à produire sont :</div>
+      <div class="field-value" style="white-space: pre-wrap;">${escapeHtml(data.documents.documentsPreuve || '• Attestation fiscale\n• Attestation URSSAF')}</div>
+      <div class="field-label" style="margin-top: 12px;">Délai pour répondre à la demande, à défaut de quoi l'offre sera rejetée :</div>
+      <div class="field-value">${(() => {
+        if (!data.documents.delaiReponse) return '________';
+        const jours = parseInt(data.documents.delaiReponse);
+        if (isNaN(jours)) return escapeHtml(data.documents.delaiReponse);
+        const today = new Date();
+        const dateCalculee = new Date(today);
+        dateCalculee.setDate(today.getDate() + jours);
+        const dateStr = dateCalculee.toLocaleDateString('fr-FR');
+        return `${dateStr} (${jours} jour${jours > 1 ? 's' : ''} à compter de la date d'export)`;
+      })()}</div>
+    </div>
+  </div>
+
+  <!-- Section G -->
+  <div class="section-group">
+    <div class="section-header">G - Candidat individuel ou membre du groupement établi ou domicilié à l'étranger</div>
+    <div class="section-content">
+      <p style="font-size: 9pt; font-style: italic; color: #6b7280; margin-bottom: 8px;">Uniquement si les informations permettant d'accéder aux documents de preuve n'ont pas été fournis à l'occasion de la présentation des candidatures ou s'ils n'ont pas déjà été fournis par l'opérateur concerné :</p>
+      <p style="font-size: 9pt; font-style: italic; color: #6b7280; margin-bottom: 4px;">(Lister les documents de preuve exigés)</p>
+      <div class="field-value">Documents équivalents selon la législation du pays d'établissement</div>
+      <div class="field-label" style="margin-top: 12px;">Délai pour répondre à la demande, à défaut de quoi l'offre sera rejetée :</div>
+      <div class="field-value">________</div>
+    </div>
+  </div>
+  
+  <!-- Section H -->
+  <div class="section-group">
+    <div class="section-header">H - Signature du pouvoir adjudicateur ou de l'entité adjudicatrice</div>
     <div class="section-content">
       <div class="signature-block">
         <p>À ${escapeHtml(data.signature.lieu)}, le ${escapeHtml(data.signature.date)}</p>
@@ -466,6 +480,10 @@ export async function generateNoti1Html(data: Noti1Data): Promise<string> {
   <!-- Footer -->
   <div class="footer">
     NOTI1 – Information au titulaire pressenti | N° de procédure: ${escapeHtml(data.numeroProcedure)} | Page <span id="page-num">1</span>
+  </div>
+  
+  <div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #d1d5db; font-size: 7pt; color: #6b7280;">
+    <sup>1</sup> Formulaire non obligatoire disponible, avec sa notice explicative, sur le site du ministère chargé de l'économie.
   </div>
   
   <script>

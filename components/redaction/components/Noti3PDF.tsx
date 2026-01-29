@@ -420,7 +420,9 @@ export const Noti3PDF = ({
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>A – Identification du pouvoir adjudicateur</Text>
           <View style={styles.sectionContent}>
-            <Text style={[styles.fieldValueFull, { fontWeight: 'bold' }]}>{data.pouvoirAdjudicateur.nom}</Text>
+            {data.pouvoirAdjudicateur.nom.split('\n').map((line, index) => (
+              <Text key={index} style={[styles.fieldValueFull, index === 0 && { fontWeight: 'bold' }]}>{line}</Text>
+            ))}
             <Text style={styles.fieldValueFull}>{data.pouvoirAdjudicateur.adresseVoie}</Text>
             <Text style={styles.fieldValueFull}>{data.pouvoirAdjudicateur.codePostal} {data.pouvoirAdjudicateur.ville}</Text>
           </View>

@@ -49,34 +49,57 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
 
   // Cleanup à la fermeture
   useEffect(() => {
-    // Si données pré-chargées, charger les candidats depuis Supabase et analyser multi-lots
+    // Si données pré-chargées, charger les candidats depuis depots/retraits et analyser multi-lots
     if (preloadedData && preloadedData.rapportData && preloadedData.procedure) {
       const loadCandidatsAndAnalyze = async () => {
         try {
-          // Extraire le numéro court de la procédure
-          const numeroAfpa = preloadedData.procedure['Numéro de procédure (Afpa)'];
-          const numeroCourt = numeroAfpa?.match(/^(\d{5})/)?.[1];
-
-          let candidats: any[] = [];
-
-          if (numeroCourt) {
-            // Charger les candidats depuis ouverture_plis
-            const { data: allOuverturePlis } = await supabase
-              .from('ouverture_plis')
-              .select('*');
-
-            if (allOuverturePlis && allOuverturePlis.length > 0) {
-              const procedureMatch = allOuverturePlis.find((pli: any) => 
-                String(pli.num_proc) === numeroCourt
-              );
-
-              if (procedureMatch) {
-                candidats = typeof procedureMatch.candidats === 'string' 
-                  ? JSON.parse(procedureMatch.candidats)
-                  : (procedureMatch.candidats || []);
+          const procedure = preloadedData.procedure;
+          
+          // Charger les candidats depuis les colonnes depots et retraits
+          let candidatsDepots: any[] = [];
+          let candidatsRetraits: any[] = [];
+          
+          try {
+            if (procedure.depots) {
+              if (typeof procedure.depots === 'string') {
+                candidatsDepots = JSON.parse(procedure.depots);
+              } else if (Array.isArray(procedure.depots)) {
+                candidatsDepots = procedure.depots;
+              } else if (typeof procedure.depots === 'object' && procedure.depots !== null) {
+                candidatsDepots = Object.values(procedure.depots);
               }
             }
+          } catch (e) {
+            console.error('Erreur parsing depots:', e);
           }
+          
+          try {
+            if (procedure.retraits) {
+              if (typeof procedure.retraits === 'string') {
+                candidatsRetraits = JSON.parse(procedure.retraits);
+              } else if (Array.isArray(procedure.retraits)) {
+                candidatsRetraits = procedure.retraits;
+              } else if (typeof procedure.retraits === 'object' && procedure.retraits !== null) {
+                candidatsRetraits = Object.values(procedure.retraits);
+              }
+            }
+          } catch (e) {
+            console.error('Erreur parsing retraits:', e);
+          }
+          
+          // S'assurer que ce sont bien des tableaux
+          candidatsDepots = Array.isArray(candidatsDepots) ? candidatsDepots : [];
+          candidatsRetraits = Array.isArray(candidatsRetraits) ? candidatsRetraits : [];
+          
+          // Combiner les deux sources en éliminant les doublons
+          const candidatsMap = new Map();
+          [...candidatsDepots, ...candidatsRetraits].forEach((c: any) => {
+            const nom = c.societe || c.nom || c.raisonSociale || '';
+            if (nom && !candidatsMap.has(nom.toLowerCase())) {
+              candidatsMap.set(nom.toLowerCase(), c);
+            }
+          });
+          const candidats = Array.from(candidatsMap.values());
 
           // Mettre à jour cachedData avec les candidats
           const updatedData = {
@@ -117,50 +140,95 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
 
     setIsLoading(true);
     try {
+      console.log('🔍 Recherche procédure:', selectedProcedure);
       const procedure = procedures.find(p => p.NumProc === selectedProcedure);
       if (!procedure) {
         alert('Procédure introuvable');
+        setIsLoading(false);
         return;
       }
+      console.log('✅ Procédure trouvée:', procedure);
 
       const numeroAfpa = procedure['Numéro de procédure (Afpa)'];
       const numeroCourt = numeroAfpa?.match(/^(\d{5})/)?.[1];
 
       if (!numeroCourt) {
         alert('Numéro de procédure invalide');
+        setIsLoading(false);
         return;
       }
+      console.log('📋 Numéro court:', numeroCourt);
 
-      // Charger les données depuis ouverture_plis et rapports_presentation
-      const { data: allOuverturePlis } = await supabase
-        .from('ouverture_plis')
-        .select('*');
-
-      const procedureMatch = allOuverturePlis?.find((pli: any) => 
-        String(pli.num_proc) === numeroCourt
-      );
-
-      let candidats: any[] = [];
-      if (procedureMatch) {
-        try {
-          candidats = typeof procedureMatch.candidats === 'string' 
-            ? JSON.parse(procedureMatch.candidats)
-            : (procedureMatch.candidats || []);
-        } catch (e) {
-          console.error('Erreur parsing candidats:', e);
+      // Charger les candidats depuis les colonnes depots et retraits
+      let candidatsDepots: any[] = [];
+      let candidatsRetraits: any[] = [];
+      
+      console.log('📦 Depots brut:', procedure.depots);
+      console.log('📥 Retraits brut:', procedure.retraits);
+      
+      try {
+        if (procedure.depots) {
+          if (typeof procedure.depots === 'string') {
+            candidatsDepots = JSON.parse(procedure.depots);
+          } else if (Array.isArray(procedure.depots)) {
+            candidatsDepots = procedure.depots;
+          } else if (typeof procedure.depots === 'object' && procedure.depots !== null) {
+            // Si c'est un objet, essayer de le convertir en tableau
+            candidatsDepots = Object.values(procedure.depots);
+          }
         }
+      } catch (e) {
+        console.error('Erreur parsing depots:', e);
       }
+      
+      try {
+        if (procedure.retraits) {
+          if (typeof procedure.retraits === 'string') {
+            candidatsRetraits = JSON.parse(procedure.retraits);
+          } else if (Array.isArray(procedure.retraits)) {
+            candidatsRetraits = procedure.retraits;
+          } else if (typeof procedure.retraits === 'object' && procedure.retraits !== null) {
+            // Si c'est un objet, essayer de le convertir en tableau
+            candidatsRetraits = Object.values(procedure.retraits);
+          }
+        }
+      } catch (e) {
+        console.error('Erreur parsing retraits:', e);
+      }
+      
+      // S'assurer que ce sont bien des tableaux
+      candidatsDepots = Array.isArray(candidatsDepots) ? candidatsDepots : [];
+      candidatsRetraits = Array.isArray(candidatsRetraits) ? candidatsRetraits : [];
+      
+      console.log('👥 Candidats depots:', candidatsDepots.length);
+      console.log('👥 Candidats retraits:', candidatsRetraits.length);
+      
+      // Combiner les deux sources en éliminant les doublons
+      const candidatsMap = new Map();
+      [...candidatsDepots, ...candidatsRetraits].forEach((c: any) => {
+        const nom = c.societe || c.nom || c.raisonSociale || '';
+        if (nom && !candidatsMap.has(nom.toLowerCase())) {
+          candidatsMap.set(nom.toLowerCase(), c);
+        }
+      });
+      const candidats = Array.from(candidatsMap.values());
+      console.log('✅ Total candidats uniques:', candidats.length);
 
       // Charger le dernier rapport de présentation
-      const { data: rapport } = await supabase
+      console.log('📄 Chargement rapport pour NumProc:', procedure.NumProc);
+      const { data: rapports, error: rapportError } = await supabase
         .from('rapports_presentation')
         .select('rapport_data')
         .eq('num_proc', procedure.NumProc)
         .order('date_modification', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
 
-      const rapportData = rapport?.rapport_data;
+      if (rapportError) {
+        console.error('Erreur chargement rapport:', rapportError);
+      }
+
+      const rapportData = rapports?.[0]?.rapport_data || null;
+      console.log('📊 Rapport trouvé:', !!rapportData);
 
       // Stocker en cache
       setCachedData({
@@ -170,21 +238,26 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
         numeroAfpa,
         numeroCourt,
       });
+      console.log('💾 Données mises en cache');
 
       // Vérifier si multi-lots
       if (rapportData && isMultiLots(rapportData)) {
+        console.log('🎯 Procédure multi-lots détectée');
         const analysis = analyzeMultiLots(rapportData, candidats);
         setMultiLotsAnalysis(analysis);
         setShowMultiLotsDashboard(true);
       } else {
+        console.log('📌 Procédure mono-lot');
         setMultiLotsAnalysis(null);
         setShowMultiLotsDashboard(false);
       }
 
       setDataLoaded(true);
+      console.log('✅ Chargement terminé avec succès');
     } catch (err) {
       console.error('Erreur lors du chargement:', err);
-      alert('Erreur lors du chargement des données');
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      alert(`Erreur lors du chargement des données:\n\n${errorMessage}\n\nVérifiez la console pour plus de détails.`);
     } finally {
       setIsLoading(false);
     }
@@ -199,10 +272,20 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
     const { procedure, candidats, rapportData } = cachedData;
     const attributaire = rapportData.section9_attribution?.attributairePressenti || '';
     
-    const coordonnees = candidats.find((c: any) => 
-      (c.societe || c.nom || '').toLowerCase().includes(attributaire.toLowerCase()) ||
-      attributaire.toLowerCase().includes((c.societe || c.nom || '').toLowerCase())
-    );
+    // Fonction de normalisation des noms
+    const normaliserNom = (nom: string) => {
+      return nom.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/^(sarl|sas|eurl|sasu|sa)\s+/gi, '')
+        .replace(/\s+(sarl|sas|eurl|sasu|sa)$/gi, '')
+        .trim();
+    };
+    
+    const coordonnees = candidats.find((c: any) => {
+      const nomC = c.societe || c.nom || c.raisonSociale || '';
+      return normaliserNom(nomC).includes(normaliserNom(attributaire)) ||
+             normaliserNom(attributaire).includes(normaliserNom(nomC));
+    });
 
     const lots = rapportData.section7_2_syntheseLots?.lots || [];
     const lotsForNoti1 = lots.map((lot: any) => ({
@@ -222,12 +305,12 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
       titulaire: {
         denomination: attributaire,
         siret: coordonnees?.siret || '',
-        adresse1: coordonnees?.adresse || '',
+        adresse1: coordonnees?.adresse || coordonnees?.adressePostale || '',
         adresse2: '',
         codePostal: coordonnees?.codePostal || '',
         ville: coordonnees?.ville || '',
         email: coordonnees?.email || '',
-        telephone: coordonnees?.telephone || '',
+        telephone: coordonnees?.telephone || coordonnees?.tel || '',
         fax: '',
         estMandataire: false,
       },
@@ -264,10 +347,20 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
     const { procedure, candidats, rapportData } = cachedData;
     const attributaire = rapportData.section9_attribution?.attributairePressenti || '';
     
-    const coordonnees = candidats.find((c: any) => 
-      (c.societe || c.nom || '').toLowerCase().includes(attributaire.toLowerCase()) ||
-      attributaire.toLowerCase().includes((c.societe || c.nom || '').toLowerCase())
-    );
+    // Fonction de normalisation des noms
+    const normaliserNom = (nom: string) => {
+      return nom.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/^(sarl|sas|eurl|sasu|sa)\s+/gi, '')
+        .replace(/\s+(sarl|sas|eurl|sasu|sa)$/gi, '')
+        .trim();
+    };
+    
+    const coordonnees = candidats.find((c: any) => {
+      const nomC = c.societe || c.nom || c.raisonSociale || '';
+      return normaliserNom(nomC).includes(normaliserNom(attributaire)) ||
+             normaliserNom(attributaire).includes(normaliserNom(nomC));
+    });
 
     const lots = rapportData.section7_2_syntheseLots?.lots || [];
     const lotsForNoti5 = lots.map((lot: any) => ({
@@ -291,12 +384,12 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
       attributaire: {
         denomination: attributaire,
         siret: coordonnees?.siret || '',
-        adresse1: coordonnees?.adresse || '',
+        adresse1: coordonnees?.adresse || coordonnees?.adressePostale || '',
         adresse2: '',
         codePostal: coordonnees?.codePostal || '',
         ville: coordonnees?.ville || '',
         email: coordonnees?.email || '',
-        telephone: coordonnees?.telephone || '',
+        telephone: coordonnees?.telephone || coordonnees?.tel || '',
         fax: '',
         estMandataire: false,
       },
@@ -344,38 +437,71 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
     const { procedure, candidats, rapportData } = cachedData;
     const attributaire = rapportData.section9_attribution?.attributairePressenti || '';
     const tableauNotes = rapportData.section7_valeurOffres?.tableau || 
-                         rapportData.section7_2_syntheseLots?.lots?.[0]?.tableau || [];
+                         rapportData.section7_2_syntheseLots?.lots?.[0]?.tableau || 
+                         [];
+    
+    // Vérification que le tableau de notes existe et contient des données
+    if (!tableauNotes || tableauNotes.length === 0) {
+      alert('Aucune donnée d\'analyse trouvée dans le rapport de présentation (section 7)');
+      return;
+    }
     
     // Récupérer les pondérations depuis section2_criteres
     const criteres = rapportData.section2_criteres || {};
     const maxEco = String(criteres.criterePrix || criteres.critereFinancier || '60');
     const maxTech = String(criteres.critereTechnique || criteres.critereValeurTechnique || '40');
     
+    // Normaliser les noms pour comparaison
+    const normaliserNom = (nom: string) => {
+      return nom.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/^(sarl|sas|eurl|sasu|sa)\s+/gi, '')
+        .replace(/\s+(sarl|sas|eurl|sasu|sa)$/gi, '')
+        .trim();
+    };
+    
     const notesAttributaire = tableauNotes.find((offre: any) => 
-      offre.raisonSociale?.toLowerCase().includes(attributaire.toLowerCase()) ||
-      attributaire.toLowerCase().includes(offre.raisonSociale?.toLowerCase())
+      normaliserNom(offre.raisonSociale || '').includes(normaliserNom(attributaire)) ||
+      normaliserNom(attributaire).includes(normaliserNom(offre.raisonSociale || ''))
     );
 
     const perdants: Noti3Data[] = [];
 
-    candidats.forEach((candidat: any) => {
-      const nomCandidat = candidat.societe || candidat.nom || '';
-      const isAttributaire = nomCandidat.toLowerCase().includes(attributaire.toLowerCase()) || 
-                            attributaire.toLowerCase().includes(nomCandidat.toLowerCase());
+    // CHANGEMENT MAJEUR : parcourir tableauNotes au lieu de candidats
+    tableauNotes.forEach((offre: any) => {
+      const nomCandidat = offre.raisonSociale || '';
+      const isAttributaire = normaliserNom(nomCandidat).includes(normaliserNom(attributaire)) || 
+                            normaliserNom(attributaire).includes(normaliserNom(nomCandidat));
       
-      if (!isAttributaire && nomCandidat) {
-        const notesCandidat = tableauNotes.find((offre: any) => 
-          offre.raisonSociale?.toLowerCase().includes(nomCandidat.toLowerCase()) ||
-          nomCandidat.toLowerCase().includes(offre.raisonSociale?.toLowerCase())
-        );
+      // Un candidat est perdant s'il n'est PAS l'attributaire ET a un rang > 1
+      if (!isAttributaire && nomCandidat && (offre.rangFinal > 1 || offre.rang > 1)) {
+        // Chercher les coordonnées dans candidats (depots/retraits)
+        let coordonnees = candidats.find((c: any) => {
+          const nomC = c.societe || c.nom || c.raisonSociale || '';
+          return normaliserNom(nomC).includes(normaliserNom(nomCandidat)) ||
+                 normaliserNom(nomCandidat).includes(normaliserNom(nomC));
+        });
+        
+        // Si pas trouvé dans candidats, utiliser les données du tableau d'analyse si disponibles
+        if (!coordonnees) {
+          coordonnees = {
+            adresse: offre.adresse || '',
+            adressePostale: offre.adressePostale || '',
+            codePostal: offre.codePostal || '',
+            ville: offre.ville || '',
+            siret: offre.siret || '',
+            email: offre.email || '',
+            telephone: offre.telephone || offre.tel || '',
+          };
+        }
 
         const noti3: Noti3Data = {
           numeroProcedure: procedure['Numéro de procédure (Afpa)'] || '',
           pouvoirAdjudicateur: {
-            nom: 'AFPA - Association nationale pour la formation professionnelle des adultes',
-            adresseVoie: '13, place du Général de Gaulle',
+            nom: 'AFPA\nAgence nationale pour la formation professionnelle des adultes',
+            adresseVoie: '3, rue Franklin',
             codePostal: '93100',
-            ville: 'Montreuil',
+            ville: 'MONTREUIL',
           },
           objetConsultation: procedure['Nom de la procédure'] || rapportData.section1_contexte?.objetMarche || '',
           notification: {
@@ -384,20 +510,20 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
           },
           candidat: {
             denomination: nomCandidat,
-            adresse1: candidat.adresse || '',
-            codePostal: candidat.codePostal || '',
-            ville: candidat.ville || '',
-            siret: candidat.siret || '',
-            email: candidat.email || '',
-            telephone: candidat.telephone || '',
+            adresse1: coordonnees?.adresse || coordonnees?.adressePostale || '',
+            codePostal: coordonnees?.codePostal || '',
+            ville: coordonnees?.ville || '',
+            siret: coordonnees?.siret || '',
+            email: coordonnees?.email || '',
+            telephone: coordonnees?.telephone || coordonnees?.tel || '',
           },
           rejet: {
             type: 'offre',
             motifs: 'Votre offre n\'a pas obtenu la meilleure note au regard des critères d\'analyse définis dans le Règlement de la Consultation.',
-            noteEco: notesCandidat ? String(Math.round(notesCandidat.noteFinanciere || notesCandidat.noteFinanciereSur60 || 0)) : '0',
-            noteTech: notesCandidat ? String(Math.round(notesCandidat.noteTechnique || notesCandidat.noteTechniqueSur40 || 0)) : '0',
-            total: notesCandidat ? String(Math.round(notesCandidat.noteFinaleSur100 || 0)) : '0',
-            classement: notesCandidat ? String(notesCandidat.rangFinal || '-') : '-',
+            noteEco: String(Math.round(offre.noteFinanciere || offre.noteFinanciereSur60 || 0)),
+            noteTech: String(Math.round(offre.noteTechnique || offre.noteTechniqueSur40 || 0)),
+            total: String(Math.round(offre.noteFinaleSur100 || 0)),
+            classement: String(offre.rangFinal || offre.rang || '-'),
             maxEco,
             maxTech,
           },
@@ -423,7 +549,7 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
     });
 
     if (perdants.length === 0) {
-      alert('Aucun candidat non retenu trouvé');
+      alert(`Aucun candidat non retenu trouvé.\n\nVérifiez que :\n- Le tableau d'analyse (section 7) contient tous les candidats\n- L'attributaire est correctement défini (section 9)\n- Les candidats non retenus ont un rang > 1`);
       return;
     }
 

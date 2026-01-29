@@ -338,7 +338,7 @@ export const Noti1PDF = ({
         <View style={styles.titleBanner}>
           <View style={styles.titleBannerLeft}>
             <Text style={styles.titleH1}>MARCHÉS PUBLICS</Text>
-            <Text style={styles.titleH2}>Information du titulaire pressenti</Text>
+            <Text style={styles.titleH2}>Information au titulaire pressenti ¹</Text>
           </View>
           <View style={styles.titleBannerRight}>
             <Text style={styles.notiCode}>NOTI1</Text>
@@ -347,13 +347,15 @@ export const Noti1PDF = ({
 
         {/* Intro */}
         <Text style={styles.intro}>
-          Le formulaire NOTI1 est un modèle de lettre qui peut être utilisé par le pouvoir adjudicateur ou l'entité adjudicatrice pour informer le titulaire pressenti de son intention de lui attribuer le marché public.
+          Le formulaire NOTI1 peut être utilisé par le pouvoir adjudicateur ou l'entité adjudicatrice pour informer le soumissionnaire auquel il est envisagé d'attribuer le marché public que son offre a été retenue. Il permet aussi de réclamer au titulaire pressenti l'ensemble des documents prouvant qu'il a satisfait à ses obligations fiscales et sociales et à ses obligations d'assurance décennale s'il y est soumis, dans le délai fixé par l'acheteur.
         </Text>
 
         {/* Section A */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>A – Identification du pouvoir adjudicateur</Text>
+          <Text style={styles.sectionHeader}>A – Identification du pouvoir adjudicateur ou de l'entité adjudicatrice</Text>
           <View style={styles.sectionContent}>
+            <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b', marginBottom: 6 }]}>(Reprendre le contenu de la mention figurant dans les documents de la consultation.)</Text>
+            <Text style={[styles.fieldValueFull, { fontWeight: 'bold', fontSize: 9 }]}>AFPA</Text>
             <Text style={[styles.fieldValueFull, { fontWeight: 'bold' }]}>{data.pouvoirAdjudicateur.nom}</Text>
             <Text style={styles.fieldValueFull}>{data.pouvoirAdjudicateur.adresseVoie}</Text>
             <Text style={styles.fieldValueFull}>{data.pouvoirAdjudicateur.codePostal} {data.pouvoirAdjudicateur.ville}</Text>
@@ -364,7 +366,9 @@ export const Noti1PDF = ({
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>B – Objet de la consultation</Text>
           <View style={styles.sectionContent}>
+            <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b', marginBottom: 6 }]}>(Reprendre le contenu de la mention figurant dans les documents de la consultation.)</Text>
             <Text style={styles.fieldValueFull}>{data.objetConsultation || '—'}</Text>
+            <Text style={styles.fieldValueFull}>{data.numeroProcedure || '—'}</Text>
           </View>
         </View>
 
@@ -372,85 +376,101 @@ export const Noti1PDF = ({
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>C – Identification du titulaire pressenti</Text>
           <View style={styles.sectionContent}>
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Entreprise :</Text>
-              <Text style={styles.fieldValue}>{data.titulaire.denomination || '—'}</Text>
-            </View>
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Adresse :</Text>
-              <Text style={styles.fieldValue}>{data.titulaire.adresse1 || '—'}</Text>
-            </View>
+            <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b', marginBottom: 6 }]}>[Indiquer le nom commercial et la dénomination sociale du candidat individuel ou de chaque membre du groupement d'entreprises candidat, les adresses de son établissement et de son siège social (si elle est différente de celle de l'établissement), son adresse électronique, ses numéros de téléphone et de télécopie et son numéro SIRET. En cas de candidature groupée, identifier précisément le mandataire du groupement.]</Text>
+            <Text style={[styles.fieldValueFull, { fontWeight: 'bold' }]}>{data.titulaire.denomination || '—'}</Text>
+            <Text style={styles.fieldValueFull}>{data.titulaire.adresse1 || '—'}</Text>
             {data.titulaire.adresse2 && (
-              <View style={styles.fieldRow}>
-                <Text style={styles.fieldLabel}></Text>
-                <Text style={styles.fieldValue}>{data.titulaire.adresse2}</Text>
-              </View>
+              <Text style={styles.fieldValueFull}>{data.titulaire.adresse2}</Text>
             )}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>CP / Ville :</Text>
-              <Text style={styles.fieldValue}>{data.titulaire.codePostal} {data.titulaire.ville}</Text>
-            </View>
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>SIRET :</Text>
-              <Text style={styles.fieldValue}>{data.titulaire.siret || '—'}</Text>
-            </View>
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Email :</Text>
-              <Text style={styles.fieldValue}>{data.titulaire.email || '—'}</Text>
-            </View>
+            <Text style={styles.fieldValueFull}>{data.titulaire.codePostal} {data.titulaire.ville}</Text>
+            <Text style={styles.fieldValueFull}>SIRET : {data.titulaire.siret || '—'}</Text>
+            <Text style={styles.fieldValueFull}>{data.titulaire.email || '—'}</Text>
           </View>
         </View>
 
         {/* Section D */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>D – Attribution envisagée</Text>
+          <Text style={styles.sectionHeader}>D – Information au titulaire pressenti</Text>
           <View style={styles.sectionContent}>
-            <Text style={styles.paragraph}>Je vous informe que je compte vous attribuer :</Text>
+            <Text style={styles.paragraph}>Je vous informe que l'offre que vous avez faite, au titre de la consultation désignée ci-dessus, a été retenue :</Text>
+            <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b' }]}>(Cocher la case correspondante.)</Text>
             <Checkbox 
               checked={data.attribution.type === 'ensemble'} 
-              label="L'ensemble du marché public (en cas de non allotissement)"
+              label="pour l'ensemble du marché public (en cas de non allotissement)."
             />
             <Checkbox 
               checked={data.attribution.type === 'lots'} 
-              label={`Le(s) lot(s) n° ${data.attribution.type === 'lots' && data.attribution.lots?.length 
-                ? data.attribution.lots.map(l => `${l.numero}: ${l.intitule}`).join(', ')
-                : '________________'}`}
+              label={`pour le(s) lot(s) n° ${data.attribution.type === 'lots' && data.attribution.lots?.length 
+                ? data.attribution.lots.map(l => `${l.numero}`).join(', ')
+                : '________'} de la procédure de passation du marché public (en cas d'allotissement.)`}
             />
+            {data.attribution.type === 'lots' && data.attribution.lots?.length > 0 && (
+              <View style={{ marginLeft: 20, marginTop: 4 }}>
+                <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b' }]}>(Indiquer l'intitulé du ou des lots concernés tel qu'il figure dans les documents de la consultation.)</Text>
+                {data.attribution.lots.map((lot, idx) => (
+                  <Text key={idx} style={styles.fieldValueFull}>{lot.intitule}</Text>
+                ))}
+              </View>
+            )}
           </View>
         </View>
 
         {/* Section E */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>E – Documents à fournir</Text>
+          <Text style={styles.sectionHeader}>E – Délai de transmission, par le titulaire pressenti, des attestations sociales et fiscales et, s'il y est soumis, de l'attestation d'assurance de responsabilité décennale</Text>
           <View style={styles.sectionContent}>
             <Text style={styles.paragraph}>
-              En application de l'article R. 2144-1 du code de la commande publique, je vous demande de me transmettre les pièces suivantes avant le {data.documents.dateSignature || '________'} :
+              Pour permettre la signature et la notification du marché public, vous devez me transmettre, avant le {data.documents.dateSignature || '________'}, les documents figurant :
             </Text>
+            <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b' }]}>(Cocher la ou les cases correspondantes.)</Text>
             <Checkbox 
               checked={data.documents.candidatFrance} 
-              label="Candidat établi en France : attestations fiscales et sociales"
+              label="en rubrique F (candidat individuel ou membre du groupement établi en France) ;"
             />
             <Checkbox 
               checked={data.documents.candidatEtranger} 
-              label="Candidat établi à l'étranger : documents équivalents"
-            />
-            <Text style={[styles.paragraph, { marginTop: 8 }]}>
-              Délai de réponse : {data.documents.delaiReponse || '__'} jours à compter de :
-            </Text>
-            <Checkbox 
-              checked={data.documents.decompteA === 'réception'} 
-              label="La réception de la présente information"
-            />
-            <Checkbox 
-              checked={data.documents.decompteA === 'transmission'} 
-              label="La transmission des documents complémentaires"
+              label="en rubrique G (candidat individuel ou membre du groupement établi ou domicilié à l'étranger)."
             />
           </View>
         </View>
 
-        {/* Section F - Signature */}
+        {/* Section F */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>F – Signature</Text>
+          <Text style={styles.sectionHeader}>F – Candidat individuel ou membre du groupement établi en France</Text>
+          <View style={styles.sectionContent}>
+            <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b' }]}>Uniquement si les informations permettant d'accéder aux documents de preuve n'ont pas été fournis à l'occasion de la présentation des candidatures ou s'ils n'ont pas déjà été fournis par l'opérateur concerné :</Text>
+            <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b', marginTop: 4 }]}>(Lister les documents de preuve exigés)</Text>
+            <Text style={[styles.fieldValueFull, { fontWeight: 'bold', marginTop: 6 }]}>Les documents à produire sont :</Text>
+            <Text style={styles.fieldValueFull}>{data.documents.documentsPreuve || '• Attestation fiscale\n• Attestation URSSAF'}</Text>
+            <Text style={[styles.fieldValueFull, { fontWeight: 'bold', marginTop: 8 }]}>Délai pour répondre à la demande, à défaut de quoi l'offre sera rejetée :</Text>
+            <Text style={styles.fieldValueFull}>{(() => {
+              if (!data.documents.delaiReponse) return '________';
+              const jours = parseInt(data.documents.delaiReponse);
+              if (isNaN(jours)) return data.documents.delaiReponse;
+              const today = new Date();
+              const dateCalculee = new Date(today);
+              dateCalculee.setDate(today.getDate() + jours);
+              const dateStr = dateCalculee.toLocaleDateString('fr-FR');
+              return `${dateStr} (${jours} jour${jours > 1 ? 's' : ''} à compter de la date d'export)`;
+            })()}</Text>
+          </View>
+        </View>
+
+        {/* Section G */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>G – Candidat individuel ou membre du groupement établi ou domicilié à l'étranger</Text>
+          <View style={styles.sectionContent}>
+            <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b' }]}>Uniquement si les informations permettant d'accéder aux documents de preuve n'ont pas été fournis à l'occasion de la présentation des candidatures ou s'ils n'ont pas déjà été fournis par l'opérateur concerné :</Text>
+            <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b', marginTop: 4 }]}>(Lister les documents de preuve exigés)</Text>
+            <Text style={styles.fieldValueFull}>Documents équivalents selon la législation du pays d'établissement</Text>
+            <Text style={[styles.fieldValueFull, { fontWeight: 'bold', marginTop: 8 }]}>Délai pour répondre à la demande, à défaut de quoi l'offre sera rejetée :</Text>
+            <Text style={styles.fieldValueFull}>________</Text>
+          </View>
+        </View>
+
+        {/* Section H - Signature */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>H – Signature du pouvoir adjudicateur ou de l'entité adjudicatrice</Text>
           <View style={styles.sectionContent}>
             <View style={styles.signatureBlock}>
               <Text style={styles.signatureText}>
@@ -480,6 +500,11 @@ export const Noti1PDF = ({
         <View style={styles.footerLine2}>
           <Text style={styles.footerAfpa}>
             AFPA – Agence nationale pour la formation professionnelle des adultes – 3 rue Franklin, 93100 Montreuil
+          </Text>
+        </View>
+        <View style={{ marginTop: 4 }}>
+          <Text style={[styles.footerAfpa, { fontSize: 5 }]}>
+            ¹ Formulaire non obligatoire disponible, avec sa notice explicative, sur le site du ministère chargé de l'économie.
           </Text>
         </View>
       </View>
