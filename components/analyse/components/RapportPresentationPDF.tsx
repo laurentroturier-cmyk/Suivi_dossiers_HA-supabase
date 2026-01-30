@@ -552,23 +552,31 @@ export const RapportPresentationPDF = ({
               </View>
             ) : null}
 
-            {!data?.section7_2_syntheseLots && data?.section7_valeurOffres?.montantAttributaire && (
+            {data?.section7_valeurOffres?.montantEstime > 0 && (
               <Text style={[styles.paragraph, { marginTop: 10 }]}>
-                Le montant de l'offre du prestataire pressenti s'élève à{' '}
-                <Text style={{ fontWeight: 'bold' }}>{formatCurrency(data.section7_valeurOffres.montantAttributaire)}</Text>.
+                <Text style={{ fontWeight: 'bold' }}>Montant de l'estimation : </Text>
+                {formatCurrency(data.section7_valeurOffres.montantEstime)}
               </Text>
             )}
 
-            {data?.section7_valeurOffres?.montantEstime > 0 && (
+            {!data?.section7_2_syntheseLots && data?.section7_valeurOffres?.montantAttributaire && (
               <Text style={styles.paragraph}>
-                Pour rappel, le montant estimé dans la note d'opportunité était de{' '}
-                <Text style={{ fontWeight: 'bold' }}>{formatCurrency(data.section7_valeurOffres.montantEstime)} TTC</Text>, 
-                soit un écart de{' '}
-                <Text style={{ fontWeight: 'bold' }}>
-                  {formatCurrency(data.section7_valeurOffres.ecartAbsolu)} ({data.section7_valeurOffres.ecartPourcent.toFixed(2)}%)
-                </Text>.
+                <Text style={{ fontWeight: 'bold' }}>Montant de l'offre retenue : </Text>
+                {formatCurrency(data.section7_valeurOffres.montantAttributaire)}
               </Text>
             )}
+
+            {data?.section7_valeurOffres?.montantEstime > 0 && data?.section7_valeurOffres?.montantAttributaire && (() => {
+              const ecart = data.section7_valeurOffres.montantAttributaire - data.section7_valeurOffres.montantEstime;
+              const ecartPourcent = (ecart / data.section7_valeurOffres.montantEstime) * 100;
+              const signe = ecart >= 0 ? '+' : '';
+              return (
+                <Text style={styles.paragraph}>
+                  <Text style={{ fontWeight: 'bold' }}>Écart par rapport à l'estimation : </Text>
+                  {signe}{formatCurrency(ecart)} ({signe}{ecartPourcent.toFixed(2)}%)
+                </Text>
+              );
+            })()}
           </View>
 
           {/* 8. ANALYSE DE LA PERFORMANCE DU DOSSIER */}
@@ -630,7 +638,7 @@ export const RapportPresentationPDF = ({
                 </View>
                 
                 <Text style={styles.paragraph}>
-                  Au global, la performance achat tous lots confondus est de{' '}
+                  Au global, la performance achat tous lots confondus (par rapport à la moyenne des offres) est de{' '}
                   <Text style={{ fontWeight: 'bold' }}>{data.section8_performance.performanceAchatPourcent.toFixed(1)}%</Text>.
                 </Text>
                 <Text style={styles.paragraph}>
@@ -642,7 +650,7 @@ export const RapportPresentationPDF = ({
             ) : data?.section8_performance ? (
               <>
                 <Text style={styles.paragraph}>
-                  Au global, la performance achat est de{' '}
+                  Au global, la performance achat (par rapport à la moyenne des offres) est de{' '}
                   <Text style={{ fontWeight: 'bold' }}>{data.section8_performance.performanceAchatPourcent.toFixed(1)}%</Text>.
                 </Text>
                 <Text style={styles.paragraph}>

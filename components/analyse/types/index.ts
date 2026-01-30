@@ -129,6 +129,7 @@ export interface Section8Performance {
   montantAttributaireTTC: number;
   montantAttributaireHT: number;
   tableauDetaille?: LotPerformanceDetail[]; // Tableau détaillé par lot
+  referenceCalcul: string; // Texte de référence pour le calcul (ex: "par rapport à la moyenne des offres")
 }
 
 export interface LotPerformanceDetail {

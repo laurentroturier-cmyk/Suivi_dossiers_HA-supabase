@@ -1128,18 +1128,34 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             ]),
             
             // Comparaison avec Note d'Opportunité
-            ...(state.rapportGenere.section7_valeurOffres.montantEstime > 0 ? [
-              new Paragraph({
-                children: [
-                  createBodyText(`Pour rappel, le montant estimé dans la note d'opportunité était de `),
-                  createBodyText(`${formatCurrency(state.rapportGenere.section7_valeurOffres.montantEstime)} TTC`, true),
-                  createBodyText(`, soit un écart de `),
-                  createBodyText(`${formatCurrency(state.rapportGenere.section7_valeurOffres.ecartAbsolu)} (${state.rapportGenere.section7_valeurOffres.ecartPourcent.toFixed(2)}%)`, true),
-                  createBodyText(`.`),
-                ],
-                spacing: { after: 200 },
-              })
-            ] : []),
+            ...(state.rapportGenere.section7_valeurOffres.montantEstime > 0 ? (() => {
+              const ecart = state.rapportGenere.section7_valeurOffres.montantAttributaire - state.rapportGenere.section7_valeurOffres.montantEstime;
+              const ecartPourcent = (ecart / state.rapportGenere.section7_valeurOffres.montantEstime) * 100;
+              const signe = ecart >= 0 ? '+' : '';
+              return [
+                new Paragraph({
+                  children: [
+                    createBodyText(`Montant de l'estimation : `),
+                    createBodyText(`${formatCurrency(state.rapportGenere.section7_valeurOffres.montantEstime)}`, true),
+                  ],
+                  spacing: { after: 100 },
+                }),
+                new Paragraph({
+                  children: [
+                    createBodyText(`Montant de l'offre retenue : `),
+                    createBodyText(`${formatCurrency(state.rapportGenere.section7_valeurOffres.montantAttributaire)}`, true),
+                  ],
+                  spacing: { after: 100 },
+                }),
+                new Paragraph({
+                  children: [
+                    createBodyText(`Écart par rapport à l'estimation : `),
+                    createBodyText(`${signe}${formatCurrency(ecart)} (${signe}${ecartPourcent.toFixed(2)}%)`, true),
+                  ],
+                  spacing: { after: 200 },
+                })
+              ];
+            })() : []),
             
             // Section 8 : Performance
             new Paragraph({
@@ -1161,13 +1177,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               
               new Paragraph({
                 children: [
-                  createBodyText(`Au global, la performance achat tous lots confondus est de `),
+                  createBodyText(`Au global, la performance achat tous lots confondus (${state.rapportGenere.section8_performance.referenceCalcul || 'par rapport à la moyenne des offres'}) est de `),
                   createBodyText(`${state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%`, true),
                   createBodyText(`.`),
                 ],
                 spacing: { before: 200, after: 100 },
               }),
-              
+
               new Paragraph({
                 children: [
                   createBodyText(`L'impact budgétaire total estimé est de `),
@@ -1182,7 +1198,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               // Ancien format si pas de tableau détaillé mais multi-lots
               new Paragraph({
                 children: [
-                  createBodyText(`Au global, la performance achat tous lots confondus est de `),
+                  createBodyText(`Au global, la performance achat tous lots confondus (${state.rapportGenere.section8_performance.referenceCalcul || 'par rapport à la moyenne des offres'}) est de `),
                   createBodyText(`${state.rapportGenere.section8_1_synthesePerformance.performanceGlobalePourcent.toFixed(1)}%`, true),
                   createBodyText(`.`),
                 ],
@@ -1212,7 +1228,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               // Sinon : afficher la performance du lot unique
               new Paragraph({
                 children: [
-                  createBodyText(`Au global, la performance achat est de `),
+                  createBodyText(`Au global, la performance achat (par rapport à la moyenne des offres) est de `),
                   createBodyText(`${state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%`, true),
                   createBodyText(`.`),
                 ],
@@ -1762,8 +1778,9 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                           ...rapportEditable,
                           section1_contexte: { ...rapportEditable.section1_contexte, objetMarche: e.target.value }
                         })}
-                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
-                        rows={3}
+                        className="w-full p-3 border border-gray-300 rounded-lg text-sm font-sans resize-y"
+                        rows={10}
+                        placeholder="Décrivez l'objet du marché..."
                       />
                     </div>
                     <div>
@@ -2150,13 +2167,20 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                           </tbody>
                         </table>
                       </div>
-                      <p className="mt-3"><strong>Montant de l'offre retenue :</strong> {formatCurrency(state.rapportGenere.section7_valeurOffres.montantAttributaire)}</p>
                       {state.rapportGenere.section7_valeurOffres.montantEstime > 0 && (
-                        <p className="mt-1">
-                          <strong>Écart avec estimation :</strong> {formatCurrency(state.rapportGenere.section7_valeurOffres.ecartAbsolu)} 
-                          ({state.rapportGenere.section7_valeurOffres.ecartPourcent > 0 ? '+' : ''}{state.rapportGenere.section7_valeurOffres.ecartPourcent.toFixed(2)}%)
-                        </p>
+                        <p className="mt-3"><strong>Montant de l'estimation :</strong> {formatCurrency(state.rapportGenere.section7_valeurOffres.montantEstime)}</p>
                       )}
+                      <p className={state.rapportGenere.section7_valeurOffres.montantEstime > 0 ? "mt-1" : "mt-3"}><strong>Montant de l'offre retenue :</strong> {formatCurrency(state.rapportGenere.section7_valeurOffres.montantAttributaire)}</p>
+                      {state.rapportGenere.section7_valeurOffres.montantEstime > 0 && (() => {
+                        const ecart = state.rapportGenere.section7_valeurOffres.montantAttributaire - state.rapportGenere.section7_valeurOffres.montantEstime;
+                        const ecartPourcent = (ecart / state.rapportGenere.section7_valeurOffres.montantEstime) * 100;
+                        const signe = ecart >= 0 ? '+' : '';
+                        return (
+                          <p className="mt-1">
+                            <strong>Écart par rapport à l'estimation :</strong> {signe}{formatCurrency(ecart)} ({signe}{ecartPourcent.toFixed(2)}%)
+                          </p>
+                        );
+                      })()}
                     </>
                   )}
                 </>
@@ -2220,16 +2244,54 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                           </tbody>
                         </table>
                       </div>
-                      <p className="text-sm mt-3"><strong>Performance globale :</strong> {state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%</p>
-                      <p className="text-sm"><strong>Impact budgétaire total :</strong> {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireTTC)} TTC 
+                      <div className="mt-3 mb-2">
+                        <label className="text-xs text-gray-500 block mb-1">Référence du calcul (modifiable) :</label>
+                        <input
+                          type="text"
+                          value={state.rapportGenere.section8_performance.referenceCalcul || 'par rapport à la moyenne des offres'}
+                          onChange={(e) => setState((prev: any) => ({
+                            ...prev,
+                            rapportGenere: {
+                              ...prev.rapportGenere,
+                              section8_performance: {
+                                ...prev.rapportGenere.section8_performance,
+                                referenceCalcul: e.target.value
+                              }
+                            }
+                          }))}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="par rapport à la moyenne des offres"
+                        />
+                      </div>
+                      <p className="text-sm"><strong>Performance globale ({state.rapportGenere.section8_performance.referenceCalcul || 'par rapport à la moyenne des offres'}) :</strong> {state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%</p>
+                      <p className="text-sm"><strong>Impact budgétaire total :</strong> {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireTTC)} TTC
                         (soit {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireHT)} HT)</p>
                     </>
                   ) : state.rapportGenere.section8_1_synthesePerformance ? (
                     // Mode multi-lots : afficher la performance des lots sélectionnés (ancien format)
                     <>
                       <p className="font-semibold mb-2 text-blue-700">📊 Performance tous lots confondus</p>
-                      <p className="text-sm mb-2"><strong>Performance globale :</strong> {state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%</p>
-                      <p className="text-sm mb-3"><strong>Impact budgétaire total :</strong> {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireTTC)} TTC 
+                      <div className="mb-2">
+                        <label className="text-xs text-gray-500 block mb-1">Référence du calcul (modifiable) :</label>
+                        <input
+                          type="text"
+                          value={state.rapportGenere.section8_performance.referenceCalcul || 'par rapport à la moyenne des offres'}
+                          onChange={(e) => setState((prev: any) => ({
+                            ...prev,
+                            rapportGenere: {
+                              ...prev.rapportGenere,
+                              section8_performance: {
+                                ...prev.rapportGenere.section8_performance,
+                                referenceCalcul: e.target.value
+                              }
+                            }
+                          }))}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="par rapport à la moyenne des offres"
+                        />
+                      </div>
+                      <p className="text-sm mb-2"><strong>Performance globale ({state.rapportGenere.section8_performance.referenceCalcul || 'par rapport à la moyenne des offres'}) :</strong> {state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%</p>
+                      <p className="text-sm mb-3"><strong>Impact budgétaire total :</strong> {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireTTC)} TTC
                         (soit {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireHT)} HT)</p>
                       
                       <p className="font-semibold mb-2 text-sm">Détail par lot :</p>
@@ -2259,8 +2321,27 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   ) : (
                     // Mode lot unique
                     <>
-                      <p><strong>Performance achat :</strong> {state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%</p>
-                      <p><strong>Impact budgétaire :</strong> {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireTTC)} TTC 
+                      <div className="mb-2">
+                        <label className="text-xs text-gray-500 block mb-1">Référence du calcul (modifiable) :</label>
+                        <input
+                          type="text"
+                          value={state.rapportGenere.section8_performance.referenceCalcul || 'par rapport à la moyenne des offres'}
+                          onChange={(e) => setState((prev: any) => ({
+                            ...prev,
+                            rapportGenere: {
+                              ...prev.rapportGenere,
+                              section8_performance: {
+                                ...prev.rapportGenere.section8_performance,
+                                referenceCalcul: e.target.value
+                              }
+                            }
+                          }))}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="par rapport à la moyenne des offres"
+                        />
+                      </div>
+                      <p><strong>Performance achat ({state.rapportGenere.section8_performance.referenceCalcul || 'par rapport à la moyenne des offres'}) :</strong> {state.rapportGenere.section8_performance.performanceAchatPourcent.toFixed(1)}%</p>
+                      <p><strong>Impact budgétaire :</strong> {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireTTC)} TTC
                         (soit {formatCurrency(state.rapportGenere.section8_performance.impactBudgetaireHT)} HT)</p>
                     </>
                   )}

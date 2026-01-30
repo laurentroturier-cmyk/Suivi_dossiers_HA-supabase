@@ -261,6 +261,7 @@ function generatePerformance(sources: RapportSources): Section8Performance {
       impactBudgetaireHT: 0,
       montantAttributaireTTC: 0,
       montantAttributaireHT: 0,
+      referenceCalcul: 'par rapport à la moyenne des offres',
     };
   }
   
@@ -275,6 +276,7 @@ function generatePerformance(sources: RapportSources): Section8Performance {
     impactBudgetaireHT: an01Data.stats.savingAmount / (1 + tva / 100),
     montantAttributaireTTC,
     montantAttributaireHT,
+    referenceCalcul: 'par rapport à la moyenne des offres',
   };
 }
 
@@ -318,6 +320,7 @@ function generatePerformanceFromMultiLots(allLots: AnalysisData[], sources: Rapp
     montantAttributaireTTC: totalAttributaireTTC,
     montantAttributaireHT: totalAttributaireHT,
     tableauDetaille,
+    referenceCalcul: 'par rapport à la moyenne des offres',
   };
 }
 
