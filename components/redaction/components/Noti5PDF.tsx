@@ -12,8 +12,8 @@ import type { Noti5Data } from '../types/noti5';
 // Styles professionnels du document NOTI5 (couleur verte)
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 90,
-    paddingBottom: 70,
+    paddingTop: 85,
+    paddingBottom: 60,
     paddingHorizontal: 50,
     fontSize: 10,
     fontFamily: 'Helvetica',
@@ -23,13 +23,13 @@ const styles = StyleSheet.create({
   // ===== HEADER FIXE =====
   headerFixed: {
     position: 'absolute',
-    top: 20,
+    top: 18,
     left: 50,
     right: 50,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 12,
+    paddingBottom: 10,
     borderBottomWidth: 2,
     borderBottomColor: '#16a34a',
     borderBottomStyle: 'solid',
@@ -63,13 +63,13 @@ const styles = StyleSheet.create({
   // ===== FOOTER FIXE =====
   footerFixed: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 15,
     left: 50,
     right: 50,
     borderTopWidth: 1,
     borderTopColor: '#86efac',
     borderTopStyle: 'solid',
-    paddingTop: 10,
+    paddingTop: 8,
   },
   
   footerContent: {
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   // Bandeau titre NOTI
   titleBanner: {
     flexDirection: 'row',
-    marginBottom: 15,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#16a34a',
     borderRadius: 4,
@@ -161,15 +161,15 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontStyle: 'italic',
     color: '#14532d',
-    marginBottom: 18,
-    lineHeight: 1.5,
+    marginBottom: 12,
+    lineHeight: 1.4,
     textAlign: 'justify',
     paddingHorizontal: 5,
   },
   
   // Sections
   section: {
-    marginBottom: 12,
+    marginBottom: 10,
     breakInside: 'avoid',
   },
   
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     borderColor: '#bbf7d0',
     borderBottomLeftRadius: 4,
     borderBottomRightRadius: 4,
-    padding: 12,
+    padding: 10,
     backgroundColor: '#f0fdf4',
     breakInside: 'avoid',
   },
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginVertical: 4,
+    marginVertical: 3,
     paddingLeft: 8,
     breakInside: 'avoid',
   },
@@ -280,8 +280,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#22c55e',
     borderRadius: 4,
-    padding: 12,
-    marginVertical: 12,
+    padding: 10,
+    marginVertical: 10,
   },
   
   successTitle: {
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   
   // Signature
   signatureBlock: {
-    marginTop: 20,
+    marginTop: 10,
     alignItems: 'flex-end',
     paddingRight: 20,
   },
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 1,
     backgroundColor: '#86efac',
-    marginTop: 30,
+    marginTop: 20,
     marginBottom: 5,
   },
   

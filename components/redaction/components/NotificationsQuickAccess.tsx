@@ -9,6 +9,119 @@ import type { Noti5Data } from '../types/noti5';
 import type { Noti3Data } from '../types/noti3';
 import type { MultiLotsAnalysis } from '../types/multiLots';
 
+/**
+ * Charge les candidats enrichis depuis la table ouverture_plis
+ * Cette table contient les données complètes des candidats (SIRET, adresse, email, etc.)
+ */
+async function loadCandidatsFromOuverturePlis(numProc: string): Promise<any[]> {
+  try {
+    // Essayer de charger d'abord l'analyse "complet", puis "recevabilite", puis "candidature"
+    const typesAnalyse = ['complet', 'recevabilite', 'candidature'] as const;
+
+    for (const typeAnalyse of typesAnalyse) {
+      const { data, error } = await supabase
+        .from('ouverture_plis')
+        .select('candidats')
+        .eq('num_proc', numProc)
+        .eq('type_analyse', typeAnalyse)
+        .maybeSingle();
+
+      if (!error && data?.candidats && Array.isArray(data.candidats) && data.candidats.length > 0) {
+        console.log(`✅ Candidats chargés depuis ouverture_plis (${typeAnalyse}):`, data.candidats.length);
+        return data.candidats;
+      }
+    }
+
+    console.log('ℹ️ Aucun candidat trouvé dans ouverture_plis pour:', numProc);
+    return [];
+  } catch (error) {
+    console.error('Erreur chargement ouverture_plis:', error);
+    return [];
+  }
+}
+
+/**
+ * Formate une note avec ses décimales (max 2 chiffres après la virgule)
+ * Exemple: 42.78 → "42,78"
+ */
+function formatNote(value: number | undefined | null): string {
+  const num = Number(value) || 0;
+  // Si c'est un entier, on l'affiche sans décimales
+  if (Number.isInteger(num)) {
+    return String(num);
+  }
+  // Sinon on affiche avec 2 décimales max, format français (virgule)
+  return num.toLocaleString('fr-FR', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
+}
+
+/**
+ * Normalise un nom de société pour la comparaison
+ */
+function normaliserNom(nom: string): string {
+  return nom.toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/^(sarl|sas|eurl|sasu|sa|sci|scp|snc)\s+/gi, '')
+    .replace(/\s+(sarl|sas|eurl|sasu|sa|sci|scp|snc)$/gi, '')
+    .trim();
+}
+
+/**
+ * Trouve les coordonnées d'un candidat en cherchant dans ouverture_plis puis depots/retraits
+ */
+function findCandidatCoordonnees(
+  nomCandidat: string,
+  candidatsOuverturePlis: any[],
+  candidatsDepotsRetraits: any[]
+): any {
+  const nomNormalise = normaliserNom(nomCandidat);
+
+  // 1. Chercher d'abord dans ouverture_plis (données les plus complètes)
+  const candidatOP = candidatsOuverturePlis.find((c: any) => {
+    const nomC = c.societe || c.nom || c.raisonSociale || '';
+    return normaliserNom(nomC).includes(nomNormalise) ||
+           nomNormalise.includes(normaliserNom(nomC));
+  });
+
+  if (candidatOP) {
+    console.log('✅ Candidat trouvé dans ouverture_plis:', candidatOP.societe);
+    return {
+      societe: candidatOP.societe || '',
+      siret: candidatOP.siret || '',
+      adresse: candidatOP.adresse || '',
+      codePostal: candidatOP.codePostal || '',
+      ville: candidatOP.ville || '',
+      email: candidatOP.email || '',
+      telephone: candidatOP.telephone || '',
+      // Données supplémentaires disponibles dans ouverture_plis
+      prenom: candidatOP.prenom || '',
+      nom: candidatOP.nom || '',
+    };
+  }
+
+  // 2. Sinon, chercher dans depots/retraits
+  const candidatDR = candidatsDepotsRetraits.find((c: any) => {
+    const nomC = c.societe || c.nom || c.raisonSociale || '';
+    return normaliserNom(nomC).includes(nomNormalise) ||
+           nomNormalise.includes(normaliserNom(nomC));
+  });
+
+  if (candidatDR) {
+    console.log('ℹ️ Candidat trouvé dans depots/retraits:', candidatDR.societe || candidatDR.nom);
+    return {
+      societe: candidatDR.societe || candidatDR.raisonSociale || '',
+      siret: candidatDR.siret || '',
+      adresse: candidatDR.adresse || candidatDR.adressePostale || '',
+      codePostal: candidatDR.codePostal || '',
+      ville: candidatDR.ville || '',
+      email: candidatDR.email || '',
+      telephone: candidatDR.telephone || candidatDR.tel || '',
+    };
+  }
+
+  console.log('⚠️ Candidat non trouvé:', nomCandidat);
+  return null;
+}
+
 interface NotificationsQuickAccessProps {
   procedures?: any[]; // Optionnel si preloadedData fourni
   onClose: () => void;
@@ -101,10 +214,19 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
           });
           const candidats = Array.from(candidatsMap.values());
 
+          // 🆕 Extraire le numéro court (5 chiffres) pour la requête ouverture_plis
+          const numeroAfpa = procedure['Numéro de procédure (Afpa)'] || procedure.NumProc || '';
+          const numeroCourt = numeroAfpa.match(/^(\d{5})/)?.[1] || procedure.NumProc;
+
+          // 🆕 Charger les candidats enrichis depuis ouverture_plis
+          const candidatsOuverturePlis = await loadCandidatsFromOuverturePlis(numeroCourt);
+          console.log('📋 Candidats ouverture_plis (preloaded):', candidatsOuverturePlis.length);
+
           // Mettre à jour cachedData avec les candidats
           const updatedData = {
             ...preloadedData,
             candidats,
+            candidatsOuverturePlis, // 🆕 Ajout des candidats enrichis
           };
           setCachedData(updatedData);
 
@@ -230,10 +352,15 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
       const rapportData = rapports?.[0]?.rapport_data || null;
       console.log('📊 Rapport trouvé:', !!rapportData);
 
+      // 🆕 Charger les candidats enrichis depuis ouverture_plis (utiliser numeroCourt = 5 chiffres)
+      const candidatsOuverturePlis = await loadCandidatsFromOuverturePlis(numeroCourt);
+      console.log('📋 Candidats ouverture_plis:', candidatsOuverturePlis.length);
+
       // Stocker en cache
       setCachedData({
         procedure,
         candidats,
+        candidatsOuverturePlis, // 🆕 Ajout des candidats enrichis
         rapportData,
         numeroAfpa,
         numeroCourt,
@@ -269,23 +396,12 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
       return;
     }
 
-    const { procedure, candidats, rapportData } = cachedData;
+    const { procedure, candidats, candidatsOuverturePlis = [], rapportData } = cachedData;
     const attributaire = rapportData.section9_attribution?.attributairePressenti || '';
-    
-    // Fonction de normalisation des noms
-    const normaliserNom = (nom: string) => {
-      return nom.toLowerCase()
-        .replace(/\s+/g, ' ')
-        .replace(/^(sarl|sas|eurl|sasu|sa)\s+/gi, '')
-        .replace(/\s+(sarl|sas|eurl|sasu|sa)$/gi, '')
-        .trim();
-    };
-    
-    const coordonnees = candidats.find((c: any) => {
-      const nomC = c.societe || c.nom || c.raisonSociale || '';
-      return normaliserNom(nomC).includes(normaliserNom(attributaire)) ||
-             normaliserNom(attributaire).includes(normaliserNom(nomC));
-    });
+
+    // 🆕 Utiliser la fonction centralisée pour trouver les coordonnées
+    // Priorité : ouverture_plis (données complètes) > depots/retraits
+    const coordonnees = findCandidatCoordonnees(attributaire, candidatsOuverturePlis, candidats);
 
     const lots = rapportData.section7_2_syntheseLots?.lots || [];
     const lotsForNoti1 = lots.map((lot: any) => ({
@@ -305,12 +421,12 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
       titulaire: {
         denomination: attributaire,
         siret: coordonnees?.siret || '',
-        adresse1: coordonnees?.adresse || coordonnees?.adressePostale || '',
+        adresse1: coordonnees?.adresse || '',
         adresse2: '',
         codePostal: coordonnees?.codePostal || '',
         ville: coordonnees?.ville || '',
         email: coordonnees?.email || '',
-        telephone: coordonnees?.telephone || coordonnees?.tel || '',
+        telephone: coordonnees?.telephone || '',
         fax: '',
         estMandataire: false,
       },
@@ -344,23 +460,11 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
       return;
     }
 
-    const { procedure, candidats, rapportData } = cachedData;
+    const { procedure, candidats, candidatsOuverturePlis = [], rapportData } = cachedData;
     const attributaire = rapportData.section9_attribution?.attributairePressenti || '';
-    
-    // Fonction de normalisation des noms
-    const normaliserNom = (nom: string) => {
-      return nom.toLowerCase()
-        .replace(/\s+/g, ' ')
-        .replace(/^(sarl|sas|eurl|sasu|sa)\s+/gi, '')
-        .replace(/\s+(sarl|sas|eurl|sasu|sa)$/gi, '')
-        .trim();
-    };
-    
-    const coordonnees = candidats.find((c: any) => {
-      const nomC = c.societe || c.nom || c.raisonSociale || '';
-      return normaliserNom(nomC).includes(normaliserNom(attributaire)) ||
-             normaliserNom(attributaire).includes(normaliserNom(nomC));
-    });
+
+    // 🆕 Utiliser la fonction centralisée pour trouver les coordonnées
+    const coordonnees = findCandidatCoordonnees(attributaire, candidatsOuverturePlis, candidats);
 
     const lots = rapportData.section7_2_syntheseLots?.lots || [];
     const lotsForNoti5 = lots.map((lot: any) => ({
@@ -380,18 +484,31 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
       notification: {
         type: lots.length > 1 ? 'lots' : 'ensemble',
         lots: lotsForNoti5,
+        executionImmediateChecked: true,
+        executionOrdreServiceChecked: false,
       },
       attributaire: {
         denomination: attributaire,
         siret: coordonnees?.siret || '',
-        adresse1: coordonnees?.adresse || coordonnees?.adressePostale || '',
+        adresse1: coordonnees?.adresse || '',
         adresse2: '',
         codePostal: coordonnees?.codePostal || '',
         ville: coordonnees?.ville || '',
         email: coordonnees?.email || '',
-        telephone: coordonnees?.telephone || coordonnees?.tel || '',
+        telephone: coordonnees?.telephone || '',
         fax: '',
         estMandataire: false,
+      },
+      garantie: {
+        pasPrevue: true,
+        prevueSansAllotissement: false,
+        retenueGarantieSansAllotissement: false,
+        garantiePremiereDemandeOuCautionSansAllotissement: false,
+        prevueAvecAllotissement: false,
+        montantInferieur90k: false,
+        montantSuperieur90kRetenue: false,
+        montantSuperieur90kGarantie: false,
+        modalites: '',
       },
       executionPrestations: {
         type: 'immediate',
@@ -434,33 +551,24 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
       return;
     }
 
-    const { procedure, candidats, rapportData } = cachedData;
+    const { procedure, candidats, candidatsOuverturePlis = [], rapportData } = cachedData;
     const attributaire = rapportData.section9_attribution?.attributairePressenti || '';
-    const tableauNotes = rapportData.section7_valeurOffres?.tableau || 
-                         rapportData.section7_2_syntheseLots?.lots?.[0]?.tableau || 
+    const tableauNotes = rapportData.section7_valeurOffres?.tableau ||
+                         rapportData.section7_2_syntheseLots?.lots?.[0]?.tableau ||
                          [];
-    
+
     // Vérification que le tableau de notes existe et contient des données
     if (!tableauNotes || tableauNotes.length === 0) {
       alert('Aucune donnée d\'analyse trouvée dans le rapport de présentation (section 7)');
       return;
     }
-    
+
     // Récupérer les pondérations depuis section2_criteres
     const criteres = rapportData.section2_criteres || {};
     const maxEco = String(criteres.criterePrix || criteres.critereFinancier || '60');
     const maxTech = String(criteres.critereTechnique || criteres.critereValeurTechnique || '40');
-    
-    // Normaliser les noms pour comparaison
-    const normaliserNom = (nom: string) => {
-      return nom.toLowerCase()
-        .replace(/\s+/g, ' ')
-        .replace(/^(sarl|sas|eurl|sasu|sa)\s+/gi, '')
-        .replace(/\s+(sarl|sas|eurl|sasu|sa)$/gi, '')
-        .trim();
-    };
-    
-    const notesAttributaire = tableauNotes.find((offre: any) => 
+
+    const notesAttributaire = tableauNotes.find((offre: any) =>
       normaliserNom(offre.raisonSociale || '').includes(normaliserNom(attributaire)) ||
       normaliserNom(attributaire).includes(normaliserNom(offre.raisonSociale || ''))
     );
@@ -470,23 +578,18 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
     // CHANGEMENT MAJEUR : parcourir tableauNotes au lieu de candidats
     tableauNotes.forEach((offre: any) => {
       const nomCandidat = offre.raisonSociale || '';
-      const isAttributaire = normaliserNom(nomCandidat).includes(normaliserNom(attributaire)) || 
+      const isAttributaire = normaliserNom(nomCandidat).includes(normaliserNom(attributaire)) ||
                             normaliserNom(attributaire).includes(normaliserNom(nomCandidat));
-      
+
       // Un candidat est perdant s'il n'est PAS l'attributaire ET a un rang > 1
       if (!isAttributaire && nomCandidat && (offre.rangFinal > 1 || offre.rang > 1)) {
-        // Chercher les coordonnées dans candidats (depots/retraits)
-        let coordonnees = candidats.find((c: any) => {
-          const nomC = c.societe || c.nom || c.raisonSociale || '';
-          return normaliserNom(nomC).includes(normaliserNom(nomCandidat)) ||
-                 normaliserNom(nomCandidat).includes(normaliserNom(nomC));
-        });
-        
-        // Si pas trouvé dans candidats, utiliser les données du tableau d'analyse si disponibles
+        // 🆕 Utiliser la fonction centralisée pour trouver les coordonnées
+        let coordonnees = findCandidatCoordonnees(nomCandidat, candidatsOuverturePlis, candidats);
+
+        // Si pas trouvé, utiliser les données du tableau d'analyse si disponibles
         if (!coordonnees) {
           coordonnees = {
             adresse: offre.adresse || '',
-            adressePostale: offre.adressePostale || '',
             codePostal: offre.codePostal || '',
             ville: offre.ville || '',
             siret: offre.siret || '',
@@ -520,18 +623,18 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
           rejet: {
             type: 'offre',
             motifs: 'Votre offre n\'a pas obtenu la meilleure note au regard des critères d\'analyse définis dans le Règlement de la Consultation.',
-            noteEco: String(Math.round(offre.noteFinanciere || offre.noteFinanciereSur60 || 0)),
-            noteTech: String(Math.round(offre.noteTechnique || offre.noteTechniqueSur40 || 0)),
-            total: String(Math.round(offre.noteFinaleSur100 || 0)),
+            noteEco: formatNote(offre.noteFinanciere || offre.noteFinanciereSur60),
+            noteTech: formatNote(offre.noteTechnique || offre.noteTechniqueSur40),
+            total: formatNote(offre.noteFinaleSur100),
             classement: String(offre.rangFinal || offre.rang || '-'),
             maxEco,
             maxTech,
           },
           attributaire: {
             denomination: attributaire,
-            noteEco: notesAttributaire ? String(Math.round(notesAttributaire.noteFinanciere || notesAttributaire.noteFinanciereSur60 || 0)) : maxEco,
-            noteTech: notesAttributaire ? String(Math.round(notesAttributaire.noteTechnique || notesAttributaire.noteTechniqueSur40 || 0)) : maxTech,
-            total: notesAttributaire ? String(Math.round(notesAttributaire.noteFinaleSur100 || 0)) : '100',
+            noteEco: notesAttributaire ? formatNote(notesAttributaire.noteFinanciere || notesAttributaire.noteFinanciereSur60) : maxEco,
+            noteTech: notesAttributaire ? formatNote(notesAttributaire.noteTechnique || notesAttributaire.noteTechniqueSur40) : maxTech,
+            total: notesAttributaire ? formatNote(notesAttributaire.noteFinaleSur100) : '100',
             motifs: 'Offre économiquement la plus avantageuse au regard des critères d\'analyse.',
             maxEco,
             maxTech,

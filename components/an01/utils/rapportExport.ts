@@ -246,7 +246,14 @@ export async function exportRapportDOCX(options: ExportRapportOptions): Promise<
         
         new Paragraph({
           children: [
-            createBodyText(`Le présent marché a pour objet ${rapportData.section1_contexte.objetMarche} pour une durée totale de ${rapportData.section1_contexte.dureeMarche} mois.`),
+            createBodyText(rapportData.section1_contexte.objetMarche),
+          ],
+          spacing: { after: 100 },
+        }),
+
+        new Paragraph({
+          children: [
+            createBodyText(`Pour une durée totale de ${rapportData.section1_contexte.dureeMarche} mois.`),
           ],
           spacing: { after: 200 },
         }),

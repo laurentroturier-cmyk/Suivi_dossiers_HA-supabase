@@ -353,12 +353,12 @@ export const RapportPresentationPDF = ({
             </View>
           </View>
 
+          {/* Saut de page après le sommaire */}
+          <View break />
+
           {/* 1. CONTEXTE */}
           <View style={styles.chapter} id="chapitre1">
             <Text style={styles.chapterHeader}>1. CONTEXTE</Text>
-            <Text style={styles.paragraph}>
-              Le présent marché a pour objet :
-            </Text>
             {data?.section1_contexte?.objetMarche && (
               <Text style={styles.paragraph}>{data.section1_contexte.objetMarche}</Text>
             )}
@@ -495,10 +495,10 @@ export const RapportPresentationPDF = ({
                               {offre.noteFinaleSur100?.toFixed(2) || '—'}
                             </Text>
                             <Text style={[styles.tableCell, { width: '15%', textAlign: 'right' }]}>
-                              {offre.noteFinanciere?.toFixed(2) || '—'}
+                              {(offre.noteFinanciere ?? offre.noteFinanciereSur60)?.toFixed(2) || '—'}
                             </Text>
                             <Text style={[styles.tableCell, { width: '15%', textAlign: 'right' }]}>
-                              {offre.noteTechnique?.toFixed(2) || '—'}
+                              {(offre.noteTechnique ?? offre.noteTechniqueSur40)?.toFixed(2) || '—'}
                             </Text>
                             <Text style={[styles.tableCell, { width: '15%', textAlign: 'right' }]}>
                               {formatCurrency(offre.montantTTC || 0)}
@@ -536,10 +536,10 @@ export const RapportPresentationPDF = ({
                       {offre.raisonSociale}
                     </Text>
                     <Text style={[styles.tableCell, { width: '15%', textAlign: 'right' }]}>
-                      {offre.noteTechnique?.toFixed(2) || '—'}
+                      {(offre.noteTechnique ?? offre.noteTechniqueSur40)?.toFixed(2) || '—'}
                     </Text>
                     <Text style={[styles.tableCell, { width: '15%', textAlign: 'right' }]}>
-                      {offre.noteFinanciere?.toFixed(2) || '—'}
+                      {(offre.noteFinanciere ?? offre.noteFinanciereSur60)?.toFixed(2) || '—'}
                     </Text>
                     <Text style={[styles.tableCell, { width: '15%', textAlign: 'right' }]}>
                       {offre.noteFinaleSur100?.toFixed(2) || '—'}

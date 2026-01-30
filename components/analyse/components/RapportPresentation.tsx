@@ -838,15 +838,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               spacing: { before: 400, after: 200 },
             }),
             
-            // Introduction de l'objet du marché
-            new Paragraph({
-              children: [
-                createBodyText("Le présent marché a pour objet :"),
-              ],
-              spacing: { after: 100 },
-            }),
-            
-            // Traiter l'objet du marché avec support des listes à puces
+            // Objet du marché avec support des listes à puces
             ...createParagraphsFromText(state.rapportGenere.section1_contexte.objetMarche),
             
             // Durée du marché

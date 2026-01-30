@@ -26,6 +26,20 @@ import { loadNoti1 } from '../utils/noti1Storage';
 import { loadNoti5 } from '../utils/noti5Storage';
 import { loadNoti3 } from '../utils/noti3Storage';
 
+/**
+ * Formate une note avec ses décimales (max 2 chiffres après la virgule)
+ * Exemple: 42.78 → "42,78"
+ */
+function formatNote(value: number | undefined | null): string {
+  const num = Number(value) || 0;
+  // Si c'est un entier, on l'affiche sans décimales
+  if (Number.isInteger(num)) {
+    return String(num);
+  }
+  // Sinon on affiche avec 2 décimales max, format français (virgule)
+  return num.toLocaleString('fr-FR', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
+}
+
 interface MultiLotsDashboardProps {
   analysis: MultiLotsAnalysis;
   procedureInfo: {
@@ -385,6 +399,8 @@ export default function MultiLotsDashboard({
           numero: l.numero,
           intitule: l.intitule,
         })),
+        executionImmediateChecked: true,
+        executionOrdreServiceChecked: false,
       },
       attributaire: {
         denomination: candidat.nom,
@@ -397,6 +413,17 @@ export default function MultiLotsDashboard({
         telephone: candidat.coordonnees?.telephone || '',
         fax: '',
         estMandataire: false,
+      },
+      garantie: {
+        pasPrevue: true,
+        prevueSansAllotissement: false,
+        retenueGarantieSansAllotissement: false,
+        garantiePremiereDemandeOuCautionSansAllotissement: false,
+        prevueAvecAllotissement: false,
+        montantInferieur90k: false,
+        montantSuperieur90kRetenue: false,
+        montantSuperieur90kGarantie: false,
+        modalites: '',
       },
       executionPrestations: { type: 'immediate' },
       garanties: {
@@ -459,18 +486,18 @@ export default function MultiLotsDashboard({
       rejet: {
         type: 'offre',
         motifs: lotPerdu.motifRejet || "Votre offre n'a pas obtenu la meilleure note.",
-        noteEco: String(Math.round(lotPerdu.noteFinanciere || 0)),
-        noteTech: String(Math.round(lotPerdu.noteTechnique || 0)),
-        total: String(Math.round(lotPerdu.noteCandidat || 0)),
+        noteEco: formatNote(lotPerdu.noteFinanciere),
+        noteTech: formatNote(lotPerdu.noteTechnique),
+        total: formatNote(lotPerdu.noteCandidat),
         classement: String(lotPerdu.rang || '-'),
         maxEco,
         maxTech,
       },
       attributaire: {
         denomination: lotPerdu.gagnant || '',
-        noteEco: String(Math.round(lotPerdu.noteFinGagnant || 0)),
-        noteTech: String(Math.round(lotPerdu.noteTechGagnant || 0)),
-        total: String(Math.round(lotPerdu.noteGagnant || 100)),
+        noteEco: formatNote(lotPerdu.noteFinGagnant),
+        noteTech: formatNote(lotPerdu.noteTechGagnant),
+        total: formatNote(lotPerdu.noteGagnant) || '100',
         motifs: 'Offre économiquement la plus avantageuse au regard des critères d\'analyse.',
         maxEco,
         maxTech,
