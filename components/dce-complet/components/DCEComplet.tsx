@@ -311,6 +311,12 @@ export function DCEComplet({ onClose }: DCECompletProps) {
             procedureId={numeroProcedure}
             onSave={() => loadDCE()}
             configurationGlobale={dceState.configurationGlobale}
+            procedureInfo={{
+              numeroProcedure: numeroProcedure,
+              titreMarche: dceState.titreMarche || selectedProcedure?.['Intitulé'] || '',
+              acheteur: selectedProcedure?.['Acheteur'] || dceState.configurationGlobale?.informationsGenerales?.acheteur || '',
+            }}
+            lotsFromConfigurationGlobale={dceState.configurationGlobale?.lots || []}
           />
         );
       case 'dpgf':

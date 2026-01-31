@@ -100,6 +100,38 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 🆕 Synchroniser les données depuis les props quand elles changent (changement de lot)
+  useEffect(() => {
+    console.log('📥 Chargement des données BPU depuis Supabase');
+    
+    if (data.columns && data.columns.length > 0) {
+      setColumns(data.columns);
+      console.log(`✅ ${data.columns.length} colonnes chargées`);
+    } else {
+      setColumns(DEFAULT_COLUMNS);
+      console.log('⚠️ Aucune colonne sauvegardée, utilisation des colonnes par défaut');
+    }
+    
+    if (data.headerLabels && Object.keys(data.headerLabels).length > 0) {
+      setHeaderLabels(data.headerLabels);
+    } else {
+      setHeaderLabels(DEFAULT_COLUMNS.reduce((acc, col) => ({ ...acc, [col.id]: col.label }), {}));
+    }
+    
+    if (data.rows && data.rows.length > 0) {
+      setRows(data.rows);
+      console.log(`✅ ${data.rows.length} lignes chargées depuis Supabase`);
+    } else {
+      // Initialiser avec 10 lignes vides si aucune donnée
+      const initialRows: BPURow[] = Array.from({ length: 10 }, (_, i) => ({
+        id: `row-${Date.now()}-${i}`,
+        ...DEFAULT_COLUMNS.reduce((acc, col) => ({ ...acc, [col.id]: '' }), {}),
+      }));
+      setRows(initialRows);
+      console.log('⚠️ Aucune ligne sauvegardée, initialisation avec 10 lignes vides');
+    }
+  }, [data, currentLot]); // Se déclenche quand data change (changement de lot)
+
   // Mettre à jour les largeurs des colonnes avec les valeurs par défaut
   useEffect(() => {
     const updatedColumns = columns.map(col => {
@@ -1050,6 +1082,11 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
                 <ArrowLeft className="w-5 h-5" />
                 Retour
               </button>
+
+              {/* Titre du module */}
+              <h1 className="text-xl font-bold text-[#2F5B58] border-l border-gray-300 pl-4">
+                BORDEREAU DE PRIX UNITAIRES (BPU)
+              </h1>
 
               {/* Navigation entre les lots */}
               {totalLots && totalLots > 1 && currentLot && onLotChange && (
