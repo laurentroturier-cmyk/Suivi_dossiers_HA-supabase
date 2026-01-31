@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Download, Edit2, ArrowLeft, Save, Upload, ChevronLeft, ChevronRight, AlertTriangle, Database } from 'lucide-react';
+import { Plus, Trash2, Download, Edit2, ArrowLeft, Save, Upload, ChevronLeft, ChevronRight, AlertTriangle, Copy } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../../../lib/supabase';
 
@@ -40,8 +40,8 @@ interface Props {
 // Colonnes complètes selon les images fournies
 const DEFAULT_COLUMNS: BPUColumn[] = [
   { id: 'codeArticle', label: 'Code Article', width: '120px' },
-  { id: 'categorie', label: 'Catégorie', width: '130px' },
-  { id: 'designation', label: "Désignation de l'article", width: '250px' },
+  { id: 'categorie', label: 'Catégorie', width: '280px' },
+  { id: 'designation', label: "Désignation de l'article", width: '450px' },
   { id: 'unite', label: 'Unité', width: '90px' },
   { id: 'qteCond', label: 'Qté dans le cond.', width: '110px' },
   { id: 'refFournisseur', label: 'Réf. Fournisseur', width: '150px' },
@@ -74,12 +74,34 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
-  const [isSavingToDb, setIsSavingToDb] = useState(false);
+  const [isSavingData, setIsSavingData] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateMode, setDuplicateMode] = useState<'all' | 'select'>('select');
+  const [selectedLots, setSelectedLots] = useState<number[]>([]);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   
   // Refs pour synchroniser les scrolls
   const topScrollRef = useRef<HTMLDivElement>(null);
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Mettre à jour les largeurs des colonnes avec les valeurs par défaut
+  useEffect(() => {
+    const updatedColumns = columns.map(col => {
+      const defaultCol = DEFAULT_COLUMNS.find(dc => dc.id === col.id);
+      if (defaultCol && defaultCol.width !== col.width) {
+        return { ...col, width: defaultCol.width };
+      }
+      return col;
+    });
+    
+    // Vérifier s'il y a eu des changements
+    const hasChanges = updatedColumns.some((col, i) => col.width !== columns[i].width);
+    if (hasChanges) {
+      console.log('📏 Mise à jour des largeurs de colonnes');
+      setColumns(updatedColumns);
+    }
+  }, []); // Exécuter une seule fois au montage
 
   // Initialiser avec 10 lignes si vide
   useEffect(() => {
@@ -101,13 +123,51 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
     }
   };
 
-  const handleSave = () => {
-    const updatedData: BPUTableData = {
-      columns,
-      headerLabels,
-      rows,
-    };
-    onSave(updatedData);
+  const handleSave = async () => {
+    if (!procedureInfo?.numeroProcedure || !procedureInfo?.numeroLot) {
+      setSaveStatus('❌ Erreur: Informations de procédure manquantes');
+      setTimeout(() => setSaveStatus(null), 4000);
+      return;
+    }
+
+    setIsSavingData(true);
+    setSaveStatus('⏳ Sauvegarde en cours...');
+
+    try {
+      const bpuData = {
+        columns,
+        headerLabels,
+        rows,
+      };
+
+      const { data, error } = await supabase
+        .from('bpus')
+        .upsert({
+          procedure_id: procedureInfo.numeroProcedure,
+          numero_lot: parseInt(procedureInfo.numeroLot),
+          libelle_lot: procedureInfo.libelleLot || '',
+          type_bpu: 'standard',
+          data: bpuData,
+        }, {
+          onConflict: 'procedure_id,numero_lot',
+        });
+
+      if (error) {
+        console.error('Erreur Supabase:', error);
+        setSaveStatus(`❌ Erreur: ${error.message}`);
+      } else {
+        setSaveStatus('✅ Enregistré avec succès !');
+        // Appeler aussi onSave pour mettre à jour l'état local du module DCE si nécessaire
+        const updatedData: BPUTableData = { columns, headerLabels, rows };
+        onSave(updatedData);
+      }
+    } catch (error: any) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      setSaveStatus(`❌ Erreur: ${error.message || 'Erreur inconnue'}`);
+    } finally {
+      setIsSavingData(false);
+      setTimeout(() => setSaveStatus(null), 4000);
+    }
   };
 
   const handleCellChange = (rowId: string, columnId: string, value: string) => {
@@ -282,7 +342,7 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
           return;
         }
 
-        console.log('📥 Import Excel - Toutes les lignes:', jsonData.slice(0, 10)); // Afficher les 10 premières lignes
+        console.log('📥 Import Excel - Toutes les lignes:', jsonData.slice(0, 15)); // Afficher les 15 premières lignes
 
         // Trouver la ligne d'en-tête en cherchant des mots-clés typiques du BPU
         let headerRowIndex = 0;
@@ -298,6 +358,8 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
             const cellStr = cell.toString().toLowerCase();
             return bpuKeywords.some(keyword => cellStr.includes(keyword));
           }).length;
+          
+          console.log(`Ligne ${i}: ${keywordMatches} mots-clés détectés →`, row.slice(0, 6));
           
           // Si au moins 3 colonnes contiennent des mots-clés, c'est probablement la ligne d'en-tête
           if (keywordMatches >= 3) {
@@ -322,24 +384,68 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
         // Mapper les colonnes importées aux colonnes existantes
         const columnMapping: { [key: number]: string } = {};
         
+        // Fonction pour normaliser les chaînes (enlever accents, ponctuation)
+        const normalize = (str: string) => {
+          return str.toLowerCase()
+            .trim()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Enlever les accents
+            .replace(/[^a-z0-9]/g, ''); // Enlever la ponctuation
+        };
+
+        // Mapper les colonnes - ÉVITER LES DOUBLONS
+        const usedColumns = new Set<string>(); // Suivre les colonnes déjà mappées
+
         importedHeaders.forEach((importedHeader, index) => {
-          const normalizedImported = importedHeader.toString().toLowerCase().trim();
+          const normalizedImported = normalize(importedHeader.toString());
           
-          // Chercher une correspondance dans nos colonnes
-          const matchingColumn = columns.find(col => {
-            const colLabel = (headerLabels[col.id] || col.label).toLowerCase().trim();
-            return colLabel === normalizedImported || 
-                   colLabel.includes(normalizedImported) || 
-                   normalizedImported.includes(colLabel);
+          // Chercher une correspondance EXACTE d'abord
+          let matchingColumn = columns.find(col => {
+            if (usedColumns.has(col.id)) return false; // Déjà utilisé
+            const colLabel = normalize(headerLabels[col.id] || col.label);
+            const colId = normalize(col.id);
+            return colLabel === normalizedImported || colId === normalizedImported;
           });
+
+          // Si pas de correspondance exacte, chercher une correspondance partielle
+          if (!matchingColumn) {
+            matchingColumn = columns.find(col => {
+              if (usedColumns.has(col.id)) return false; // Déjà utilisé
+              const colLabel = normalize(headerLabels[col.id] || col.label);
+              const colId = normalize(col.id);
+              
+              // Correspondance partielle MAIS avec des règles strictes
+              // - Le terme doit être au début ou à la fin
+              // - Ou correspondance de plus de 60% des caractères
+              const importedLength = normalizedImported.length;
+              const labelLength = colLabel.length;
+              
+              if (importedLength < 3 || labelLength < 3) return false;
+              
+              // Si l'importé commence par le label ou inversement
+              if (normalizedImported.startsWith(colLabel) || colLabel.startsWith(normalizedImported)) {
+                return true;
+              }
+              
+              // Si l'importé se termine par le label ou inversement
+              if (normalizedImported.endsWith(colLabel) || colLabel.endsWith(normalizedImported)) {
+                return true;
+              }
+              
+              return false;
+            });
+          }
 
           if (matchingColumn) {
             columnMapping[index] = matchingColumn.id;
+            usedColumns.add(matchingColumn.id); // Marquer comme utilisé
             console.log(`✅ Mapping: Colonne ${index} "${importedHeader}" → ${matchingColumn.id}`);
           } else {
             console.log(`⚠️ Pas de correspondance pour: "${importedHeader}"`);
           }
         });
+
+        console.log('📊 Mapping complet des colonnes:', columnMapping);
 
         // Créer les nouvelles lignes
         const newRows: BPURow[] = importedRows.map((row, rowIndex) => {
@@ -360,9 +466,10 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
             }
           });
 
-          // Log la première ligne pour vérification
-          if (rowIndex === 0) {
-            console.log('📝 Première ligne importée:', newRow);
+          // Log les 3 premières lignes pour vérification
+          if (rowIndex < 3) {
+            console.log(`📝 Ligne ${rowIndex + 1} importée:`, newRow);
+            console.log(`   Source Excel ligne ${headerRowIndex + 1 + rowIndex}:`, row);
           }
 
           return newRow;
@@ -426,16 +533,48 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
     setTimeout(() => setImportStatus(null), 3000);
   };
 
-  // Sauvegarder dans Supabase
-  const handleSaveToSupabase = async () => {
-    if (!procedureInfo?.numeroProcedure || !procedureInfo?.numeroLot) {
-      setSaveStatus('❌ Erreur: Informations de procédure manquantes');
-      setTimeout(() => setSaveStatus(null), 4000);
+  // Gérer la sélection des lots pour la duplication
+  const toggleLotSelection = (lotNumber: number) => {
+    setSelectedLots(prev => 
+      prev.includes(lotNumber) 
+        ? prev.filter(l => l !== lotNumber)
+        : [...prev, lotNumber]
+    );
+  };
+
+  const toggleAllLots = () => {
+    if (!totalLots || !currentLot) return;
+    
+    const allLotNumbers = Array.from({ length: totalLots }, (_, i) => i + 1)
+      .filter(lot => lot !== currentLot); // Exclure le lot actuel
+    
+    if (selectedLots.length === allLotNumbers.length) {
+      setSelectedLots([]);
+    } else {
+      setSelectedLots(allLotNumbers);
+    }
+  };
+
+  // Dupliquer le tableau vers d'autres lots
+  const handleDuplicate = async () => {
+    if (!procedureInfo?.numeroProcedure || !currentLot || !totalLots) {
+      setSaveStatus('❌ Erreur: Informations manquantes');
+      setTimeout(() => setSaveStatus(null), 3000);
       return;
     }
 
-    setIsSavingToDb(true);
-    setSaveStatus('⏳ Sauvegarde en cours...');
+    const lotsToUpdate = duplicateMode === 'all' 
+      ? Array.from({ length: totalLots }, (_, i) => i + 1).filter(lot => lot !== currentLot)
+      : selectedLots;
+
+    if (lotsToUpdate.length === 0) {
+      setSaveStatus('❌ Aucun lot sélectionné');
+      setTimeout(() => setSaveStatus(null), 3000);
+      return;
+    }
+
+    setIsDuplicating(true);
+    setSaveStatus(`⏳ Sauvegarde du lot actuel...`);
 
     try {
       const bpuData = {
@@ -444,11 +583,13 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
         rows,
       };
 
-      const { data, error } = await supabase
+      // ÉTAPE 1 : Sauvegarder le lot actuel AVANT de dupliquer
+      console.log('💾 Sauvegarde du lot source:', currentLot);
+      const { error: saveError } = await supabase
         .from('bpus')
         .upsert({
           procedure_id: procedureInfo.numeroProcedure,
-          numero_lot: parseInt(procedureInfo.numeroLot),
+          numero_lot: parseInt(procedureInfo.numeroLot!),
           libelle_lot: procedureInfo.libelleLot || '',
           type_bpu: 'standard',
           data: bpuData,
@@ -456,18 +597,53 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
           onConflict: 'procedure_id,numero_lot',
         });
 
-      if (error) {
-        console.error('Erreur Supabase:', error);
-        setSaveStatus(`❌ Erreur: ${error.message}`);
+      if (saveError) {
+        console.error('Erreur lors de la sauvegarde du lot source:', saveError);
+        setSaveStatus(`❌ Erreur lors de la sauvegarde: ${saveError.message}`);
+        setIsDuplicating(false);
+        setTimeout(() => setSaveStatus(null), 4000);
+        return;
+      }
+
+      // ÉTAPE 2 : Dupliquer vers les autres lots
+      setSaveStatus(`⏳ Duplication vers ${lotsToUpdate.length} lot(s)...`);
+      console.log('📋 Duplication vers les lots:', lotsToUpdate);
+
+      // Préparer les données pour tous les lots cibles
+      const upsertData = lotsToUpdate.map(lotNumber => ({
+        procedure_id: procedureInfo.numeroProcedure,
+        numero_lot: lotNumber,
+        libelle_lot: `Lot ${lotNumber}`,
+        type_bpu: 'standard',
+        data: bpuData,
+      }));
+
+      // Upsert en masse
+      const { error: duplicateError } = await supabase
+        .from('bpus')
+        .upsert(upsertData, {
+          onConflict: 'procedure_id,numero_lot',
+        });
+
+      if (duplicateError) {
+        console.error('Erreur Supabase lors de la duplication:', duplicateError);
+        setSaveStatus(`❌ Erreur: ${duplicateError.message}`);
       } else {
-        setSaveStatus('✅ Enregistré dans Supabase !');
+        console.log('✅ Duplication réussie');
+        setSaveStatus(`✅ Lot ${currentLot} sauvegardé et dupliqué vers ${lotsToUpdate.length} lot(s) !`);
+        setShowDuplicateModal(false);
+        setSelectedLots([]);
+        
+        // Appeler onSave pour mettre à jour l'état local du module DCE
+        const updatedData: BPUTableData = { columns, headerLabels, rows };
+        onSave(updatedData);
       }
     } catch (error: any) {
-      console.error('Erreur lors de la sauvegarde:', error);
+      console.error('Erreur lors de la duplication:', error);
       setSaveStatus(`❌ Erreur: ${error.message || 'Erreur inconnue'}`);
     } finally {
-      setIsSavingToDb(false);
-      setTimeout(() => setSaveStatus(null), 4000);
+      setIsDuplicating(false);
+      setTimeout(() => setSaveStatus(null), 5000);
     }
   };
 
@@ -593,23 +769,24 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
                 <Trash2 className="w-4 h-4" />
                 Effacer tout
               </button>
-              <button
-                onClick={handleSaveToSupabase}
-                disabled={isSavingToDb}
-                className="flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 text-sm"
-                title="Sauvegarder dans la base de données"
-              >
-                <Database className="w-4 h-4" />
-                {isSavingToDb ? 'Sauvegarde...' : 'Sauvegarder BD'}
-              </button>
+              {totalLots && totalLots > 1 && (
+                <button
+                  onClick={() => setShowDuplicateModal(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm"
+                  title="Dupliquer vers d'autres lots"
+                >
+                  <Copy className="w-4 h-4" />
+                  Dupliquer
+                </button>
+              )}
               <button
                 onClick={handleSave}
-                disabled={isSaving}
+                disabled={isSavingData}
                 className="flex items-center gap-2 px-3 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50 text-sm"
-                title="Enregistrer dans le module DCE"
+                title="Enregistrer le BPU"
               >
                 <Save className="w-4 h-4" />
-                {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                {isSavingData ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </div>
           </div>
@@ -885,6 +1062,115 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
               >
                 Effacer tout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale de duplication vers d'autres lots */}
+      {showDuplicateModal && totalLots && currentLot && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-start gap-3 mb-4">
+              <Copy className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Dupliquer le BPU vers d'autres lots
+                </h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  Cette action va copier la structure et les données du tableau actuel (Lot {currentLot}) vers les lots sélectionnés.
+                </p>
+
+                {/* Options de duplication */}
+                <div className="space-y-3 mb-4">
+                  <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="duplicateMode"
+                      checked={duplicateMode === 'all'}
+                      onChange={() => setDuplicateMode('all')}
+                      className="w-4 h-4 text-orange-600"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">Tous les lots</div>
+                      <div className="text-sm text-gray-600">
+                        Dupliquer vers tous les {totalLots - 1} autres lots
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="duplicateMode"
+                      checked={duplicateMode === 'select'}
+                      onChange={() => setDuplicateMode('select')}
+                      className="w-4 h-4 text-orange-600"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">Sélectionner les lots</div>
+                      <div className="text-sm text-gray-600">
+                        Choisir manuellement les lots de destination
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Sélection des lots si mode "select" */}
+                {duplicateMode === 'select' && (
+                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-gray-700">
+                        Lots disponibles ({selectedLots.length} sélectionné{selectedLots.length > 1 ? 's' : ''})
+                      </span>
+                      <button
+                        onClick={toggleAllLots}
+                        className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                      >
+                        {selectedLots.length === totalLots - 1 ? 'Tout désélectionner' : 'Tout sélectionner'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 max-h-60 overflow-y-auto">
+                      {Array.from({ length: totalLots }, (_, i) => i + 1)
+                        .filter(lot => lot !== currentLot)
+                        .map(lot => (
+                          <label
+                            key={lot}
+                            className="flex items-center gap-2 p-2 border border-gray-300 rounded cursor-pointer hover:bg-white"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedLots.includes(lot)}
+                              onChange={() => toggleLotSelection(lot)}
+                              className="w-4 h-4 text-orange-600 rounded"
+                            />
+                            <span className="text-sm text-gray-700">Lot {lot}</span>
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowDuplicateModal(false);
+                  setSelectedLots([]);
+                }}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                disabled={isDuplicating}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDuplicate}
+                disabled={isDuplicating || (duplicateMode === 'select' && selectedLots.length === 0)}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
+              >
+                {isDuplicating ? 'Duplication...' : `Dupliquer vers ${duplicateMode === 'all' ? totalLots - 1 : selectedLots.length} lot(s)`}
               </button>
             </div>
           </div>
