@@ -127,6 +127,7 @@ export function mapProcedureToDCE(procedure: ProjectData): Omit<DCEState, 'id' |
     ccap,
     cctp,
     bpu,
+    bpuTMA: null,
     dqe,
     dpgf,
     documentsAnnexes: annexes,

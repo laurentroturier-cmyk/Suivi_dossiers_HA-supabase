@@ -17,22 +17,32 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
-  Settings2,
-  Upload,
-  X
+  Package
 } from 'lucide-react';
 import { generateReglementConsultationWord } from '../utils/reglementConsultationGenerator';
 import { autoFillRCFromProcedure } from '../utils/procedureAutoFill';
 import type { RapportCommissionData } from '../types/rapportCommission';
-import { exportLotsToExcel, importLotsFromExcel, type LotExcel } from '../../dce-complet/utils/lotsExcelService';
+
+interface LotConfiguration {
+  numero: string;
+  intitule: string;
+  montant: string;
+  description?: string;
+}
 
 interface ReglementConsultationProps {
   initialNumeroProcedure?: string;
   onDataChange?: (data: RapportCommissionData) => void;
   initialData?: RapportCommissionData;
+  lotsFromConfigurationGlobale?: LotConfiguration[];
 }
 
-export default function ReglementConsultation({ initialNumeroProcedure, onDataChange, initialData }: ReglementConsultationProps) {
+export default function ReglementConsultation({ 
+  initialNumeroProcedure, 
+  onDataChange, 
+  initialData,
+  lotsFromConfigurationGlobale 
+}: ReglementConsultationProps) {
   const [showFullEdit, setShowFullEdit] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeSection, setActiveSection] = useState(0);
@@ -765,7 +775,7 @@ export default function ReglementConsultation({ initialNumeroProcedure, onDataCh
                 )}
                 {activeSection === 1 && <PouvoirSection data={formData.pouvoirAdjudicateur} updateField={updateField} />}
                 {activeSection === 2 && <ObjetSection data={formData.objet} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} loadingCPV={loadingCPV} fetchCPVLibelle={fetchCPVLibelle} fetchCPVSecondaireLibelle={fetchCPVSecondaireLibelle} supabase={supabase} />}
-                {activeSection === 3 && <ConditionsSection data={formData.conditions} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />}
+                {activeSection === 3 && <ConditionsSection data={formData.conditions} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} lotsFromConfigurationGlobale={lotsFromConfigurationGlobale} />}
                 {activeSection === 4 && <TypeMarcheSection data={formData.typeMarche} updateField={updateField} />}
                 {activeSection === 5 && <DCESection data={formData.dce} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />}
                 {activeSection === 6 && <JugementSection data={formData.jugement} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />}
@@ -1239,108 +1249,16 @@ function ObjetSection({ data, updateField, addArrayItem, removeArrayItem, loadin
   );
 }
 
-function ConditionsSection({ data, updateField, addArrayItem, removeArrayItem }: any) {
-  const [newLot, setNewLot] = useState({ numero: '', intitule: '', montantMax: '' });
-  const [isLotsModalOpen, setIsLotsModalOpen] = useState(false);
-  const [modalLots, setModalLots] = useState<LotExcel[]>([]);
-  const [importError, setImportError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+function ConditionsSection({ data, updateField, addArrayItem, removeArrayItem, lotsFromConfigurationGlobale }: any) {
+  // Nombre de lots depuis Configuration Globale
+  const nbLotsValue = lotsFromConfigurationGlobale?.length || parseInt(data.nbLots) || 0;
 
-  // Nombre de lots depuis la procédure
-  const nbLotsValue = parseInt(data.nbLots) || 0;
 
-  // Ouvrir la modale avec les lots pré-remplis
-  const openLotsModal = () => {
-    if (data.lots && data.lots.length > 0) {
-      setModalLots(data.lots.map((l: any) => ({
-        numero: l.numero || '',
-        intitule: l.intitule || '',
-        montantMax: l.montantMax || ''
-      })));
-    } else if (nbLotsValue > 0) {
-      // Pré-remplir avec le nombre de lots de la procédure
-      setModalLots(Array.from({ length: nbLotsValue }, (_, i) => ({
-        numero: String(i + 1),
-        intitule: '',
-        montantMax: ''
-      })));
-    } else {
-      setModalLots([{ numero: '1', intitule: '', montantMax: '' }]);
-    }
-    setIsLotsModalOpen(true);
-  };
-
-  // Sauvegarder les lots depuis la modale
-  const saveLotsFromModal = () => {
-    // Supprimer tous les lots existants et ajouter les nouveaux
-    // On doit utiliser updateField pour remplacer le tableau complet
-    const lotsFiltered = modalLots.filter(l => l.numero);
-    updateField('conditions', 'lots', lotsFiltered);
-    updateField('conditions', 'nbLots', String(lotsFiltered.length));
-    setIsLotsModalOpen(false);
-  };
-
-  // Export Excel
-  const handleExportExcel = () => {
-    const lots = data.lots || [];
-    exportLotsToExcel(lots, nbLotsValue, `lots_procedure`);
-  };
-
-  // Import Excel
-  const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setImportError(null);
-
-    try {
-      const lots = await importLotsFromExcel(file);
-      updateField('conditions', 'lots', lots);
-      updateField('conditions', 'nbLots', String(lots.length));
-    } catch (error) {
-      setImportError(error instanceof Error ? error.message : 'Erreur lors de l\'import');
-    }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  // Fonctions pour la modale
-  const updateModalLot = (index: number, field: keyof LotExcel, value: string) => {
-    setModalLots(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
-  };
-
-  const addModalLot = () => {
-    const nextNumero = modalLots.length + 1;
-    setModalLots(prev => [...prev, { numero: String(nextNumero), intitule: '', montantMax: '' }]);
-  };
-
-  const removeModalLot = (index: number) => {
-    if (modalLots.length <= 1) return;
-    setModalLots(prev => {
-      const updated = prev.filter((_, i) => i !== index);
-      return updated.map((lot, i) => ({ ...lot, numero: String(i + 1) }));
-    });
-  };
-
-  // Calcul du total pour la modale
-  const calculerTotalMontant = () => {
-    return modalLots.reduce((sum, lot) => {
-      const montant = parseFloat(lot.montantMax.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-      return sum + montant;
-    }, 0);
-  };
-
-  // Calcul du total des lots actuels
+  // Calcul du total des lots depuis Configuration Globale
   const calculerTotalLotsActuels = () => {
-    if (!data.lots || data.lots.length === 0) return 0;
-    return data.lots.reduce((sum: number, lot: any) => {
-      const montantStr = String(lot.montantMax || '0');
+    if (!lotsFromConfigurationGlobale || lotsFromConfigurationGlobale.length === 0) return 0;
+    return lotsFromConfigurationGlobale.reduce((sum: number, lot: any) => {
+      const montantStr = String(lot.montant || '0');  // "montant" au lieu de "montantMax"
       const montant = parseFloat(montantStr.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
       return sum + montant;
     }, 0);
@@ -1373,12 +1291,9 @@ function ConditionsSection({ data, updateField, addArrayItem, removeArrayItem }:
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
             Nb lots
           </label>
-          <input
-            type="text"
-            value={data.nbLots}
-            onChange={(e) => updateField('conditions', 'nbLots', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center"
-          />
+          <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white text-center font-semibold">
+            {nbLotsValue}
+          </div>
         </div>
 
         <div>
@@ -1392,220 +1307,58 @@ function ConditionsSection({ data, updateField, addArrayItem, removeArrayItem }:
       </div>
 
       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-        {/* En-tête Lots avec boutons de configuration */}
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        {/* En-tête Lots */}
+        <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Lots</h3>
-          {nbLotsValue > 1 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={openLotsModal}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition"
-              >
-                <Settings2 className="w-4 h-4" />
-                Configurer les {nbLotsValue} lots
-              </button>
-              <button
-                type="button"
-                onClick={handleExportExcel}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#2F5B58] text-[#2F5B58] dark:text-[#5DBDB4] dark:border-[#5DBDB4] rounded-lg hover:bg-[#2F5B58]/10 transition"
-                title="Exporter les lots vers Excel"
-              >
-                <Download className="w-4 h-4" />
-                Export Excel
-              </button>
-              <label className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#2F5B58] text-[#2F5B58] dark:text-[#5DBDB4] dark:border-[#5DBDB4] rounded-lg hover:bg-[#2F5B58]/10 transition cursor-pointer">
-                <Upload className="w-4 h-4" />
-                Import Excel
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleImportExcel}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          )}
         </div>
 
-        {/* Message d'erreur d'import */}
-        {importError && (
-          <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
-            {importError}
+        {/* Message d'information sur la gestion des lots */}
+        <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-700 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-1">
+                Les lots sont gérés dans le module "Configuration Globale"
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-400">
+                Pour ajouter, modifier ou supprimer des lots, veuillez utiliser le module <strong>⚙️ Configuration Globale</strong> accessible depuis le menu principal du DCE.
+                Les lots seront automatiquement synchronisés dans tous les documents.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Affichage des lots en lecture seule depuis Configuration Globale */}
+        {lotsFromConfigurationGlobale && lotsFromConfigurationGlobale.length > 0 ? (
+          <div className="space-y-2">
+            {lotsFromConfigurationGlobale.map((lot: any, index: number) => (
+              <div key={index} className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      Lot n°{lot.numero}: {lot.intitule}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      Montant estimé: {parseFloat(lot.montant || '0').toLocaleString('fr-FR')} € HT
+                    </div>
+                    {lot.description && (
+                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        {lot.description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Aucun lot configuré.</p>
+            <p className="text-xs mt-1">Veuillez configurer les lots dans le module "Configuration Globale".</p>
           </div>
         )}
-
-        <div className="space-y-2 mb-3">
-          {data.lots?.map((lot: any, index: number) => (
-            <div key={index} className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-white">Lot n°{lot.numero}: {lot.intitule}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Montant max: {lot.montantMax} € HT</div>
-                </div>
-                <button
-                  onClick={() => removeArrayItem('conditions', 'lots', index)}
-                  className="text-red-600 hover:text-red-700 dark:text-red-400 ml-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 mb-2">
-          <input
-            type="text"
-            value={newLot.numero}
-            onChange={(e) => setNewLot({ ...newLot, numero: e.target.value })}
-            placeholder="N°"
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-          />
-          <input
-            type="text"
-            value={newLot.intitule}
-            onChange={(e) => setNewLot({ ...newLot, intitule: e.target.value })}
-            placeholder="Intitulé"
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-          />
-          <input
-            type="text"
-            value={newLot.montantMax}
-            onChange={(e) => setNewLot({ ...newLot, montantMax: e.target.value })}
-            placeholder="Montant max €"
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-          />
-        </div>
-
-        <button
-          onClick={() => {
-            if (newLot.numero && newLot.intitule) {
-              addArrayItem('conditions', 'lots', newLot);
-              setNewLot({ numero: '', intitule: '', montantMax: '' });
-            }
-          }}
-          className="w-full px-4 py-2 text-sm text-green-700 dark:text-green-400 border border-green-600 dark:border-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
-        >
-          <Plus className="w-4 h-4 inline mr-1" />
-          Ajouter un lot
-        </button>
       </div>
-
-      {/* Modale de configuration des lots */}
-      {isLotsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsLotsModalOpen(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden m-4">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-[#2F5B58] text-white">
-              <h2 className="text-lg font-semibold">Configuration des {nbLotsValue} lots</h2>
-              <button onClick={() => setIsLotsModalOpen(false)} className="p-1 hover:bg-white/20 rounded-lg transition">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {modalLots.length} lot{modalLots.length > 1 ? 's' : ''} configuré{modalLots.length > 1 ? 's' : ''}
-                </p>
-                <button
-                  onClick={addModalLot}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  Ajouter un lot
-                </button>
-              </div>
-
-              <div className="border dark:border-gray-700 rounded-lg overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">N°</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Intitulé du lot</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">Montant max (€ HT)</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-16">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {modalLots.map((lot, index) => (
-                      <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td className="px-4 py-3">
-                          <input
-                            type="text"
-                            value={lot.numero}
-                            readOnly
-                            className="w-full border dark:border-gray-600 rounded px-2 py-1.5 text-sm text-center bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="text"
-                            value={lot.intitule}
-                            onChange={e => updateModalLot(index, 'intitule', e.target.value)}
-                            placeholder={`Intitulé du lot ${lot.numero}`}
-                            className="w-full border dark:border-gray-600 rounded px-2 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2F5B58] focus:border-transparent"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="text"
-                            value={lot.montantMax}
-                            onChange={e => updateModalLot(index, 'montantMax', e.target.value)}
-                            placeholder="0"
-                            className="w-full border dark:border-gray-600 rounded px-2 py-1.5 text-sm text-right bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2F5B58] focus:border-transparent"
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => removeModalLot(index)}
-                            disabled={modalLots.length <= 1}
-                            className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="Supprimer ce lot"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  {modalLots.length > 1 && (
-                    <tfoot className="bg-gray-50 dark:bg-gray-700 border-t dark:border-gray-600">
-                      <tr>
-                        <td className="px-4 py-3 font-medium text-sm text-gray-900 dark:text-white" colSpan={2}>Total estimé</td>
-                        <td className="px-4 py-3 text-right font-semibold text-sm text-[#2F5B58] dark:text-[#5DBDB4]">
-                          {calculerTotalMontant().toLocaleString('fr-FR')} €
-                        </td>
-                        <td></td>
-                      </tr>
-                    </tfoot>
-                  )}
-                </table>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-              <button
-                onClick={() => setIsLotsModalOpen(false)}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={saveLotsFromModal}
-                className="px-4 py-2 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition"
-              >
-                Appliquer les lots
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Options</h3>

@@ -3,7 +3,7 @@
 // Onglet de saisie préalable des informations réutilisées dans tous les modules
 // ============================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Save,
   Plus,
@@ -17,10 +17,15 @@ import {
   Calendar,
   Euro,
   FileText,
-  Settings
+  Settings,
+  Settings2,
+  Download,
+  Upload
 } from 'lucide-react';
 import type { ConfigurationGlobale, LotConfiguration } from '../../types';
 import type { ProjectData } from '../../../../types';
+import { LotsConfigurationModal } from './LotsConfigurationModal';
+import { exportLotsToExcel, importLotsFromExcel, type LotExcel } from '../../utils/lotsExcelService';
 
 interface ConfigurationGlobaleProps {
   data: ConfigurationGlobale | null;
@@ -61,6 +66,9 @@ export function ConfigurationGlobaleForm({
   );
 
   const [hasChanges, setHasChanges] = useState(false);
+  const [isLotsModalOpen, setIsLotsModalOpen] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Synchroniser le titre depuis la procédure (toujours utiliser Nom de la procédure)
   useEffect(() => {
@@ -193,6 +201,78 @@ export function ConfigurationGlobaleForm({
     return sum + montant;
   }, 0);
 
+  // Convertir les lots en format Excel
+  const lotsToExcel = (): LotExcel[] => {
+    return config.lots.map(lot => ({
+      numero: lot.numero,
+      intitule: lot.intitule,
+      montantMax: lot.montant,
+    }));
+  };
+
+  // Fonction pour mettre à jour les lots depuis la modale
+  const handleLotsFromModal = (lotsFromModal: Array<{ numero: string; intitule: string; montantMax: string }>) => {
+    const newLots: LotConfiguration[] = lotsFromModal.map(lot => ({
+      numero: lot.numero,
+      intitule: lot.intitule,
+      montant: lot.montantMax,
+      description: config.lots.find(l => l.numero === lot.numero)?.description || '',
+    }));
+    
+    setConfig(prev => ({
+      ...prev,
+      lots: newLots
+    }));
+    setHasChanges(true);
+  };
+
+  // Export Excel
+  const handleExportExcel = () => {
+    const lots = lotsToExcel();
+    const procedureNum = procedure?.['Numéro de procédure'] || 'procedure';
+    exportLotsToExcel(lots, config.lots.length, `lots_${procedureNum}`);
+  };
+
+  // Import Excel
+  const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportError(null);
+
+    try {
+      const lotsFromExcel = await importLotsFromExcel(file);
+      console.log('📥 Lots depuis Excel:', lotsFromExcel);
+      
+      const newLots: LotConfiguration[] = lotsFromExcel.map(lot => ({
+        numero: lot.numero,
+        intitule: lot.intitule,
+        montant: lot.montantMax || '',  // Assurer qu'il y a toujours une string
+        description: '',
+      }));
+      
+      console.log('✅ Lots transformés pour Configuration Globale:', newLots);
+      
+      setConfig(prev => ({
+        ...prev,
+        lots: newLots
+      }));
+      setHasChanges(true);
+    } catch (error) {
+      console.error('❌ Erreur import Excel:', error);
+      setImportError(error instanceof Error ? error.message : 'Erreur lors de l\'import');
+    }
+
+    // Reset l'input file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const triggerFileImport = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* En-tête */}
@@ -297,22 +377,61 @@ export function ConfigurationGlobaleForm({
 
         {/* 2. CONFIGURATION DES LOTS */}
         <section className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
               <Package className="w-5 h-5 text-gray-700" />
               <h2 className="text-xl font-semibold text-gray-900">Configuration des lots</h2>
-              <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded">
+              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded">
                 {config.lots.length} lot{config.lots.length > 1 ? 's' : ''}
               </span>
             </div>
-            <button
-              onClick={addLot}
-              className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Ajouter un lot
-            </button>
+            <div className="flex items-center gap-2">
+              {config.lots.length > 0 && (
+                <>
+                  <button
+                    onClick={() => setIsLotsModalOpen(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition whitespace-nowrap"
+                    title="Ouvrir le configurateur de lots"
+                  >
+                    <Settings2 size={16} />
+                    Configurer
+                  </button>
+                  <button
+                    onClick={handleExportExcel}
+                    className="flex items-center gap-2 px-3 py-2 text-sm border border-[#2F5B58] text-[#2F5B58] rounded-lg hover:bg-[#2F5B58]/10 transition whitespace-nowrap"
+                    title="Exporter les lots vers Excel"
+                  >
+                    <Download size={16} />
+                    Export Excel
+                  </button>
+                  <label className="flex items-center gap-2 px-3 py-2 text-sm border border-[#2F5B58] text-[#2F5B58] rounded-lg hover:bg-[#2F5B58]/10 transition cursor-pointer whitespace-nowrap">
+                    <Upload size={16} />
+                    Import Excel
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleImportExcel}
+                      className="hidden"
+                    />
+                  </label>
+                </>
+              )}
+              <button
+                onClick={addLot}
+                className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition-colors whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                Ajouter un lot
+              </button>
+            </div>
           </div>
+
+          {/* Message d'erreur d'import */}
+          {importError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+              {importError}
+            </div>
+          )}
 
           {config.lots.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -545,6 +664,15 @@ export function ConfigurationGlobaleForm({
           Les modifications sont enregistrées automatiquement et seront propagées aux autres modules du DCE.
         </div>
       </div>
+
+      {/* Modale de configuration des lots */}
+      <LotsConfigurationModal
+        isOpen={isLotsModalOpen}
+        onClose={() => setIsLotsModalOpen(false)}
+        lots={lotsToExcel()}
+        nbLots={config.lots.length}
+        onSave={handleLotsFromModal}
+      />
     </div>
   );
 }

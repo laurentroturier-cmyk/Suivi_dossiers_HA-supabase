@@ -6,6 +6,7 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 import { LotSelector } from '../shared/LotSelector';
 import { lotService, ModuleType } from '../../../../services/lotService';
+import type { LotConfiguration } from '../../types';
 
 interface GenericMultiLotsProps<T> {
   procedureId: string;
@@ -16,6 +17,7 @@ interface GenericMultiLotsProps<T> {
     data: T;
     onSave: (data: T) => Promise<void> | void;
     isSaving?: boolean;
+    [key: string]: any; // 🆕 Permettre des props supplémentaires
   }>;
   onSave?: () => void;
   configurationGlobale?: {
@@ -26,6 +28,8 @@ interface GenericMultiLotsProps<T> {
       description?: string;
     }>;
   } | null;
+  formComponentProps?: Record<string, any>; // 🆕 Props supplémentaires pour le FormComponent
+  lotsFromConfigurationGlobale?: LotConfiguration[]; // 🆕 Lots depuis Configuration Globale
 }
 
 export function GenericMultiLots<T>({
@@ -36,6 +40,8 @@ export function GenericMultiLots<T>({
   FormComponent,
   onSave,
   configurationGlobale,
+  formComponentProps = {},
+  lotsFromConfigurationGlobale = [],
 }: GenericMultiLotsProps<T>) {
   // 🆕 Utiliser les lots de la Configuration Globale si disponibles
   const hasConfigGlobale = configurationGlobale && configurationGlobale.lots && configurationGlobale.lots.length > 0;
@@ -188,20 +194,6 @@ export function GenericMultiLots<T>({
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
-      {/* Message d'info si Configuration Globale active */}
-      {hasConfigGlobale && (
-        <div className="mx-6 mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
-          <svg className="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <div className="text-sm text-green-800">
-            <strong>Configuration Globale active :</strong> Les lots sont gérés depuis l'onglet "⚙️ Configuration Globale".
-            Vous travaillez sur <strong>{configLots.length} lot{configLots.length > 1 ? 's' : ''}</strong> configuré{configLots.length > 1 ? 's' : ''}.
-          </div>
-        </div>
-      )}
-      
       <LotSelector
         procedureId={procedureId}
         totalLots={totalLots}
@@ -214,6 +206,20 @@ export function GenericMultiLots<T>({
         disabled={saving}
         lotLibelle={lotLibelle}
       />
+      
+      {/* Message d'info si Configuration Globale active */}
+      {hasConfigGlobale && (
+        <div className="mx-6 mt-2 mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+          <svg className="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <div className="text-sm text-green-800">
+            <strong>Configuration Globale active :</strong> Les lots sont gérés depuis l'onglet "⚙️ Configuration Globale".
+            Vous travaillez sur <strong>{configLots.length} lot{configLots.length > 1 ? 's' : ''}</strong> configuré{configLots.length > 1 ? 's' : ''}.
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -262,6 +268,37 @@ export function GenericMultiLots<T>({
               data={formData}
               onSave={handleSaveLot}
               isSaving={saving}
+              {...formComponentProps}
+              totalLots={totalLots}
+              currentLot={currentLot}
+              onLotChange={handleLotChange}
+              procedureInfo={{
+                ...formComponentProps.procedureInfo,
+                numeroLot: (() => {
+                  // Priorité 1: Lot depuis Configuration Globale (source unique)
+                  const lotFromConfig = lotsFromConfigurationGlobale.find(l => l.numero === currentLot.toString());
+                  if (lotFromConfig) return lotFromConfig.numero;
+                  
+                  // Priorité 2: Lot depuis la Configuration Globale (ancien système)
+                  const currentConfigLot = configLots.find(l => parseInt(l.numero) === currentLot);
+                  if (currentConfigLot) return currentConfigLot.numero;
+                  
+                  // Fallback: Numéro actuel
+                  return currentLot.toString();
+                })(),
+                libelleLot: (() => {
+                  // Priorité 1: Lot depuis Configuration Globale (source unique)
+                  const lotFromConfig = lotsFromConfigurationGlobale.find(l => l.numero === currentLot.toString());
+                  if (lotFromConfig) return lotFromConfig.intitule;
+                  
+                  // Priorité 2: Lot depuis la Configuration Globale (ancien système)
+                  const currentConfigLot = configLots.find(l => parseInt(l.numero) === currentLot);
+                  if (currentConfigLot) return currentConfigLot.intitule;
+                  
+                  // Fallback: Libellé saisi manuellement
+                  return lotLibelle;
+                })(),
+              }}
             />
           </div>
         )}

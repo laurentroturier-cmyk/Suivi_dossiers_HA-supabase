@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 /**
  * Types de modules supportant les lots
  */
-export type ModuleType = 'ae' | 'qt' | 'cctp' | 'ccap' | 'bpu' | 'dqe' | 'dpgf';
+export type ModuleType = 'ae' | 'qt' | 'cctp' | 'ccap' | 'bpu' | 'bpu_tma' | 'dqe' | 'dpgf';
 
 /**
  * Mapping entre type de module et nom de table Supabase
@@ -19,9 +19,25 @@ const TABLE_MAPPING: Record<ModuleType, string> = {
   qt: 'questionnaires_techniques',
   cctp: 'cctps', // À créer
   ccap: 'ccaps', // À créer
-  bpu: 'bpus',   // À créer
+  bpu: 'bpus',
+  bpu_tma: 'bpus', // 🆕 Utilise la même table avec type_bpu = 'tma'
   dqe: 'dqes',   // À créer
   dpgf: 'dpgfs', // À créer
+};
+
+/**
+ * Mapping entre type de module et type de BPU (pour les modules qui utilisent la table bpus)
+ * Null pour les modules qui n'utilisent pas la table bpus
+ */
+const BPU_TYPE_MAPPING: Record<ModuleType, string | null> = {
+  ae: null,
+  qt: null,
+  cctp: null,
+  ccap: null,
+  bpu: 'standard',
+  bpu_tma: 'tma',
+  dqe: null,
+  dpgf: null,
 };
 
 /**
@@ -32,6 +48,7 @@ export interface Lot {
   procedure_id: string;
   numero_lot: number;
   libelle_lot?: string;
+  type_bpu?: string; // 🆕 Type de BPU (uniquement pour la table bpus)
   data: any;
   created_at: string;
   updated_at: string;
@@ -46,12 +63,19 @@ export class LotService {
    */
   async getLotsForProcedure(procedureId: string, moduleType: ModuleType): Promise<Lot[]> {
     const tableName = TABLE_MAPPING[moduleType];
+    const bpuType = BPU_TYPE_MAPPING[moduleType];
     
-    const { data, error } = await supabase
+    let query = supabase
       .from(tableName)
       .select('*')
-      .eq('procedure_id', procedureId)
-      .order('numero_lot', { ascending: true });
+      .eq('procedure_id', procedureId);
+    
+    // Si c'est un type de BPU, filtrer par type_bpu
+    if (bpuType !== null) {
+      query = query.eq('type_bpu', bpuType);
+    }
+    
+    const { data, error } = await query.order('numero_lot', { ascending: true });
     
     if (error) {
       console.error(`Erreur lors de la récupération des lots ${moduleType}:`, error);
@@ -70,13 +94,20 @@ export class LotService {
     moduleType: ModuleType
   ): Promise<Lot | null> {
     const tableName = TABLE_MAPPING[moduleType];
+    const bpuType = BPU_TYPE_MAPPING[moduleType];
     
-    const { data, error } = await supabase
+    let query = supabase
       .from(tableName)
       .select('*')
       .eq('procedure_id', procedureId)
-      .eq('numero_lot', numeroLot)
-      .maybeSingle();
+      .eq('numero_lot', numeroLot);
+    
+    // Si c'est un type de BPU, filtrer par type_bpu
+    if (bpuType !== null) {
+      query = query.eq('type_bpu', bpuType);
+    }
+    
+    const { data, error } = await query.maybeSingle();
     
     if (error) {
       console.error(`Erreur lors de la récupération du lot ${numeroLot}:`, error);
@@ -97,14 +128,20 @@ export class LotService {
     libelleLot?: string
   ): Promise<Lot> {
     const tableName = TABLE_MAPPING[moduleType];
+    const bpuType = BPU_TYPE_MAPPING[moduleType];
     
-    const payload = {
+    const payload: any = {
       procedure_id: procedureId,
       numero_lot: numeroLot,
       libelle_lot: libelleLot,
       data,
       updated_at: new Date().toISOString(),
     };
+    
+    // Si c'est un type de BPU, ajouter type_bpu
+    if (bpuType !== null) {
+      payload.type_bpu = bpuType;
+    }
 
     const { data: result, error } = await supabase
       .from(tableName)
@@ -131,12 +168,20 @@ export class LotService {
     moduleType: ModuleType
   ): Promise<void> {
     const tableName = TABLE_MAPPING[moduleType];
+    const bpuType = BPU_TYPE_MAPPING[moduleType];
     
-    const { error } = await supabase
+    let query = supabase
       .from(tableName)
       .delete()
       .eq('procedure_id', procedureId)
       .eq('numero_lot', numeroLot);
+    
+    // Si c'est un type de BPU, filtrer par type_bpu
+    if (bpuType !== null) {
+      query = query.eq('type_bpu', bpuType);
+    }
+    
+    const { error } = await query;
     
     if (error) {
       console.error(`Erreur lors de la suppression du lot ${numeroLot}:`, error);
@@ -175,11 +220,19 @@ export class LotService {
    */
   async countLots(procedureId: string, moduleType: ModuleType): Promise<number> {
     const tableName = TABLE_MAPPING[moduleType];
+    const bpuType = BPU_TYPE_MAPPING[moduleType];
     
-    const { count, error } = await supabase
+    let query = supabase
       .from(tableName)
       .select('*', { count: 'exact', head: true })
       .eq('procedure_id', procedureId);
+    
+    // Si c'est un type de BPU, filtrer par type_bpu
+    if (bpuType !== null) {
+      query = query.eq('type_bpu', bpuType);
+    }
+    
+    const { count, error } = await query;
     
     if (error) {
       console.error(`Erreur lors du comptage des lots:`, error);

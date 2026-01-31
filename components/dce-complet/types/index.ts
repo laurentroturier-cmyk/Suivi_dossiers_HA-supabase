@@ -182,17 +182,60 @@ export interface CCTPData {
 // BPU (Bordereau des Prix Unitaires)
 // ============================================
 
+export interface BPUColumn {
+  id: string;
+  label: string;
+  width?: string;
+}
+
+export interface BPURow {
+  id: string;
+  [key: string]: any;
+}
+
 export interface BPUData {
-  lots: Array<{
-    numero: string;
-    intitule: string;
-    lignes: Array<{
-      numero: string;
-      designation: string;
-      unite: string;
-      prixUnitaire: string;
-      quantiteEstimative?: string;
-    }>;
+  columns: BPUColumn[];
+  headerLabels: { [key: string]: string };
+  rows: BPURow[];
+}
+
+// ============================================
+// BPU TMA (Bordereau des Prix Unitaires - TMA)
+// Spécifique pour les marchés de TMA avec différentes unités d'œuvre
+// ============================================
+
+export interface BPUTMAData {
+  nomCandidat: string;
+  tauxTVA: number;
+  priseConnaissance: {
+    forfaitGlobal: number;
+  };
+  uom: {
+    prixUnitaire: number;
+  };
+  tauxDegressivite: {
+    annee2: number;
+    annee3: number;
+    annee4: number;
+  };
+  autresUO: {
+    uoV: number;  // UO Cycle en V
+    uoA: number;  // UO AGILE
+    uoI: number;  // UO Innovation
+  };
+  uoR: {
+    nombreEstime: number;
+    prixUnitaire: number;
+  };
+  expertises: Array<{
+    ref: string;
+    designation: string;
+    prix: number;
+  }>;
+  realisations: Array<{
+    ref: string;
+    designation: string;
+    prix: number;
   }>;
 }
 
@@ -276,6 +319,7 @@ export interface DCEState {
   ccap: CCAPData | null;
   cctp: CCTPData | null;
   bpu: BPUData | null;
+  bpuTMA: BPUTMAData | null;
   dqe: DQEData | null;
   dpgf: DPGFData | null;
   documentsAnnexes: DocumentsAnnexesData | null;
@@ -308,6 +352,7 @@ export interface DCERecord {
   ccap: CCAPData | null;
   cctp: CCTPData | null;
   bpu: BPUData | null;
+  bpu_tma: BPUTMAData | null;
   dqe: DQEData | null;
   dpgf: DPGFData | null;
   documents_annexes: DocumentsAnnexesData | null;
@@ -362,6 +407,7 @@ export type DCESectionType =
   | 'ccap'
   | 'cctp'
   | 'bpu'
+  | 'bpuTMA'
   | 'dqe'
   | 'dpgf'
   | 'documentsAnnexes'
@@ -381,6 +427,7 @@ export interface DCECompleteness {
     ccap: number;
     cctp: number;
     bpu: number;
+    bpuTMA: number;
     dqe: number;
     dpgf: number;
     documentsAnnexes: number;

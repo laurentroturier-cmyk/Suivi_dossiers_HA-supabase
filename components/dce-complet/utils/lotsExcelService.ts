@@ -89,19 +89,91 @@ export function importLotsFromExcel(file: File): Promise<LotExcel[]> {
         // Convertir en JSON
         const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet);
 
+        // Debug : afficher les noms de colonnes de la première ligne
+        if (jsonData.length > 0) {
+          console.log('📋 Colonnes détectées dans Excel:', Object.keys(jsonData[0]));
+        }
+
         // Mapper vers notre interface
         const lots: LotExcel[] = jsonData
-          .map((row) => {
+          .map((row, index) => {
             // Gérer les différentes variations de noms de colonnes
             const numero = String(
-              row['N° Lot'] ?? row['Numero'] ?? row['numero'] ?? row['N°'] ?? ''
+              row['N° Lot'] ?? row['Numero'] ?? row['numero'] ?? row['N°'] ?? row['__EMPTY'] ?? ''
             ).trim();
+            
             const intitule = String(
-              row['Intitulé du lot'] ?? row['Intitule'] ?? row['intitule'] ?? row['Intitulé'] ?? ''
+              row['Intitulé du lot'] ?? row['Intitule'] ?? row['intitule'] ?? row['Intitulé'] ?? row['__EMPTY_1'] ?? ''
             ).trim();
-            const montantMax = String(
-              row['Montant max (€ HT)'] ?? row['Montant max'] ?? row['montantMax'] ?? row['Montant'] ?? ''
-            ).trim();
+            
+            // Essayer de trouver la colonne de montant avec plus de variantes
+            let montantMax = '';
+            const possibleKeys = [
+              'Montant max (€ HT)', 
+              'Montant max', 
+              'montantMax', 
+              'Montant', 
+              'Montant (€ HT)', 
+              'Montant HT', 
+              'Prix', 
+              '__EMPTY_2',
+              // Variantes avec espaces et parenthèses différentes
+              ' Montant max ( HT) ',
+              ' Montant max (HT) ',
+              'Montant max ( HT)',
+              'Montant max (HT)',
+            ];
+            
+            for (const key of possibleKeys) {
+              if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
+                // Convertir en string et gérer les nombres
+                const value = typeof row[key] === 'number' ? row[key].toString() : String(row[key]);
+                if (value.trim() !== '') {
+                  montantMax = value.trim();
+                  break;
+                }
+              }
+            }
+            
+            // Si pas trouvé, chercher dans toutes les colonnes SAUF celle du numéro
+            if (!montantMax) {
+              const allKeys = Object.keys(row);
+              // Exclure les colonnes qui contiennent le numéro de lot
+              const excludedKeys = ['N° Lot', 'Numero', 'numero', 'N°', '__EMPTY'];
+              
+              for (const key of allKeys) {
+                // Ignorer les colonnes de numéro et d'intitulé et les métadonnées
+                if (excludedKeys.includes(key) || 
+                    key === 'Intitulé du lot' || 
+                    key === '__EMPTY_1' ||
+                    key === '__rowNum__') {
+                  continue;
+                }
+                
+                const rawValue = row[key];
+                // Gérer les nombres directement
+                let numericValue: number;
+                if (typeof rawValue === 'number') {
+                  numericValue = rawValue;
+                } else {
+                  const value = String(rawValue ?? '').trim();
+                  const cleanValue = value.replace(/\s/g, '').replace(',', '.');
+                  numericValue = parseFloat(cleanValue);
+                }
+                
+                // Vérifier que c'est un nombre valide et suffisamment grand (pas 1, 2, 3...)
+                if (!isNaN(numericValue) && numericValue > 100) {
+                  montantMax = numericValue.toString();
+                  console.log(`💡 Montant détecté dans colonne "${key}":`, rawValue, `(valeur numérique: ${numericValue})`);
+                  break;
+                }
+              }
+            }
+
+            // Debug pour chaque ligne
+            if (index < 3) {
+              console.log(`Ligne ${index + 1}:`, { numero, intitule, montantMax, row });
+            }
 
             return { numero, intitule, montantMax };
           })
@@ -112,8 +184,10 @@ export function importLotsFromExcel(file: File): Promise<LotExcel[]> {
           return;
         }
 
+        console.log('✅ Lots importés:', lots.length);
         resolve(lots);
       } catch (error) {
+        console.error('❌ Erreur import Excel:', error);
         reject(new Error('Erreur lors de la lecture du fichier Excel'));
       }
     };

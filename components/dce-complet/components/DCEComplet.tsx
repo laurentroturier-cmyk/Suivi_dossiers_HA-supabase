@@ -19,6 +19,7 @@ import { ActeEngagementMultiLots } from './modules/ActeEngagementMultiLots';
 import { CCAPMultiLots } from './modules/CCAPMultiLots';
 import { CCTPMultiLots } from './modules/CCTPMultiLots';
 import { BPUMultiLots } from './modules/BPUMultiLots';
+import { BPUTMAMultiLots } from './modules/BPUTMAMultiLots';
 import { DQEMultiLots } from './modules/DQEMultiLots';
 import { DPGFMultiLots } from './modules/DPGFMultiLots';
 import { DocumentsAnnexesForm } from './modules/DocumentsAnnexesForm';
@@ -105,6 +106,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
     { key: 'ccap', label: 'CCAP', icon: <FileCheck className="w-5 h-5" /> },
     { key: 'cctp', label: 'CCTP', icon: <FileCheck className="w-5 h-5" /> },
     { key: 'bpu', label: 'BPU', icon: <FileSpreadsheet className="w-5 h-5" /> },
+    { key: 'bpuTMA', label: 'BPU TMA', icon: <FileSpreadsheet className="w-5 h-5" /> },
     { key: 'dqe', label: 'DQE', icon: <FileSpreadsheet className="w-5 h-5" /> },
     { key: 'dpgf', label: 'DPGF', icon: <FileSpreadsheet className="w-5 h-5" /> },
     { key: 'documentsAnnexes', label: 'Documents Annexes', icon: <FolderOpen className="w-5 h-5" /> },
@@ -144,12 +146,19 @@ export function DCEComplet({ onClose }: DCECompletProps) {
       sections: Object.keys(dceState).filter(k => 
         !['id', 'userId', 'numeroProcedure', 'procedureId', 'statut', 'titreMarche', 'version', 'notes', 'createdAt', 'updatedAt'].includes(k)
       ),
+      nbLots: dceState.configurationGlobale?.lots?.length || 0,
     });
 
+    // Afficher immédiatement un feedback visuel
+    console.log('⏳ Sauvegarde en cours...');
+    
     const success = await saveDCE();
+    
     if (success) {
+      console.log('✅ Sauvegarde terminée avec succès');
       alert('✓ DCE sauvegardé avec succès dans la base de données');
     } else {
+      console.error('❌ Échec de la sauvegarde');
       alert('✗ Erreur lors de la sauvegarde du DCE');
     }
   };
@@ -245,6 +254,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
             numeroProcedure={numeroProcedure}
             onSave={data => handleSectionSave('reglementConsultation', data)}
             initialData={dceState.reglementConsultation}
+            lotsFromConfigurationGlobale={dceState.configurationGlobale?.lots || []}
           />
         );
       case 'acteEngagement':
@@ -278,6 +288,21 @@ export function DCEComplet({ onClose }: DCECompletProps) {
             procedureId={numeroProcedure}
             onSave={() => loadDCE()}
             configurationGlobale={dceState.configurationGlobale}
+            procedureInfo={{
+              numeroProcedure: numeroProcedure,
+              titreMarche: dceState.titreMarche || selectedProcedure?.['Intitulé'] || '',
+              acheteur: selectedProcedure?.['Acheteur'] || dceState.configurationGlobale?.informationsGenerales?.acheteur || '',
+            }}
+            lotsFromConfigurationGlobale={dceState.configurationGlobale?.lots || []}
+          />
+        );
+      case 'bpuTMA':
+        return (
+          <BPUTMAMultiLots
+            procedureId={numeroProcedure}
+            onSave={() => loadDCE()}
+            configurationGlobale={dceState.configurationGlobale}
+            lotsFromConfigurationGlobale={dceState.configurationGlobale?.lots || []}
           />
         );
       case 'dqe':
