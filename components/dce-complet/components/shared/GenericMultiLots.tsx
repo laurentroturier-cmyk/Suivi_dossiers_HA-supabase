@@ -272,6 +272,7 @@ export function GenericMultiLots<T>({
               totalLots={totalLots}
               currentLot={currentLot}
               onLotChange={handleLotChange}
+              lotsConfig={lotsFromConfigurationGlobale}
               procedureInfo={{
                 ...formComponentProps.procedureInfo,
                 numeroLot: (() => {
