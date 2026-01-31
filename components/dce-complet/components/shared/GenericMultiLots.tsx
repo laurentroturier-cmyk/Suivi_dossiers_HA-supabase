@@ -4,6 +4,7 @@
 // ============================================
 
 import React, { useState, useEffect, ReactElement } from 'react';
+import { Maximize2, List } from 'lucide-react';
 import { LotSelector } from '../shared/LotSelector';
 import { lotService, ModuleType } from '../../../../services/lotService';
 import type { LotConfiguration } from '../../types';
@@ -30,6 +31,8 @@ interface GenericMultiLotsProps<T> {
   } | null;
   formComponentProps?: Record<string, any>; // 🆕 Props supplémentaires pour le FormComponent
   lotsFromConfigurationGlobale?: LotConfiguration[]; // 🆕 Lots depuis Configuration Globale
+  /** Afficher une vue synthèse (tableau des lots avec accès pleine page) quand plusieurs lots */
+  showSummaryViewWhenMultipleLots?: boolean;
 }
 
 export function GenericMultiLots<T>({
@@ -42,6 +45,7 @@ export function GenericMultiLots<T>({
   configurationGlobale,
   formComponentProps = {},
   lotsFromConfigurationGlobale = [],
+  showSummaryViewWhenMultipleLots = false,
 }: GenericMultiLotsProps<T>) {
   // 🆕 Utiliser les lots de la Configuration Globale si disponibles
   const hasConfigGlobale = configurationGlobale && configurationGlobale.lots && configurationGlobale.lots.length > 0;
@@ -53,6 +57,8 @@ export function GenericMultiLots<T>({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Vue synthèse : tableau des lots avec bouton d'accès pleine page (quand plusieurs lots) */
+  const [showSummaryView, setShowSummaryView] = useState(true);
 
   useEffect(() => {
     loadLotData();
@@ -192,6 +198,29 @@ export function GenericMultiLots<T>({
     setCurrentLot(newLot);
   };
 
+  /** Liste des lots pour la vue synthèse (config globale ou fallback) */
+  const lotsForSummary: Array<{ numero: string; intitule: string; montant: string }> = (() => {
+    if (lotsFromConfigurationGlobale.length > 0) {
+      return lotsFromConfigurationGlobale.map(l => ({ numero: l.numero, intitule: l.intitule, montant: l.montant || '' }));
+    }
+    if (configLots.length > 0) {
+      return configLots.map(l => ({ numero: l.numero, intitule: l.intitule, montant: l.montant || '' }));
+    }
+    // Fallback : lots numérotés 1 à totalLots
+    return Array.from({ length: totalLots }, (_, i) => ({
+      numero: String(i + 1),
+      intitule: `Lot ${i + 1}`,
+      montant: '',
+    }));
+  })();
+
+  const showSummaryTable = showSummaryViewWhenMultipleLots && totalLots > 1 && showSummaryView;
+
+  const openLotFullPage = (lotNum: number) => {
+    setCurrentLot(lotNum);
+    setShowSummaryView(false);
+  };
+
   return (
     <div className="h-full flex flex-col bg-gray-50">
       <LotSelector
@@ -239,7 +268,57 @@ export function GenericMultiLots<T>({
       )}
 
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        {loading ? (
+        {/* Vue synthèse : tableau des lots avec accès pleine page */}
+        {showSummaryTable ? (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-800">
+                {moduleName} — Synthèse des lots
+              </h2>
+              <p className="text-sm text-gray-600">
+                {lotsForSummary.length} lot{lotsForSummary.length > 1 ? 's' : ''} — Cliquez sur « Ouvrir » pour accéder au détail d'un lot
+              </p>
+            </div>
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="bg-[#2F5B58] text-white">
+                    <th className="px-4 py-3 font-semibold w-24">N° Lot</th>
+                    <th className="px-4 py-3 font-semibold">Nom du lot</th>
+                    <th className="px-4 py-3 font-semibold w-36">Montant estimé</th>
+                    <th className="px-4 py-3 font-semibold w-40 text-center">Accès</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lotsForSummary.map((lot, index) => {
+                    const lotNum = parseInt(lot.numero, 10) || index + 1;
+                    return (
+                      <tr
+                        key={lot.numero}
+                        className="border-b border-gray-200 hover:bg-gray-50 even:bg-gray-50/50"
+                      >
+                        <td className="px-4 py-3 font-medium text-gray-900">Lot {lot.numero}</td>
+                        <td className="px-4 py-3 text-gray-700">{lot.intitule || `Lot ${lot.numero}`}</td>
+                        <td className="px-4 py-3 text-gray-700">{lot.montant ? `${lot.montant} € HT` : '—'}</td>
+                        <td className="px-4 py-2 text-center">
+                          <button
+                            type="button"
+                            onClick={() => openLotFullPage(lotNum)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition text-sm font-medium"
+                            title="Ouvrir ce lot en pleine page"
+                          >
+                            <Maximize2 className="w-4 h-4" />
+                            Ouvrir
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2F5B58] mx-auto mb-4"></div>
@@ -248,11 +327,23 @@ export function GenericMultiLots<T>({
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-800">
-                {moduleName} - Lot {currentLot}
-              </h2>
-              
+            <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                {showSummaryViewWhenMultipleLots && totalLots > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSummaryView(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm font-medium"
+                    title="Retour à la synthèse des lots"
+                  >
+                    <List className="w-4 h-4" />
+                    Retour à la synthèse
+                  </button>
+                )}
+                <h2 className="text-xl font-bold text-gray-800">
+                  {moduleName} - Lot {currentLot}
+                </h2>
+              </div>
               <div className="flex items-center gap-2">
                 <label className="text-sm text-gray-600">Libellé :</label>
                 <input

@@ -1531,6 +1531,54 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
             </div>
           )}
 
+          {/* Écart Budget / Total HT réel */}
+          {procedureInfo?.numeroLot && (() => {
+            const currentLotNum = parseInt(procedureInfo.numeroLot, 10) || currentLot || 1;
+            const lotFromConfig = lotsConfig.find((l: LotInfo) => {
+              const n = typeof l.numero === 'string' ? parseInt(l.numero, 10) : l.numero;
+              return n === currentLotNum;
+            });
+            const budgetEstime = lotFromConfig?.montant
+              ? parseFloat(String(lotFromConfig.montant).replace(/[^\d,.-]/g, '').replace(/,/g, '.')) || 0
+              : 0;
+            const ecartHT = totalHT - budgetEstime;
+            const hasBudget = budgetEstime > 0;
+
+            if (!hasBudget) return null;
+
+            const ecartColor =
+              ecartHT > 0 ? 'text-red-600 font-bold'   // supérieur → rouge
+              : ecartHT < 0 ? 'text-green-600 font-bold' // inférieur → vert
+              : 'text-gray-900 font-bold';              // égal → noir
+
+            const ecartLabel =
+              ecartHT > 0 ? `+ ${ecartHT.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+              : ecartHT < 0 ? `${ecartHT.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+              : '0,00 €';
+
+            return (
+              <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
+                <div className="flex flex-wrap items-center gap-6 text-sm">
+                  <div>
+                    <span className="font-semibold text-gray-600">Budget estimé HT :</span>{' '}
+                    <span className="text-gray-900">{budgetEstime.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-600">Total HT réel :</span>{' '}
+                    <span className="text-gray-900">{totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-600">Écart :</span>{' '}
+                    <span className={ecartColor}>{ecartLabel}</span>
+                    {ecartHT > 0 && <span className="text-red-600 text-xs ml-1">(au-dessus du budget)</span>}
+                    {ecartHT < 0 && <span className="text-green-600 text-xs ml-1">(sous le budget)</span>}
+                    {ecartHT === 0 && <span className="text-gray-500 text-xs ml-1">(égal au budget)</span>}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Totaux DQE */}
           <div className="bg-gradient-to-r from-[#4A9B8E] to-[#3A8B7E] rounded-lg p-4 mb-4 shadow-md">
             <div className="grid grid-cols-3 gap-4">

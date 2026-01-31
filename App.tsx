@@ -50,6 +50,7 @@ import ImmobilierPage from './pages/ImmobilierPage';
 import { RapportPresentation } from './components/analyse';
 import { AppVersion } from './components/AppVersion';
 import { AnalyseOverview } from './components/an01';
+import { AnalyseOffresDQE } from './components/analyse-offres-dqe';
 import DashboardPage from './pages/DashboardPage';
 
 import { 
@@ -2875,6 +2876,7 @@ const App: React.FC = () => {
                     'an01': 'AN01',
                     'ouverture-plis': 'Ouverture des plis',
                     'rapport-presentation': 'Rapport de Présentation',
+                    'analyse-offres-dqe': 'Analyse des offres DQE',
                     'contrats': 'Contrats',
                     'export': 'Exports & données',
                     'detail': 'Détail',
@@ -2949,11 +2951,19 @@ const App: React.FC = () => {
                   'depots': 'Registre Dépôts',
                   'an01': 'AN01',
                   'rapport': 'Rapport de Présentation',
+                  'analyse-offres-dqe': 'Analyse des offres DQE',
                 };
-                // Si c'est rapport, naviguer vers rapport-presentation
                 const actualTab = tab === 'rapport' ? 'rapport-presentation' : tab;
                 navigateTo(actualTab as any, titles[tab] || tab);
               }} />
+            )}
+
+            {activeTab === 'analyse-offres-dqe' && (
+              <AnalyseOffresDQE
+                onClose={() => {
+                  handleGoBack();
+                }}
+              />
             )}
 
             {activeTab === 'dce-complet' && (

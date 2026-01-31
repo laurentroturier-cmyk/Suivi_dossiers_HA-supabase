@@ -62,6 +62,7 @@ export function DQEMultiLots({ procedureId, onSave, configurationGlobale, proced
       configurationGlobale={configurationGlobale}
       formComponentProps={{ procedureInfo }}
       lotsFromConfigurationGlobale={lotsFromConfigurationGlobale}
+      showSummaryViewWhenMultipleLots={true}
     />
   );
 }
