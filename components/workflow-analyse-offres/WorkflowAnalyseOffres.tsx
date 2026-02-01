@@ -95,6 +95,7 @@ interface WorkflowAnalyseOffresProps {
 }
 
 const WORKFLOW_PROCEDURE_KEY = 'workflow_analyse_procedure';
+const WORKFLOW_VALIDATED_PREFIX = 'workflow_validated_';
 
 export function WorkflowAnalyseOffres({
   onClose,
@@ -114,6 +115,8 @@ export function WorkflowAnalyseOffres({
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportSuccess, setExportSuccess] = useState(false);
 
+  const [validatedTiles, setValidatedTiles] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem(WORKFLOW_PROCEDURE_KEY);
@@ -125,6 +128,43 @@ export function WorkflowAnalyseOffres({
       // ignore
     }
   }, []);
+
+  useEffect(() => {
+    if (!numeroProcedure || numeroProcedure.length !== 5) {
+      setValidatedTiles(new Set());
+      return;
+    }
+    try {
+      const key = WORKFLOW_VALIDATED_PREFIX + numeroProcedure;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const arr = JSON.parse(raw) as string[];
+        setValidatedTiles(new Set(Array.isArray(arr) ? arr : []));
+      } else {
+        setValidatedTiles(new Set());
+      }
+    } catch {
+      setValidatedTiles(new Set());
+    }
+  }, [numeroProcedure]);
+
+  const toggleTileValidated = (stepId: number, subIndex: number) => {
+    const key = `${stepId}-${subIndex}`;
+    setValidatedTiles((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        const storageKey = WORKFLOW_VALIDATED_PREFIX + numeroProcedure;
+        if (numeroProcedure.length === 5) {
+          localStorage.setItem(storageKey, JSON.stringify([...next]));
+        }
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
 
   const showWelcome = !numeroProcedure || numeroProcedure.length !== 5 || !procedureResult.isValid;
 
@@ -348,6 +388,9 @@ export function WorkflowAnalyseOffres({
                       const isRapportPresentation = subId === 'rapport-presentation';
                       const isExportPdf = subId === 'export-pdf';
                       const isLoaded = isRetraits ? retraitsLoaded : isDepots ? depotsLoaded : false;
+                      const tileKey = `${step.id}-${i}`;
+                      const isValidated = validatedTiles.has(tileKey);
+                      const isGreen = isLoaded || isValidated;
                       const onClick = isRetraits && onNavigateToRetraits
                         ? () => saveNumeroAndNavigate(onNavigateToRetraits)
                         : isDepots && onNavigateToDepots
@@ -367,11 +410,11 @@ export function WorkflowAnalyseOffres({
                           role={onClick ? 'button' : undefined}
                           onClick={onClick}
                           className={`
-                            p-4 rounded-xl border-l-4 transition-colors
+                            p-4 rounded-xl border-l-4 transition-colors relative
                             bg-gray-50 dark:bg-gray-700/50
                             border-[#004d3d] dark:border-cyan-500
                             ${onClick ? 'cursor-pointer hover:bg-[#004d3d]/10 dark:hover:bg-cyan-500/10' : ''}
-                            ${isLoaded ? 'bg-[#004d3d]/10 dark:bg-cyan-500/10 border-l-[#006d57] dark:border-l-cyan-400' : ''}
+                            ${isGreen ? 'bg-[#004d3d]/10 dark:bg-cyan-500/10 border-l-[#006d57] dark:border-l-cyan-400' : ''}
                           `}
                         >
                           <h4 className="font-medium text-gray-900 dark:text-white text-sm">
@@ -380,12 +423,28 @@ export function WorkflowAnalyseOffres({
                           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                             {sub.desc}
                           </p>
-                          {isLoaded && (
-                            <p className="mt-2 text-xs font-semibold text-[#004d3d] dark:text-cyan-400 flex items-center gap-1">
-                              <Check className="w-3.5 h-3.5" />
-                              Chargé
-                            </p>
-                          )}
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            {isLoaded && (
+                              <p className="text-xs font-semibold text-[#004d3d] dark:text-cyan-400 flex items-center gap-1">
+                                <Check className="w-3.5 h-3.5" />
+                                Chargé
+                              </p>
+                            )}
+                            <label
+                              className="flex items-center gap-1.5 cursor-pointer text-xs text-gray-600 dark:text-gray-400 hover:text-[#004d3d] dark:hover:text-cyan-400"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isValidated}
+                                onChange={() => toggleTileValidated(step.id, i)}
+                                className="rounded border-gray-400 text-[#004d3d] focus:ring-[#004d3d] dark:border-gray-500 dark:text-cyan-500 dark:focus:ring-cyan-500"
+                              />
+                              <span className={isValidated ? 'font-semibold text-[#004d3d] dark:text-cyan-400' : ''}>
+                                Étape validée
+                              </span>
+                            </label>
+                          </div>
                         </div>
                       );
                     })}
