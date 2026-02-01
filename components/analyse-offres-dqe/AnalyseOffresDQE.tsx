@@ -13,11 +13,11 @@ import {
   ArrowLeft,
   Loader2,
   BarChart3,
-  CheckCircle,
   AlertCircle,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { ProcedureSelector } from '../dce-complet/components/shared/ProcedureSelector';
+import { ProcedureHeader } from '../dce-complet/components/shared/ProcedureHeader';
 import { useProcedure } from '../dce-complet/hooks/useProcedureLoader';
 import { parseDQEExcelFile, type ParsedDQERow, type ParseDQEResult } from './utils/parseDQEExcel';
 import type { ProjectData } from '../../types';
@@ -98,6 +98,17 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
   const totalLots = lotsConfig.length || 1;
   const currentCandidats = candidatsByLot[String(selectedLotNum)] || [];
 
+  const showWelcome = !numeroProcedure || numeroProcedure.length !== 5 || !procedureResult.isValid;
+
+  const handleBackToSelection = () => {
+    setNumeroProcedure('');
+    setProcedureInfo(null);
+    setLotsConfig([]);
+    setCandidatsByLot({});
+    setSelectedLotNum(1);
+    setError(null);
+  };
+
   const addCandidatFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -152,7 +163,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-6 py-6">
-        {onClose && (
+        {onClose && !showWelcome && (
           <button
             onClick={onClose}
             className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
@@ -162,65 +173,84 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
           </button>
         )}
 
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-[#2F5B58] text-white flex items-center justify-center">
-            <BarChart3 className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Analyse des offres DQE
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Chargez les DQE Excel par lot et par candidat pour comparer les montants
-            </p>
-          </div>
-        </div>
+        {/* Écran de bienvenue : sélection de la procédure (comme DCE Complet) */}
+        {showWelcome ? (
+          <div className="flex flex-col items-center justify-center min-h-[70vh] py-8">
+            <div className="max-w-2xl w-full">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="w-8 h-8 text-[#006d57] dark:text-emerald-400" />
+                </div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  Analyse des offres DQE
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Saisissez un numéro de procédure pour démarrer
+                </p>
+              </div>
 
-        {/* Recherche procédure */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Numéro de procédure
-          </h2>
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <ProcedureSelector
-                value={numeroProcedure}
-                onChange={setNumeroProcedure}
-                onProcedureSelected={() => {}}
-              />
-            </div>
-            {procedureResult.error && (
-              <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {procedureResult.error}
-              </p>
-            )}
-            {procedureResult.isValid && procedureInfo && (
-              <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" />
-                {procedureInfo['Intitulé']}
-              </p>
-            )}
-          </div>
-          {loadingDCE && (
-            <div className="mt-4 flex items-center gap-2 text-gray-600 dark:text-gray-400">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Chargement des lots...
-            </div>
-          )}
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
-              {error}
-            </div>
-          )}
-        </div>
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Numéro de procédure (5 chiffres)
+                </label>
+                <ProcedureSelector
+                  value={numeroProcedure}
+                  onChange={setNumeroProcedure}
+                  onProcedureSelected={() => {}}
+                />
 
-        {!procedureResult.isValid || !numeroProcedure || numeroProcedure.length !== 5 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center text-gray-500 dark:text-gray-400">
-            Saisissez un numéro de procédure à 5 chiffres pour charger les lots et commencer l'analyse.
+                {procedureResult.error && !procedureResult.isValid && (
+                  <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      {procedureResult.error}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 flex justify-center gap-4">
+                {onClose && (
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                  >
+                    Retour au menu précédent
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         ) : (
           <>
+            {/* En-tête de procédure (comme DCE Complet) */}
+            <div className="mb-6 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl flex-shrink-0">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+                <div className="flex-1 min-w-0">
+                  <ProcedureHeader procedure={procedureInfo} />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleBackToSelection}
+                  className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 whitespace-nowrap"
+                >
+                  Retour à la sélection
+                </button>
+              </div>
+              {loadingDCE && (
+                <div className="mt-3 flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Chargement des lots...
+                </div>
+              )}
+              {error && (
+                <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
+                  {error}
+                </div>
+              )}
+            </div>
+
+            {/* Contenu : lots, candidats, tableau comparatif */}
             {/* Sélection du lot */}
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">

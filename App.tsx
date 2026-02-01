@@ -51,6 +51,7 @@ import { RapportPresentation } from './components/analyse';
 import { AppVersion } from './components/AppVersion';
 import { AnalyseOverview } from './components/an01';
 import { AnalyseOffresDQE } from './components/analyse-offres-dqe';
+import { WorkflowAnalyseOffres } from './components/workflow-analyse-offres';
 import DashboardPage from './pages/DashboardPage';
 
 import { 
@@ -387,6 +388,8 @@ const App: React.FC = () => {
   const [previousTab, setPreviousTab] = useState<{tab: TableType, subTab?: string} | null>(null);
   const [detailData, setDetailData] = useState<{ type: 'project' | 'procedure', data: any[], title: string, filterField?: string, filterValue?: string | null } | null>(null);
   const [procedures, setProcedures] = useState<ProjectData[]>([]);
+  const [ouverturePlisInitialNumero, setOuverturePlisInitialNumero] = useState('');
+  const [ouverturePlisInitialSection, setOuverturePlisInitialSection] = useState<'candidature' | 'recevabilite' | null>(null);
   const [dossiers, setDossiers] = useState<DossierData[]>([]);
   
   const [refAcheteurs, setRefAcheteurs] = useState<any[]>([]);
@@ -2877,6 +2880,7 @@ const App: React.FC = () => {
                     'ouverture-plis': 'Ouverture des plis',
                     'rapport-presentation': 'Rapport de Présentation',
                     'analyse-offres-dqe': 'Analyse des offres DQE',
+                    'workflow-analyse-offres': 'Workflow Analyse des offres',
                     'contrats': 'Contrats',
                     'export': 'Exports & données',
                     'detail': 'Détail',
@@ -2963,6 +2967,32 @@ const App: React.FC = () => {
                 onClose={() => {
                   handleGoBack();
                 }}
+              />
+            )}
+
+            {activeTab === 'workflow-analyse-offres' && (
+              <WorkflowAnalyseOffres
+                onClose={() => {
+                  handleGoBack();
+                }}
+                onNavigateToRetraits={() => navigateTo('retraits', 'Registre Retraits')}
+                onNavigateToDepots={() => navigateTo('depots', 'Registre Dépôts')}
+                onNavigateToOuverturePlis={(num) => {
+                  setOuverturePlisInitialNumero(num);
+                  setOuverturePlisInitialSection(null);
+                  navigateTo('ouverture-plis', 'Ouverture des plis');
+                }}
+                onNavigateToOuverturePlisCandidature={(num) => {
+                  setOuverturePlisInitialNumero(num);
+                  setOuverturePlisInitialSection('candidature');
+                  navigateTo('ouverture-plis', 'Ouverture des plis');
+                }}
+                onNavigateToOuverturePlisRecevabilite={(num) => {
+                  setOuverturePlisInitialNumero(num);
+                  setOuverturePlisInitialSection('recevabilite');
+                  navigateTo('ouverture-plis', 'Ouverture des plis');
+                }}
+                onNavigateToRapportPresentation={() => navigateTo('rapport-presentation', 'Rapport de Présentation')}
               />
             )}
 
@@ -5002,10 +5032,16 @@ const App: React.FC = () => {
 
         {activeTab === 'ouverture-plis' && (
           <div className="animate-in fade-in duration-700">
-            <OuverturePlis 
+            <OuverturePlis
               onBack={() => navigateTo('home', 'Accueil')}
               procedures={procedures}
               dossiers={dossiers}
+              initialNumero={ouverturePlisInitialNumero || undefined}
+              initialSection={ouverturePlisInitialSection ?? undefined}
+              onInitialApplied={() => {
+                setOuverturePlisInitialNumero('');
+                setOuverturePlisInitialSection(null);
+              }}
             />
           </div>
         )}

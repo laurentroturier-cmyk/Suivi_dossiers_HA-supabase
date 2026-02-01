@@ -1,0 +1,1 @@
+export { WorkflowAnalyseOffres } from './WorkflowAnalyseOffres';

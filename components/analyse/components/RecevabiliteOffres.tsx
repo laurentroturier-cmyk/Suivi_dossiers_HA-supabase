@@ -20,6 +20,7 @@ interface CandidatRecevabilite {
   lotRecevabilite: string;
   recevable: string;
   motifRejetRecevabilite: string;
+  observation?: string;
 }
 
 const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
@@ -51,6 +52,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
         lotRecevabilite: '',
         recevable: '',
         motifRejetRecevabilite: '',
+        observation: '',
       }));
       setCandidats(candidatsInitiaux);
     }
@@ -106,25 +108,28 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
     }
   };
 
+  const inputBase = 'w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2F5B58] focus:border-[#2F5B58] outline-none';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#0d0f12] dark:via-[#121212] dark:to-[#0d0f12]">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 dark:bg-[#1E1E1E]/80 dark:border-[#333333] sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      {/* Header — thème app (teal #2F5B58) */}
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={onBack}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-xl transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <ArrowLeft className="w-5 h-5" />
+                Retour
               </button>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center">
-                  <FileCheck className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <div className="w-12 h-12 rounded-xl bg-[#2F5B58]/10 dark:bg-teal-500/20 flex items-center justify-center">
+                  <FileCheck className="w-6 h-6 text-[#2F5B58] dark:text-teal-400" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black text-gray-900 dark:text-white">Recevabilité des offres</h1>
+                  <h1 className="text-xl font-bold text-[#2F5B58] dark:text-teal-400">Recevabilité des offres</h1>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Procédure : {procedure?.['Référence procédure (plateforme)']}
                   </p>
@@ -132,40 +137,34 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
               </div>
             </div>
 
-            {/* Bouton de sauvegarde et indicateurs */}
             <div className="flex items-center gap-4">
-              {/* Erreur */}
               {error && (
                 <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
                   <AlertCircle className="w-4 h-4" />
                   <span>{error}</span>
                 </div>
               )}
-
-              {/* Bouton de sauvegarde manuelle */}
               <button
                 onClick={handleSaveRecevabilite}
                 disabled={saving || !candidats.length}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-xl transition-colors flex items-center gap-2 font-medium"
+                className="px-4 py-2 bg-[#2F5B58] hover:bg-[#234441] disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg transition flex items-center gap-2 font-medium"
               >
                 {saving ? (
                   <>
                     <Cloud className="w-4 h-4 animate-spin" />
-                    <span>Sauvegarde...</span>
+                    Sauvegarde...
                   </>
                 ) : (
                   <>
                     <Cloud className="w-4 h-4" />
-                    <span>Sauvegarder</span>
+                    Enregistrer
                   </>
                 )}
               </button>
-
-              {/* Message de succès */}
               {showSaveSuccess && (
-                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium animate-fade-in">
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Sauvegardé avec succès !</span>
+                  Sauvegardé
                 </div>
               )}
             </div>
@@ -175,10 +174,10 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
 
       {/* Contenu principal */}
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
-        {/* En-tête avec métadonnées */}
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl p-6 border-2 border-green-200 dark:border-green-500/30">
-          <h3 className="text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <FileCheck className="w-6 h-6 text-green-600 dark:text-green-400" />
+        {/* En-tête avec métadonnées — style DQE (teal / vert clair) */}
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-bold text-[#2F5B58] dark:text-teal-400 mb-4 flex items-center gap-2">
+            <FileCheck className="w-5 h-5" />
             Recevabilité des offres
           </h3>
           
@@ -214,32 +213,25 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
           </div>
         </div>
 
-        {/* Tableau de recevabilité */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-xl border-2 border-gray-200 dark:border-[#333333] overflow-hidden">
+        {/* Tableau de recevabilité — thème app (teal en-tête, colonne Observation) */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
-                <tr className="bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-950/40 dark:to-cyan-950/40">
-                  <th className="px-4 py-3 text-left text-sm font-black text-gray-900 dark:text-white border-r border-gray-300 dark:border-gray-600">
-                    Candidat
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-black text-gray-900 dark:text-white border-r border-gray-300 dark:border-gray-600">
-                    Lot
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-black text-gray-900 dark:text-white border-r border-gray-300 dark:border-gray-600">
-                    Recevable / Éliminé
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-black text-gray-900 dark:text-white">
-                    Si rejet : motif
-                  </th>
+                <tr className="bg-[#2F5B58] text-white">
+                  <th className="px-4 py-3 text-left text-sm font-semibold border-r border-[#234441]">Candidat</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold border-r border-[#234441]">Lot</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold border-r border-[#234441]">Recevable / Éliminé</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold border-r border-[#234441]">Si rejet : motif</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Observation</th>
                 </tr>
               </thead>
-              <tbody className="bg-yellow-50 dark:bg-yellow-950/5">
+              <tbody className="bg-white dark:bg-gray-900">
                 {candidats.map((candidat, index) => (
-                  <tr key={index} className="border-t border-gray-200 dark:border-[#333333] hover:bg-yellow-100 dark:hover:bg-yellow-950/10 transition-colors">
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-[#333333]">
+                  <tr key={index} className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
                       <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-gray-400" />
+                        <Building2 className="w-4 h-4 text-[#2F5B58] dark:text-teal-400 flex-shrink-0" />
                         <div>
                           <div className="font-semibold">{candidat.societe}</div>
                           {candidat.siret && (
@@ -248,7 +240,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 border-r border-gray-200 dark:border-[#333333]">
+                    <td className="px-4 py-3 border-r border-gray-200 dark:border-gray-700">
                       <select
                         value={candidat.lotRecevabilite}
                         onChange={(e) => {
@@ -256,7 +248,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                           newCandidats[index].lotRecevabilite = e.target.value;
                           setCandidats(newCandidats);
                         }}
-                        className="w-full text-sm border-2 border-gray-300 dark:border-[#444444] rounded-lg px-3 py-2 bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                        className={inputBase}
                       >
                         <option value="">-</option>
                         <option value="Unique">Unique</option>
@@ -267,7 +259,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                         <option value="Lot 5">Lot 5</option>
                       </select>
                     </td>
-                    <td className="px-4 py-3 border-r border-gray-200 dark:border-[#333333]">
+                    <td className="px-4 py-3 border-r border-gray-200 dark:border-gray-700">
                       <select
                         value={candidat.recevable}
                         onChange={(e) => {
@@ -278,12 +270,12 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                           }
                           setCandidats(newCandidats);
                         }}
-                        className={`w-full text-sm font-semibold border-2 rounded-lg px-3 py-2 focus:outline-none ${
+                        className={`w-full text-sm font-semibold rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2F5B58] focus:border-[#2F5B58] ${
                           candidat.recevable === 'Recevable'
-                            ? 'border-green-500 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400'
+                            ? 'border border-green-500 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400'
                             : candidat.recevable === 'Éliminé'
-                            ? 'border-red-500 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400'
-                            : 'border-gray-300 dark:border-[#444444] bg-white dark:bg-[#252525] text-gray-900 dark:text-white'
+                            ? 'border border-red-500 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400'
+                            : inputBase
                         }`}
                       >
                         <option value="">-</option>
@@ -291,7 +283,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                         <option value="Éliminé">Éliminé</option>
                       </select>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 border-r border-gray-200 dark:border-gray-700">
                       <select
                         value={candidat.motifRejetRecevabilite}
                         onChange={(e) => {
@@ -300,7 +292,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                           setCandidats(newCandidats);
                         }}
                         disabled={candidat.recevable !== 'Éliminé'}
-                        className="w-full text-sm border-2 border-gray-300 dark:border-[#444444] rounded-lg px-3 py-2 bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-red-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`${inputBase} disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         <option value="">-</option>
                         <option value="Irrégulière">Irrégulière</option>
@@ -309,6 +301,19 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                         <option value="Anormalement basse">Anormalement basse</option>
                       </select>
                     </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="text"
+                        value={candidat.observation ?? ''}
+                        onChange={(e) => {
+                          const newCandidats = [...candidats];
+                          newCandidats[index] = { ...newCandidats[index], observation: e.target.value };
+                          setCandidats(newCandidats);
+                        }}
+                        placeholder="Observation..."
+                        className={inputBase}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -316,9 +321,9 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
           </div>
         </div>
 
-        {/* Déclaration d'infructuosité */}
-        <div className="bg-gray-100 dark:bg-gray-800/30 rounded-xl p-6 border-2 border-gray-300 dark:border-gray-600">
-          <h4 className="text-lg font-black text-gray-900 dark:text-white mb-4">
+        {/* Déclaration d'infructuosité — thème app (teal / gris) */}
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h4 className="text-lg font-bold text-[#2F5B58] dark:text-teal-400 mb-4">
             Déclaration d'infructuosité ou sans suite de la procédure ou des lots
           </h4>
           
@@ -332,14 +337,13 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                 onChange={(e) => setRaisonInfructuosite(e.target.value)}
                 placeholder="Exemple: Sans suite / Infructueux"
                 rows={3}
-                className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-[#444444] bg-white dark:bg-[#252525] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-orange-500"
+                className={`${inputBase} w-full`}
               />
             </div>
             
             <div className="space-y-3">
-              {/* Liste des lots infructueux */}
               {lotsInfructueux.map((lot, index) => (
-                <div key={lot.id} className="bg-yellow-50 dark:bg-yellow-950/10 rounded-lg p-4 border border-yellow-300 dark:border-yellow-600">
+                <div key={lot.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-start gap-4">
                     <div className="flex-1 grid grid-cols-2 gap-4">
                       <div>
@@ -355,7 +359,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                             setLotsInfructueux(newLots);
                           }}
                           placeholder="Numéro du lot"
-                          className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 dark:border-[#444444] bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:outline-none focus:border-yellow-500"
+                          className={inputBase}
                         />
                       </div>
                       <div>
@@ -371,7 +375,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                             setLotsInfructueux(newLots);
                           }}
                           placeholder="Infructueux / sans suite"
-                          className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 dark:border-[#444444] bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:outline-none focus:border-yellow-500"
+                          className={inputBase}
                         />
                       </div>
                     </div>
@@ -388,12 +392,11 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                 </div>
               ))}
 
-              {/* Bouton ajouter un lot */}
               <button
                 onClick={() => {
                   setLotsInfructueux([...lotsInfructueux, { id: Date.now(), lot: '', statut: '' }]);
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-yellow-400 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-950/10 hover:bg-yellow-100 dark:hover:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 font-semibold transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-[#2F5B58] dark:border-teal-500 bg-[#2F5B58]/5 dark:bg-teal-500/10 hover:bg-[#2F5B58]/10 dark:hover:bg-teal-500/20 text-[#2F5B58] dark:text-teal-400 font-semibold transition-colors"
               >
                 <Plus className="w-5 h-5" />
                 Ajouter un lot infructueux
@@ -402,51 +405,51 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
           </div>
         </div>
 
-        {/* Tableau de référence des motifs de rejet */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-xl p-6 border-2 border-gray-200 dark:border-[#333333]">
-          <h4 className="text-lg font-black text-gray-900 dark:text-white mb-4">
+        {/* Tableau de référence des motifs de rejet — thème app */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h4 className="text-lg font-bold text-[#2F5B58] dark:text-teal-400 mb-4">
             Motifs de rejet
           </h4>
           
-          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-[#333333]">
+          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-[#333333]">
+              <thead>
+                <tr className="bg-[#2F5B58] text-white">
+                  <th className="px-4 py-3 text-left font-semibold border-r border-[#234441]">
                     Motifs de rejet
                   </th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left font-semibold">
                     Description
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-[#333333]">
-                <tr className="hover:bg-gray-50 dark:hover:bg-[#252525]">
-                  <td className="px-4 py-3 font-semibold text-red-600 dark:text-red-400 border-r border-gray-200 dark:border-[#333333]">
+              <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <td className="px-4 py-3 font-semibold text-red-600 dark:text-red-400 border-r border-gray-200 dark:border-gray-700">
                     Irrégulière
                   </td>
                   <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                     Offre qui ne respecte pas les exigences formulées dans les documents de la consultation notamment parce qu'elle est incomplète, ou qui méconnaît la législation applicable notamment en matière sociale et environnementale
                   </td>
                 </tr>
-                <tr className="hover:bg-gray-50 dark:hover:bg-[#252525]">
-                  <td className="px-4 py-3 font-semibold text-red-600 dark:text-red-400 border-r border-gray-200 dark:border-[#333333]">
+                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <td className="px-4 py-3 font-semibold text-red-600 dark:text-red-400 border-r border-gray-200 dark:border-gray-700">
                     Inacceptable
                   </td>
                   <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                     Offre dont le prix excède les crédits budgétaires alloués au marché public tels qu'ils ont été déterminés et établis avant le lancement de la procédure
                   </td>
                 </tr>
-                <tr className="hover:bg-gray-50 dark:hover:bg-[#252525]">
-                  <td className="px-4 py-3 font-semibold text-red-600 dark:text-red-400 border-r border-gray-200 dark:border-[#333333]">
+                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <td className="px-4 py-3 font-semibold text-red-600 dark:text-red-400 border-r border-gray-200 dark:border-gray-700">
                     Inappropriée
                   </td>
                   <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                     Offre sans rapport avec le marché public parce qu'elle n'est manifestement pas en mesure, sans modification substantielle, de répondre au besoin et aux exigences de l'acheteur formulées dans les documents de la consultation
                   </td>
                 </tr>
-                <tr className="hover:bg-gray-50 dark:hover:bg-[#252525]">
-                  <td className="px-4 py-3 font-semibold text-red-600 dark:text-red-400 border-r border-gray-200 dark:border-[#333333]">
+                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <td className="px-4 py-3 font-semibold text-red-600 dark:text-red-400 border-r border-gray-200 dark:border-gray-700">
                     Anormalement basse
                   </td>
                   <td className="px-4 py-3 text-gray-700 dark:text-gray-300">

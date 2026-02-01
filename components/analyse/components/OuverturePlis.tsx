@@ -4,10 +4,18 @@ import { DepotsData } from '../../../types/depots';
 import RecevabiliteOffres from './RecevabiliteOffres';
 import { useOuverturePlis } from '../../../hooks/useOuverturePlis';
 
+export type OuverturePlisSection = 'candidature' | 'recevabilite';
+
 interface OuverturePlisProps {
   onBack: () => void;
   procedures: any[];
   dossiers: any[];
+  /** Numéro de procédure (5 chiffres) pour pré-remplir et ouvrir directement une section (depuis le workflow) */
+  initialNumero?: string;
+  /** Section à ouvrir au chargement (Analyse des candidatures ou Recevabilité des offres) */
+  initialSection?: OuverturePlisSection;
+  /** Appelé après application de initialNumero/initialSection (pour réinitialiser en amont) */
+  onInitialApplied?: () => void;
 }
 
 type OngletType = 'candidature' | 'recevabilite';
@@ -71,11 +79,19 @@ interface Candidat {
   offreObservations: string;
 }
 
-const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossiers }) => {
-  const [searchNumero, setSearchNumero] = useState('');
+const OuverturePlis: React.FC<OuverturePlisProps> = ({
+  onBack,
+  procedures,
+  dossiers,
+  initialNumero = '',
+  initialSection,
+  onInitialApplied,
+}) => {
+  const [searchNumero, setSearchNumero] = useState(initialNumero || '');
   const [selectedProcedure, setSelectedProcedure] = useState<any>(null);
   const [ongletActif, setOngletActif] = useState<OngletType | null>(null);
   const [showRecevabilite, setShowRecevabilite] = useState(false);
+  const [initialApplied, setInitialApplied] = useState(false);
   const [candidats, setCandidats] = useState<Candidat[]>([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
@@ -140,6 +156,45 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
       setDemandeur('');
     }
   }, [searchNumero]);
+
+  // Ouverture directe depuis le workflow : appliquer initialNumero puis initialSection
+  useEffect(() => {
+    if (initialApplied || (!initialNumero && !initialSection)) return;
+
+    if (initialNumero && initialNumero.trim().length === 5) {
+      setSearchNumero(initialNumero);
+      if (procedures.length > 0) {
+        const procedure = procedures.find((p: any) => {
+          if (p['NumeroAfpa5Chiffres'] === initialNumero) return true;
+          const numAfpaComplet = p['Numéro de procédure (Afpa)'];
+          if (numAfpaComplet) {
+            const match = String(numAfpaComplet).match(/^(\d{5})/);
+            if (match && match[1] === initialNumero) return true;
+          }
+          return false;
+        });
+        if (procedure) {
+          setSelectedProcedure(procedure);
+          const dossierId = procedure['IDProjet'];
+          if (dossierId) {
+            const dossier = dossiers.find((d: any) => d.IDProjet === dossierId);
+            if (dossier?.['Demandeur']) setDemandeur(dossier['Demandeur']);
+          }
+        }
+      }
+    }
+  }, [initialNumero, initialSection, procedures, dossiers, initialApplied]);
+
+  useEffect(() => {
+    if (initialApplied || !initialSection || !selectedProcedure) return;
+    if (initialSection === 'candidature') {
+      setOngletActif('candidature');
+    } else if (initialSection === 'recevabilite') {
+      setShowRecevabilite(true);
+    }
+    setInitialApplied(true);
+    onInitialApplied?.();
+  }, [initialSection, selectedProcedure, initialApplied, onInitialApplied]);
 
   // Charger les candidats depuis les dépôts
   useEffect(() => {
@@ -269,178 +324,190 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
     }
   }, [selectedProcedure, ongletActif]);
 
-  // Vue tableau candidature
+  // Vue tableau candidature — pleine page, style DQE/BPU (teal, tableau pleine page)
   if (ongletActif === 'candidature' && selectedProcedure) {
+    const colClasses = 'border border-gray-300 dark:border-gray-600 px-2 py-1.5 text-sm bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2F5B58] focus:border-[#2F5B58] rounded min-w-0';
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#0d0f12] dark:via-[#121212] dark:to-[#0d0f12]">
-        {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 dark:bg-[#1E1E1E]/80 dark:border-[#333333] sticky top-0 z-10">
-          <div className="max-w-full mx-auto px-6 py-6">
-            <div className="flex items-center justify-between">
+      <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 overflow-hidden flex flex-col">
+        {/* En-tête fixe — style DQE */}
+        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm z-20 flex-shrink-0">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setOngletActif(null)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-xl transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
                 >
-                  <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <ArrowLeft className="w-5 h-5" />
+                  Retour
                 </button>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center">
-                    <UserCheck className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-black text-gray-900 dark:text-white">Analyse des candidatures</h1>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Procédure : {selectedProcedure?.['Référence procédure (plateforme)']}</p>
-                  </div>
-                </div>
+                <h1 className="text-xl font-bold text-[#2F5B58] dark:text-teal-400 border-l border-gray-300 dark:border-gray-600 pl-4">
+                  ANALYSE DES CANDIDATURES
+                </h1>
               </div>
-
-              {/* Bouton de sauvegarde et indicateurs */}
-              <div className="flex items-center gap-4">
-                {/* Erreur */}
+              <div className="flex items-center gap-2">
                 {error && (
                   <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
                     <AlertCircle className="w-4 h-4" />
                     <span>{error}</span>
                   </div>
                 )}
-
-                {/* Bouton de sauvegarde manuelle */}
                 <button
                   onClick={handleSaveCandidature}
                   disabled={saving || !candidats.length}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-xl transition-colors flex items-center gap-2 font-medium"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] hover:bg-[#234441] disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg transition font-medium"
                 >
                   {saving ? (
                     <>
                       <Cloud className="w-4 h-4 animate-spin" />
-                      <span>Sauvegarde...</span>
+                      Sauvegarde...
                     </>
                   ) : (
                     <>
                       <Cloud className="w-4 h-4" />
-                      <span>Sauvegarder</span>
+                      Enregistrer
                     </>
                   )}
                 </button>
-
-                {/* Message de succès */}
                 {showSaveSuccess && (
-                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium animate-fade-in">
+                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Sauvegardé avec succès !</span>
+                    Sauvegardé
                   </div>
                 )}
+              </div>
+            </div>
+            {/* Infos procédure — style DQE */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-800 rounded-lg p-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="font-semibold text-gray-600 dark:text-gray-400">Procédure :</span>{' '}
+                  <span className="text-gray-900 dark:text-white">{selectedProcedure?.['Référence procédure (plateforme)'] || searchNumero}</span>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-600 dark:text-gray-400">Marché :</span>{' '}
+                  <span className="text-gray-900 dark:text-white truncate block max-w-[200px]" title={String(selectedProcedure?.['Nom de la procédure'] || '')}>
+                    {selectedProcedure?.['Nom de la procédure'] || '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-600 dark:text-gray-400">Acheteur :</span>{' '}
+                  <span className="text-gray-900 dark:text-white">{selectedProcedure?.['Acheteur'] || '—'}</span>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-600 dark:text-gray-400">Candidats :</span>{' '}
+                  <span className="text-gray-900 dark:text-white font-medium">{candidats.length}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tableau avec catégories */}
-        <div className="max-w-full mx-auto px-6 py-8">
-          <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-gray-200 dark:border-[#333333] overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                {/* En-têtes de catégories */}
-                <thead>
-                  <tr>
-                    <th className="bg-gray-200 dark:bg-gray-700 px-2 py-3"></th>
-                    <th colSpan={7} className="bg-yellow-500 dark:bg-yellow-600 px-4 py-3 text-center text-sm font-black text-gray-900 dark:text-white border-r-2 border-white">
-                      Candidat
-                    </th>
-                    <th colSpan={1} className="bg-blue-500 dark:bg-blue-600 px-4 py-3 text-center text-sm font-black text-white border-r-2 border-white">
-                      Dépôt
-                    </th>
-                    <th colSpan={1} className="bg-green-500 dark:bg-green-600 px-4 py-3 text-center text-sm font-black text-white">
-                      Admission
-                    </th>
+        {/* Tableau pleine page — une seule ligne d'en-tête teal */}
+        <div className="flex-1 overflow-auto">
+          <div className="min-w-full inline-block align-top">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-[#2F5B58] text-white">
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold sticky left-0 bg-[#2F5B58] z-10" style={{ width: '44px', minWidth: '44px' }}></th>
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ width: '50px', minWidth: '50px' }}>N°</th>
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '90px' }}>Prénom</th>
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '140px' }}>Nom</th>
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '160px' }}>Société</th>
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '120px' }}>N° Siret/Siren</th>
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '180px' }}>Adresse</th>
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '120px' }}>Ville</th>
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '80px' }}>Lot</th>
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '110px' }}>Admis / Rejeté</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-900">
+                {candidats.map((candidat, index) => (
+                  <tr key={index} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="border border-gray-300 dark:border-gray-600 px-1 py-1 text-center sticky left-0 bg-white dark:bg-gray-900 z-[1]">
+                      <button
+                        onClick={() => handleOpenEditModal(index)}
+                        className="p-1.5 rounded hover:bg-[#2F5B58]/10 text-[#2F5B58] dark:text-teal-400 transition"
+                        title="Modifier"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-sm text-gray-900 dark:text-white text-center tabular-nums">{candidat.numero}</td>
+                    <td className="border border-gray-300 dark:border-gray-600 p-0">
+                      <input
+                        value={candidat.prenom}
+                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], prenom: e.target.value }; setCandidats(c); }}
+                        className={`w-full ${colClasses}`}
+                      />
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 p-0">
+                      <input
+                        value={candidat.nom}
+                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], nom: e.target.value }; setCandidats(c); }}
+                        className={`w-full ${colClasses}`}
+                      />
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 p-0">
+                      <input
+                        value={candidat.societe}
+                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], societe: e.target.value }; setCandidats(c); }}
+                        className={`w-full ${colClasses}`}
+                      />
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 p-0">
+                      <input
+                        value={candidat.siret}
+                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], siret: e.target.value }; setCandidats(c); }}
+                        className={`w-full ${colClasses}`}
+                      />
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 p-0">
+                      <input
+                        value={candidat.adresse}
+                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], adresse: e.target.value }; setCandidats(c); }}
+                        className={`w-full ${colClasses}`}
+                      />
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 p-0">
+                      <input
+                        value={candidat.ville}
+                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], ville: e.target.value }; setCandidats(c); }}
+                        className={`w-full ${colClasses}`}
+                      />
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 p-0">
+                      <input
+                        value={candidat.lot}
+                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], lot: e.target.value }; setCandidats(c); }}
+                        className={`w-full ${colClasses}`}
+                      />
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 p-0">
+                      <select
+                        value={candidat.admisRejete}
+                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], admisRejete: e.target.value }; setCandidats(c); }}
+                        className={`w-full ${colClasses}`}
+                      >
+                        <option value="">—</option>
+                        <option value="Admis">Admis</option>
+                        <option value="Rejeté">Rejeté</option>
+                      </select>
+                    </td>
                   </tr>
-                  {/* En-têtes de colonnes */}
-                  <tr className="border-t-2 border-gray-300">
-                    <th className="bg-gray-100 dark:bg-gray-800 px-2 py-2"></th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">N°</th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Prénom</th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Nom</th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Société</th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">N° Siret/Siren</th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r border-gray-300">Adresse</th>
-                    <th className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r-4 border-blue-500">Ville</th>
-                    
-                    <th className="bg-blue-100 dark:bg-blue-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white border-r-4 border-green-500">Lot</th>
-                    
-                    <th className="bg-green-100 dark:bg-green-900/30 px-2 py-2 text-xs font-bold text-gray-900 dark:text-white">Admis / Rejeté</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-[#1E1E1E]">
-                  {candidats.map((candidat, index) => (
-                    <tr key={index} className="border-t border-gray-200 dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-[#252525]">
-                      <td className="px-2 py-2 text-center">
-                        <button
-                          onClick={() => handleOpenEditModal(index)}
-                          className="p-1 rounded hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-                          title="Modifier"
-                        >
-                          <Pencil className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                        </button>
-                      </td>
-                      <td className="px-2 py-2 text-xs text-gray-900 dark:text-white text-center border-r border-gray-200">{candidat.numero}</td>
-                      <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r border-gray-200">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">-</option>
-                        </select>
-                      </td>
-                      <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r border-gray-200">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">{candidat.nom || '-'}</option>
-                        </select>
-                      </td>
-                      <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r border-gray-200">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">{candidat.societe || '-'}</option>
-                        </select>
-                      </td>
-                      <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r border-gray-200">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">{candidat.siret || '-'}</option>
-                        </select>
-                      </td>
-                      <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r border-gray-200">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">{candidat.adresse || '-'}</option>
-                        </select>
-                      </td>
-                      <td className="px-2 py-2 text-xs text-gray-900 dark:text-white border-r-4 border-blue-500">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">{candidat.ville || '-'}</option>
-                        </select>
-                      </td>
-                      
-                      <td className="px-2 py-2 text-xs border-r-4 border-green-500 bg-blue-50/30 dark:bg-blue-950/10">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">-</option>
-                        </select>
-                      </td>
-                      
-                      <td className="px-2 py-2 text-xs bg-green-50/30 dark:bg-green-950/10">
-                        <select className="w-full text-xs border rounded px-1 py-1 bg-white dark:bg-[#252525]">
-                          <option value="">-</option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Modale d'édition avec onglets */}
+        {/* Modale d'édition avec onglets — style teal cohérent DQE */}
         {editModalOpen && editCandidat && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col relative">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col relative border border-gray-200 dark:border-gray-700">
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-[#333333]">
-                <h2 className="text-2xl font-black text-purple-700 dark:text-purple-300">Candidat n°{editCandidat.numero} - {editCandidat.societe}</h2>
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-[#2F5B58] dark:text-teal-400">Candidat n°{editCandidat.numero} — {editCandidat.societe || 'Sans société'}</h2>
                 <button
                   onClick={handleCancelEdit}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -450,13 +517,13 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
               </div>
 
               {/* Onglets */}
-              <div className="flex gap-2 px-6 pt-4 border-b border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#252525]">
+              <div className="flex gap-2 px-6 pt-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                 <button
                   onClick={() => setActiveTab('info')}
                   className={`px-4 py-2 rounded-t-lg font-semibold transition-colors ${
                     activeTab === 'info'
-                      ? 'bg-white dark:bg-[#1E1E1E] text-purple-600 dark:text-purple-400 border-t-2 border-purple-600'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'
+                      ? 'bg-white dark:bg-gray-900 text-[#2F5B58] dark:text-teal-400 border-t-2 border-[#2F5B58]'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   Info Générale
@@ -465,8 +532,8 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                   onClick={() => setActiveTab('dc1')}
                   className={`px-4 py-2 rounded-t-lg font-semibold transition-colors ${
                     activeTab === 'dc1'
-                      ? 'bg-white dark:bg-[#1E1E1E] text-orange-600 dark:text-orange-400 border-t-2 border-orange-600'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'
+                      ? 'bg-white dark:bg-gray-900 text-orange-600 dark:text-orange-400 border-t-2 border-orange-600'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   DC1
@@ -475,8 +542,8 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                   onClick={() => setActiveTab('dc2')}
                   className={`px-4 py-2 rounded-t-lg font-semibold transition-colors ${
                     activeTab === 'dc2'
-                      ? 'bg-white dark:bg-[#1E1E1E] text-blue-600 dark:text-blue-400 border-t-2 border-blue-600'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'
+                      ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 border-t-2 border-blue-600'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   DC2
@@ -485,8 +552,8 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                   onClick={() => setActiveTab('assurances')}
                   className={`px-4 py-2 rounded-t-lg font-semibold transition-colors ${
                     activeTab === 'assurances'
-                      ? 'bg-white dark:bg-[#1E1E1E] text-green-600 dark:text-green-400 border-t-2 border-green-600'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'
+                      ? 'bg-white dark:bg-gray-900 text-green-600 dark:text-green-400 border-t-2 border-green-600'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   Assurances
@@ -495,8 +562,8 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                   onClick={() => setActiveTab('offre')}
                   className={`px-4 py-2 rounded-t-lg font-semibold transition-colors ${
                     activeTab === 'offre'
-                      ? 'bg-white dark:bg-[#1E1E1E] text-indigo-600 dark:text-indigo-400 border-t-2 border-indigo-600'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'
+                      ? 'bg-white dark:bg-gray-900 text-[#2F5B58] dark:text-teal-400 border-t-2 border-[#2F5B58]'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   Offre
@@ -510,39 +577,39 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Prénom</label>
-                      <input type="text" value={editCandidat.prenom} onChange={e => handleEditField('prenom', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="text" value={editCandidat.prenom} onChange={e => handleEditField('prenom', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:ring-2 focus:ring-[#2F5B58]/20 focus:outline-none" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Nom</label>
-                      <input type="text" value={editCandidat.nom} onChange={e => handleEditField('nom', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="text" value={editCandidat.nom} onChange={e => handleEditField('nom', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:ring-2 focus:ring-[#2F5B58]/20 focus:outline-none" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Société</label>
-                      <input type="text" value={editCandidat.societe} onChange={e => handleEditField('societe', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="text" value={editCandidat.societe} onChange={e => handleEditField('societe', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:ring-2 focus:ring-[#2F5B58]/20 focus:outline-none" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">N° Siret/Siren</label>
-                      <input type="text" value={editCandidat.siret} onChange={e => handleEditField('siret', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="text" value={editCandidat.siret} onChange={e => handleEditField('siret', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:ring-2 focus:ring-[#2F5B58]/20 focus:outline-none" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                      <input type="email" value={editCandidat.email} onChange={e => handleEditField('email', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="email" value={editCandidat.email} onChange={e => handleEditField('email', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:ring-2 focus:ring-[#2F5B58]/20 focus:outline-none" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Téléphone</label>
-                      <input type="tel" value={editCandidat.telephone} onChange={e => handleEditField('telephone', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="tel" value={editCandidat.telephone} onChange={e => handleEditField('telephone', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:ring-2 focus:ring-[#2F5B58]/20 focus:outline-none" />
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Adresse</label>
-                      <input type="text" value={editCandidat.adresse} onChange={e => handleEditField('adresse', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="text" value={editCandidat.adresse} onChange={e => handleEditField('adresse', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:ring-2 focus:ring-[#2F5B58]/20 focus:outline-none" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Code Postal</label>
-                      <input type="text" value={editCandidat.codePostal} onChange={e => handleEditField('codePostal', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="text" value={editCandidat.codePostal} onChange={e => handleEditField('codePostal', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:ring-2 focus:ring-[#2F5B58]/20 focus:outline-none" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Ville</label>
-                      <input type="text" value={editCandidat.ville} onChange={e => handleEditField('ville', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="text" value={editCandidat.ville} onChange={e => handleEditField('ville', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:ring-2 focus:ring-[#2F5B58]/20 focus:outline-none" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">Lot</label>
@@ -703,36 +770,36 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                 {/* Onglet Offre */}
                 {activeTab === 'offre' && (
                   <div className="space-y-4">
-                    <div className="bg-indigo-50 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-200 dark:border-indigo-500/30">
-                      <h3 className="text-sm font-black text-indigo-700 dark:text-indigo-300 mb-3">Détail de l'offre</h3>
+                    <div className="bg-green-50 dark:bg-teal-950/20 p-4 rounded-xl border border-[#2F5B58]/20 dark:border-teal-500/30">
+                      <h3 className="text-sm font-black text-[#2F5B58] dark:text-teal-300 mb-3">Détail de l'offre</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Prix de base (€)</label>
-                          <input type="text" value={editCandidat.offrePrixBase} onChange={e => handleEditField('offrePrixBase', e.target.value)} className="w-full px-3 py-2 border-2 border-indigo-300 dark:border-indigo-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-indigo-500 focus:outline-none" />
+                          <input type="text" value={editCandidat.offrePrixBase} onChange={e => handleEditField('offrePrixBase', e.target.value)} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Prix options (€)</label>
-                          <input type="text" value={editCandidat.offrePrixOptions} onChange={e => handleEditField('offrePrixOptions', e.target.value)} className="w-full px-3 py-2 border-2 border-indigo-300 dark:border-indigo-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-indigo-500 focus:outline-none" />
+                          <input type="text" value={editCandidat.offrePrixOptions} onChange={e => handleEditField('offrePrixOptions', e.target.value)} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Prix total (€)</label>
-                          <input type="text" value={editCandidat.offrePrixTotal} onChange={e => handleEditField('offrePrixTotal', e.target.value)} className="w-full px-3 py-2 border-2 border-indigo-300 dark:border-indigo-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-indigo-500 focus:outline-none" />
+                          <input type="text" value={editCandidat.offrePrixTotal} onChange={e => handleEditField('offrePrixTotal', e.target.value)} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Délai d'exécution</label>
-                          <input type="text" value={editCandidat.offreDelai} onChange={e => handleEditField('offreDelai', e.target.value)} className="w-full px-3 py-2 border-2 border-indigo-300 dark:border-indigo-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-indigo-500 focus:outline-none" />
+                          <input type="text" value={editCandidat.offreDelai} onChange={e => handleEditField('offreDelai', e.target.value)} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Validité de l'offre</label>
-                          <input type="text" value={editCandidat.offreValidite} onChange={e => handleEditField('offreValidite', e.target.value)} placeholder="Ex: 90 jours" className="w-full px-3 py-2 border-2 border-indigo-300 dark:border-indigo-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-indigo-500 focus:outline-none" />
+                          <input type="text" value={editCandidat.offreValidite} onChange={e => handleEditField('offreValidite', e.target.value)} placeholder="Ex: 90 jours" className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
                         </div>
                         <div className="md:col-span-2">
                           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Variantes proposées</label>
-                          <textarea value={editCandidat.offreVariantes} onChange={e => handleEditField('offreVariantes', e.target.value)} rows={3} className="w-full px-3 py-2 border-2 border-indigo-300 dark:border-indigo-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-indigo-500 focus:outline-none" />
+                          <textarea value={editCandidat.offreVariantes} onChange={e => handleEditField('offreVariantes', e.target.value)} rows={3} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
                         </div>
                         <div className="md:col-span-2">
                           <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Observations</label>
-                          <textarea value={editCandidat.offreObservations} onChange={e => handleEditField('offreObservations', e.target.value)} rows={4} className="w-full px-3 py-2 border-2 border-indigo-300 dark:border-indigo-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-indigo-500 focus:outline-none" />
+                          <textarea value={editCandidat.offreObservations} onChange={e => handleEditField('offreObservations', e.target.value)} rows={4} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
                         </div>
                       </div>
                     </div>
@@ -749,7 +816,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                   <button onClick={handleCancelEdit} className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                     Annuler
                   </button>
-                  <button onClick={handleSaveEdit} className="flex items-center gap-2 px-6 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors">
+                  <button onClick={handleSaveEdit} className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[#2F5B58] text-white font-semibold hover:bg-[#234441] transition-colors">
                     <Save className="w-4 h-4" />
                     Enregistrer tout
                   </button>
@@ -793,8 +860,8 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                 <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center">
-                  <PackageOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                <div className="w-12 h-12 rounded-xl bg-[#2F5B58]/10 dark:bg-teal-500/20 flex items-center justify-center">
+                  <PackageOpen className="w-6 h-6 text-[#2F5B58] dark:text-teal-400" />
                 </div>
                 <div>
                   <h1 className="text-2xl font-black text-gray-900 dark:text-white">Ouverture des plis</h1>
@@ -811,8 +878,8 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
         {/* Étape 1 : Sélectionner une procédure */}
         <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-gray-200 dark:border-[#333333] p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center">
-              <span className="text-purple-600 dark:text-purple-400 font-black">1</span>
+            <div className="w-8 h-8 rounded-lg bg-[#2F5B58]/10 dark:bg-teal-500/20 flex items-center justify-center">
+              <span className="text-[#2F5B58] dark:text-teal-400 font-black">1</span>
             </div>
             <h2 className="text-lg font-black text-gray-900 dark:text-white">Sélectionner une procédure</h2>
           </div>
@@ -830,11 +897,11 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                   onKeyPress={(e) => e.key === 'Enter' && handleSearchProcedure()}
                   placeholder="Ex: 25006"
                   maxLength={5}
-                  className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-[#333333] bg-white dark:bg-[#252525] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500 dark:focus:border-purple-400 transition-colors"
+                  className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-[#333333] bg-white dark:bg-[#252525] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#2F5B58] dark:focus:border-teal-400 transition-colors"
                 />
                 <button
                   onClick={handleSearchProcedure}
-                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-semibold rounded-xl transition-colors flex items-center gap-2"
+                  className="px-6 py-3 bg-[#2F5B58] hover:bg-[#234441] dark:bg-teal-600 dark:hover:bg-teal-500 text-white font-semibold rounded-xl transition-colors flex items-center gap-2"
                 >
                   <Search className="w-4 h-4" />
                   Rechercher
@@ -844,7 +911,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
 
             {/* Affichage de la procédure sélectionnée */}
             {selectedProcedure && (
-              <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-500/30 rounded-xl">
+              <div className="mt-4 p-4 bg-green-50 dark:bg-teal-950/20 border border-[#2F5B58]/20 dark:border-teal-500/30 rounded-xl">
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="font-bold text-gray-700 dark:text-gray-300">Procédure sélectionnée :</span>{' '}
@@ -889,7 +956,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                   value={msa}
                   onChange={(e) => setMsa(e.target.value)}
                   placeholder="Nom du MSA"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-[#333333] bg-white dark:bg-[#252525] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500 dark:focus:border-purple-400 transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-[#333333] bg-white dark:bg-[#252525] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#2F5B58] dark:focus:border-teal-400 transition-colors"
                 />
               </div>
 
@@ -902,7 +969,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                   value={valideurTechnique}
                   onChange={(e) => setValideurTechnique(e.target.value)}
                   placeholder="Nom du valideur"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-[#333333] bg-white dark:bg-[#252525] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500 dark:focus:border-purple-400 transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-[#333333] bg-white dark:bg-[#252525] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#2F5B58] dark:focus:border-teal-400 transition-colors"
                 />
               </div>
 
@@ -926,11 +993,11 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <button
               onClick={() => setOngletActif('candidature')}
-              className="group bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-purple-200 dark:border-purple-500/40 hover:border-purple-400 dark:hover:border-purple-400 p-8 transition-all hover:shadow-xl hover:-translate-y-1"
+              className="group bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-[#2F5B58]/20 dark:border-teal-500/40 hover:border-[#2F5B58] dark:hover:border-teal-400 p-8 transition-all hover:shadow-xl hover:-translate-y-1"
             >
               <div className="flex flex-col items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <UserCheck className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                <div className="w-16 h-16 rounded-2xl bg-[#2F5B58]/10 dark:bg-teal-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <UserCheck className="w-8 h-8 text-[#2F5B58] dark:text-teal-400" />
                 </div>
                 <div className="text-center">
                   <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Analyse candidature</h3>
@@ -943,11 +1010,11 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
 
             <button
               onClick={() => setShowRecevabilite(true)}
-              className="group bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-blue-200 dark:border-blue-500/40 hover:border-blue-400 dark:hover:border-blue-400 p-8 transition-all hover:shadow-xl hover:-translate-y-1"
+              className="group bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-emerald-200 dark:border-emerald-500/40 hover:border-emerald-400 dark:hover:border-emerald-400 p-8 transition-all hover:shadow-xl hover:-translate-y-1"
             >
               <div className="flex flex-col items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <FileCheck className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                <div className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileCheck className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="text-center">
                   <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Recevabilité des offres</h3>
@@ -966,7 +1033,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
             <h2 className="text-lg font-black text-gray-900 dark:text-white mb-4">Liste des candidatures reçues</h2>
             
             {/* Informations de la procédure */}
-            <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-950/10 rounded-xl border border-purple-200 dark:border-purple-500/30">
+            <div className="mb-6 p-4 bg-green-50 dark:bg-teal-950/10 rounded-xl border border-[#2F5B58]/20 dark:border-teal-500/30">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div>
                   <span className="font-semibold text-gray-700 dark:text-gray-300">Référence :</span>{' '}
@@ -990,7 +1057,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
                 </div>
                 <div>
                   <span className="font-semibold text-gray-700 dark:text-gray-300">Total candidatures :</span>{' '}
-                  <span className="text-purple-600 dark:text-purple-400 font-bold">
+                  <span className="text-[#2F5B58] dark:text-teal-400 font-bold">
                     {depotsData.stats.totalEnveloppesElectroniques + depotsData.stats.totalEnveloppesPapier}
                   </span>
                 </div>
@@ -1000,7 +1067,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
             {/* Tableau des candidatures */}
             <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-[#333333]">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-[#333333]">
-                <thead className="bg-purple-50 dark:bg-purple-950/20">
+                <thead className="bg-green-50 dark:bg-teal-950/20">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                       N°
@@ -1091,9 +1158,9 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({ onBack, procedures, dossi
         {selectedProcedure && ongletActif === 'candidature' && (
           <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-gray-200 dark:border-[#333333] overflow-hidden">
             {/* Section title */}
-            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 px-6 py-4 border-b border-gray-200 dark:border-[#333333]">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-teal-950/20 dark:to-emerald-950/20 px-6 py-4 border-b border-gray-200 dark:border-[#333333]">
               <div className="flex items-center gap-3">
-                <UserCheck className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                <UserCheck className="w-6 h-6 text-[#2F5B58] dark:text-teal-400" />
                 <h2 className="text-xl font-black text-gray-900 dark:text-white">Analyse des candidatures</h2>
               </div>
             </div>

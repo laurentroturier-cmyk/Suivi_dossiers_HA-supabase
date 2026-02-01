@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell, Construction } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell, Construction, GitBranch } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (tab: string) => void;
@@ -107,6 +107,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
         { label: 'Ouverture des plis', tab: 'ouverture-plis', isAdmin: false, icon: PackageOpen, color: 'text-purple-600 dark:text-purple-400' },
         { label: 'Analyse AN01', tab: 'an01', isAdmin: false, icon: LineChart, color: 'text-emerald-600 dark:text-emerald-400' },
         { label: 'Rapport de Présentation', tab: 'rapport-presentation', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
+        { label: 'Analyse des offres DQE', tab: 'analyse-offres-dqe', isAdmin: false, icon: BarChart3, color: 'text-teal-600 dark:text-teal-400' },
       ]
     },
     {
@@ -152,6 +153,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
         { label: 'Paramètres', tab: 'admin', isAdmin: true },
+      ]
+    },
+    {
+      id: 'endev',
+      titre: 'EN Dev',
+      description: 'Fonctionnalités en cours de développement et maquettes',
+      icon: GitBranch,
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      iconBg: 'bg-amber-100 dark:bg-amber-500/20',
+      borderColor: 'border-amber-200 dark:border-amber-500/40',
+      borderHover: 'hover:border-amber-400 dark:hover:border-amber-400',
+      btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
+      btnText: 'text-gray-700 dark:text-gray-200',
+      isExperimental: true,
+      actions: [
+        { label: 'Workflow Analyse des offres', tab: 'workflow-analyse-offres', isAdmin: false, icon: BarChart3, color: 'text-[#004d3d] dark:text-cyan-400' },
       ]
     },
   ];

@@ -2,7 +2,7 @@
  * Barrel file - Export centralisé de tous les composants et utilitaires du module analyse
  */
 
-// Composants
+// Composants (ré-export pour éviter dépendance circulaire avec redaction → NotificationsQuickAccess → analyse)
 export { default as Noti1Modal } from './components/Noti1Modal';
 export { default as Noti3Modal } from './components/Noti3Modal';
 export { default as Noti5Modal } from './components/Noti5Modal';
