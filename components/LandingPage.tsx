@@ -107,7 +107,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
         { label: 'Ouverture des plis', tab: 'ouverture-plis', isAdmin: false, icon: PackageOpen, color: 'text-purple-600 dark:text-purple-400' },
         { label: 'Analyse AN01', tab: 'an01', isAdmin: false, icon: LineChart, color: 'text-emerald-600 dark:text-emerald-400' },
         { label: 'Rapport de Présentation', tab: 'rapport-presentation', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
-        { label: 'Analyse des offres DQE', tab: 'analyse-offres-dqe', isAdmin: false, icon: BarChart3, color: 'text-teal-600 dark:text-teal-400' },
+
       ]
     },
     {

@@ -17,13 +17,15 @@ import {
   UserCheck,
   UserX,
   Mail,
-  Zap
+  Zap,
+  Building2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../../lib/supabase';
 import { UserProfile, DataRecord, AccessRequest } from '../../../types/auth';
 import { PROJECT_FIELDS, DOSSIER_FIELDS, PROCEDURE_GROUPS } from '../../../constants';
 import DataImport from './DataImport';
+import GestionCentres from './GestionCentres';
 
 interface AdminDashboardProps {
   profile: UserProfile;
@@ -37,7 +39,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   const [error, setError] = useState<string | null>(null);
   const [rlsError, setRlsError] = useState(false);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
-  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import'>('data');
+  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import' | 'centres'>('data');
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -395,6 +397,16 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                 >
                   <FileSpreadsheet className="w-4 h-4" />
                   Import de données
+                </button>
+
+                <button 
+                  onClick={() => setActiveTab('centres')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'centres' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4" />
+                  Gestion Centres
                 </button>
 
                 <button 
@@ -968,6 +980,11 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         {/* Import Data Tab */}
         {activeTab === 'import' && (
           <DataImport />
+        )}
+
+        {/* Gestion Centres Tab - ADMIN ONLY */}
+        {activeTab === 'centres' && profile.role === 'admin' && (
+          <GestionCentres profile={profile} />
         )}
       </main>
     </div>

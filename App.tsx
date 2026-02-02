@@ -50,7 +50,6 @@ import ImmobilierPage from './pages/ImmobilierPage';
 import { RapportPresentation } from './components/analyse';
 import { AppVersion } from './components/AppVersion';
 import { AnalyseOverview } from './components/an01';
-import { AnalyseOffresDQE } from './components/analyse-offres-dqe';
 import { WorkflowAnalyseOffres } from './components/workflow-analyse-offres';
 import DashboardPage from './pages/DashboardPage';
 
@@ -1539,6 +1538,7 @@ const App: React.FC = () => {
 
   // Fonction de reset spécifique aux filtres PROJETS
   const resetProjectFilters = () => {
+    setProjectSearch('');
     setSelectedAcheteurs([]);
     setSelectedFamilies([]);
     setSelectedPriorities([]);
@@ -1549,6 +1549,8 @@ const App: React.FC = () => {
 
   // Fonction de reset spécifique aux filtres PROCÉDURES
   const resetProcedureFilters = () => {
+    setProjectSearch('');
+    setProcedureSearch('');
     setSelectedAcheteurs([]); // Reset acheteur car maintenant partagé avec procédures
     setSelectedProcTypes([]);
     setSelectedYears([]);
@@ -2879,7 +2881,7 @@ const App: React.FC = () => {
                     'an01': 'AN01',
                     'ouverture-plis': 'Ouverture des plis',
                     'rapport-presentation': 'Rapport de Présentation',
-                    'analyse-offres-dqe': 'Analyse des offres DQE',
+
                     'workflow-analyse-offres': 'Workflow Analyse des offres',
                     'contrats': 'Contrats',
                     'export': 'Exports & données',
@@ -2955,19 +2957,10 @@ const App: React.FC = () => {
                   'depots': 'Registre Dépôts',
                   'an01': 'AN01',
                   'rapport': 'Rapport de Présentation',
-                  'analyse-offres-dqe': 'Analyse des offres DQE',
                 };
                 const actualTab = tab === 'rapport' ? 'rapport-presentation' : tab;
                 navigateTo(actualTab as any, titles[tab] || tab);
               }} />
-            )}
-
-            {activeTab === 'analyse-offres-dqe' && (
-              <AnalyseOffresDQE
-                onClose={() => {
-                  handleGoBack();
-                }}
-              />
             )}
 
             {activeTab === 'workflow-analyse-offres' && (

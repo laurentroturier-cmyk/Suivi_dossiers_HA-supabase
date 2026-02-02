@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
     paddingTop: 90,
     paddingBottom: 70,
     paddingHorizontal: 50,
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Helvetica',
     backgroundColor: '#ffffff',
   },
@@ -104,6 +104,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textAlign: 'center',
     marginBottom: 10,
+    textDecoration: 'underline',
   },
   
   titleH2: {
@@ -112,6 +113,7 @@ const styles = StyleSheet.create({
     color: '#0f766e',
     textAlign: 'center',
     marginBottom: 20,
+    textDecoration: 'underline',
   },
   
   // Chapitre
@@ -125,10 +127,11 @@ const styles = StyleSheet.create({
     color: '#0f766e',
     marginBottom: 10,
     marginTop: 10,
+    textDecoration: 'underline',
   },
   
   chapterContent: {
-    fontSize: 9,
+    fontSize: 11,
     color: '#334155',
     lineHeight: 1.5,
   },
@@ -140,11 +143,12 @@ const styles = StyleSheet.create({
     color: '#475569',
     marginTop: 8,
     marginBottom: 4,
+    textDecoration: 'underline',
   },
   
   // Paragraphe
   paragraph: {
-    fontSize: 9,
+    fontSize: 11,
     color: '#334155',
     lineHeight: 1.5,
     marginBottom: 8,
@@ -152,7 +156,7 @@ const styles = StyleSheet.create({
   
   // Liste
   listItem: {
-    fontSize: 9,
+    fontSize: 11,
     color: '#334155',
     lineHeight: 1.5,
     marginBottom: 4,
@@ -180,6 +184,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#cbd5e1',
     borderRadius: 4,
+    breakInside: 'avoid',
   },
   
   tableHeader: {
@@ -468,7 +473,7 @@ export const RapportPresentationPDF = ({
                       {lot.nomLot}
                     </Text>
                     {lot.tableau && lot.tableau.length > 0 && (
-                      <View style={styles.table}>
+                      <View style={styles.table} wrap={false}>
                         <View style={styles.tableHeader}>
                           <Text style={[styles.tableCellHeader, { width: '30%' }]}>Raison sociale</Text>
                           <Text style={[styles.tableCellHeader, { width: '10%', textAlign: 'center' }]}>Rang</Text>
@@ -512,7 +517,7 @@ export const RapportPresentationPDF = ({
               </>
             ) : data?.section7_valeurOffres?.tableau ? (
               /* SINON : afficher le tableau unique */
-              <View style={styles.table}>
+              <View style={styles.table} wrap={false}>
                 <View style={styles.tableHeader}>
                   <Text style={[styles.tableCellHeader, { width: '10%', textAlign: 'center' }]}>Rang</Text>
                   <Text style={[styles.tableCellHeader, { width: '30%' }]}>Raison sociale</Text>

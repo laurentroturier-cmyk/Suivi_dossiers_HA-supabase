@@ -2,7 +2,7 @@ import React from 'react';
 import { Download, Upload, LineChart, Info, FileText, BarChart3 } from 'lucide-react';
 
 interface AnalyseOverviewProps {
-  onNavigate: (tab: 'retraits' | 'depots' | 'an01' | 'rapport' | 'analyse-offres-dqe') => void;
+  onNavigate: (tab: 'retraits' | 'depots' | 'an01' | 'rapport') => void;
 }
 
 const AnalyseOverview: React.FC<AnalyseOverviewProps> = ({ onNavigate }) => {
@@ -46,16 +46,6 @@ const AnalyseOverview: React.FC<AnalyseOverviewProps> = ({ onNavigate }) => {
       iconBg: 'bg-purple-100 dark:bg-purple-500/20',
       borderColor: 'border-purple-200 dark:border-purple-500/40',
       action: () => onNavigate('rapport'),
-    },
-    {
-      id: 'analyse-offres-dqe',
-      title: 'Analyse des offres DQE',
-      description: "Charger les DQE Excel par lot et par candidat, comparer les montants et analyser les offres",
-      icon: BarChart3,
-      iconColor: 'text-[#2F5B58] dark:text-teal-400',
-      iconBg: 'bg-teal-100 dark:bg-teal-500/20',
-      borderColor: 'border-teal-200 dark:border-teal-500/40',
-      action: () => onNavigate('analyse-offres-dqe'),
     },
   ];
 
