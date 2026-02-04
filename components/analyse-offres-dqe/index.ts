@@ -1,0 +1,2 @@
+export { AnalyseOffresDQE } from './AnalyseOffresDQE';
+

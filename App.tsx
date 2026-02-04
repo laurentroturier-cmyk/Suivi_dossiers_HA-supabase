@@ -51,6 +51,7 @@ import { RapportPresentation } from './components/analyse';
 import { AppVersion } from './components/AppVersion';
 import { AnalyseOverview } from './components/an01';
 import { WorkflowAnalyseOffres } from './components/workflow-analyse-offres';
+import { AnalyseOffresDQE } from './components/analyse-offres-dqe';
 import DashboardPage from './pages/DashboardPage';
 
 import { 
@@ -2879,10 +2880,10 @@ const App: React.FC = () => {
                     'retraits': 'Registre Retraits',
                     'depots': 'Registre Dépôts',
                     'an01': 'AN01',
-                    'ouverture-plis': 'Ouverture des plis',
-                    'rapport-presentation': 'Rapport de Présentation',
-
-                    'workflow-analyse-offres': 'Workflow Analyse des offres',
+                  'ouverture-plis': 'Ouverture des plis',
+                  'rapport-presentation': 'Rapport de Présentation',
+                  'analyse-offres-dqe': 'Analyse des offres DQE',
+                  'workflow-analyse-offres': 'Workflow Analyse des offres',
                     'contrats': 'Contrats',
                     'export': 'Exports & données',
                     'detail': 'Détail',
@@ -2986,6 +2987,14 @@ const App: React.FC = () => {
                   navigateTo('ouverture-plis', 'Ouverture des plis');
                 }}
                 onNavigateToRapportPresentation={() => navigateTo('rapport-presentation', 'Rapport de Présentation')}
+              />
+            )}
+
+            {activeTab === 'analyse-offres-dqe' && (
+              <AnalyseOffresDQE
+                onClose={() => {
+                  handleGoBack();
+                }}
               />
             )}
 

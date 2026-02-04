@@ -3,7 +3,7 @@
 // Charge les DQE Excel par lot / par candidat et affiche une analyse comparative
 // ============================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Search,
   Upload,
@@ -20,6 +20,16 @@ import {
   CheckCircle,
   Database,
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend as RechartsLegend,
+  ResponsiveContainer,
+} from 'recharts';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
 import { ProcedureSelector } from '../dce-complet/components/shared/ProcedureSelector';
@@ -53,6 +63,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
   const [loadingFile, setLoadingFile] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newCandidatName, setNewCandidatName] = useState('');
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [viewingDQELot, setViewingDQELot] = useState<number | null>(null);
   const [dqeData, setDqeData] = useState<any>(null);
@@ -68,6 +79,10 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
   const [hasSavedData, setHasSavedData] = useState(false);
   const [loadingFromSupabase, setLoadingFromSupabase] = useState(false);
   const [savingToSupabase, setSavingToSupabase] = useState(false);
+  const [fullPageCandidatId, setFullPageCandidatId] = useState<string | null>(null);
+  const [fullPageComparison, setFullPageComparison] = useState(false);
+  const [lastManualSaveAt, setLastManualSaveAt] = useState<string | null>(null);
+  const [showAllCandidates, setShowAllCandidates] = useState(false);
 
   const procedureResult = useProcedure(numeroProcedure.length === 5 ? numeroProcedure : null);
 
@@ -278,21 +293,35 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
       
       for (const candidat of candidats) {
         const lignes = await AnalyseOffresDQEService.loadLignesCandidat(candidat.id);
-        
+
         const candidatDQE: CandidatDQE = {
           id: candidat.id,
           name: candidat.nom_candidat,
           totalHT: candidat.total_ht || 0,
           totalTVA: candidat.total_tva || 0,
           totalTTC: candidat.total_ttc || 0,
-          rows: lignes.map(ligne => ({
-            numero: ligne.numero || '',
-            designation: ligne.designation || '',
-            unite: ligne.unite || '',
-            quantite: ligne.quantite || 0,
-            prix_unitaire: ligne.prix_unitaire || 0,
-            prix_total: ligne.prix_total || 0,
-          })),
+          rows: lignes.map((ligne) => {
+            const anyLigne = ligne as any;
+            const prixUnitaire =
+              anyLigne.prix_unitaire ??
+              anyLigne.prix_unitaire_ht ??
+              anyLigne.pu_ht ??
+              anyLigne.prixUnitaire ??
+              0;
+            const prixTotal =
+              anyLigne.prix_total ??
+              anyLigne.montant_ht ??
+              anyLigne.montantHT ??
+              0;
+            return {
+              numero: anyLigne.numero || anyLigne.code_article || '',
+              designation: anyLigne.designation || '',
+              unite: anyLigne.unite || '',
+              quantite: anyLigne.quantite || 0,
+              prix_unitaire: prixUnitaire,
+              prix_total: prixTotal,
+            };
+          }),
         };
         
         const lotKey = String(candidat.numero_lot);
@@ -348,15 +377,14 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
       
       setAnalyseId(analyse.id);
       
-      // Préparer les lignes au bon format
-      const lignes = (candidat.rows || []).map((row, index) => ({
-        numero_ligne: index + 1,
-        code_article: row.numero || '',
+      // Préparer les lignes au bon format attendu par le service local (noms simples)
+      const lignes = (candidat.rows || []).map((row) => ({
+        numero: row.numero || '',
         designation: row.designation || '',
         unite: row.unite || '',
         quantite: row.quantite || 0,
-        prix_unitaire_ht: row.prix_unitaire || 0,
-        montant_ht: row.prix_total || 0,
+        prix_unitaire: row.prix_unitaire || 0,
+        prix_total: row.prix_total || 0,
       }));
       
       // Sauvegarder le candidat avec ses lignes
@@ -421,6 +449,60 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
 
   const analysisRows = currentCandidats.length > 0 ? currentCandidats[0].rows : [];
   const analysisCandidats = currentCandidats;
+
+  // Notes prix selon la méthode GRAMP (proportionnelle inverse) sur 100 points :
+  // Note = (Prix le plus bas / Prix de l'offre) × 100
+  const scoresByCandidatId = useMemo(() => {
+    if (analysisCandidats.length === 0) return {} as Record<string, number>;
+
+    const totals = analysisCandidats
+      .map((c) => c.totalHT || 0)
+      .filter((v) => v > 0);
+    if (totals.length === 0) return {} as Record<string, number>;
+
+    const minTotal = Math.min(...totals);
+    const maxScore = 100;
+    const scores: Record<string, number> = {};
+
+    analysisCandidats.forEach((c) => {
+      const total = c.totalHT || 0;
+      if (total <= 0) {
+        scores[c.id] = 0;
+      } else {
+        const ratio = minTotal / total;
+        const score = Math.round(Math.min(maxScore, Math.max(0, ratio * maxScore)));
+        scores[c.id] = score;
+      }
+    });
+
+    return scores;
+  }, [analysisCandidats]);
+
+  // Données agrégées pour les graphiques (Vue d'ensemble)
+  const dashboardChartData = useMemo(() => {
+    if (analysisCandidats.length === 0 || analysisRows.length === 0) return [];
+
+    // Regrouper par "catégorie" simple à partir du début du code article
+    // Exemple: PC-001 -> "PC", ECR-001 -> "ECR"
+    const byCategory: Record<string, { name: string; [key: string]: number | string }> = {};
+
+    analysisCandidats.forEach((candidat) => {
+      candidat.rows.forEach((row) => {
+        const code = row.numero || '';
+        const prefix = code.split('-')[0] || 'Autres';
+        const catKey = prefix.toUpperCase();
+
+        if (!byCategory[catKey]) {
+          byCategory[catKey] = { name: catKey };
+        }
+        const key = candidat.name;
+        const montant = row.prix_total || 0;
+        byCategory[catKey][key] = ((byCategory[catKey][key] as number) || 0) + montant;
+      });
+    });
+
+    return Object.values(byCategory);
+  }, [analysisCandidats, analysisRows]);
 
   const loadDQEForLot = async (lotNum: number) => {
     setLoadingDQE(true);
@@ -747,37 +829,457 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
     );
   }
 
+  // Sauvegarde manuelle de l'état courant (toutes les offres chargées)
+  const handleManualSave = async () => {
+    if (!numeroProcedure || numeroProcedure.length !== 5) return;
+    if (Object.keys(candidatsByLot).length === 0) return;
+
+    setSavingToSupabase(true);
+    setError(null);
+    try {
+      // Réinitialiser l'analyse stockée puis la reconstruire depuis l'état courant
+      await AnalyseOffresDQEService.resetAnalyse(numeroProcedure);
+      const analyse = await AnalyseOffresDQEService.getOrCreateAnalyse(numeroProcedure);
+      if (!analyse) {
+        throw new Error("Impossible de créer ou récupérer l'analyse");
+      }
+
+      for (const [lotKey, candidatsLot] of Object.entries(candidatsByLot)) {
+        const lotNum = Number(lotKey);
+        if (!Number.isFinite(lotNum)) continue;
+
+        for (const candidat of candidatsLot) {
+          const lignes = (candidat.rows || []).map((row) => ({
+            numero: row.numero || '',
+            designation: row.designation || '',
+            unite: row.unite || '',
+            quantite: row.quantite || 0,
+            prix_unitaire: row.prix_unitaire || 0,
+            prix_total: row.prix_total || 0,
+          }));
+
+          await AnalyseOffresDQEService.saveCandidatDQE(
+            analyse.id,
+            lotNum,
+            null,
+            candidat.name,
+            candidat.totalHT || 0,
+            candidat.totalTVA || 0,
+            candidat.totalTTC || 0,
+            lignes
+          );
+        }
+      }
+
+      setHasSavedData(true);
+      console.log('✅ Sauvegarde manuelle de l’analyse DQE effectuée');
+      setLastManualSaveAt(
+        new Date().toLocaleString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      );
+    } catch (err: any) {
+      console.error('Erreur sauvegarde manuelle DQE:', err);
+      setError(err.message || 'Erreur lors de la sauvegarde');
+    } finally {
+      setSavingToSupabase(false);
+    }
+  };
+
+  // Vue plein écran pour la comparaison multi-offres
+  if (fullPageComparison && analysisCandidats.length >= 2 && analysisRows.length > 0) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900">
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setFullPageComparison(false)}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Retour
+              </button>
+              <div>
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
+                  Synthèse comparative ligne par ligne
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Procédure {numeroProcedure} — Lot {selectedLotNum} — {getLotName(selectedLotNum)}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={exportToExcel}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#2F5B58] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#234441]"
+            >
+              <FileDown className="h-3.5 w-3.5" />
+              Exporter Excel
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-auto px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-900">
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-auto bg-white dark:bg-gray-900">
+            <table className="min-w-full text-xs sm:text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-800">
+                <tr>
+                  <th className="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-300">
+                    Code
+                  </th>
+                  <th className="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-300 min-w-[220px]">
+                    Désignation
+                  </th>
+                  {analysisCandidats.map((c) => (
+                    <th
+                      key={c.id}
+                      className="px-3 py-2 text-right font-semibold text-[#2F5B58] dark:text-teal-300 whitespace-nowrap"
+                    >
+                      {c.name}
+                    </th>
+                  ))}
+                  <th className="px-3 py-2 text-right font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
+                    Min
+                  </th>
+                  <th className="px-3 py-2 text-right font-semibold text-amber-700 dark:text-amber-300 whitespace-nowrap">
+                    Max
+                  </th>
+                  <th className="px-3 py-2 text-right font-semibold text-rose-700 dark:text-rose-300 whitespace-nowrap">
+                    Écart
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {analysisRows.map((row, rowIndex) => {
+                  const valuesByCandidat = analysisCandidats.map((c) => {
+                    const r = c.rows[rowIndex] as any;
+                    if (!r) return 0;
+                    return (
+                      r.prix_total ??
+                      r.prixTotal ??
+                      r.montantHT ??
+                      r.montant_ht ??
+                      0
+                    );
+                  });
+                  const min = Math.min(...valuesByCandidat);
+                  const max = Math.max(...valuesByCandidat);
+                  const ecart = max - min;
+
+                  return (
+                    <tr
+                      key={`${row.numero}-${rowIndex}`}
+                      className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/70"
+                    >
+                      <td className="px-3 py-2 font-mono text-[11px] text-slate-500 dark:text-slate-300">
+                        {row.numero || '—'}
+                      </td>
+                      <td className="px-3 py-2 text-slate-800 dark:text-slate-100">
+                        {row.designation || '—'}
+                      </td>
+                      {analysisCandidats.map((c, idx) => {
+                        const r = c.rows[rowIndex] as any;
+                        const val =
+                          r?.prix_total ??
+                          r?.prixTotal ??
+                          r?.montantHT ??
+                          r?.montant_ht ??
+                          0;
+                        const isMin = val > 0 && val === min;
+                        return (
+                          <td
+                            key={`${c.id}-${idx}`}
+                            className={`px-3 py-2 text-right tabular-nums font-medium ${
+                              isMin
+                                ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30'
+                                : 'text-slate-800 dark:text-slate-100'
+                            }`}
+                          >
+                            {val > 0
+                              ? val.toLocaleString('fr-FR', { minimumFractionDigits: 2 })
+                              : '—'}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2 text-right tabular-nums font-semibold text-emerald-700 dark:text-emerald-300">
+                        {min > 0 ? min.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-amber-700 dark:text-amber-300">
+                        {max > 0 ? max.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums font-semibold text-rose-700 dark:text-rose-300">
+                        {ecart > 0 ? ecart.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Vue plein écran pour un candidat (offre) avec toutes les colonnes BPU
+  const fullPageIndex = fullPageCandidatId
+    ? currentCandidats.findIndex((c) => c.id === fullPageCandidatId)
+    : -1;
+  const fullPageCandidat =
+    fullPageIndex >= 0 ? currentCandidats[fullPageIndex] : null;
+
+  if (fullPageCandidat) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900">
+        {/* Header plein écran */}
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setFullPageCandidatId(null)}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Retour
+              </button>
+              <div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {fullPageCandidat.name}
+                  </span>
+                  {currentCandidats.every(
+                    (c) => fullPageCandidat.totalHT <= c.totalHT
+                  ) && (
+                    <span className="inline-flex items-center rounded-full border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                      Moins-disant
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Procédure {numeroProcedure} — Lot {selectedLotNum} —{' '}
+                  {getLotName(selectedLotNum)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-4 text-xs sm:text-sm">
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Total HT
+                  </div>
+                  <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                    {fullPageCandidat.totalHT.toLocaleString('fr-FR', {
+                      minimumFractionDigits: 2,
+                    })}{' '}
+                    €
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    TVA estimée
+                  </div>
+                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    {fullPageCandidat.totalTVA.toLocaleString('fr-FR', {
+                      minimumFractionDigits: 2,
+                    })}{' '}
+                    €
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Total TTC
+                  </div>
+                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    {fullPageCandidat.totalTTC.toLocaleString('fr-FR', {
+                      minimumFractionDigits: 2,
+                    })}{' '}
+                    €
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={exportToExcel}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#2F5B58] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#234441]"
+              >
+                <FileDown className="h-3.5 w-3.5" />
+                Exporter Excel
+              </button>
+
+              {currentCandidats.length > 1 && (
+                <div className="ml-2 hidden sm:flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (fullPageIndex > 0) {
+                        setFullPageCandidatId(
+                          currentCandidats[fullPageIndex - 1].id
+                        );
+                      }
+                    }}
+                    disabled={fullPageIndex <= 0}
+                    className="inline-flex items-center rounded-l-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-xs text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                  >
+                    ◀
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (fullPageIndex < currentCandidats.length - 1) {
+                        setFullPageCandidatId(
+                          currentCandidats[fullPageIndex + 1].id
+                        );
+                      }
+                    }}
+                    disabled={fullPageIndex >= currentCandidats.length - 1}
+                    className="inline-flex items-center rounded-r-lg border border-l-0 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-xs text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                  >
+                    ▶
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tableau plein écran */}
+        <div className="flex-1 overflow-auto px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-900">
+          <table className="min-w-full border-collapse text-xs sm:text-sm bg-white dark:bg-gray-900 shadow-sm">
+            <thead className="bg-gray-100 dark:bg-gray-800">
+              <tr>
+                <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  Code
+                </th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  Désignation
+                </th>
+                <th className="px-3 py-2 text-center font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  Unité
+                </th>
+                <th className="px-3 py-2 text-right font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  Qté
+                </th>
+                <th className="px-3 py-2 text-right font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  PU HT
+                </th>
+                <th className="px-3 py-2 text-right font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  Éco-contrib HT
+                </th>
+                <th className="px-3 py-2 text-right font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  Montant HT
+                </th>
+                <th className="px-3 py-2 text-center font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  TVA (%)
+                </th>
+                <th className="px-3 py-2 text-right font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  Montant TVA
+                </th>
+                <th className="px-3 py-2 text-right font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                  Montant TTC
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {fullPageCandidat.rows.map((row, idx) => (
+                <tr
+                  key={`${fullPageCandidat.id}-${idx}`}
+                  className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/60"
+                >
+                  <td className="px-3 py-2 font-mono text-[11px] text-gray-700 dark:text-gray-200">
+                    {row.numero || '—'}
+                  </td>
+                  <td className="px-3 py-2 text-gray-900 dark:text-gray-100">
+                    {row.designation || '—'}
+                  </td>
+                  <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-200">
+                    {row.unite || '—'}
+                  </td>
+                  <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-200 tabular-nums">
+                    {row.quantite ?? '—'}
+                  </td>
+                  <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-200 tabular-nums">
+                    {row.prix_unitaire
+                      ? row.prix_unitaire.toLocaleString('fr-FR', {
+                          minimumFractionDigits: 2,
+                        })
+                      : '—'}
+                  </td>
+                  <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-200 tabular-nums">
+                    {row.eco_contrib
+                      ? row.eco_contrib.toLocaleString('fr-FR', {
+                          minimumFractionDigits: 2,
+                        })
+                      : '—'}
+                  </td>
+                  <td className="px-3 py-2 text-right text-emerald-700 dark:text-emerald-300 font-semibold tabular-nums">
+                    {row.prix_total
+                      ? row.prix_total.toLocaleString('fr-FR', {
+                          minimumFractionDigits: 2,
+                        })
+                      : '—'}
+                  </td>
+                  <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-200">
+                    {row.tva_pct ? `${row.tva_pct}%` : '—'}
+                  </td>
+                  <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-200 tabular-nums">
+                    {row.montant_tva
+                      ? row.montant_tva.toLocaleString('fr-FR', {
+                          minimumFractionDigits: 2,
+                        })
+                      : '—'}
+                  </td>
+                  <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-200 tabular-nums">
+                    {row.montant_ttc
+                      ? row.montant_ttc.toLocaleString('fr-FR', {
+                          minimumFractionDigits: 2,
+                        })
+                      : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {onClose && !showWelcome && (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {onClose && (
           <button
             onClick={onClose}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
+            className="mb-4 inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
           >
             <ArrowLeft className="w-4 h-4" />
-            Retour
+            Retour au menu précédent
           </button>
         )}
 
-        {/* Écran de bienvenue : sélection de la procédure (comme DCE Complet) */}
+        {/* Écran de bienvenue : sélection de la procédure */}
         {showWelcome ? (
-          <div className="flex flex-col items-center justify-center min-h-[70vh] py-8">
-            <div className="max-w-2xl w-full">
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="w-8 h-8 text-[#006d57] dark:text-emerald-400" />
-                </div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Analyse des offres DQE
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Saisissez un numéro de procédure pour démarrer
-                </p>
+          <div className="flex flex-col items-center justify-center min-h-[50vh]">
+            <div className="max-w-xl w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-8 text-center shadow-lg">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                <BarChart3 className="h-7 w-7" />
               </div>
-
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+                Analyse des offres DQE
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
+                Saisissez un numéro de procédure pour démarrer l’analyse comparative des offres
+                (DQE) de vos candidats.
+              </p>
+              <div className="text-left space-y-3">
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
                   Numéro de procédure (5 chiffres)
                 </label>
                 <ProcedureSelector
@@ -785,130 +1287,140 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                   onChange={setNumeroProcedure}
                   onProcedureSelected={() => {}}
                 />
-
                 {procedureResult.error && !procedureResult.isValid && (
-                  <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p className="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      {procedureResult.error}
-                    </p>
+                  <div className="mt-2 flex items-center gap-1.5 rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 px-2 py-1.5 text-[11px] text-red-700 dark:text-red-100">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <span>{procedureResult.error}</span>
                   </div>
-                )}
-              </div>
-
-              <div className="mt-8 flex justify-center gap-4">
-                {onClose && (
-                  <button
-                    onClick={onClose}
-                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
-                  >
-                    Retour au menu précédent
-                  </button>
                 )}
               </div>
             </div>
           </div>
         ) : (
           <>
-            {/* En-tête de procédure (comme DCE Complet) */}
-            <div className="mb-6 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl flex-shrink-0">
-              <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
-                <div className="flex-1 min-w-0">
-                  <ProcedureHeader procedure={procedureInfo} />
+            {/* En-tête de procédure (inspiré de la maquette, mais aux couleurs de l'app) */}
+            <div className="mb-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 sm:px-6 sm:py-5 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-300">
+                    <span>Procédure</span>
+                    <span className="font-semibold text-emerald-700 dark:text-emerald-300">{numeroProcedure}</span>
+                    <span className="text-gray-300 dark:text-gray-600">/</span>
+                    <span>Lot</span>
+                    <span className="font-semibold text-emerald-700 dark:text-emerald-300">{selectedLotNum}</span>
+                    <span className="text-gray-300 dark:text-gray-600">/</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-100">Analyse</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
+                      <span>PROC-{numeroProcedure}</span>
+                    </div>
+                    {procedureInfo?.['Nom de la procédure'] && (
+                      <div className="space-y-0.5 text-xs sm:text-sm text-gray-800 dark:text-gray-100">
+                        <div className="font-medium">
+                          {procedureInfo['Nom de la procédure']}
+                        </div>
+                        {procedureInfo['Acheteur'] && (
+                          <div className="text-gray-500 dark:text-gray-300">
+                            Acheteur : {procedureInfo['Acheteur']}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleBackToSelection}
-                  className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 whitespace-nowrap"
-                >
-                  Retour à la sélection
-                </button>
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-300">
+                  {loadingDCE && (
+                    <div className="flex items-center gap-1.5">
+                      <Loader2 className="h-4 w-4 animate-spin text-emerald-600 dark:text-emerald-300" />
+                      <span>Chargement des lots…</span>
+                    </div>
+                  )}
+                  {error && (
+                    <div className="flex items-center gap-1.5 rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 px-3 py-1.5 text-red-700 dark:text-red-100">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              {loadingDCE && (
-                <div className="mt-3 flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Chargement des lots...
-                </div>
-              )}
-              {error && (
-                <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
-                  {error}
-                </div>
-              )}
             </div>
 
-            {/* Contenu : lots, candidats, tableau comparatif */}
-            
-            {/* Message d'aide pour le workflow */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-6 mb-6">
+            {/* Bandeau mode d’emploi */}
+            <div className="mb-6 rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-4 sm:px-6 sm:py-5">
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                    <BarChart3 className="w-6 h-6 text-white" />
-                  </div>
+                <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+                  <BarChart3 className="h-5 w-5" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <div className="space-y-1 text-xs sm:text-sm">
+                  <p className="font-semibold text-gray-900 dark:text-white">
                     Mode de fonctionnement — Analyse comparative multi-candidats
-                  </h3>
-                  <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                    <p className="flex items-start gap-2">
-                      <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                      <span><strong>Sélectionnez un lot</strong> ci-dessous</span>
-                    </p>
-                    <p className="flex items-start gap-2">
-                      <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                      <span><strong>Chargez autant de DQE candidats que vous le souhaitez</strong> (fichiers Excel/CSV) — ils s'ajoutent sans effacer les précédents</span>
-                    </p>
-                    <p className="flex items-start gap-2">
-                      <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
-                      <span><strong>Analysez et comparez</strong> tous les candidats dans le tableau comparatif ci-dessous</span>
-                    </p>
-                    <p className="flex items-start gap-2">
-                      <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">✓</span>
-                      <span className="italic">Les données sont sauvegardées automatiquement dans Supabase à chaque ajout. Vous pouvez les recharger à tout moment.</span>
-                    </p>
-                  </div>
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-200">
+                    1. Sélectionnez le lot, 2. Chargez les DQE des candidats (Excel), 3. Comparez
+                    les montants dans les onglets ci-dessous.
+                  </p>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                    ✓ Les données sont sauvegardées automatiquement par le service d’analyse DQE et
+                    peuvent être rechargées plus tard.
+                  </p>
                 </div>
               </div>
             </div>
-            
-            {/* Sélection du lot */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Lot à analyser
-                </h2>
-                
-                {/* Boutons Sauvegarder / Charger depuis Supabase */}
-                <div className="flex items-center gap-2">
+
+            {/* Sélection du lot + accès sauvegardes */}
+            <div className="mb-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 sm:px-6 sm:py-5">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
+                    Lot à analyser
+                  </h2>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-300">{getLotName(selectedLotNum)}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleManualSave}
+                    disabled={savingToSupabase || Object.keys(candidatsByLot).length === 0}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingToSupabase ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Save className="h-3.5 w-3.5" />
+                    )}
+                    {savingToSupabase ? 'Sauvegarde…' : 'Sauvegarder maintenant'}
+                  </button>
                   {hasSavedData && (
                     <button
                       type="button"
                       onClick={handleLoadFromSupabase}
                       disabled={loadingFromSupabase}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm font-medium"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loadingFromSupabase ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        <Database className="w-4 h-4" />
+                        <Database className="h-3.5 w-3.5" />
                       )}
-                      {loadingFromSupabase ? 'Chargement...' : 'Charger depuis Supabase'}
+                      {loadingFromSupabase ? 'Chargement…' : 'Charger une sauvegarde'}
                     </button>
                   )}
-                  
                   {hasSavedData && (
-                    <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      <span className="text-green-700 dark:text-green-300 font-medium">
-                        Données sauvegardées
-                      </span>
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 text-[11px] text-emerald-700 dark:text-emerald-300">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      Données sauvegardées
                     </div>
                   )}
                 </div>
               </div>
-              
+
+              {lastManualSaveAt && (
+                <div className="mb-3 text-[11px] text-emerald-700 dark:text-emerald-300">
+                  ✅ Sauvegarde manuelle effectuée à {lastManualSaveAt}
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-2">
                 {Array.from({ length: totalLots }, (_, i) => i + 1).map((num) => (
                   <button
@@ -918,101 +1430,100 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                       loadDQEForLot(num);
                     }}
                     disabled={loadingDQE}
-                    className={`px-4 py-2 rounded-lg font-medium transition ${
+                    className={`rounded-full px-4 py-1.5 text-xs sm:text-sm font-medium transition ${
                       selectedLotNum === num
-                        ? 'bg-[#2F5B58] text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        ? 'bg-[#2F5B58] text-white shadow-sm'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     {loadingDQE && selectedLotNum === num ? (
-                      <Loader2 className="w-4 h-4 animate-spin inline" />
+                      <Loader2 className="inline h-4 w-4 animate-spin" />
                     ) : (
                       `Lot ${num}`
                     )}
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                {getLotName(selectedLotNum)}
-              </p>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-500 italic">
-                💡 Cliquez sur un lot pour ouvrir le DQE en pleine page
-              </p>
             </div>
 
-            {/* Ajouter un candidat (DQE Excel) */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Charger le DQE Excel d'un candidat — Lot {selectedLotNum}
+            {/* Charger le DQE Excel d’un candidat */}
+            <div className="mb-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-5 sm:px-6 sm:py-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
+                  Charger le DQE Excel d’un candidat — Lot {selectedLotNum}
                 </h2>
                 {currentCandidats.length > 0 && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                    <span className="text-xs text-green-700 dark:text-green-300">
-                      Les fichiers s'ajoutent sans effacer les précédents
-                    </span>
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 text-[11px] text-emerald-700 dark:text-emerald-300">
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    Les fichiers s’ajoutent sans effacer les précédents
                   </div>
                 )}
               </div>
-              
+
               {!pendingFile ? (
-                <>
-                  <div className="flex flex-wrap items-end gap-4">
-                    <div className="w-64">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Nom du candidat
-                      </label>
-                      <input
-                        type="text"
-                        value={newCandidatName}
-                        onChange={(e) => setNewCandidatName(e.target.value)}
-                        placeholder="Ex: Entreprise A"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".xlsx,.xls,.csv"
-                        onChange={addCandidatFromFile}
-                        className="hidden"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={loadingFile}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] disabled:opacity-50 transition"
-                      >
-                        {loadingFile ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Upload className="w-4 h-4" />
-                        )}
-                        {loadingFile ? 'Chargement...' : 'Choisir un fichier DQE Excel'}
-                      </button>
-                    </div>
+                <div className="grid gap-4 md:grid-cols-[minmax(0,260px),1fr] md:items-end">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Nom du candidat
+                    </label>
+                    <input
+                      type="text"
+                      value={newCandidatName}
+                      onChange={(e) => setNewCandidatName(e.target.value)}
+                      placeholder="Ex : Entreprise A"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+                    />
+                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                      Laissez vide pour utiliser le nom du fichier.
+                    </p>
                   </div>
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    Fichiers DQE ou BPU acceptés. Les colonnes seront mappées automatiquement.
-                  </p>
-                </>
+
+                  <div className="flex flex-col gap-3">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={addCandidatFromFile}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={loadingFile}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2F5B58] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#234441] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {loadingFile ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Chargement…
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4" />
+                          Choisir un fichier DQE Excel
+                        </>
+                      )}
+                    </button>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                      Fichiers DQE ou BPU (.xlsx, .xls, .csv). Les colonnes sont mappées
+                      automatiquement.
+                    </p>
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-3">
-                      <FileSpreadsheet className="w-5 h-5" />
+                  <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
+                    <div className="mb-3 flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
+                      <FileSpreadsheet className="h-5 w-5 text-blue-500 dark:text-blue-300" />
                       <span className="font-medium">Fichier sélectionné : {pendingFile.name}</span>
                     </div>
-                    
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Choisir l'onglet à importer
+                    <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Choisir l’onglet à importer
                     </label>
                     <select
                       value={selectedSheet}
                       onChange={(e) => setSelectedSheet(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2F5B58] focus:border-transparent"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
                     >
                       {availableSheets.map((sheet) => (
                         <option key={sheet} value={sheet}>
@@ -1020,26 +1531,27 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                         </option>
                       ))}
                     </select>
-                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                      {availableSheets.length} feuille{availableSheets.length > 1 ? 's' : ''} disponible{availableSheets.length > 1 ? 's' : ''} dans ce fichier
+                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                      {availableSheets.length} feuille{availableSheets.length > 1 ? 's' : ''} trouvée
+                      {availableSheets.length > 1 ? 's' : ''} dans ce fichier.
                     </p>
                   </div>
-                  
-                  <div className="flex gap-3">
+
+                  <div className="flex flex-wrap gap-3">
                     <button
                       type="button"
                       onClick={confirmSheetAndImport}
                       disabled={loadingFile || !selectedSheet}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] disabled:opacity-50 transition"
+                      className="inline-flex items-center gap-2 rounded-lg bg-[#2F5B58] px-4 py-2 text-sm font-semibold text-white hover:bg-[#234441] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loadingFile ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Import en cours...
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Import en cours…
                         </>
                       ) : (
                         <>
-                          <FileSpreadsheet className="w-4 h-4" />
+                          <FileSpreadsheet className="h-4 w-4" />
                           Importer cet onglet
                         </>
                       )}
@@ -1048,7 +1560,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                       type="button"
                       onClick={cancelSheetSelection}
                       disabled={loadingFile}
-                      className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 transition"
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Annuler
                     </button>
@@ -1059,426 +1571,696 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
 
             {/* Liste des candidats chargés pour ce lot */}
             {currentCandidats.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <div className="mb-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 sm:px-6 sm:py-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
                     Candidats chargés pour le lot {selectedLotNum}
                   </h2>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <BarChart3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                      {currentCandidats.length} candidat{currentCandidats.length > 1 ? 's' : ''}
-                    </span>
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 text-[11px] text-blue-700 dark:text-blue-200">
+                    <BarChart3 className="h-3.5 w-3.5 text-blue-500 dark:text-blue-300" />
+                    {currentCandidats.length} candidat
+                    {currentCandidats.length > 1 ? 's' : ''}
                   </div>
                 </div>
-                
-                {currentCandidats.length < 2 && (
-                  <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                      💡 <strong>Astuce :</strong> Chargez au moins 2 candidats pour activer l'analyse comparative complète.
-                    </p>
+
+                <ul className="space-y-2 text-sm">
+                  {(showAllCandidates ? currentCandidats : currentCandidats.slice(0, 3)).map(
+                    (c, index) => (
+                      <li
+                        key={c.id}
+                        className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/60 px-3 py-2"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2F5B58] text-xs font-bold text-white">
+                            {index + 1}
+                          </div>
+                          <FileSpreadsheet className="h-4 w-4 text-[#2F5B58]" />
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {c.name}
+                          </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-300">
+                            Total HT :{' '}
+                            {c.totalHT.toLocaleString('fr-FR', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}{' '}
+                            € — {c.rows.length} ligne{c.rows.length > 1 ? 's' : ''}
+                          </span>
+                          <span className="text-[11px] text-gray-500 dark:text-gray-300">
+                            Note :{' '}
+                            <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                              {scoresByCandidatId[c.id] ?? 0}
+                            </span>
+                            /100
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeCandidat(selectedLotNum, c.id)}
+                          className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </li>
+                    )
+                  )}
+                </ul>
+
+                {currentCandidats.length > 3 && (
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCandidates((v) => !v)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#2F5B58] hover:underline"
+                    >
+                      {showAllCandidates
+                        ? 'Masquer les offres supplémentaires'
+                        : `Afficher les ${currentCandidats.length - 3} autre(s) offre(s)`}
+                    </button>
                   </div>
                 )}
-                
-                <ul className="space-y-2">
-                  {currentCandidats.map((c, index) => (
-                    <li
-                      key={c.id}
-                      className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-[#2F5B58] text-white text-xs font-bold">
-                          {index + 1}
-                        </div>
-                        <FileSpreadsheet className="w-5 h-5 text-[#2F5B58]" />
-                        <span className="font-medium text-gray-900 dark:text-white">{c.name}</span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          Total HT : {c.totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                          — {c.rows.length} ligne{c.rows.length > 1 ? 's' : ''}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeCandidat(selectedLotNum, c.id)}
-                        className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                        title="Supprimer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                
+
                 {currentCandidats.length >= 2 && (
-                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <p className="text-sm text-green-800 dark:text-green-200">
-                      ✅ Analyse comparative activée ! Vous pouvez visualiser les différences de prix ci-dessous.
-                    </p>
+                  <div className="mt-3 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-200">
+                    ✅ Analyse comparative activée : utilisez les onglets ci-dessous pour comparer
+                    les offres ligne par ligne.
                   </div>
                 )}
               </div>
             )}
 
-            {/* Tableau d'analyse comparative en pleine page */}
+            {/* Zone d'analyse avec onglets (inspirée de la maquette HTML, mais en thème clair) */}
             {analysisCandidats.length >= 1 && analysisRows.length > 0 && (
-              <div className="fixed inset-0 bg-gray-50 dark:bg-gray-900 z-40 overflow-auto">
-                {/* En-tête fixe */}
-                <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-50">
-                  <div className="max-w-[98%] mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() => {
-                            // Vider les candidats du lot actuel pour revenir à l'écran de chargement
-                            setCandidatsByLot(prev => {
-                              const newState = { ...prev };
-                              delete newState[String(selectedLotNum)];
-                              return newState;
-                            });
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition"
-                        >
-                          <ArrowLeft className="w-5 h-5" />
-                          Retour
-                        </button>
-                        <div className="flex items-center gap-3">
-                          <BarChart3 className="w-6 h-6 text-[#2F5B58] dark:text-teal-400" />
-                          <h1 className="text-xl font-bold text-[#2F5B58] dark:text-teal-400">
-                            Analyse Comparative - Lot {selectedLotNum} : {getLotName(selectedLotNum)}
-                          </h1>
-                        </div>
-                      </div>
-                      <button
-                        onClick={exportToExcel}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition"
-                      >
-                        <FileDown className="w-4 h-4" />
-                        Exporter Excel
-                      </button>
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Procédure {numeroProcedure} - {procedureInfo?.['Nom de la procédure'] || ''}
-                    </p>
+              <div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
+                {/* En-tête / onglets */}
+                <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/60 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                    <span>Procédure</span>
+                    <span className="font-semibold text-[#2F5B58]">{numeroProcedure}</span>
+                    <span className="text-gray-300 dark:text-gray-600">/</span>
+                    <span>Lot</span>
+                    <span className="font-semibold text-[#2F5B58]">{selectedLotNum}</span>
+                    <span className="text-gray-300 dark:text-gray-600">/</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-100">Analyse</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[11px] sm:text-xs text-gray-500 dark:text-gray-300">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      {analysisCandidats.length} offre{analysisCandidats.length > 1 ? 's' : ''} chargée
+                    </span>
+                    <span className="hidden sm:inline text-gray-300 dark:text-gray-600">•</span>
+                    <span className="hidden sm:inline">
+                      {analysisRows.length} ligne{analysisRows.length > 1 ? 's' : ''} comparée{analysisRows.length > 1 ? 's' : ''}
+                    </span>
                   </div>
                 </div>
 
-                <div className="max-w-[98%] mx-auto px-6 py-6 space-y-6">
-                  {/* KPIs Comparatifs */}
+                {/* Barre d'onglets */}
+                <div className="border-b border-gray-200 dark:border-gray-700 px-3 py-2 flex gap-2 overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('dashboard')}
+                    className={`px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition ${
+                      activeTab === 'dashboard'
+                        ? 'bg-[#2F5B58] text-white shadow-sm'
+                        : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    📊 Vue d'ensemble
+                  </button>
+
                   {analysisCandidats.length >= 2 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {/* Meilleure offre HT */}
-                      <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-green-700 dark:text-green-300">Meilleure offre HT</span>
-                          <div className="w-8 h-8 bg-green-200 dark:bg-green-800 rounded-full flex items-center justify-center">
-                            <span className="text-green-700 dark:text-green-200 font-bold">1</span>
-                          </div>
-                        </div>
-                        {(() => {
-                          const minCandidat = analysisCandidats.reduce((prev, curr) => 
-                            curr.totalHT < prev.totalHT ? curr : prev
-                          );
-                          return (
-                            <>
-                              <div className="text-2xl font-bold text-green-900 dark:text-green-100">
-                                {minCandidat.totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-                              </div>
-                              <div className="text-sm text-green-600 dark:text-green-400 mt-1">
-                                {minCandidat.name}
-                              </div>
-                            </>
-                          );
-                        })()}
-                      </div>
-
-                      {/* Écart maximum */}
-                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Écart max</span>
-                          <div className="w-8 h-8 bg-orange-200 dark:bg-orange-800 rounded-full flex items-center justify-center">
-                            <span className="text-orange-700 dark:text-orange-200 font-bold">Δ</span>
-                          </div>
-                        </div>
-                        {(() => {
-                          const minTotal = Math.min(...analysisCandidats.map(c => c.totalHT));
-                          const maxTotal = Math.max(...analysisCandidats.map(c => c.totalHT));
-                          const ecart = maxTotal - minTotal;
-                          const ecartPct = minTotal > 0 ? ((ecart / minTotal) * 100) : 0;
-                          return (
-                            <>
-                              <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                                {ecart.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-                              </div>
-                              <div className="text-sm text-orange-600 dark:text-orange-400 mt-1">
-                                +{ecartPct.toFixed(1)}% vs meilleur
-                              </div>
-                            </>
-                          );
-                        })()}
-                      </div>
-
-                      {/* Nombre de candidats */}
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Candidats analysés</span>
-                          <div className="w-8 h-8 bg-blue-200 dark:bg-blue-800 rounded-full flex items-center justify-center">
-                            <FileSpreadsheet className="w-4 h-4 text-blue-700 dark:text-blue-200" />
-                          </div>
-                        </div>
-                        <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                          {analysisCandidats.length}
-                        </div>
-                        <div className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                          {analysisRows.length} lignes comparées
-                        </div>
-                      </div>
-
-                      {/* Moyenne des offres */}
-                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Moyenne HT</span>
-                          <div className="w-8 h-8 bg-purple-200 dark:bg-purple-800 rounded-full flex items-center justify-center">
-                            <span className="text-purple-700 dark:text-purple-200 font-bold">μ</span>
-                          </div>
-                        </div>
-                        {(() => {
-                          const moyenne = analysisCandidats.reduce((sum, c) => sum + c.totalHT, 0) / analysisCandidats.length;
-                          return (
-                            <>
-                              <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                                {moyenne.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-                              </div>
-                              <div className="text-sm text-purple-600 dark:text-purple-400 mt-1">
-                                Prix moyen
-                              </div>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('comparaison')}
+                      className={`px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex items-center gap-1.5 transition ${
+                        activeTab === 'comparaison'
+                          ? 'bg-gray-900 text-white dark:bg-gray-800'
+                          : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      ⚖️ Comparaison
+                    </button>
                   )}
 
-                  {/* Tableau détaillé par candidat */}
-                  <div className="grid gap-6">
-                    {analysisCandidats.map((candidat, candidatIndex) => {
-                      const isWinner = analysisCandidats.every(c => candidat.totalHT <= c.totalHT);
-                      return (
-                        <div 
-                          key={candidat.id} 
-                          className={`bg-white dark:bg-gray-800 rounded-xl border-2 ${
-                            isWinner 
-                              ? 'border-green-500 dark:border-green-600 shadow-green-100 dark:shadow-green-900/20 shadow-lg' 
-                              : 'border-gray-200 dark:border-gray-700'
-                          } overflow-hidden`}
-                        >
-                          {/* En-tête candidat */}
-                          <div className={`px-6 py-4 ${
-                            isWinner 
-                              ? 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30' 
-                              : 'bg-gray-50 dark:bg-gray-700/50'
-                          } border-b border-gray-200 dark:border-gray-600`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                {isWinner && (
-                                  <div className="w-10 h-10 bg-green-500 dark:bg-green-600 rounded-full flex items-center justify-center shadow-lg">
-                                    <span className="text-white font-bold text-lg">★</span>
-                                  </div>
-                                )}
-                                <div>
-                                  <h3 className={`text-xl font-bold ${
-                                    isWinner 
-                                      ? 'text-green-900 dark:text-green-100' 
-                                      : 'text-gray-900 dark:text-white'
-                                  }`}>
-                                    {candidat.name}
-                                    {isWinner && <span className="ml-2 text-sm font-normal text-green-700 dark:text-green-300">(Meilleure offre)</span>}
-                                  </h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {candidat.rows.length} article{candidat.rows.length > 1 ? 's' : ''}
-                                  </p>
+                  {analysisCandidats.map((c) => {
+                    const isWinner = analysisCandidats.every((other) => c.totalHT <= other.totalHT);
+                    const tabId = c.id;
+                    return (
+                      <button
+                        key={tabId}
+                        type="button"
+                        onClick={() => setActiveTab(tabId)}
+                        className={`px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex items-center gap-1.5 transition ${
+                          activeTab === tabId
+                            ? 'bg-gray-900 text-white dark:bg-gray-800'
+                            : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <span>🏷️ {c.name}</span>
+                        {isWinner && (
+                          <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700">
+                            Moins-disant
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Contenu des onglets */}
+                <div className="p-4 sm:p-6 space-y-6">
+                  {/* Onglet Dashboard */}
+                  {activeTab === 'dashboard' && (
+                    <>
+                      {analysisCandidats.length >= 2 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {/* Offres reçues */}
+                          <div className="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 overflow-hidden">
+                            <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                  Offres reçues
+                                </div>
+                                <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+                                  {analysisCandidats.length}
+                                </div>
+                                <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                  {analysisCandidats.map((c) => c.name).join(' • ')}
                                 </div>
                               </div>
-                              
-                              {/* Totaux */}
-                              <div className="flex gap-8">
-                                <div className="text-right">
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">Total HT</div>
-                                  <div className={`text-2xl font-bold ${
-                                    isWinner 
-                                      ? 'text-green-700 dark:text-green-300' 
-                                      : 'text-gray-900 dark:text-white'
-                                  }`}>
-                                    {candidat.totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">TVA</div>
-                                  <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                                    {candidat.totalTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">Total TTC</div>
-                                  <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                                    {candidat.totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-                                  </div>
-                                </div>
+                              <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
+                                <BarChart3 className="w-4 h-4" />
                               </div>
                             </div>
                           </div>
 
-                          {/* Tableau détail */}
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead className="bg-gray-100 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600">
+                          {/* Montant total HT */}
+                          <div className="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 overflow-hidden">
+                            <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                            {(() => {
+                              const totals = analysisCandidats.map((c) => c.totalHT);
+                              const minTotal = Math.min(...totals);
+                              const maxTotal = Math.max(...totals);
+                              const avg = totals.reduce((s, v) => s + v, 0) / totals.length;
+                              return (
+                                <>
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div>
+                                      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                        Montant moyen HT
+                                      </div>
+                                      <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avg.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
+                                      </div>
+                                      <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                        Fourchette : {minTotal.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € –{' '}
+                                        {maxTotal.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
+                                      </div>
+                                    </div>
+                                    <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
+                                      <FileDown className="w-4 h-4" />
+                                    </div>
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+
+                          {/* Écart min / max */}
+                          <div className="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 overflow-hidden">
+                            <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500" />
+                            {(() => {
+                              const totals = analysisCandidats.map((c) => c.totalHT);
+                              const minTotal = Math.min(...totals);
+                              const maxTotal = Math.max(...totals);
+                              const ecart = maxTotal - minTotal;
+                              const ecartPct = minTotal > 0 ? (ecart / minTotal) * 100 : 0;
+                              return (
+                                <>
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div>
+                                      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                        Écart min / max
+                                      </div>
+                                      <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+                                        {ecartPct.toFixed(1)}%
+                                      </div>
+                                      <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                        {ecart.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € de différence
+                                      </div>
+                                    </div>
+                                    <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-amber-700 dark:text-amber-300">
+                                      <AlertCircle className="w-4 h-4" />
+                                    </div>
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+
+                          {/* Moins-disant */}
+                          <div className="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 overflow-hidden">
+                            <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-teal-400 to-emerald-500" />
+                            {(() => {
+                              const winner = analysisCandidats.reduce((prev, curr) =>
+                                curr.totalHT < prev.totalHT ? curr : prev
+                              );
+                              return (
+                                <>
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div>
+                                      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                        Moins-disant
+                                      </div>
+                                      <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
+                                        {winner.name}
+                                      </div>
+                                      <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                        {winner.totalHT.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € HT
+                                      </div>
+                                    </div>
+                                    <div className="w-9 h-9 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-md">
+                                      <CheckCircle className="w-4 h-4" />
+                                    </div>
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Graphique comparatif par catégorie (Recharts) */}
+                      <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 sm:p-6">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                              Graphique de comparaison par catégorie
+                            </div>
+                            <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                              Montants HT par catégorie et par offre (agrégés à partir du DQE).
+                            </div>
+                          </div>
+                        </div>
+                        <div className="h-[260px] sm:h-[320px]">
+                          {dashboardChartData.length === 0 ? (
+                            <div className="flex h-full items-center justify-center text-[11px] text-gray-500 dark:text-gray-400">
+                              Importez au moins une offre complète pour activer le graphique.
+                            </div>
+                          ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart
+                                data={dashboardChartData}
+                                margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                                <XAxis
+                                  dataKey="name"
+                                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                                  axisLine={{ stroke: '#e5e7eb' }}
+                                />
+                                <YAxis
+                                  tickFormatter={(v) =>
+                                    typeof v === 'number'
+                                      ? `${(v / 1000).toLocaleString('fr-FR', {
+                                          maximumFractionDigits: 0,
+                                        })} k€`
+                                      : v
+                                  }
+                                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                                  axisLine={{ stroke: '#e5e7eb' }}
+                                />
+                                <RechartsTooltip
+                                  formatter={(value: any) =>
+                                    typeof value === 'number'
+                                      ? `${value.toLocaleString('fr-FR', {
+                                          minimumFractionDigits: 2,
+                                        })} €`
+                                      : value
+                                  }
+                                />
+                                <RechartsLegend wrapperStyle={{ fontSize: 11 }} />
+                                {analysisCandidats.map((c, idx) => {
+                                  const colors = ['#16a34a', '#0f766e', '#2563eb', '#f97316', '#7c3aed'];
+                                  const color = colors[idx % colors.length];
+                                  return (
+                                    <Bar
+                                      key={c.id}
+                                      dataKey={c.name}
+                                      stackId="offres"
+                                      fill={color}
+                                      radius={idx === analysisCandidats.length - 1 ? [4, 4, 0, 0] : 0}
+                                      maxBarSize={48}
+                                    />
+                                  );
+                                })}
+                              </BarChart>
+                            </ResponsiveContainer>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Onglet par candidat */}
+                  {analysisCandidats.map((candidat) => {
+                    if (activeTab !== candidat.id) return null;
+                    const isWinner = analysisCandidats.every((c) => candidat.totalHT <= c.totalHT);
+                    const score = scoresByCandidatId[candidat.id] ?? null;
+                    return (
+                      <div key={candidat.id} className="space-y-4">
+                        {/* En-tête fournisseur (clair, vert appli) */}
+                        <div className="flex flex-col lg:flex-row items-start justify-between gap-4 rounded-xl bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 px-4 py-4 sm:px-6 sm:py-5">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                                🏪 {candidat.name}
+                              </h3>
+                              {isWinner && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700">
+                                  Moins-disant
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                              {candidat.rows.length} article{candidat.rows.length > 1 ? 's' : ''} dans le DQE
+                            </p>
+                            {score !== null && (
+                              <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-300">
+                                Note de prix :{' '}
+                                <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                                  {score}
+                                </span>
+                                /100
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-4">
+                            <div className="text-right">
+                              <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                Total HT
+                              </div>
+                              <div className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">
+                                {candidat.totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                TVA estimée
+                              </div>
+                              <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                {candidat.totalTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                Total TTC
+                              </div>
+                              <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                {candidat.totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Table DQE du candidat (structure inspirée de la maquette) */}
+                        <div className="space-y-3">
+                          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                            <div className="relative w-full md:max-w-xs">
+                              <Search className="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                              <input
+                                type="text"
+                                placeholder="Rechercher un article..."
+                                className="w-full pl-9 pr-3 py-2 rounded-lg bg-white dark:bg-gray-900/70 border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+                                disabled
+                              />
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setFullPageCandidatId(candidat.id)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900/60 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
+                              >
+                                <ArrowLeft className="h-3.5 w-3.5 rotate-90" />
+                                Pleine page
+                              </button>
+                              <button
+                                type="button"
+                                onClick={exportToExcel}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2F5B58] text-xs font-semibold text-white shadow-sm hover:bg-[#234441]"
+                              >
+                                <FileDown className="w-3.5 h-3.5" />
+                                Exporter Excel
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-auto">
+                            <table className="min-w-full text-xs sm:text-sm">
+                              <thead className="bg-gray-100 dark:bg-gray-800/80">
                                 <tr>
-                                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 w-24">Code</th>
-                                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 min-w-[300px]">Désignation</th>
-                                  <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 w-32">Montant HT</th>
-                                  <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 w-24">TVA (%)</th>
-                                  <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 w-32">Montant TVA</th>
-                                  <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 w-32">Montant TTC</th>
+                                  <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                                    Code
+                                  </th>
+                                  <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                                    Désignation
+                                  </th>
+                                  <th className="px-3 py-2 text-right font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                                    Qté
+                                  </th>
+                                  <th className="px-3 py-2 text-right font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                                    PU HT
+                                  </th>
+                                  <th className="px-3 py-2 text-right font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                                    Montant HT
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {candidat.rows.map((row, rowIdx) => (
-                                  <tr 
-                                    key={row.id} 
-                                    className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                                {candidat.rows.map((row, idx) => {
+                                  const anyRow = row as any;
+                                  const unitPrice =
+                                    anyRow.prix_unitaire ??
+                                    anyRow.prixUnitaire ??
+                                    anyRow.pu_ht ??
+                                    anyRow.pu ??
+                                    0;
+                                  const lineTotal =
+                                    anyRow.prix_total ??
+                                    anyRow.prixTotal ??
+                                    anyRow.montantHT ??
+                                    anyRow.montant_ht ??
+                                    0;
+                                  return (
+                                  <tr
+                                    key={`${candidat.id}-${idx}`}
+                                    className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/60"
                                   >
-                                    <td className="py-2 px-4 text-gray-700 dark:text-gray-300 font-mono text-xs">
-                                      {row.codeArticle || '—'}
+                                    <td className="px-3 py-2 font-mono text-[11px] text-gray-700 dark:text-gray-200">
+                                      {row.numero || '—'}
                                     </td>
-                                    <td className="py-2 px-4 text-gray-900 dark:text-white">
+                                    <td className="px-3 py-2 text-gray-900 dark:text-gray-100">
                                       {row.designation || '—'}
                                     </td>
-                                    <td className="py-2 px-4 text-right tabular-nums font-semibold text-gray-900 dark:text-white">
-                                      {row.montantHT > 0 
-                                        ? row.montantHT.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) 
+                                    <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-200 tabular-nums">
+                                      {row.quantite ?? '—'}
+                                    </td>
+                                    <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-200 tabular-nums">
+                                      {unitPrice
+                                        ? unitPrice.toLocaleString('fr-FR', {
+                                            minimumFractionDigits: 2,
+                                          })
                                         : '—'}
                                     </td>
-                                    <td className="py-2 px-4 text-center text-gray-700 dark:text-gray-300">
-                                      {row.tauxTVA > 0 ? `${row.tauxTVA}%` : '—'}
-                                    </td>
-                                    <td className="py-2 px-4 text-right tabular-nums text-gray-700 dark:text-gray-300">
-                                      {row.montantTVA > 0 
-                                        ? row.montantTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) 
-                                        : '—'}
-                                    </td>
-                                    <td className="py-2 px-4 text-right tabular-nums font-medium text-gray-900 dark:text-white">
-                                      {row.montantTTC > 0 
-                                        ? row.montantTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) 
+                                    <td className="px-3 py-2 text-right text-emerald-700 dark:text-emerald-300 font-semibold tabular-nums">
+                                      {lineTotal
+                                        ? lineTotal.toLocaleString('fr-FR', {
+                                            minimumFractionDigits: 2,
+                                          })
                                         : '—'}
                                     </td>
                                   </tr>
-                                ))}
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    );
+                  })}
+
+                  {/* Onglet comparaison globale (tableau ligne par ligne) */}
+                  {activeTab === 'comparaison' && analysisCandidats.length >= 2 && (
+                    <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">
+                        Synthèse comparative ligne par ligne
+                      </h3>
+                      <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                        Mise en évidence automatique de la meilleure offre pour chaque ligne.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFullPageComparison(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900/60 text-xs font-medium text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        <ArrowLeft className="h-3.5 w-3.5 rotate-90" />
+                        Pleine page
+                      </button>
+                      <button
+                        type="button"
+                        onClick={exportToExcel}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#2F5B58] to-teal-600 text-xs font-semibold text-white shadow-sm"
+                      >
+                        <FileDown className="w-3.5 h-3.5" />
+                        Exporter Excel
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Tableau de synthèse comparative */}
-                  {analysisCandidats.length >= 2 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                          Synthèse comparative ligne par ligne
-                        </h3>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead className="bg-gray-100 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600">
+                      <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-auto">
+                        <table className="min-w-full text-xs sm:text-sm">
+                          <thead className="bg-slate-50 dark:bg-slate-800">
                             <tr>
-                              <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 w-24">Code</th>
-                              <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 min-w-[250px]">Désignation</th>
+                              <th className="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-300">
+                                Code
+                              </th>
+                              <th className="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-300 min-w-[220px]">
+                                Désignation
+                              </th>
                               {analysisCandidats.map((c) => (
-                                <th key={c.id} className="text-right py-3 px-4 font-semibold text-[#2F5B58] dark:text-teal-400 whitespace-nowrap">
+                                <th
+                                  key={c.id}
+                                  className="px-3 py-2 text-right font-semibold text-[#2F5B58] dark:text-teal-300 whitespace-nowrap"
+                                >
                                   {c.name}
                                 </th>
                               ))}
-                              <th className="text-right py-3 px-4 font-semibold text-green-700 dark:text-green-300 whitespace-nowrap">Min</th>
-                              <th className="text-right py-3 px-4 font-semibold text-orange-700 dark:text-orange-300 whitespace-nowrap">Max</th>
-                              <th className="text-right py-3 px-4 font-semibold text-red-700 dark:text-red-300 whitespace-nowrap">Écart</th>
+                              <th className="px-3 py-2 text-right font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
+                                Min
+                              </th>
+                              <th className="px-3 py-2 text-right font-semibold text-amber-700 dark:text-amber-300 whitespace-nowrap">
+                                Max
+                              </th>
+                              <th className="px-3 py-2 text-right font-semibold text-rose-700 dark:text-rose-300 whitespace-nowrap">
+                                Écart
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
                             {analysisRows.map((row, rowIndex) => {
                               const valuesByCandidat = analysisCandidats.map((c) => {
-                                const r = c.rows[rowIndex];
-                                return r ? r.montantHT : 0;
+                                const r = c.rows[rowIndex] as any;
+                                if (!r) return 0;
+                                return (
+                                  r.prix_total ??
+                                  r.prixTotal ??
+                                  r.montantHT ??
+                                  r.montant_ht ??
+                                  0
+                                );
                               });
                               const min = Math.min(...valuesByCandidat);
                               const max = Math.max(...valuesByCandidat);
                               const ecart = max - min;
 
                               return (
-                                <tr key={row.id} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                                  <td className="py-2 px-4 text-gray-700 dark:text-gray-300 font-mono text-xs">
-                                    {row.codeArticle || '—'}
+                                <tr
+                                  key={`${row.numero}-${rowIndex}`}
+                                  className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/70"
+                                >
+                                  <td className="px-3 py-2 font-mono text-[11px] text-slate-500 dark:text-slate-300">
+                                    {row.numero || '—'}
                                   </td>
-                                  <td className="py-2 px-4 text-gray-900 dark:text-white">
+                                  <td className="px-3 py-2 text-slate-800 dark:text-slate-100">
                                     {row.designation || '—'}
                                   </td>
-                                  {analysisCandidats.map((c) => {
-                                    const r = c.rows[rowIndex];
-                                    const val = r ? r.montantHT : 0;
+                                  {analysisCandidats.map((c, idx) => {
+                                    const r = c.rows[rowIndex] as any;
+                                    const val =
+                                      r?.prix_total ??
+                                      r?.prixTotal ??
+                                      r?.montantHT ??
+                                      r?.montant_ht ??
+                                      0;
                                     const isMin = val > 0 && val === min;
                                     return (
-                                      <td 
-                                        key={c.id} 
-                                        className={`py-2 px-4 text-right tabular-nums font-medium ${
-                                          isMin 
-                                            ? 'text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20' 
-                                            : 'text-gray-900 dark:text-white'
+                                      <td
+                                        key={`${c.id}-${idx}`}
+                                        className={`px-3 py-2 text-right tabular-nums font-medium ${
+                                          isMin
+                                            ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30'
+                                            : 'text-slate-800 dark:text-slate-100'
                                         }`}
                                       >
-                                        {val > 0 ? val.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
+                                        {val > 0
+                                          ? val.toLocaleString('fr-FR', { minimumFractionDigits: 2 })
+                                          : '—'}
                                       </td>
                                     );
                                   })}
-                                  <td className="py-2 px-4 text-right tabular-nums font-semibold text-green-700 dark:text-green-300">
+                                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-emerald-700 dark:text-emerald-300">
                                     {min > 0 ? min.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
                                   </td>
-                                  <td className="py-2 px-4 text-right tabular-nums text-orange-700 dark:text-orange-300">
+                                  <td className="px-3 py-2 text-right tabular-nums text-amber-700 dark:text-amber-300">
                                     {max > 0 ? max.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
                                   </td>
-                                  <td className="py-2 px-4 text-right tabular-nums font-semibold text-red-700 dark:text-red-300">
+                                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-rose-700 dark:text-rose-300">
                                     {ecart > 0 ? ecart.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
                                   </td>
                                 </tr>
                               );
                             })}
                           </tbody>
-                          <tfoot className="bg-gray-100 dark:bg-gray-700/50 font-bold">
+                          <tfoot className="bg-slate-50 dark:bg-slate-800/80 font-semibold">
                             <tr>
-                              <td colSpan={2} className="py-3 px-4 text-gray-900 dark:text-white">TOTAL HT</td>
+                              <td
+                                colSpan={2}
+                                className="px-3 py-2 text-slate-800 dark:text-slate-100 text-right"
+                              >
+                                TOTAL HT
+                              </td>
                               {analysisCandidats.map((c) => {
-                                const isMin = analysisCandidats.every(other => c.totalHT <= other.totalHT);
+                                const isMin = analysisCandidats.every((other) => c.totalHT <= other.totalHT);
                                 return (
-                                  <td 
-                                    key={c.id} 
-                                    className={`py-3 px-4 text-right tabular-nums ${
-                                      isMin 
-                                        ? 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30' 
-                                        : 'text-[#2F5B58] dark:text-teal-400'
+                                  <td
+                                    key={c.id}
+                                    className={`px-3 py-2 text-right tabular-nums ${
+                                      isMin
+                                        ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/40'
+                                        : 'text-[#2F5B58] dark:text-teal-300'
                                     }`}
                                   >
                                     {c.totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                                   </td>
                                 );
                               })}
-                              <td className="py-3 px-4 text-right tabular-nums text-green-700 dark:text-green-300">
-                                {Math.min(...analysisCandidats.map(c => c.totalHT)).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                              <td className="px-3 py-2 text-right tabular-nums text-emerald-700 dark:text-emerald-300">
+                                {Math.min(...analysisCandidats.map((c) => c.totalHT)).toLocaleString('fr-FR', {
+                                  minimumFractionDigits: 2,
+                                })}{' '}
+                                €
                               </td>
-                              <td className="py-3 px-4 text-right tabular-nums text-orange-700 dark:text-orange-300">
-                                {Math.max(...analysisCandidats.map(c => c.totalHT)).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                              <td className="px-3 py-2 text-right tabular-nums text-amber-700 dark:text-amber-300">
+                                {Math.max(...analysisCandidats.map((c) => c.totalHT)).toLocaleString('fr-FR', {
+                                  minimumFractionDigits: 2,
+                                })}{' '}
+                                €
                               </td>
-                              <td className="py-3 px-4 text-right tabular-nums text-red-700 dark:text-red-300">
-                                {(Math.max(...analysisCandidats.map(c => c.totalHT)) - Math.min(...analysisCandidats.map(c => c.totalHT))).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                              <td className="px-3 py-2 text-right tabular-nums text-rose-700 dark:text-rose-300">
+                                {(
+                                  Math.max(...analysisCandidats.map((c) => c.totalHT)) -
+                                  Math.min(...analysisCandidats.map((c) => c.totalHT))
+                                ).toLocaleString('fr-FR', { minimumFractionDigits: 2 })}{' '}
+                                €
                               </td>
                             </tr>
                           </tfoot>

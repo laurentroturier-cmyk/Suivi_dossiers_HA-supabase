@@ -102,4 +102,29 @@ export interface SegmentationRow {
   dna_sousfamille: string;
 }
 
-export type TableType = 'home' | 'procedures' | 'dossiers' | 'dashboard' | 'ai' | 'export' | 'gantt' | 'an01' | 'detail' | 'retraits' | 'depots' | 'analyse' | 'redaction' | 'notifications-quick' | 'reglement-consultation' | 'questionnaire-technique' | 'noti1' | 'dce' | 'contrats' | 'immobilier' | 'ouverture-plis' | 'rapport-presentation' | 'workflow-analyse-offres';
+export type TableType =
+  | 'home'
+  | 'procedures'
+  | 'dossiers'
+  | 'dashboard'
+  | 'ai'
+  | 'export'
+  | 'gantt'
+  | 'an01'
+  | 'detail'
+  | 'retraits'
+  | 'depots'
+  | 'analyse'
+  | 'redaction'
+  | 'notifications-quick'
+  | 'reglement-consultation'
+  | 'questionnaire-technique'
+  | 'noti1'
+  | 'dce'
+  | 'contrats'
+  | 'immobilier'
+  | 'ouverture-plis'
+  | 'rapport-presentation'
+  | 'workflow-analyse-offres'
+  | 'analyse-offres-dqe';
+
