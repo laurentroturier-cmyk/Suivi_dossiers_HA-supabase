@@ -368,8 +368,17 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
     if (!numeroProcedure || numeroProcedure.length !== 5) return;
     
     try {
-      // Créer ou récupérer l'analyse
-      const analyse = await AnalyseOffresDQEService.getOrCreateAnalyse(numeroProcedure);
+      // Créer ou récupérer l'analyse pour ce lot
+      const lotConfig = lotsConfig.find(
+        (l) => parseInt(l.numero, 10) === lotNum || l.numero === String(lotNum)
+      );
+      const nomLot = lotConfig?.intitule ?? null;
+
+      const analyse = await AnalyseOffresDQEService.getOrCreateAnalyse(
+        numeroProcedure,
+        lotNum,
+        nomLot
+      );
       
       if (!analyse) {
         throw new Error('Impossible de créer ou récupérer l\'analyse');
@@ -837,16 +846,30 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
     setSavingToSupabase(true);
     setError(null);
     try {
-      // Réinitialiser l'analyse stockée puis la reconstruire depuis l'état courant
+      // Réinitialiser toutes les analyses stockées pour cette procédure
       await AnalyseOffresDQEService.resetAnalyse(numeroProcedure);
-      const analyse = await AnalyseOffresDQEService.getOrCreateAnalyse(numeroProcedure);
-      if (!analyse) {
-        throw new Error("Impossible de créer ou récupérer l'analyse");
-      }
 
+      // Reconstruire depuis l'état courant pour chaque lot
       for (const [lotKey, candidatsLot] of Object.entries(candidatsByLot)) {
         const lotNum = Number(lotKey);
         if (!Number.isFinite(lotNum)) continue;
+
+        const lotConfig = lotsConfig.find(
+          (l) => parseInt(l.numero, 10) === lotNum || l.numero === String(lotNum)
+        );
+        const nomLot = lotConfig?.intitule ?? null;
+
+        const analyse = await AnalyseOffresDQEService.getOrCreateAnalyse(
+          numeroProcedure,
+          lotNum,
+          nomLot
+        );
+
+        if (!analyse) {
+          // On log l'erreur mais on continue avec les autres lots
+          console.error("Impossible de créer ou récupérer l'analyse pour le lot", lotNum);
+          continue;
+        }
 
         for (const candidat of candidatsLot) {
           const lignes = (candidat.rows || []).map((row) => ({
@@ -861,7 +884,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
           await AnalyseOffresDQEService.saveCandidatDQE(
             analyse.id,
             lotNum,
-            null,
+            nomLot,
             candidat.name,
             candidat.totalHT || 0,
             candidat.totalTVA || 0,
@@ -911,6 +934,9 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Procédure {numeroProcedure} — Lot {selectedLotNum} — {getLotName(selectedLotNum)}
                 </p>
+                <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+                  Montants comparés : <span className="font-semibold">Montants HT par ligne</span>.
+                </p>
               </div>
             </div>
             <button
@@ -943,6 +969,9 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                       {c.name}
                     </th>
                   ))}
+                  <th className="px-3 py-2 text-right font-semibold text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
+                    Prix moyen
+                  </th>
                   <th className="px-3 py-2 text-right font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
                     Min
                   </th>
@@ -970,6 +999,9 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                   const min = Math.min(...valuesByCandidat);
                   const max = Math.max(...valuesByCandidat);
                   const ecart = max - min;
+                  const somme = valuesByCandidat.reduce((s, v) => s + v, 0);
+                  const nbPositifs = valuesByCandidat.filter((v) => v > 0).length;
+                  const moyenne = nbPositifs > 0 ? somme / nbPositifs : 0;
 
                   return (
                     <tr
@@ -1006,6 +1038,9 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                           </td>
                         );
                       })}
+                      <td className="px-3 py-2 text-right tabular-nums font-medium text-indigo-700 dark:text-indigo-300">
+                        {moyenne > 0 ? moyenne.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
+                      </td>
                       <td className="px-3 py-2 text-right tabular-nums font-semibold text-emerald-700 dark:text-emerald-300">
                         {min > 0 ? min.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
                       </td>
@@ -2105,6 +2140,9 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                       <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                         Mise en évidence automatique de la meilleure offre pour chaque ligne.
                       </p>
+                      <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
+                        Montants comparés : <span className="font-semibold">Montants HT par ligne</span>.
+                      </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <button
@@ -2144,6 +2182,9 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                                   {c.name}
                                 </th>
                               ))}
+                              <th className="px-3 py-2 text-right font-semibold text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
+                                Prix moyen
+                              </th>
                               <th className="px-3 py-2 text-right font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
                                 Min
                               </th>
@@ -2171,6 +2212,9 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                               const min = Math.min(...valuesByCandidat);
                               const max = Math.max(...valuesByCandidat);
                               const ecart = max - min;
+                              const somme = valuesByCandidat.reduce((s, v) => s + v, 0);
+                              const nbPositifs = valuesByCandidat.filter((v) => v > 0).length;
+                              const moyenne = nbPositifs > 0 ? somme / nbPositifs : 0;
 
                               return (
                                 <tr
@@ -2207,6 +2251,11 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                                       </td>
                                     );
                                   })}
+                                  <td className="px-3 py-2 text-right tabular-nums font-medium text-indigo-700 dark:text-indigo-300">
+                                    {moyenne > 0
+                                      ? moyenne.toLocaleString('fr-FR', { minimumFractionDigits: 2 })
+                                      : '—'}
+                                  </td>
                                   <td className="px-3 py-2 text-right tabular-nums font-semibold text-emerald-700 dark:text-emerald-300">
                                     {min > 0 ? min.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
                                   </td>

@@ -20,6 +20,7 @@ export const PROJECT_FIELDS = [
   { id: 'Numéro de procédure (Afpa)', label: 'N° Afpa' },
   { id: 'Statut de la consultation', label: 'Statut' },
   { id: 'Montant de la procédure', label: 'Montant de la procédure' },
+  { id: "Date d'échéance du marché", label: "Date d'échéance du marché précédent si renouvellement" },
   { id: 'Date_limite_validite_offres calculee', label: 'Date limite validité offres' },
 ];
 

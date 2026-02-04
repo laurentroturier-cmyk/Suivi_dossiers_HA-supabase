@@ -2468,6 +2468,30 @@ const App: React.FC = () => {
             );
           }
 
+          // Champs contenant "Commentaire" (projet et procédures) : textarea multi-lignes pour une vraie saisie
+          if (key.includes('Commentaire')) {
+            const placeholder =
+              key === "Commentaire général sur le projet"
+                ? "Saisir un commentaire sur le projet (plusieurs lignes possibles)..."
+                : key === "RP - Commentaire"
+                  ? "Saisir un commentaire sur le rapport de présentation..."
+                  : key === "NO_-_Commentaire"
+                    ? "Saisir un commentaire (notification/ordre)..."
+                    : "Saisir un commentaire (plusieurs lignes possibles)...";
+            return (
+              <div key={key} className="flex flex-col gap-2 md:col-span-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{label}</label>
+                <textarea
+                  value={val || ''}
+                  onChange={e => handleFieldChange(type, key, e.target.value)}
+                  placeholder={placeholder}
+                  rows={5}
+                  className="w-full min-h-[120px] px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-[#004d3d]/5 outline-none resize-y"
+                />
+              </div>
+            );
+          }
+
           // Vérifier si le champ doit être protégé (non modifiable manuellement)
           const isProtectedField = key === "Numéro de procédure (Afpa)" || key === "NumProc" || key === "IDProjet";
           const isFieldReadOnly = isProtectedField; // Toujours protégé, même pour les admins
