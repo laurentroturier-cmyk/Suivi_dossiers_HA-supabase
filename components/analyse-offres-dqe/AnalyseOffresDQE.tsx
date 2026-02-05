@@ -39,6 +39,7 @@ import { parseDQEExcelFile, getExcelSheetNames, type ParsedDQERow, type ParseDQE
 import { AnalyseOffresDQEService } from './services/analyseOffresDQEService';
 import type { ProjectData } from '../../types';
 import type { LotConfiguration } from '../dce-complet/types';
+import type { DepotsData } from '../../types/depots';
 
 interface CandidatDQE {
   id: string;
@@ -83,6 +84,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
   const [fullPageComparison, setFullPageComparison] = useState(false);
   const [lastManualSaveAt, setLastManualSaveAt] = useState<string | null>(null);
   const [showAllCandidates, setShowAllCandidates] = useState(false);
+  const [selectedDepotCandidat, setSelectedDepotCandidat] = useState<string>('');
 
   const procedureResult = useProcedure(numeroProcedure.length === 5 ? numeroProcedure : null);
 
@@ -147,6 +149,48 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
 
   const totalLots = lotsConfig.length || 1;
   const currentCandidats = candidatsByLot[String(selectedLotNum)] || [];
+
+  // Candidats proposés depuis le registre des dépôts (si disponible sur la procédure)
+  const depotCandidatesForLot = useMemo(() => {
+    if (!procedureInfo || !(procedureInfo as any).depots) return [];
+
+    let depots: any = (procedureInfo as any).depots;
+    try {
+      if (typeof depots === 'string') {
+        depots = JSON.parse(depots);
+      }
+    } catch (e) {
+      console.error('[AnalyseOffresDQE] Erreur parsing depots:', e);
+      return [];
+    }
+
+    const depotsData = depots as DepotsData;
+    const entreprises = Array.isArray(depotsData?.entreprises) ? depotsData.entreprises : [];
+    if (!entreprises.length) return [];
+
+    const lotLabel = String(selectedLotNum);
+
+    // Filtrer par lot quand l'info est disponible, sinon garder
+    const filtered = entreprises.filter((e: any) => {
+      const lot = (e.lot || '').toString().toLowerCase();
+      if (!lot) return true;
+      if (lot.includes('unique')) return true;
+      return lot.includes(lotLabel);
+    });
+
+    const namesSet = new Set<string>();
+    const results: string[] = [];
+
+    filtered.forEach((e: any) => {
+      const name = (e.societe || e.nom || e.raisonSociale || '').trim();
+      if (name && !namesSet.has(name.toLowerCase())) {
+        namesSet.add(name.toLowerCase());
+        results.push(name);
+      }
+    });
+
+    return results.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+  }, [procedureInfo, selectedLotNum]);
 
   const showWelcome = !numeroProcedure || numeroProcedure.length !== 5 || !procedureResult.isValid;
 
@@ -1501,15 +1545,53 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                     <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
                       Nom du candidat
                     </label>
+
+                    {/* Sélecteur depuis le registre des dépôts (si disponible) */}
+                    {depotCandidatesForLot.length > 0 && (
+                      <div className="mb-2">
+                        <select
+                          value={selectedDepotCandidat}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setSelectedDepotCandidat(value);
+                            if (value) {
+                              setNewCandidatName(value);
+                            }
+                          }}
+                          className="mb-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+                        >
+                          <option value="">
+                            — Sélectionner dans le registre des dépôts —
+                          </option>
+                          {depotCandidatesForLot.map((name) => (
+                            <option key={name} value={name}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                          Les candidats proposés proviennent du registre des dépôts de cette
+                          procédure (filtré sur le lot si renseigné).
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Saisie libre toujours possible */}
                     <input
                       type="text"
                       value={newCandidatName}
-                      onChange={(e) => setNewCandidatName(e.target.value)}
+                      onChange={(e) => {
+                        setNewCandidatName(e.target.value);
+                        if (selectedDepotCandidat && e.target.value !== selectedDepotCandidat) {
+                          setSelectedDepotCandidat('');
+                        }
+                      }}
                       placeholder="Ex : Entreprise A"
                       className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
                     />
                     <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                      Laissez vide pour utiliser le nom du fichier.
+                      Laissez vide pour utiliser le nom du fichier, ou choisissez un candidat
+                      depuis le registre puis ajustez le nom si besoin.
                     </p>
                   </div>
 
