@@ -48,9 +48,17 @@ interface Props {
     libelleLot?: string;
   };
   lotsFromConfigurationGlobale?: LotConfiguration[];
+  onBackToHub?: () => void;
 }
 
-export function DQEMultiLots({ procedureId, onSave, configurationGlobale, procedureInfo, lotsFromConfigurationGlobale }: Props) {
+export function DQEMultiLots({
+  procedureId,
+  onSave,
+  configurationGlobale,
+  procedureInfo,
+  lotsFromConfigurationGlobale,
+  onBackToHub,
+}: Props) {
   return (
     <GenericMultiLots
       procedureId={procedureId}
@@ -60,7 +68,7 @@ export function DQEMultiLots({ procedureId, onSave, configurationGlobale, proced
       FormComponent={DQEForm}
       onSave={onSave}
       configurationGlobale={configurationGlobale}
-      formComponentProps={{ procedureInfo }}
+      formComponentProps={{ procedureInfo, onBackToHub }}
       lotsFromConfigurationGlobale={lotsFromConfigurationGlobale}
       showSummaryViewWhenMultipleLots={true}
     />

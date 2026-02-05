@@ -29,6 +29,7 @@ interface DCEStatusBarProps {
   className?: string;
   conflicts?: ConflictDetectionResult | null;
   onShowConflicts?: () => void;
+  onBackToSelection?: () => void;
 }
 
 export function DCEStatusBar({
@@ -42,6 +43,7 @@ export function DCEStatusBar({
   className = '',
   conflicts,
   onShowConflicts,
+  onBackToSelection,
 }: DCEStatusBarProps) {
   if (!dceState) return null;
 
@@ -132,6 +134,17 @@ export function DCEStatusBar({
         <div className="flex items-center justify-between gap-6 flex-wrap">
           {/* Gauche : Statut + Progression */}
           <div className="flex items-center gap-6">
+            {/* Bouton retour à la sélection (optionnel) */}
+            {onBackToSelection && (
+              <button
+                type="button"
+                onClick={onBackToSelection}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-full hover:bg-gray-200"
+              >
+                <span className="text-base leading-none">←</span>
+                Retour à la sélection
+              </button>
+            )}
             {/* Statut */}
             <div>
               <StatutBadge statut={dceState.statut} />

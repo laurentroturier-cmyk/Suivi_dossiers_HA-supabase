@@ -44,9 +44,16 @@ interface Props {
     }>;
   } | null;
   lotsFromConfigurationGlobale?: LotConfiguration[];
+  onBackToHub?: () => void;
 }
 
-export function BPUTMAMultiLots({ procedureId, onSave, configurationGlobale, lotsFromConfigurationGlobale }: Props) {
+export function BPUTMAMultiLots({
+  procedureId,
+  onSave,
+  configurationGlobale,
+  lotsFromConfigurationGlobale,
+  onBackToHub,
+}: Props) {
   return (
     <GenericMultiLots
       procedureId={procedureId}
@@ -57,6 +64,7 @@ export function BPUTMAMultiLots({ procedureId, onSave, configurationGlobale, lot
       onSave={onSave}
       configurationGlobale={configurationGlobale}
       lotsFromConfigurationGlobale={lotsFromConfigurationGlobale}
+      formComponentProps={{ onBackToHub }}
     />
   );
 }

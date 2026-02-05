@@ -216,6 +216,9 @@ export function GenericMultiLots<T>({
 
   const showSummaryTable = showSummaryViewWhenMultipleLots && totalLots > 1 && showSummaryView;
 
+  // Bouton de retour vers le hub (annexes financières, pièces administratives, etc.)
+  const onBackToHub: (() => void) | undefined = (formComponentProps as any)?.onBackToHub;
+
   const openLotFullPage = (lotNum: number) => {
     setCurrentLot(lotNum);
     setShowSummaryView(false);
@@ -329,6 +332,16 @@ export function GenericMultiLots<T>({
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-3">
+                {onBackToHub && (
+                  <button
+                    type="button"
+                    onClick={onBackToHub}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-900"
+                  >
+                    <span className="text-base leading-none">←</span>
+                    Retour aux {moduleName === 'BPU' || moduleName === 'BPU TMA' || moduleName === 'DQE' || moduleName === 'DPGF' ? 'annexes financières' : 'pièces administratives & techniques'}
+                  </button>
+                )}
                 {showSummaryViewWhenMultipleLots && totalLots > 1 && (
                   <button
                     type="button"

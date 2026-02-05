@@ -14,16 +14,35 @@ interface Props {
   numeroProcedure?: string; // Pour le nom de fichier Word
   onSave?: (data: CCAPData) => void;
   initialData?: CCAPData;
+  /**
+   * Quand vrai, on ouvre directement l'écran de sélection du type de CCAP
+   * à chaque fois que le module est monté (clic sur "CCAP" dans le menu).
+   */
+  openTypeSelectorOnMount?: boolean;
+  /**
+   * Callback optionnel pour revenir à l'écran de choix des pièces
+   * (par exemple la page "Pièces administratives & techniques" du DCE complet).
+   */
+  onBackToHub?: () => void;
 }
 
-export function CCAPMultiLots({ procedureId, numeroProcedure, onSave, initialData }: Props) {
+export function CCAPMultiLots({
+  procedureId,
+  numeroProcedure,
+  onSave,
+  initialData,
+  openTypeSelectorOnMount = false,
+  onBackToHub,
+}: Props) {
   const [ccapData, setCcapData] = useState<CCAPData>(initialData || createDefaultCCAP());
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [showTypeSelector, setShowTypeSelector] = useState(!initialData?.typeCCAP);
+  const [showTypeSelector, setShowTypeSelector] = useState(
+    openTypeSelectorOnMount || !initialData?.typeCCAP,
+  );
   const [selectedType, setSelectedType] = useState<CCAPType | null>(initialData?.typeCCAP || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -31,9 +50,12 @@ export function CCAPMultiLots({ procedureId, numeroProcedure, onSave, initialDat
     if (initialData) {
       setCcapData(initialData);
       setSelectedType(initialData.typeCCAP || null);
-      setShowTypeSelector(!initialData.typeCCAP);
+      setShowTypeSelector(openTypeSelectorOnMount || !initialData.typeCCAP);
+    } else if (openTypeSelectorOnMount) {
+      // Pas de données initiales : on force l'ouverture du sélecteur de type
+      setShowTypeSelector(true);
     }
-  }, [initialData]);
+  }, [initialData, openTypeSelectorOnMount]);
 
   const handleSave = async (data: CCAPData) => {
     setIsSaving(true);
@@ -127,6 +149,20 @@ export function CCAPMultiLots({ procedureId, numeroProcedure, onSave, initialDat
 
   return (
     <div className="space-y-4">
+      {/* Bouton de retour vers la page de choix des pièces */}
+      {onBackToHub && (
+        <div className="flex justify-between items-center">
+          <button
+            type="button"
+            onClick={onBackToHub}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-900"
+          >
+            <span className="text-base leading-none">←</span>
+            Retour aux pièces administratives & techniques
+          </button>
+        </div>
+      )}
+
       {/* En-tête avec info */}
       <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
         <div className="flex items-start gap-3">

@@ -51,9 +51,20 @@ interface Props {
     libelleLot?: string;
   };
   lotsFromConfigurationGlobale?: LotConfiguration[];
+  /**
+   * Bouton de retour vers la page des annexes financières.
+   */
+  onBackToHub?: () => void;
 }
 
-export function BPUMultiLots({ procedureId, onSave, configurationGlobale, procedureInfo, lotsFromConfigurationGlobale }: Props) {
+export function BPUMultiLots({
+  procedureId,
+  onSave,
+  configurationGlobale,
+  procedureInfo,
+  lotsFromConfigurationGlobale,
+  onBackToHub,
+}: Props) {
   return (
     <GenericMultiLots
       procedureId={procedureId}
@@ -63,7 +74,7 @@ export function BPUMultiLots({ procedureId, onSave, configurationGlobale, proced
       FormComponent={BPUForm}
       onSave={onSave}
       configurationGlobale={configurationGlobale}
-      formComponentProps={{ procedureInfo }}
+      formComponentProps={{ procedureInfo, onBackToHub }}
       lotsFromConfigurationGlobale={lotsFromConfigurationGlobale}
     />
   );

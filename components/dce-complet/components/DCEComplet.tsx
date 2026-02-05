@@ -4,7 +4,7 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
-import { X, FileText, CheckSquare, FileCheck, FileSpreadsheet, FolderOpen, ArrowLeft, AlertTriangle, Settings } from 'lucide-react';
+import { X, FileText, CheckSquare, FileCheck, FileSpreadsheet, FolderOpen, ArrowLeft, AlertTriangle, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { ProcedureSelector } from './shared/ProcedureSelector';
 import { ProcedureHeader } from './shared/ProcedureHeader';
 import { DCEStatusBar } from './shared/DCEStatusBar';
@@ -24,6 +24,10 @@ import { DQEMultiLots } from './modules/DQEMultiLots';
 import { DPGFMultiLots } from './modules/DPGFMultiLots';
 import { DocumentsAnnexesForm } from './modules/DocumentsAnnexesForm';
 import { CRTForm } from './modules/CRTForm';
+import { AnnexesFinancieresHub } from './modules/AnnexesFinancieresHub';
+import { ClausesContractuellesHub } from './modules/ClausesContractuellesHub';
+import { ModuleComingSoon } from './modules/ModuleComingSoon';
+import { ReponseTechniqueHub } from './modules/ReponseTechniqueHub';
 import QuestionnaireTechnique from "../../redaction/components/questionnaire/QuestionnaireTechnique";
 import {
   ensureActeEngagement,
@@ -48,6 +52,21 @@ export function DCEComplet({ onClose }: DCECompletProps) {
   const [showWelcome, setShowWelcome] = useState(true);
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [savingSection, setSavingSection] = useState<DCESectionType | null>(null);
+  /** Sous-menu Règlement de Consultation : ouvert/fermé */
+  const [rcSubmenuOpen, setRcSubmenuOpen] = useState(false);
+  /** Section RC affichée (index 0–7) quand activeSection === 'reglementConsultation' */
+  const [rcSelectedSection, setRcSelectedSection] = useState(0);
+
+  /** Sections du Règlement de consultation (même ordre que dans ReglementConsultation.tsx) */
+  const RC_SECTIONS = [
+    'En-tête',
+    'Pouvoir adjudicateur',
+    'Objet de la consultation',
+    'Conditions',
+    'Type de marché',
+    'DCE',
+    'Jugement des offres',
+  ];
 
   // Charger la procédure
   const procedureResult = useProcedure(numeroProcedure.length === 5 ? numeroProcedure : null);
@@ -103,15 +122,10 @@ export function DCEComplet({ onClose }: DCECompletProps) {
     { key: 'configurationGlobale', label: '⚙️ Configuration Globale', icon: <Settings className="w-5 h-5" /> },
     { key: 'reglementConsultation', label: 'Règlement de Consultation', icon: <FileText className="w-5 h-5" /> },
     { key: 'acteEngagement', label: 'Acte d\'Engagement', icon: <CheckSquare className="w-5 h-5" /> },
-    { key: 'ccap', label: 'CCAP', icon: <FileCheck className="w-5 h-5" /> },
-    { key: 'cctp', label: 'CCTP', icon: <FileCheck className="w-5 h-5" /> },
-    { key: 'bpu', label: 'BPU', icon: <FileSpreadsheet className="w-5 h-5" /> },
-    { key: 'bpuTMA', label: 'BPU TMA', icon: <FileSpreadsheet className="w-5 h-5" /> },
-    { key: 'dqe', label: 'DQE', icon: <FileSpreadsheet className="w-5 h-5" /> },
-    { key: 'dpgf', label: 'DPGF', icon: <FileSpreadsheet className="w-5 h-5" /> },
+    { key: 'clausesContractuelles', label: 'Pièces administratives & techniques', icon: <FileCheck className="w-5 h-5" /> },
+    { key: 'annexesFinancieres', label: 'Annexes financières', icon: <FileSpreadsheet className="w-5 h-5" /> },
     { key: 'documentsAnnexes', label: 'Documents Annexes', icon: <FolderOpen className="w-5 h-5" /> },
-    { key: 'crt', label: 'CRT (Cadre de réponse technique)', icon: <FileText className="w-5 h-5" /> },
-    { key: 'qt', label: 'Questionnaire technique', icon: <FileText className="w-5 h-5" /> },
+    { key: 'reponseTechnique', label: 'Réponse technique', icon: <FileText className="w-5 h-5" /> },
   ];
 
   /**
@@ -255,6 +269,8 @@ export function DCEComplet({ onClose }: DCECompletProps) {
             onSave={data => handleSectionSave('reglementConsultation', data)}
             initialData={dceState.reglementConsultation}
             lotsFromConfigurationGlobale={dceState.configurationGlobale?.lots || []}
+            initialRCSection={Math.min(rcSelectedSection, RC_SECTIONS.length - 1)}
+            hideRCSectionsSidebar
           />
         );
       case 'acteEngagement':
@@ -272,14 +288,28 @@ export function DCEComplet({ onClose }: DCECompletProps) {
             procedureId={numeroProcedure}
             onSave={data => handleSectionSave('ccap', data)}
             initialData={dceState.ccap}
+            openTypeSelectorOnMount
+            onBackToHub={() => setActiveSection('clausesContractuelles')}
           />
         );
       case 'cctp':
         return (
-          <CCTPMultiLots
-            procedureId={numeroProcedure}
-            onSave={() => loadDCE()}
-            configurationGlobale={dceState.configurationGlobale}
+          <ModuleComingSoon
+            title="Module CCTP – en cours de préparation"
+            description="Le module CCTP multi-lots est en cours de finalisation."
+            onBack={() => setActiveSection('clausesContractuelles')}
+          />
+        );
+      case 'clausesContractuelles':
+        return (
+          <ClausesContractuellesHub
+            onSelectSection={(section) => setActiveSection(section)}
+          />
+        );
+      case 'annexesFinancieres':
+        return (
+          <AnnexesFinancieresHub
+            onSelectSection={(section) => setActiveSection(section)}
           />
         );
       case 'bpu':
@@ -294,6 +324,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
               acheteur: selectedProcedure?.['Acheteur'] || dceState.configurationGlobale?.informationsGenerales?.acheteur || '',
             }}
             lotsFromConfigurationGlobale={dceState.configurationGlobale?.lots || []}
+            onBackToHub={() => setActiveSection('annexesFinancieres')}
           />
         );
       case 'bpuTMA':
@@ -303,6 +334,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
             onSave={() => loadDCE()}
             configurationGlobale={dceState.configurationGlobale}
             lotsFromConfigurationGlobale={dceState.configurationGlobale?.lots || []}
+            onBackToHub={() => setActiveSection('annexesFinancieres')}
           />
         );
       case 'dqe':
@@ -317,6 +349,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
               acheteur: selectedProcedure?.['Acheteur'] || dceState.configurationGlobale?.informationsGenerales?.acheteur || '',
             }}
             lotsFromConfigurationGlobale={dceState.configurationGlobale?.lots || []}
+            onBackToHub={() => setActiveSection('annexesFinancieres')}
           />
         );
       case 'dpgf':
@@ -325,30 +358,57 @@ export function DCEComplet({ onClose }: DCECompletProps) {
             procedureId={numeroProcedure}
             onSave={() => loadDCE()}
             configurationGlobale={dceState.configurationGlobale}
+            onBackToHub={() => setActiveSection('annexesFinancieres')}
           />
         );
       case 'documentsAnnexes':
         return (
-          <DocumentsAnnexesForm
-            data={ensureDocumentsAnnexes(dceState.documentsAnnexes)}
-            onSave={data => handleSectionSave('documentsAnnexes', data)}
-            isSaving={savingSection === 'documentsAnnexes' || isLoadingDCE}
+          <ModuleComingSoon
+            title="Annexes au CCAP / CCTP – en cours de préparation"
+            description="Ce module centralisera prochainement les annexes communes (administratives et techniques) rattachées au CCAP et au CCTP."
+            onBack={() => setActiveSection('clausesContractuelles')}
+          />
+        );
+      case 'reponseTechnique':
+        return (
+          <ReponseTechniqueHub
+            onSelectSection={(section) => setActiveSection(section)}
           />
         );
       case 'crt':
         return (
-          <CRTForm
-            data={ensureCRT(dceState.crt)}
-            onSave={data => handleSectionSave('crt', data)}
-            isSaving={savingSection === 'crt' || isLoadingDCE}
-          />
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => setActiveSection('reponseTechnique')}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-900"
+            >
+              <span className="text-base leading-none">←</span>
+              Retour à la réponse technique
+            </button>
+            <CRTForm
+              data={ensureCRT(dceState.crt)}
+              onSave={data => handleSectionSave('crt', data)}
+              isSaving={savingSection === 'crt' || isLoadingDCE}
+            />
+          </div>
         );
       case 'qt':
         return (
-          <QuestionnaireTechnique
-            initialNumeroProcedure={numeroProcedure}
-            onSave={data => handleSectionSave('qt', data)}
-          />
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => setActiveSection('reponseTechnique')}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-900"
+            >
+              <span className="text-base leading-none">←</span>
+              Retour à la réponse technique
+            </button>
+            <QuestionnaireTechnique
+              initialNumeroProcedure={numeroProcedure}
+              onSave={data => handleSectionSave('qt', data)}
+            />
+          </div>
         );
       default:
         return null;
@@ -448,29 +508,30 @@ export function DCEComplet({ onClose }: DCECompletProps) {
           <>
             {/* En-tête de procédure */}
             <div className="p-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-              <div className="flex items-center justify-between mb-2 gap-3">
-                <ProcedureHeader procedure={selectedProcedure} />
-                <button
-                  onClick={handleBackToSelection}
-                  className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
-                >
-                  Retour à la sélection
-                </button>
+              <div className="flex items-start justify-between gap-6">
+                {/* Colonne gauche : carte procédure */}
+                <div className="flex flex-col gap-3">
+                  <ProcedureHeader procedure={selectedProcedure} />
+                </div>
+
+                {/* Colonne droite : barre d'état du DCE (avec bouton retour inclus) */}
+                {dceState && (
+                  <div className="flex items-center">
+                    <DCEStatusBar
+                      dceState={dceState}
+                      isDirty={isDirty}
+                      isNew={isNew}
+                      onSave={handleSave}
+                      onPublish={publishDCE}
+                      onRefresh={refreshDCE}
+                      isSaving={isLoadingDCE}
+                      conflicts={conflicts}
+                      onShowConflicts={() => setShowConflictModal(true)}
+                      onBackToSelection={handleBackToSelection}
+                    />
+                  </div>
+                )}
               </div>
-              
-              {dceState && (
-                <DCEStatusBar
-                  dceState={dceState}
-                  isDirty={isDirty}
-                  isNew={isNew}
-                  onSave={handleSave}
-                  onPublish={publishDCE}
-                  onRefresh={refreshDCE}
-                  isSaving={isLoadingDCE}
-                  conflicts={conflicts}
-                  onShowConflicts={() => setShowConflictModal(true)}
-                />
-              )}
 
               {dceError && (
                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -489,13 +550,77 @@ export function DCEComplet({ onClose }: DCECompletProps) {
                   </h3>
                   <nav className="space-y-1">
                     {sections.map(section => {
+                      const isRc = section.key === 'reglementConsultation';
                       const isActive = activeSection === section.key;
-                      const isCompleted = isSectionCompleted(section.key);
+                      const isRcExpanded = isRc && rcSubmenuOpen;
+
+                      if (isRc) {
+                        return (
+                          <div key={section.key} className="space-y-0">
+                            <button
+                              onClick={() => {
+                                setRcSubmenuOpen(prev => !prev);
+                                if (!rcSubmenuOpen) {
+                                  setActiveSection('reglementConsultation');
+                                  setRcSelectedSection(0);
+                                }
+                              }}
+                              className={`
+                                w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all
+                                ${isActive
+                                  ? 'bg-green-50 text-green-700 font-medium shadow-sm'
+                                  : 'text-gray-700 hover:bg-gray-50'
+                                }
+                              `}
+                            >
+                              <div className={`flex-shrink-0 ${isActive ? 'text-[#2F5B58]' : 'text-gray-400'}`}>
+                                {section.icon}
+                              </div>
+                              <span className="flex-1 truncate text-sm">
+                                {section.label}
+                              </span>
+                              <span className={`flex-shrink-0 transition-transform ${isRcExpanded ? 'rotate-180' : ''}`}>
+                                <ChevronDown className="w-4 h-4" />
+                              </span>
+                            </button>
+                            {isRcExpanded && (
+                              <div className="pl-4 pr-2 py-1 space-y-0.5 border-l-2 border-green-200 ml-4 mt-1 mb-2">
+                                {RC_SECTIONS.map((label, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={() => {
+                                      setActiveSection('reglementConsultation');
+                                      setRcSelectedSection(index);
+                                    }}
+                                    className={`
+                                      w-full text-left px-3 py-2 rounded-lg text-sm transition-all
+                                      ${activeSection === 'reglementConsultation' && rcSelectedSection === index
+                                        ? 'bg-green-50 text-green-700 font-medium'
+                                        : 'text-gray-600 hover:bg-gray-50'
+                                      }
+                                    `}
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      {activeSection === 'reglementConsultation' && rcSelectedSection === index && (
+                                        <ChevronRight className="w-3.5 h-3.5 text-green-600" />
+                                      )}
+                                      {label}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
 
                       return (
                         <button
                           key={section.key}
-                          onClick={() => setActiveSection(section.key)}
+                          onClick={() => {
+                            setActiveSection(section.key);
+                            if (section.key !== 'reglementConsultation') setRcSubmenuOpen(false);
+                          }}
                           className={`
                             w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all
                             ${isActive
@@ -510,9 +635,6 @@ export function DCEComplet({ onClose }: DCECompletProps) {
                           <span className="flex-1 truncate text-sm">
                             {section.label}
                           </span>
-                          {isCompleted && (
-                            <CheckSquare className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          )}
                         </button>
                       );
                     })}
@@ -521,7 +643,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
               </div>
 
               {/* Zone de contenu */}
-              <div className="flex-1 overflow-y-auto bg-gray-50 p-8">
+              <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
                 {!activeSection ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center text-gray-500">
@@ -531,13 +653,13 @@ export function DCEComplet({ onClose }: DCECompletProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="max-w-5xl mx-auto">
-                    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">
-                      <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                        {sections.find(s => s.key === activeSection)?.label}
-                      </h2>
-                      {renderSectionContent()}
-                    </div>
+                  <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mr-4">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                      {activeSection === 'reglementConsultation'
+                        ? `Règlement de Consultation – ${RC_SECTIONS[rcSelectedSection]}`
+                        : sections.find(s => s.key === activeSection)?.label}
+                    </h2>
+                    {renderSectionContent()}
                   </div>
                 )}
               </div>

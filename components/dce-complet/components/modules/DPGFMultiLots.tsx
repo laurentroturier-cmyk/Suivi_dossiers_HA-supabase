@@ -19,9 +19,10 @@ interface Props {
       description?: string;
     }>;
   } | null;
+  onBackToHub?: () => void;
 }
 
-export function DPGFMultiLots({ procedureId, onSave, configurationGlobale }: Props) {
+export function DPGFMultiLots({ procedureId, onSave, configurationGlobale, onBackToHub }: Props) {
   return (
     <GenericMultiLots
       procedureId={procedureId}
@@ -31,6 +32,7 @@ export function DPGFMultiLots({ procedureId, onSave, configurationGlobale }: Pro
       FormComponent={DPGFForm}
       onSave={onSave}
       configurationGlobale={configurationGlobale}
+      formComponentProps={{ onBackToHub }}
     />
   );
 }

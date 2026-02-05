@@ -35,17 +35,23 @@ interface ReglementConsultationProps {
   onDataChange?: (data: RapportCommissionData) => void;
   initialData?: RapportCommissionData;
   lotsFromConfigurationGlobale?: LotConfiguration[];
+  /** Index de la section à afficher (0–6) quand la navigation est gérée par le parent (ex. sous-menu DCE) */
+  initialSection?: number;
+  /** Masquer la sidebar "Sections" (navigation gérée par le parent) */
+  hideSectionsSidebar?: boolean;
 }
 
 export default function ReglementConsultation({ 
   initialNumeroProcedure, 
   onDataChange, 
   initialData,
-  lotsFromConfigurationGlobale 
+  lotsFromConfigurationGlobale,
+  initialSection,
+  hideSectionsSidebar = false,
 }: ReglementConsultationProps) {
   const [showFullEdit, setShowFullEdit] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeSection, setActiveSection] = useState(0);
+  const [activeSection, setActiveSection] = useState(initialSection ?? 0);
   const [isLoadingProcedure, setIsLoadingProcedure] = useState(false);
   const [autoFillStatus, setAutoFillStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [loadingCPV, setLoadingCPV] = useState(false);
@@ -194,6 +200,13 @@ export default function ReglementConsultation({
     }
   }, [initialData]);
 
+  // Synchroniser la section affichée avec la section imposée par le parent (sous-menu DCE)
+  useEffect(() => {
+    if (initialSection !== undefined && initialSection >= 0 && initialSection <= 6) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
+
   // Garantir que RC et AE sont toujours présents
   useEffect(() => {
     const documentsObligatoires = [
@@ -232,7 +245,6 @@ export default function ReglementConsultation({
     { title: 'Type de marché', icon: FileText, color: 'red' },
     { title: 'DCE', icon: FileCheck, color: 'orange' },
     { title: 'Jugement des offres', icon: Scale, color: 'amber' },
-    { title: 'Procédure de recours', icon: AlertCircle, color: 'yellow' },
   ];
 
   const updateField = (section: string, field: string, value: any) => {
@@ -419,8 +431,8 @@ export default function ReglementConsultation({
 
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-12 gap-6">
-          {/* Navigation sections - masquée en mode édition complète */}
-          {!showFullEdit && (
+          {/* Navigation sections - masquée en mode édition complète ou quand le parent gère la nav (sous-menu DCE) */}
+          {!showFullEdit && !hideSectionsSidebar && (
           <div className="col-span-3">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 sticky top-6">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
@@ -458,7 +470,7 @@ export default function ReglementConsultation({
           )}
 
           {/* Contenu */}
-          <div className={showFullEdit ? 'col-span-12' : 'col-span-9'}>
+          <div className={showFullEdit || hideSectionsSidebar ? 'col-span-12' : 'col-span-9'}>
             {showFullEdit ? (
               // Mode édition complète : afficher le document complet éditable
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
@@ -717,7 +729,7 @@ export default function ReglementConsultation({
                     <p>L'AFPA pourra décider de ne pas donner suite à la présente consultation pour un motif d'intérêt général. Dans l'hypothèse où l'AFPA déciderait de la déclarer sans suite, les candidats ne pourront prétendre à aucune indemnité.</p>
                   </div>
 
-                  {/* Chapitre 12 */}
+                  {/* Chapitre 12 - Procédure de recours (affiché en lecture seule, identique à l'export Word) */}
                   <div className="mb-6 not-prose">
                     <h2 className="text-lg font-bold bg-[#5DBDB4] text-black p-2 mb-4">12  PROCEDURE DE RECOURS</h2>
                     <p className="mb-4">En cas de litige, seul le Tribunal administratif de Montreuil est compétent :</p>
@@ -730,11 +742,11 @@ export default function ReglementConsultation({
                       <p>SIRET : 130 006 869 00015</p>
                     </div>
                     <p className="mb-2 text-sm"><strong>Référé précontractuel :</strong> conformément à l'article L. 551-1 et aux articles R. 551-1 à R. 551-6 du Code de Justice Administrative, tout opérateur économique ayant intérêt à conclure le contrat peut introduire un référé précontractuel contre tout acte de la passation jusqu'à la date de signature du marché, auprès du Tribunal Administratif compétent.</p>
-                    <p className="mb-2 text-sm"><strong>Référé contractuel :</strong> conformément à l'article L. 551-13 et aux articles R. 551-7 à R. 551-10 du Code de Justice Administrative...</p>
-                    <p className="mb-2 text-sm"><strong>Recours pour excès de pouvoir :</strong> conformément aux articles R. 421-1 et R. 421-2 du Code de Justice Administrative...</p>
+                    <p className="mb-2 text-sm"><strong>Référé contractuel :</strong> conformément à l'article L. 551-13 et aux articles R. 551-7 à R. 551-10 du Code de Justice Administrative, tout opérateur économique ayant intérêt à conclure le contrat peut introduire un référé contractuel contre tout acte de la passation, dans un délai de 31 jours à compter de la publication de l'avis d'attribution ou à défaut d'un tel avis dans un délai de six (6) mois à compter de la conclusion du marché devant le Tribunal Administratif compétent.</p>
+                    <p className="mb-2 text-sm"><strong>Recours pour excès de pouvoir :</strong> conformément aux articles R. 421-1 et R. 421-2 du Code de Justice Administrative, tout opérateur économique ayant un intérêt à agir, dispose d'un délai de deux mois pour exercer un recours contentieux au tribunal administratif compétent, à compter de la décision lui faisant grief. Il peut assortir son recours d'un référé suspension conformément à l'article L. 521-1 du Code de Justice Administrative.</p>
                     <p className="mb-4 text-sm"><strong>Recours de plein contentieux :</strong> prévu à l'article R. 421-3 du code de justice administrative et pouvant être exercé dans un délai de deux mois contre les décisions de rejet.</p>
                   </div>
-                  
+
                   <div className="mt-12 space-y-2 not-prose">
                     <p>Fait à Montreuil-sous-Bois,</p>
                     <p>Le ........................</p>
@@ -779,7 +791,6 @@ export default function ReglementConsultation({
                 {activeSection === 4 && <TypeMarcheSection data={formData.typeMarche} updateField={updateField} />}
                 {activeSection === 5 && <DCESection data={formData.dce} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />}
                 {activeSection === 6 && <JugementSection data={formData.jugement} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />}
-                {activeSection === 7 && <RecoursSection data={formData.recours} updateField={updateField} />}
               </div>
             )}
           </div>
@@ -1720,88 +1731,6 @@ function JugementSection({ data, updateField, addArrayItem, removeArrayItem }: a
           <Plus className="w-4 h-4 inline mr-1" />
           Ajouter un sous-critère
         </button>
-      </div>
-    </div>
-  );
-}
-
-function RecoursSection({ data, updateField }: any) {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">12. Procédure de recours</h2>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Nom du tribunal
-        </label>
-        <input
-          type="text"
-          value={data.tribunalNom}
-          onChange={(e) => updateField('recours', 'tribunalNom', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Adresse
-        </label>
-        <input
-          type="text"
-          value={data.tribunalAdresse}
-          onChange={(e) => updateField('recours', 'tribunalAdresse', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Ville
-        </label>
-        <input
-          type="text"
-          value={data.tribunalVille}
-          onChange={(e) => updateField('recours', 'tribunalVille', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Téléphone
-          </label>
-          <input
-            type="text"
-            value={data.tribunalTel}
-            onChange={(e) => updateField('recours', 'tribunalTel', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Courriel
-          </label>
-          <input
-            type="email"
-            value={data.tribunalCourriel}
-            onChange={(e) => updateField('recours', 'tribunalCourriel', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          SIRET
-        </label>
-        <input
-          type="text"
-          value={data.tribunalSIRET}
-          onChange={(e) => updateField('recours', 'tribunalSIRET', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-        />
       </div>
     </div>
   );

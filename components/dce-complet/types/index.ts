@@ -406,6 +406,9 @@ export type DCESectionType =
   | 'acteEngagement'
   | 'ccap'
   | 'cctp'
+  | 'clausesContractuelles'
+  | 'annexesFinancieres'
+  | 'reponseTechnique'
   | 'bpu'
   | 'bpuTMA'
   | 'dqe'
@@ -426,6 +429,7 @@ export interface DCECompleteness {
     acteEngagement: number;
     ccap: number;
     cctp: number;
+    annexesFinancieres?: number;
     bpu: number;
     bpuTMA: number;
     dqe: number;
