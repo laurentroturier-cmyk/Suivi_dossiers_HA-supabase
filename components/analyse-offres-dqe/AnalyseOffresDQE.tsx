@@ -3,7 +3,7 @@
 // Charge les DQE Excel par lot / par candidat et affiche une analyse comparative
 // ============================================
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Search,
   Upload,
@@ -85,6 +85,33 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
   const [lastManualSaveAt, setLastManualSaveAt] = useState<string | null>(null);
   const [showAllCandidates, setShowAllCandidates] = useState(false);
   const [selectedDepotCandidat, setSelectedDepotCandidat] = useState<string>('');
+
+  // Scroll synchronisé pour la vue comparaison (barre en haut + en bas du tableau)
+  const comparisonScrollTopRef = useRef<HTMLDivElement | null>(null);
+  const comparisonScrollBottomRef = useRef<HTMLDivElement | null>(null);
+  const [comparisonScrollWidth, setComparisonScrollWidth] = useState<number | null>(null);
+
+  const handleComparisonTopScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      if (!comparisonScrollBottomRef.current) return;
+      const scrollLeft = e.currentTarget.scrollLeft;
+      if (comparisonScrollBottomRef.current.scrollLeft !== scrollLeft) {
+        comparisonScrollBottomRef.current.scrollLeft = scrollLeft;
+      }
+    },
+    [comparisonScrollBottomRef],
+  );
+
+  const handleComparisonBottomScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      if (!comparisonScrollTopRef.current) return;
+      const scrollLeft = e.currentTarget.scrollLeft;
+      if (comparisonScrollTopRef.current.scrollLeft !== scrollLeft) {
+        comparisonScrollTopRef.current.scrollLeft = scrollLeft;
+      }
+    },
+    [comparisonScrollTopRef],
+  );
 
   const procedureResult = useProcedure(numeroProcedure.length === 5 ? numeroProcedure : null);
 
@@ -502,6 +529,13 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
 
   const analysisRows = currentCandidats.length > 0 ? currentCandidats[0].rows : [];
   const analysisCandidats = currentCandidats;
+
+  // Mesure dynamique de la largeur du contenu pour aligner les deux barres de scroll
+  useEffect(() => {
+    if (comparisonScrollBottomRef.current) {
+      setComparisonScrollWidth(comparisonScrollBottomRef.current.scrollWidth);
+    }
+  }, [analysisCandidats, analysisRows]);
 
   // Notes prix selon la méthode GRAMP (proportionnelle inverse) sur 100 points :
   // Note = (Prix le plus bas / Prix de l'offre) × 100
@@ -2246,8 +2280,29 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                     </div>
                   </div>
 
-                      <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-auto">
-                        <table className="min-w-full text-xs sm:text-sm">
+                      <div className="space-y-1">
+                        {/* Barre de défilement horizontale en haut du tableau pour faciliter la lecture */}
+                        <div
+                          ref={comparisonScrollTopRef}
+                          className="block overflow-x-auto h-4 bg-slate-50 dark:bg-slate-900/60 rounded-md"
+                          onScroll={handleComparisonTopScroll}
+                        >
+                          <div
+                            style={{
+                              width: comparisonScrollWidth
+                                ? `${comparisonScrollWidth}px`
+                                : '2000px',
+                              height: 2,
+                            }}
+                          />
+                        </div>
+
+                        <div
+                          ref={comparisonScrollBottomRef}
+                          className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-x-auto overflow-y-hidden"
+                          onScroll={handleComparisonBottomScroll}
+                        >
+                        <table className="min-w-full text-xs sm:text-sm table-fixed">
                           <thead className="bg-slate-50 dark:bg-slate-800">
                             <tr>
                               <th className="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-300">
@@ -2303,7 +2358,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                                   key={`${row.numero}-${rowIndex}`}
                                   className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/70"
                                 >
-                                  <td className="px-3 py-2 font-mono text-[11px] text-slate-500 dark:text-slate-300">
+                                  <td className="px-3 py-2 font-mono text-[11px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
                                     {row.numero || '—'}
                                   </td>
                                   <td className="px-3 py-2 text-slate-800 dark:text-slate-100">
@@ -2321,7 +2376,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                                     return (
                                       <td
                                         key={`${c.id}-${idx}`}
-                                        className={`px-3 py-2 text-right tabular-nums font-medium ${
+                                        className={`px-3 py-2 text-right tabular-nums font-medium whitespace-nowrap min-w-[110px] ${
                                           isMin
                                             ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30'
                                             : 'text-slate-800 dark:text-slate-100'
@@ -2333,18 +2388,18 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                                       </td>
                                     );
                                   })}
-                                  <td className="px-3 py-2 text-right tabular-nums font-medium text-indigo-700 dark:text-indigo-300">
+                                  <td className="px-3 py-2 text-right tabular-nums font-medium text-indigo-700 dark:text-indigo-300 whitespace-nowrap min-w-[110px]">
                                     {moyenne > 0
                                       ? moyenne.toLocaleString('fr-FR', { minimumFractionDigits: 2 })
                                       : '—'}
                                   </td>
-                                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-emerald-700 dark:text-emerald-300">
+                                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap min-w-[110px]">
                                     {min > 0 ? min.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
                                   </td>
-                                  <td className="px-3 py-2 text-right tabular-nums text-amber-700 dark:text-amber-300">
+                                  <td className="px-3 py-2 text-right tabular-nums text-amber-700 dark:text-amber-300 whitespace-nowrap min-w-[110px]">
                                     {max > 0 ? max.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
                                   </td>
-                                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-rose-700 dark:text-rose-300">
+                                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-rose-700 dark:text-rose-300 whitespace-nowrap min-w-[110px]">
                                     {ecart > 0 ? ecart.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) : '—'}
                                   </td>
                                 </tr>
@@ -2355,7 +2410,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                             <tr>
                               <td
                                 colSpan={2}
-                                className="px-3 py-2 text-slate-800 dark:text-slate-100 text-right"
+                                className="px-3 py-2 text-slate-800 dark:text-slate-100 text-right whitespace-nowrap"
                               >
                                 TOTAL HT
                               </td>
@@ -2364,7 +2419,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                                 return (
                                   <td
                                     key={c.id}
-                                    className={`px-3 py-2 text-right tabular-nums ${
+                                    className={`px-3 py-2 text-right tabular-nums whitespace-nowrap min-w-[110px] ${
                                       isMin
                                         ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/40'
                                         : 'text-[#2F5B58] dark:text-teal-300'
@@ -2374,19 +2429,19 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                                   </td>
                                 );
                               })}
-                              <td className="px-3 py-2 text-right tabular-nums text-emerald-700 dark:text-emerald-300">
+                              <td className="px-3 py-2 text-right tabular-nums text-emerald-700 dark:text-emerald-300 whitespace-nowrap min-w-[110px]">
                                 {Math.min(...analysisCandidats.map((c) => c.totalHT)).toLocaleString('fr-FR', {
                                   minimumFractionDigits: 2,
                                 })}{' '}
                                 €
                               </td>
-                              <td className="px-3 py-2 text-right tabular-nums text-amber-700 dark:text-amber-300">
+                              <td className="px-3 py-2 text-right tabular-nums text-amber-700 dark:text-amber-300 whitespace-nowrap min-w-[110px]">
                                 {Math.max(...analysisCandidats.map((c) => c.totalHT)).toLocaleString('fr-FR', {
                                   minimumFractionDigits: 2,
                                 })}{' '}
                                 €
                               </td>
-                              <td className="px-3 py-2 text-right tabular-nums text-rose-700 dark:text-rose-300">
+                              <td className="px-3 py-2 text-right tabular-nums text-rose-700 dark:text-rose-300 whitespace-nowrap min-w-[110px]">
                                 {(
                                   Math.max(...analysisCandidats.map((c) => c.totalHT)) -
                                   Math.min(...analysisCandidats.map((c) => c.totalHT))
@@ -2396,6 +2451,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                             </tr>
                           </tfoot>
                         </table>
+                        </div>
                       </div>
                     </div>
                   )}

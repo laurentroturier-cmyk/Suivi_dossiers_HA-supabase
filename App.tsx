@@ -1209,13 +1209,21 @@ const App: React.FC = () => {
     };
 
     return dossiers
-      .filter(d => (
-        (selectedAcheteurs.length === 0 || selectedAcheteurs.includes(getProp(d, 'Acheteur'))) &&
-        (selectedPriorities.length === 0 || selectedPriorities.includes(getProp(d, 'Priorite'))) &&
-        matchesProjectSearch(d)
-      ))
+      .filter(d => {
+        const matchesAcheteur =
+          selectedAcheteurs.length === 0 || selectedAcheteurs.includes(getProp(d, 'Acheteur'));
+
+        const matchesPriority =
+          selectedPriorities.length === 0 || selectedPriorities.includes(getProp(d, 'Priorite'));
+
+        // ✅ appliquer aussi le filtre sur le statut du dossier pour la vue "Projets achats"
+        const matchesStatus =
+          selectedStatuses.length === 0 || selectedStatuses.includes(getProp(d, 'Statut_du_Dossier'));
+
+        return matchesAcheteur && matchesPriority && matchesStatus && matchesProjectSearch(d);
+      })
       .sort((a, b) => (parseFloat(String(a.IDProjet)) || 0) < (parseFloat(String(b.IDProjet)) || 0) ? 1 : -1);
-  }, [dossiers, selectedAcheteurs, selectedPriorities, projectSearch]);
+  }, [dossiers, selectedAcheteurs, selectedPriorities, selectedStatuses, projectSearch]);
 
   // ============================================
   // AUTH HANDLERS & RENDERING
