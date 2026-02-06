@@ -7,6 +7,14 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
+## [1.0.41] - 2026-02-06
+
+🐛 **PATCH**
+
+- Build automatique
+
+---
+
 ## [1.0.40] - 2026-02-06
 
 🐛 **PATCH**
