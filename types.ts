@@ -126,5 +126,6 @@ export type TableType =
   | 'ouverture-plis'
   | 'rapport-presentation'
   | 'workflow-analyse-offres'
-  | 'analyse-offres-dqe';
+  | 'analyse-offres-dqe'
+  | 'analyse-dpgf';
 

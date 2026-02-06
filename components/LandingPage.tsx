@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell, Construction, GitBranch } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell, Construction, GitBranch, FileSpreadsheet } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (tab: string) => void;
@@ -108,6 +108,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
         { label: 'Analyse AN01', tab: 'an01', isAdmin: false, icon: LineChart, color: 'text-emerald-600 dark:text-emerald-400' },
         { label: 'Rapport de Présentation', tab: 'rapport-presentation', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
         { label: 'Analyse des offres DQE', tab: 'analyse-offres-dqe', isAdmin: false, icon: BarChart3, color: 'text-[#004d3d] dark:text-cyan-400' },
+        { label: 'Analyse DPGF', tab: 'analyse-dpgf', isAdmin: false, icon: FileSpreadsheet, color: 'text-teal-600 dark:text-teal-400' },
 
       ]
     },

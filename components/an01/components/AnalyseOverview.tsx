@@ -1,8 +1,8 @@
 import React from 'react';
-import { Download, Upload, LineChart, Info, FileText, BarChart3 } from 'lucide-react';
+import { Download, Upload, LineChart, Info, FileText, BarChart3, FileSpreadsheet } from 'lucide-react';
 
 interface AnalyseOverviewProps {
-  onNavigate: (tab: 'retraits' | 'depots' | 'an01' | 'rapport') => void;
+  onNavigate: (tab: 'retraits' | 'depots' | 'an01' | 'rapport' | 'dpgf') => void;
 }
 
 const AnalyseOverview: React.FC<AnalyseOverviewProps> = ({ onNavigate }) => {
@@ -46,6 +46,16 @@ const AnalyseOverview: React.FC<AnalyseOverviewProps> = ({ onNavigate }) => {
       iconBg: 'bg-purple-100 dark:bg-purple-500/20',
       borderColor: 'border-purple-200 dark:border-purple-500/40',
       action: () => onNavigate('rapport'),
+    },
+    {
+      id: 'dpgf',
+      title: 'Analyse DPGF',
+      description: "Lecture et analyse des DPGF (Décomposition du Prix Global et Forfaitaire)",
+      icon: FileSpreadsheet,
+      iconColor: 'text-teal-600 dark:text-teal-400',
+      iconBg: 'bg-teal-100 dark:bg-teal-500/20',
+      borderColor: 'border-teal-200 dark:border-teal-500/40',
+      action: () => onNavigate('dpgf'),
     },
   ];
 

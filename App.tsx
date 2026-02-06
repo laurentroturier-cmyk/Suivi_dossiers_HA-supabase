@@ -52,6 +52,7 @@ import { AppVersion } from './components/AppVersion';
 import { AnalyseOverview } from './components/an01';
 import { WorkflowAnalyseOffres } from './components/workflow-analyse-offres';
 import { AnalyseOffresDQE } from './components/analyse-offres-dqe';
+import { DpgfReader } from './components/analyse-dpgf';
 import DashboardPage from './pages/DashboardPage';
 
 import { 
@@ -2990,8 +2991,9 @@ const App: React.FC = () => {
                   'depots': 'Registre Dépôts',
                   'an01': 'AN01',
                   'rapport': 'Rapport de Présentation',
+                  'dpgf': 'Analyse DPGF',
                 };
-                const actualTab = tab === 'rapport' ? 'rapport-presentation' : tab;
+                const actualTab = tab === 'rapport' ? 'rapport-presentation' : (tab === 'dpgf' ? 'analyse-dpgf' : tab);
                 navigateTo(actualTab as any, titles[tab] || tab);
               }} />
             )}
@@ -3024,6 +3026,14 @@ const App: React.FC = () => {
 
             {activeTab === 'analyse-offres-dqe' && (
               <AnalyseOffresDQE
+                onClose={() => {
+                  handleGoBack();
+                }}
+              />
+            )}
+
+            {activeTab === 'analyse-dpgf' && (
+              <DpgfReader
                 onClose={() => {
                   handleGoBack();
                 }}
