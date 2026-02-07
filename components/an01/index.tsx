@@ -9,6 +9,9 @@ export { default as Dashboard } from './components/Dashboard';
 export { default as LotSelectionView } from './components/LotSelectionView';
 export { default as GlobalTableView } from './components/GlobalTableView';
 export { default as AnalyseOverview } from './components/AnalyseOverview';
+export { default as An01EntryView } from './components/An01EntryView';
+export { default as An01SaisieWizard } from './components/An01SaisieWizard';
+export { default as An01LoadFromProcedureView } from './components/An01LoadFromProcedureView';
 export { default as TechnicalAnalysisView } from './components/TechnicalAnalysisView';
 export { default as ExportSelectModal } from './components/ExportSelectModal';
 export { default as RapportPresentationModal } from './components/RapportPresentationModal';
@@ -22,5 +25,7 @@ export * from './types';
 
 // Utilitaires
 export { parseExcelFile } from './utils/excelParser';
+export { projectToAnalysisData } from './utils/saisieToAnalysis';
 export { exportRapportDOCX } from './utils/rapportExport';
 export type { ExportRapportOptions } from './utils/rapportExport';
+export type { An01EntryChoice } from './components/An01EntryView';

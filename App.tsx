@@ -28,7 +28,7 @@ import {
 } from './utils/dateUtils';
 import { calculateStatutConsultation } from './utils/statutCalculator';
 import { DocumentViewer } from './components/DocumentViewer';
-import { UploadView, Dashboard, LotSelectionView, GlobalTableView, parseExcelFile, AnalysisData } from './components/an01';
+import { UploadView, Dashboard, LotSelectionView, GlobalTableView, An01EntryView, An01SaisieWizard, An01LoadFromProcedureView, parseExcelFile, AnalysisData } from './components/an01';
 import html2pdf from 'html2pdf.js';
 import html2canvas from 'html2canvas';
 // Expose for components relying on window globals
@@ -326,6 +326,11 @@ const App: React.FC = () => {
   
   // AN01 States
   const [an01Data, setAn01Data] = useState<{ lots: AnalysisData[], globalMetadata: Record<string, string> } | null>(null);
+  const [an01EntryMode, setAn01EntryMode] = useState<'choice' | 'upload' | 'load-base' | 'saisie'>('choice');
+  const [an01SaisiePhase, setAn01SaisiePhase] = useState<'search' | 'wizard'>('search');
+  const [an01InitialProject, setAn01InitialProject] = useState<{ id: string; meta: any; lots: any[] } | null>(null);
+  const [an01LastProject, setAn01LastProject] = useState<{ id: string; meta: any; lots: any[] } | null>(null);
+  const [an01WizardInitialStep, setAn01WizardInitialStep] = useState<number | null>(null);
   const [an01ProcedureNumber, setAn01ProcedureNumber] = useState<string>('');
   const [an01LoadMode, setAn01LoadMode] = useState<'manual' | 'auto'>('auto');
   const [an01SelectedLotIndex, setAn01SelectedLotIndex] = useState<number | null>(null);
@@ -1683,6 +1688,11 @@ const App: React.FC = () => {
     setAn01ViewMode('grid');
     setAn01ProcedureNumber('');
     setAn01LoadMode('auto');
+    setAn01EntryMode('choice');
+    setAn01SaisiePhase('search');
+    setAn01InitialProject(null);
+    setAn01LastProject(null);
+    setAn01WizardInitialStep(null);
   };
 
   const handleAn01BackToLotSelection = () => {
@@ -4974,49 +4984,82 @@ const App: React.FC = () => {
         {activeTab === 'an01' && (
           <div className="an01-wrapper">
             {!an01Data ? (
-              <div className="h-screen w-full font-sans text-gray-900 bg-gray-100 flex flex-col">
-                {an01LoadMode === 'auto' ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="surface-card p-12 rounded-[2rem] shadow-sm border border-gray-100 max-w-2xl w-full">
-                      <h2 className="text-2xl font-black text-[#004d3d] mb-6">Charger l'analyse AN01</h2>
-                      <p className="text-sm text-gray-600 mb-6">Saisissez le numéro de procédure Afpa pour charger automatiquement le fichier depuis la base de données.</p>
-                      
+              <div className="h-screen w-full font-sans text-gray-900 bg-gray-100 dark:bg-gray-900 flex flex-col">
+                {an01EntryMode === 'choice' && (
+                  <An01EntryView
+                    onChoice={(choice) => {
+                      setAn01EntryMode(choice);
+                      if (choice === 'load-base') setAn01LoadMode('auto');
+                      if (choice === 'upload') setAn01LoadMode('manual');
+                      if (choice === 'saisie') setAn01SaisiePhase('search');
+                    }}
+                  />
+                )}
+                {an01EntryMode === 'upload' && (
+                  <UploadView
+                    onFileUpload={handleAn01FileUpload}
+                    isLoading={an01IsLoading}
+                    error={an01Error}
+                  />
+                )}
+                {an01EntryMode === 'load-base' && (
+                  <div className="flex-1 flex items-center justify-center p-4">
+                    <div className="surface-card p-12 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 max-w-2xl w-full bg-white dark:bg-gray-800">
+                      <h2 className="text-2xl font-black text-[#004d3d] dark:text-emerald-400 mb-6">Charger l&apos;analyse AN01</h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Saisissez le numéro de procédure Afpa pour charger automatiquement le fichier depuis la base de données.</p>
                       <input
                         type="text"
                         placeholder="Numéro de procédure (Afpa)"
                         value={an01ProcedureNumber}
                         onChange={(e) => setAn01ProcedureNumber(e.target.value)}
-                        className="w-full px-6 py-4 rounded-xl border border-gray-200 text-sm font-bold mb-4 focus:outline-none focus:border-[#004d3d]"
+                        className="w-full px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-600 text-sm font-bold mb-4 focus:outline-none focus:border-[#004d3d] dark:focus:border-emerald-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       />
-                      
                       {an01Error && (
-                        <div className="bg-red-50 text-red-700 px-6 py-4 rounded-xl text-sm mb-4">
+                        <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-6 py-4 rounded-xl text-sm mb-4">
                           {an01Error}
                         </div>
                       )}
-                      
                       <div className="flex gap-4">
                         <button
                           onClick={() => an01ProcedureNumber && handleAn01LoadFromSupabase(an01ProcedureNumber)}
                           disabled={!an01ProcedureNumber || an01IsLoading}
-                          className="flex-1 px-8 py-4 bg-[#004d3d] text-white rounded-xl font-bold text-sm hover:bg-[#006d57] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex-1 px-8 py-4 bg-[#004d3d] dark:bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-[#006d57] dark:hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {an01IsLoading ? 'Chargement...' : 'Charger depuis la base'}
                         </button>
                         <button
-                          onClick={() => setAn01LoadMode('manual')}
-                          className="px-8 py-4 border-2 border-gray-200 text-gray-600 rounded-xl font-bold text-sm hover:border-gray-300 transition-colors"
+                          onClick={() => setAn01EntryMode('choice')}
+                          className="px-8 py-4 border-2 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 rounded-xl font-bold text-sm hover:border-gray-300 dark:hover:border-gray-500 transition-colors"
                         >
-                          Chargement manuel
+                          Retour
                         </button>
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <UploadView 
-                    onFileUpload={handleAn01FileUpload} 
-                    isLoading={an01IsLoading} 
-                    error={an01Error}
+                )}
+                {an01EntryMode === 'saisie' && an01SaisiePhase === 'search' && (
+                  <An01LoadFromProcedureView
+                    onLoaded={(project) => {
+                      setAn01InitialProject(project);
+                      setAn01SaisiePhase('wizard');
+                    }}
+                    onSkip={() => {
+                      setAn01InitialProject(null);
+                      setAn01SaisiePhase('wizard');
+                    }}
+                    onBack={() => setAn01EntryMode('choice')}
+                  />
+                )}
+                {an01EntryMode === 'saisie' && an01SaisiePhase === 'wizard' && (
+                  <An01SaisieWizard
+                    initialProject={an01InitialProject ?? undefined}
+                    initialStep={an01WizardInitialStep ?? undefined}
+                    onComplete={(result, project) => {
+                      setAn01Data(result);
+                      if (project) setAn01LastProject(project);
+                      if (result.lots.length === 1) setAn01SelectedLotIndex(0);
+                    }}
+                    onBack={() => setAn01EntryMode('choice')}
                   />
                 )}
               </div>
@@ -5026,6 +5069,15 @@ const App: React.FC = () => {
                   data={an01Data.lots[an01SelectedLotIndex]} 
                   onReset={handleAn01Reset}
                   onBack={an01Data.lots.length > 1 ? handleAn01BackToLotSelection : undefined}
+                  onBackToStep6={
+                    an01EntryMode === 'saisie' && an01LastProject
+                      ? () => {
+                          setAn01Data(null);
+                          setAn01InitialProject(an01LastProject);
+                          setAn01WizardInitialStep(5);
+                        }
+                      : undefined
+                  }
                 />
               </div>
             ) : an01ViewMode === 'table' ? (

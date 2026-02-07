@@ -17,10 +17,12 @@ import { Button } from '@/components/ui';
 interface Props {
   data: AnalysisData;
   onReset: () => void;
-  onBack?: () => void; // New prop to go back to lot selection
+  onBack?: () => void; // Retour aux lots
+  /** Retour à l'étape Synthèse du wizard (saisie) pour modifier puis revoir l'analyse */
+  onBackToStep6?: () => void;
 }
 
-const Dashboard: React.FC<Props> = ({ data, onReset, onBack }) => {
+const Dashboard: React.FC<Props> = ({ data, onReset, onBack, onBackToStep6 }) => {
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [filter, setFilter] = useState('');
   const [isExporting, setIsExporting] = useState(false);
@@ -383,7 +385,19 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack }) => {
                 title="Retour à l'accueil"
             />
           )}
-          
+          {onBackToStep6 && (
+            <Button
+              onClick={onBackToStep6}
+              variant="outline"
+              size="sm"
+              rounded="full"
+              icon={<ArrowLeft className="w-5 h-5" />}
+              className="no-print border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-600 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
+              title="Retour à l'étape Synthèse du wizard pour modifier"
+            >
+              <span className="text-sm font-medium">Retour à l&apos;étape Synthèse</span>
+            </Button>
+          )}
           <div>
             <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded uppercase tracking-wider">{lotName}</span>

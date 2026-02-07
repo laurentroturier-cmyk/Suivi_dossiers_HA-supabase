@@ -56,3 +56,6 @@ export interface GlobalAnalysisResult {
   lots: AnalysisData[];
   globalMetadata: Record<string, string>;
 }
+
+// Module Saisie (projet autonome)
+export * from './saisie';
