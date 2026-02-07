@@ -4,20 +4,26 @@
  * et affiche une grille : note (0-4) + commentaire par candidat.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui';
-import { Plus, Trash2, Download, Maximize2, ArrowLeft } from 'lucide-react';
-import type { AN01Lot, AN01Criterion } from '../../types/saisie';
+import { Plus, Trash2, Download, Maximize2, ArrowLeft, FileSpreadsheet, Upload } from 'lucide-react';
+import type { AN01Lot, AN01Criterion, AN01ProjectMeta } from '../../types/saisie';
 import { createDefaultCriterion, NOTATION_SCALE } from '../../types/saisie';
 import {
   loadTechnicalQuestionnaireForLot,
   mapQTCriteresToAN01Criteria,
 } from '../../utils/loadTechnicalQuestionnaireForLot';
+import {
+  exportTechnicalCriteriaToExcel,
+  importTechnicalCriteriaFromExcel,
+} from '../../utils/technicalCriteriaExcel';
 
 interface An01StepTechniqueProps {
   lots: AN01Lot[];
   /** Numéro de consultation (5 chiffres) pour charger le QT DCE du lot */
   consultationNumber?: string;
+  /** Métadonnées du projet pour l'en-tête de l'export Excel */
+  meta?: AN01ProjectMeta | null;
   onChange: (lots: AN01Lot[]) => void;
   onBack: () => void;
   onNext: () => void;
@@ -31,6 +37,7 @@ const parseLotNumber = (lotNumber: string): number => {
 const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
   lots,
   consultationNumber,
+  meta,
   onChange,
   onBack,
   onNext,
@@ -39,7 +46,38 @@ const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
   const [isLoadingQt, setIsLoadingQt] = useState(false);
   const [qtLoadError, setQtLoadError] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [importFeedback, setImportFeedback] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const currentLot = lots[selectedLotIndex];
+
+  const handleExportExcel = useCallback(() => {
+    if (!currentLot || !currentLot.criteria.length || !currentLot.candidates.length) return;
+    exportTechnicalCriteriaToExcel(currentLot, meta);
+  }, [currentLot, meta]);
+
+  const handleImportExcel = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !currentLot) return;
+      e.target.value = '';
+      setImportFeedback(null);
+      importTechnicalCriteriaFromExcel(file, currentLot).then((result) => {
+        if (result.success && result.updatedLot) {
+          onChange(
+            lots.map((l, i) => (i === selectedLotIndex ? result.updatedLot! : l))
+          );
+          const msg = result.stats
+            ? `${result.stats.rowsMatched} critère(s) mis à jour sur ${result.stats.rowsTotal}.`
+            : 'Import réussi.';
+          setImportFeedback(msg);
+          setTimeout(() => setImportFeedback(null), 4000);
+        } else {
+          setImportFeedback(result.error || 'Erreur lors de l\'import.');
+        }
+      });
+    },
+    [currentLot, selectedLotIndex, lots, onChange]
+  );
 
   const updateLot = (lotIndex: number, updater: (lot: AN01Lot) => AN01Lot) => {
     onChange(lots.map((l, i) => (i === lotIndex ? updater(l) : l)));
@@ -419,8 +457,8 @@ const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
 
       {currentLot && (
         <>
-          {consultationNumber?.trim() && (
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            {consultationNumber?.trim() && (
               <Button
                 variant="outline"
                 size="sm"
@@ -430,11 +468,41 @@ const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
               >
                 {isLoadingQt ? 'Chargement...' : 'Charger les critères du DCE pour ce lot'}
               </Button>
-              {qtLoadError && (
-                <span className="text-sm text-amber-600 dark:text-amber-400">{qtLoadError}</span>
-              )}
-            </div>
-          )}
+            )}
+            {currentLot.criteria.length > 0 && currentLot.candidates.length > 0 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<FileSpreadsheet className="w-4 h-4" />}
+                  onClick={handleExportExcel}
+                >
+                  Exporter en Excel
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<Upload className="w-4 h-4" />}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Importer depuis Excel
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleImportExcel}
+                />
+              </>
+            )}
+            {qtLoadError && (
+              <span className="text-sm text-amber-600 dark:text-amber-400">{qtLoadError}</span>
+            )}
+            {importFeedback && (
+              <span className="text-sm text-emerald-600 dark:text-emerald-400">{importFeedback}</span>
+            )}
+          </div>
 
           <div>
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Critères d&apos;évaluation</h3>

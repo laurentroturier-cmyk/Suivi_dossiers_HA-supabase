@@ -226,6 +226,7 @@ const An01SaisieWizard: React.FC<An01SaisieWizardProps> = ({ initialProject, ini
           <An01StepTechnique
             lots={project.lots}
             consultationNumber={project.meta?.consultation_number}
+            meta={project.meta}
             onChange={(lots) => setProject((p) => ({ ...p, lots }))}
             onBack={goPrev}
             onNext={goNext}
