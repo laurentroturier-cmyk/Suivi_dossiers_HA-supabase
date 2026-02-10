@@ -1,8 +1,8 @@
 {
-  "version": "1.0.45",
+  "version": "1.0.46",
   "name": "GestProjet",
   "lastUpdate": "2026-02-10",
-  "build": "45",
+  "build": "46",
   "changelog": {
     "1.0.15": {
       "date": "2026-01-21",
@@ -332,6 +332,13 @@
       ]
     },
     "1.0.45": {
+      "date": "2026-02-10",
+      "type": "patch",
+      "changes": [
+        "Build automatique"
+      ]
+    },
+    "1.0.46": {
       "date": "2026-02-10",
       "type": "patch",
       "changes": [
