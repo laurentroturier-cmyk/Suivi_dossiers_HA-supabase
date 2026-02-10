@@ -1,7 +1,7 @@
 {
   "name": "gestionnaire-de-marchés-publics",
   "private": true,
-  "version": "1.0.46",
+  "version": "1.0.47",
   "type": "module",
   "scripts": {
     "dev": "vite",
