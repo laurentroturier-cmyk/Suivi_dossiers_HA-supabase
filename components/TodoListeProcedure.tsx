@@ -17,7 +17,11 @@ import {
   Calendar,
   User,
   ListTodo,
-  RefreshCw
+  RefreshCw,
+  FileDown,
+  Trash,
+  SquareCheck,
+  Square
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -28,12 +32,77 @@ interface TodoTask {
   id: string;
   numero: number;
   titre: string;
+  categorie?: string;
   assigne_a: string;
   echeance: string;
   statut: 'en-attente' | 'en-cours' | 'terminee';
   date_realisation?: string;
   notes?: string;
 }
+
+// Liste prédéfinie des tâches du workflow d'achats publics
+const TACHES_PREDEFINIES = [
+  // En-tête
+  { titre: "Fiche de suivi du dossier d'achat", categorie: "En-tête" },
+  { titre: "Détail du projet", categorie: "En-tête" },
+  { titre: "Procédure", categorie: "En-tête" },
+  { titre: "Attribution", categorie: "En-tête" },
+  
+  // NO
+  { titre: "NO - Initialisation", categorie: "Notification d'Opportunité" },
+  { titre: "NO - Rédaction", categorie: "Notification d'Opportunité" },
+  { titre: "NO - Correction", categorie: "Notification d'Opportunité" },
+  { titre: "NO - Envoi en validation", categorie: "Notification d'Opportunité" },
+  { titre: "NO - Correction après validation", categorie: "Notification d'Opportunité" },
+  { titre: "NO - Envoi en validation finale", categorie: "Notification d'Opportunité" },
+  { titre: "NO - Validée", categorie: "Notification d'Opportunité" },
+  
+  // DCE
+  { titre: "DCE - Initialisation des documents", categorie: "DCE" },
+  { titre: "DCE - Création du répertoire PC", categorie: "DCE" },
+  { titre: "DCE - Création canal Teams et répertoire", categorie: "DCE" },
+  { titre: "DCE - CCAP", categorie: "DCE" },
+  { titre: "DCE - CCTP", categorie: "DCE" },
+  { titre: "DCE - CCTG", categorie: "DCE" },
+  { titre: "DCE - CRT", categorie: "DCE" },
+  { titre: "DCE - RC", categorie: "DCE" },
+  { titre: "DCE - ATTRI1", categorie: "DCE" },
+  { titre: "DCE - BPU", categorie: "DCE" },
+  { titre: "DCE - DQE", categorie: "DCE" },
+  { titre: "DCE - CEDSO", categorie: "DCE" },
+  { titre: "DCE - Annexe RGPD", categorie: "DCE" },
+  { titre: "DCE - Annexe Indemnités Afpa", categorie: "DCE" },
+  { titre: "DCE - Liste des centres", categorie: "DCE" },
+  { titre: "DCE - Liste des plateformes comptables", categorie: "DCE" },
+  
+  // Publication et analyse
+  { titre: "Publication de la procédure", categorie: "Publication" },
+  { titre: "Extraction registres des retraits, dépôts, questions et réponses", categorie: "Suivi" },
+  { titre: "Analyse des candidatures", categorie: "Analyse" },
+  { titre: "Analyse technique", categorie: "Analyse" },
+  { titre: "Finalisation AN01", categorie: "Analyse" },
+  
+  // RP
+  { titre: "RP - Rédaction", categorie: "Rapport de Présentation" },
+  { titre: "RP - Correction", categorie: "Rapport de Présentation" },
+  { titre: "RP - Envoi en validation", categorie: "Rapport de Présentation" },
+  { titre: "RP - Validation", categorie: "Rapport de Présentation" },
+  
+  // Notifications
+  { titre: "Notifications - Rejets Dematis", categorie: "Notifications" },
+  { titre: "Notifications - Attribution pressentie Dematis", categorie: "Notifications" },
+  { titre: "Notifications - Notification Dematis", categorie: "Notifications" },
+  
+  // Post-attribution
+  { titre: "Signature AE", categorie: "Post-attribution" },
+  { titre: "Création FIC", categorie: "Post-attribution" },
+  { titre: "Création fournisseur", categorie: "Post-attribution" },
+  { titre: "Contrats + catalogues FINA", categorie: "Post-attribution" },
+  { titre: "Communication interne (DSI ou Flash Achats)", categorie: "Post-attribution" },
+  { titre: "Avis d'attribution Dematis", categorie: "Post-attribution" },
+  { titre: "Données essentielles Dematis", categorie: "Post-attribution" },
+  { titre: "Demande d'informations complémentaires", categorie: "Post-attribution" }
+];
 
 interface TodoListeProcedureProps {
   procedureNumProc: string;
@@ -60,10 +129,15 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showPredefinedModal, setShowPredefinedModal] = useState(false);
+  const [filtreCategorie, setFiltreCategorie] = useState<string>('');
+  const [selectedPredefinedTasks, setSelectedPredefinedTasks] = useState<Set<number>>(new Set());
+  const [searchPredefined, setSearchPredefined] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
     titre: '',
+    categorie: '',
     assigne_a: '',
     echeance: '',
     statut: 'en-attente' as const,
@@ -154,6 +228,7 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
       id: Date.now().toString(),
       numero: tasks.length + 1,
       titre: formData.titre,
+      categorie: formData.categorie,
       assigne_a: formData.assigne_a,
       echeance: formData.echeance,
       statut: formData.statut,
@@ -189,6 +264,122 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
     saveTasks(updatedTasks);
   };
 
+  const handleDeleteSelected = () => {
+    if (selectedTasks.size === 0) return;
+    if (!confirm(`Voulez-vous vraiment supprimer ${selectedTasks.size} tâche(s) sélectionnée(s) ?`)) return;
+    
+    const updatedTasks = tasks.filter(t => !selectedTasks.has(t.id))
+      .map((t, index) => ({ ...t, numero: index + 1 }));
+    
+    saveTasks(updatedTasks);
+    setSelectedTasks(new Set());
+  };
+
+  const handleDeleteAll = () => {
+    if (tasks.length === 0) return;
+    if (!confirm('Attention : cette action va supprimer TOUTES les tâches. Voulez-vous continuer ?')) return;
+    saveTasks([]);
+    setSelectedTasks(new Set());
+  };
+
+  const toggleTaskSelection = (taskId: string) => {
+    const newSelected = new Set(selectedTasks);
+    if (newSelected.has(taskId)) {
+      newSelected.delete(taskId);
+    } else {
+      newSelected.add(taskId);
+    }
+    setSelectedTasks(newSelected);
+  };
+
+  const toggleAllTasks = () => {
+    if (selectedTasks.size === filteredTasks.length) {
+      setSelectedTasks(new Set());
+    } else {
+      setSelectedTasks(new Set(filteredTasks.map(t => t.id)));
+    }
+  };
+
+  const handleInitializePredefined = () => {
+    if (selectedPredefinedTasks.size === 0) {
+      alert('Veuillez sélectionner au moins une tâche à importer.');
+      return;
+    }
+
+    const selectedIndices = Array.from(selectedPredefinedTasks) as number[];
+    const newTasks: TodoTask[] = selectedIndices.map((index, idx) => {
+      const tache = TACHES_PREDEFINIES[index];
+      return {
+        id: Date.now().toString() + '_' + idx,
+        numero: tasks.length + idx + 1,
+        titre: tache.titre,
+        categorie: tache.categorie,
+        assigne_a: procedureAcheteur || userEmail || '',
+        echeance: '',
+        statut: 'en-attente' as const,
+        notes: ''
+      };
+    });
+
+    saveTasks([...tasks, ...newTasks]);
+    setShowPredefinedModal(false);
+    setSelectedPredefinedTasks(new Set());
+    setSearchPredefined('');
+  };
+
+  const togglePredefinedTask = (index: number) => {
+    const newSelected = new Set(selectedPredefinedTasks);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelectedPredefinedTasks(newSelected);
+  };
+
+  const togglePredefinedCategory = (categorie: string) => {
+    const categoryTasks = TACHES_PREDEFINIES
+      .map((t, idx) => ({ ...t, index: idx }))
+      .filter(t => t.categorie === categorie);
+    
+    const categoryIndices = categoryTasks.map(t => t.index);
+    const allSelected = categoryIndices.every(idx => selectedPredefinedTasks.has(idx));
+    
+    const newSelected = new Set(selectedPredefinedTasks);
+    if (allSelected) {
+      categoryIndices.forEach(idx => newSelected.delete(idx));
+    } else {
+      categoryIndices.forEach(idx => newSelected.add(idx));
+    }
+    setSelectedPredefinedTasks(newSelected);
+  };
+
+  const selectAllPredefined = () => {
+    const filtered = getFilteredPredefinedTasks();
+    if (filtered.every(t => selectedPredefinedTasks.has(t.index))) {
+      // Tout désélectionner
+      const newSelected = new Set(selectedPredefinedTasks);
+      filtered.forEach(t => newSelected.delete(t.index));
+      setSelectedPredefinedTasks(newSelected);
+    } else {
+      // Tout sélectionner
+      const newSelected = new Set(selectedPredefinedTasks);
+      filtered.forEach(t => newSelected.add(t.index));
+      setSelectedPredefinedTasks(newSelected);
+    }
+  };
+
+  const getFilteredPredefinedTasks = () => {
+    const tasksWithIndex = TACHES_PREDEFINIES.map((t, idx) => ({ ...t, index: idx }));
+    if (!searchPredefined) return tasksWithIndex;
+    
+    const term = searchPredefined.toLowerCase();
+    return tasksWithIndex.filter(t => 
+      t.titre.toLowerCase().includes(term) ||
+      t.categorie?.toLowerCase().includes(term)
+    );
+  };
+
   const toggleTaskStatus = async (taskId: string) => {
     const updatedTasks = tasks.map(t => {
       if (t.id === taskId) {
@@ -208,6 +399,7 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
   const resetForm = () => {
     setFormData({
       titre: '',
+      categorie: '',
       assigne_a: '',
       echeance: '',
       statut: 'en-attente',
@@ -220,6 +412,7 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
     setEditingTask(task);
     setFormData({
       titre: task.titre,
+      categorie: task.categorie || '',
       assigne_a: task.assigne_a,
       echeance: task.echeance,
       statut: task.statut,
@@ -244,15 +437,32 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
 
   // Filtrage
   const filteredTasks = useMemo(() => {
-    if (!searchTerm) return tasks;
+    let filtered = tasks;
     
-    const term = searchTerm.toLowerCase();
-    return tasks.filter(t => 
-      t.titre.toLowerCase().includes(term) ||
-      t.assigne_a.toLowerCase().includes(term) ||
-      t.notes?.toLowerCase().includes(term)
-    );
-  }, [tasks, searchTerm]);
+    // Filtre par catégorie
+    if (filtreCategorie) {
+      filtered = filtered.filter(t => t.categorie === filtreCategorie);
+    }
+    
+    // Filtre par recherche
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(t => 
+        t.titre.toLowerCase().includes(term) ||
+        t.assigne_a.toLowerCase().includes(term) ||
+        t.categorie?.toLowerCase().includes(term) ||
+        t.notes?.toLowerCase().includes(term)
+      );
+    }
+    
+    return filtered;
+  }, [tasks, searchTerm, filtreCategorie]);
+
+  // Liste des catégories uniques
+  const categories = useMemo(() => {
+    const cats = new Set(tasks.map(t => t.categorie).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [tasks]);
 
   // Export Excel
   const exportToExcel = () => {
@@ -260,6 +470,7 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
       tasks.map(t => ({
         'N°': t.numero,
         'Titre': t.titre,
+        'Catégorie': t.categorie || '',
         'Assigné à': t.assigne_a,
         'Échéance': t.echeance,
         'Statut': t.statut === 'terminee' ? 'Terminée' : t.statut === 'en-cours' ? 'En cours' : 'En attente',
@@ -291,10 +502,11 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
     // Tableau
     autoTable(doc, {
       startY: 35,
-      head: [['N°', 'Titre', 'Assigné à', 'Échéance', 'Statut', 'Date réalisation']],
+      head: [['N°', 'Titre', 'Catégorie', 'Assigné à', 'Échéance', 'Statut', 'Réalisation']],
       body: tasks.map(t => [
         t.numero,
         t.titre,
+        t.categorie || '-',
         t.assigne_a,
         t.echeance,
         t.statut === 'terminee' ? 'Terminée' : t.statut === 'en-cours' ? 'En cours' : 'En attente',
@@ -302,7 +514,7 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
       ]),
       theme: 'grid',
       headStyles: { fillColor: [0, 77, 61] },
-      styles: { fontSize: 8 }
+      styles: { fontSize: 7 }
     });
 
     doc.save(`TODO_Procedure_${procedureNumero}_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -378,7 +590,7 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50/30 dark:from-dark-900 dark:to-dark-800">
       {/* Header */}
       <div className="bg-white dark:bg-dark-800 border-b border-gray-200 dark:border-dark-700 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="w-full px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
@@ -405,6 +617,37 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Bouton supprimer sélection */}
+              {selectedTasks.size > 0 && (
+                <button
+                  onClick={handleDeleteSelected}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-semibold"
+                >
+                  <Trash className="w-4 h-4" />
+                  Supprimer ({selectedTasks.size})
+                </button>
+              )}
+
+              {/* Bouton supprimer tout */}
+              {tasks.length > 0 && (
+                <button
+                  onClick={handleDeleteAll}
+                  className="flex items-center gap-2 px-4 py-2 text-red-700 hover:text-red-800 border border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100 rounded-lg transition-colors font-semibold"
+                >
+                  <Trash className="w-4 h-4" />
+                  Tout supprimer
+                </button>
+              )}
+
+              {/* Bouton initialiser avec tâches prédéfinies */}
+              <button
+                onClick={() => setShowPredefinedModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold"
+              >
+                <FileDown className="w-4 h-4" />
+                Tâches standard
+              </button>
+
               {/* Export Menu */}
               <div className="relative">
                 <button
@@ -448,7 +691,7 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
       </div>
 
       {/* Stats Cards */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="w-full px-6 py-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white dark:bg-dark-800 rounded-xl p-6 border border-gray-200 dark:border-dark-700 shadow-sm">
             <div className="flex items-center justify-between">
@@ -499,9 +742,9 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-6">
-          <div className="relative">
+        {/* Search and Filter Bar */}
+        <div className="mb-6 flex gap-4">
+          <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
@@ -511,33 +754,62 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
               className="w-full pl-12 pr-4 py-3 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             />
           </div>
+
+          {/* Filtre par catégorie */}
+          {categories.length > 0 && (
+            <select
+              value={filtreCategorie}
+              onChange={(e) => setFiltreCategorie(e.target.value)}
+              className="px-4 py-3 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent min-w-[200px]"
+            >
+              <option value="">Toutes les catégories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Tasks Table */}
         <div className="bg-white dark:bg-dark-800 rounded-xl shadow-sm border border-gray-200 dark:border-dark-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-dark-900 border-b border-gray-200 dark:border-dark-700">
+          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-400px)]">
+            <table className="w-full min-w-[1400px]">
+              <thead className="bg-gray-50 dark:bg-dark-900 border-b border-gray-200 dark:border-dark-700 sticky top-0 z-10">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left w-12">
+                    <button
+                      onClick={toggleAllTasks}
+                      className="hover:scale-110 transition-transform"
+                    >
+                      {selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 ? (
+                        <SquareCheck className="w-5 h-5 text-emerald-600" />
+                      ) : (
+                        <Square className="w-5 h-5 text-gray-400" />
+                      )}
+                    </button>
+                  </th>
+                  <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-16">
                     N°
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider min-w-[250px]">
                     Titre
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider min-w-[180px]">
+                    Catégorie
+                  </th>
+                  <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider min-w-[180px]">
                     Assigné à
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-36">
                     Échéance
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-32">
                     Statut
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-36">
                     Date réalisation
                   </th>
-                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-28">
                     Actions
                   </th>
                 </tr>
@@ -545,19 +817,28 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
               <tbody className="divide-y divide-gray-200 dark:divide-dark-700">
                 {filteredTasks.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
+                    <td colSpan={9} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <ListTodo className="w-12 h-12 text-gray-300 dark:text-gray-600" />
                         <p className="text-gray-500 dark:text-gray-400 font-medium">
-                          {searchTerm ? 'Aucune tâche trouvée' : 'Aucune tâche pour le moment'}
+                          {searchTerm || filtreCategorie ? 'Aucune tâche trouvée' : 'Aucune tâche pour le moment'}
                         </p>
-                        {!searchTerm && (
-                          <button
-                            onClick={() => setShowAddModal(true)}
-                            className="text-emerald-600 hover:text-emerald-700 font-semibold"
-                          >
-                            Créer votre première tâche
-                          </button>
+                        {!searchTerm && !filtreCategorie && (
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => setShowAddModal(true)}
+                              className="text-emerald-600 hover:text-emerald-700 font-semibold"
+                            >
+                              Créer une tâche
+                            </button>
+                            <span className="text-gray-300">ou</span>
+                            <button
+                              onClick={() => setShowPredefinedModal(true)}
+                              className="text-blue-600 hover:text-blue-700 font-semibold"
+                            >
+                              Importer les tâches standard
+                            </button>
+                          </div>
                         )}
                       </div>
                     </td>
@@ -568,10 +849,22 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
                       key={task.id} 
                       className={`hover:bg-gray-50 dark:hover:bg-dark-900/50 transition-colors ${
                         isTaskLate(task) ? 'bg-red-50/50 dark:bg-red-900/10' : ''
-                      }`}
+                      } ${selectedTasks.has(task.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => toggleTaskSelection(task.id)}
+                          className="hover:scale-110 transition-transform"
+                        >
+                          {selectedTasks.has(task.id) ? (
+                            <SquareCheck className="w-5 h-5 text-emerald-600" />
+                          ) : (
+                            <Square className="w-5 h-5 text-gray-400" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => toggleTaskStatus(task.id)}
                             className="hover:scale-110 transition-transform"
@@ -587,8 +880,8 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col">
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col max-w-[250px]">
                           <span className={`text-sm font-semibold ${
                             task.statut === 'terminee' 
                               ? 'line-through text-gray-400' 
@@ -597,23 +890,30 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
                             {task.titre}
                           </span>
                           {task.notes && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
                               {task.notes}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {task.categorie && (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                            {task.categorie}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                          <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
                             {task.assigne_a}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
                           <span className={`text-sm ${
                             isTaskLate(task) 
                               ? 'text-red-600 font-bold' 
@@ -622,19 +922,19 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
                             {task.echeance}
                           </span>
                           {isTaskLate(task) && (
-                            <AlertTriangle className="w-4 h-4 text-red-600" />
+                            <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getStatutColor(task.statut)}`}>
                           {getStatutLabel(task.statut)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                         {task.date_realisation || '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td className="px-4 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditModal(task)}
@@ -693,6 +993,25 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="Ex: Rédiger le CCAP"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  Catégorie
+                </label>
+                <input
+                  type="text"
+                  value={formData.categorie || ''}
+                  onChange={(e) => setFormData({ ...formData, categorie: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder="Ex: DCE, NO, RP..."
+                  list="categories-list"
+                />
+                <datalist id="categories-list">
+                  {categories.map(cat => (
+                    <option key={cat} value={cat} />
+                  ))}
+                </datalist>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -793,6 +1112,217 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Predefined Tasks Modal */}
+      {showPredefinedModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-hidden">
+          <div className="bg-white dark:bg-dark-800 rounded-2xl w-full max-w-[95vw] h-[90vh] flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 rounded-t-2xl flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <ListTodo className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">
+                    Tâches standard du workflow d'achats publics
+                  </h2>
+                  <p className="text-sm text-blue-100 mt-0.5">
+                    {selectedPredefinedTasks.size} tâche{selectedPredefinedTasks.size > 1 ? 's' : ''} sélectionnée{selectedPredefinedTasks.size > 1 ? 's' : ''} sur {TACHES_PREDEFINIES.length}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPredefinedModal(false);
+                  setSelectedPredefinedTasks(new Set());
+                  setSearchPredefined('');
+                }}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            {/* Search and Actions Bar */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-dark-700 bg-gray-50 dark:bg-dark-900 flex-shrink-0">
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher une tâche ou catégorie..."
+                    value={searchPredefined}
+                    onChange={(e) => setSearchPredefined(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
+                <button
+                  onClick={selectAllPredefined}
+                  className="px-4 py-2.5 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                >
+                  {getFilteredPredefinedTasks().every(t => selectedPredefinedTasks.has(t.index)) ? 'Tout désélectionner' : 'Tout sélectionner'}
+                </button>
+              </div>
+            </div>
+
+            {/* Info Banner */}
+            <div className="px-6 pt-4 flex-shrink-0">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-xs font-bold">ℹ</span>
+                  </div>
+                  <div className="text-sm text-blue-900 dark:text-blue-100 space-y-1">
+                    <p className="font-semibold">Comment ça marche ?</p>
+                    <ul className="space-y-1 ml-1">
+                      <li>• Cochez les tâches que vous souhaitez importer</li>
+                      <li>• Assignation automatique à : <span className="font-bold">{procedureAcheteur || userEmail}</span></li>
+                      <li>• Aucune échéance automatique (à renseigner après import si besoin)</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tasks List - Scrollable */}
+            <div className="flex-1 min-h-0 px-6 py-4 overflow-y-auto">
+              <div className="space-y-4 pb-4">
+                {Object.entries(
+                  getFilteredPredefinedTasks().reduce((acc, tache) => {
+                    const cat = tache.categorie || 'Autre';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(tache);
+                    return acc;
+                  }, {} as Record<string, Array<typeof TACHES_PREDEFINIES[0] & { index: number }>>)
+                ).map(([categorie, taches]) => {
+                  const allCategorySelected = taches.every(t => selectedPredefinedTasks.has(t.index));
+                  const someCategorySelected = taches.some(t => selectedPredefinedTasks.has(t.index));
+                  
+                  return (
+                    <div key={categorie} className="bg-white dark:bg-dark-800 rounded-xl border border-gray-200 dark:border-dark-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                      {/* Category Header */}
+                      <div 
+                        className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-dark-900 dark:to-dark-800 px-4 py-3 border-b border-gray-200 dark:border-dark-700 cursor-pointer hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/20 dark:hover:to-blue-800/20 transition-colors"
+                        onClick={() => togglePredefinedCategory(categorie)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center">
+                              {allCategorySelected ? (
+                                <SquareCheck className="w-5 h-5 text-blue-600" />
+                              ) : someCategorySelected ? (
+                                <div className="w-5 h-5 border-2 border-blue-600 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                  <div className="w-2.5 h-2.5 bg-blue-600 rounded-sm"></div>
+                                </div>
+                              ) : (
+                                <Square className="w-5 h-5 text-gray-400" />
+                              )}
+                            </div>
+                            <h3 className="font-bold text-gray-900 dark:text-white text-lg">
+                              {categorie}
+                            </h3>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                              {taches.filter(t => selectedPredefinedTasks.has(t.index)).length} / {taches.length}
+                            </span>
+                          </div>
+                          <button className="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
+                            {allCategorySelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Tasks in Category */}
+                      <div className="divide-y divide-gray-100 dark:divide-dark-700">
+                        {taches.map((tache) => (
+                          <div
+                            key={tache.index}
+                            onClick={() => togglePredefinedTask(tache.index)}
+                            className={`px-4 py-3 cursor-pointer transition-all ${
+                              selectedPredefinedTasks.has(tache.index)
+                                ? 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                                : 'hover:bg-gray-50 dark:hover:bg-dark-900'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center justify-center flex-shrink-0">
+                                {selectedPredefinedTasks.has(tache.index) ? (
+                                  <SquareCheck className="w-5 h-5 text-blue-600" />
+                                ) : (
+                                  <Square className="w-5 h-5 text-gray-400" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-medium transition-colors ${
+                                  selectedPredefinedTasks.has(tache.index)
+                                    ? 'text-blue-900 dark:text-blue-100'
+                                    : 'text-gray-700 dark:text-gray-300'
+                                }`}>
+                                  {tache.titre}
+                                </p>
+                              </div>
+                              {selectedPredefinedTasks.has(tache.index) && (
+                                <CheckCircle2 className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Empty State */}
+              {getFilteredPredefinedTasks().length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Search className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400 font-medium">Aucune tâche trouvée</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">Essayez un autre terme de recherche</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="border-t border-gray-200 dark:border-dark-700 px-6 py-4 bg-gray-50 dark:bg-dark-900 rounded-b-2xl flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-bold text-blue-600 dark:text-blue-400">{selectedPredefinedTasks.size}</span> tâche{selectedPredefinedTasks.size > 1 ? 's' : ''} prête{selectedPredefinedTasks.size > 1 ? 's' : ''} à être importée{selectedPredefinedTasks.size > 1 ? 's' : ''}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setShowPredefinedModal(false);
+                      setSelectedPredefinedTasks(new Set());
+                      setSearchPredefined('');
+                    }}
+                    className="px-5 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-700 rounded-lg font-semibold transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleInitializePredefined}
+                    disabled={selectedPredefinedTasks.size === 0 || saving}
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-300 disabled:to-gray-400 text-white rounded-lg font-semibold transition-all flex items-center gap-2 disabled:cursor-not-allowed shadow-lg shadow-blue-600/30 disabled:shadow-none"
+                  >
+                    {saving ? (
+                      <>
+                        <RefreshCw className="w-5 h-5 animate-spin" />
+                        Importation...
+                      </>
+                    ) : (
+                      <>
+                        <FileDown className="w-5 h-5" />
+                        Importer {selectedPredefinedTasks.size > 0 ? `${selectedPredefinedTasks.size} tâche${selectedPredefinedTasks.size > 1 ? 's' : ''}` : ''}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
