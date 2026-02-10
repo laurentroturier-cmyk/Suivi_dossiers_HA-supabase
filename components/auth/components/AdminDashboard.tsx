@@ -18,7 +18,8 @@ import {
   UserX,
   Mail,
   Zap,
-  Building2
+  Building2,
+  ShoppingCart
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../../lib/supabase';
@@ -26,6 +27,7 @@ import { UserProfile, DataRecord, AccessRequest } from '../../../types/auth';
 import { PROJECT_FIELDS, DOSSIER_FIELDS, PROCEDURE_GROUPS } from '../../../constants';
 import DataImport from './DataImport';
 import GestionCentres from './GestionCentres';
+import { DashboardAchats } from '../../dashboard-achats';
 
 interface AdminDashboardProps {
   profile: UserProfile;
@@ -39,7 +41,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   const [error, setError] = useState<string | null>(null);
   const [rlsError, setRlsError] = useState(false);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
-  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import' | 'centres'>('data');
+  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import' | 'centres' | 'commandes-fina'>('data');
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -407,6 +409,16 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                 >
                   <Building2 className="w-4 h-4" />
                   Gestion Centres
+                </button>
+
+                <button 
+                  onClick={() => setActiveTab('commandes-fina')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'commandes-fina' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
+                  }`}
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  Commandes Fina par Trimestre
                 </button>
 
                 <button 
@@ -985,6 +997,13 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         {/* Gestion Centres Tab - ADMIN ONLY */}
         {activeTab === 'centres' && profile.role === 'admin' && (
           <GestionCentres profile={profile} />
+        )}
+
+        {/* Commandes Fina Tab - ADMIN ONLY */}
+        {activeTab === 'commandes-fina' && profile.role === 'admin' && (
+          <div className="h-full overflow-auto">
+            <DashboardAchats onBack={() => setActiveTab('data')} />
+          </div>
         )}
       </main>
     </div>

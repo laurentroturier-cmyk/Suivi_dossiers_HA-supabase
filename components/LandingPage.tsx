@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell, Construction, GitBranch, FileSpreadsheet } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell, Construction, GitBranch, FileSpreadsheet, ShoppingCart } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (tab: string) => void;
@@ -339,6 +339,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
                             <ActionIcon className={`w-4 h-4 ${action.color || domaine.iconColor}`} />
                           )}
                           <span>{action.label}</span>
+                          {action.badge && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-200 border border-cyan-200 dark:border-cyan-500/60">
+                              {action.badge}
+                            </span>
+                          )}
                         </div>
                         <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
