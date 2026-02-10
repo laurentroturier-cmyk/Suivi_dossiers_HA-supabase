@@ -547,7 +547,7 @@ export const TodoListeProcedure: React.FC<TodoListeProcedureProps> = ({
   const isAdmin = userRole === 'admin';
   const isOwner = userEmail && procedureAcheteur && 
     String(userEmail).toLowerCase() === String(procedureAcheteur).toLowerCase();
-  const hasAccess = isAdmin || isOwner;
+  const hasAccess = true; // Accès pour tout le monde
 
   if (loading) {
     return (

@@ -4733,29 +4733,6 @@ const App: React.FC = () => {
                                 <td className="px-8 py-5 text-left sticky left-0 bg-white/80 group-hover:bg-gray-50/80 dark:bg-[#1E1E1E]/80 dark:group-hover:bg-[#252525]/80 transition-colors backdrop-blur-sm z-10">
                                   <div className="flex items-center gap-2">
                                     <button onClick={() => { if(activeTab === 'dossiers') { setEditingProject(item); setActiveSubTab('general'); } else { setEditingProcedure(item); setActiveSubTab('general'); } }} className={`p-2.5 rounded-xl transition-all ${activeTab === 'dossiers' ? 'text-emerald-700 bg-emerald-50' : 'text-blue-600 bg-blue-50'}`} title="Modifier"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                                    {activeTab === 'procedures' && canAccessTodoList(item) && (() => {
-                                      const todoCount = getTodoCount(item);
-                                      const hasTodos = todoCount > 0;
-                                      return (
-                                        <button 
-                                          onClick={() => { 
-                                            setSelectedProcedureTodo(item); 
-                                            setShowTodoListe(true); 
-                                          }} 
-                                          className={`p-2.5 rounded-xl transition-all relative ${hasTodos ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' : 'text-amber-600 bg-amber-50 hover:bg-amber-100'}`}
-                                          title={`Gérer les tâches TODO${hasTodos ? ` (${todoCount})` : ''}`}
-                                        >
-                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                          </svg>
-                                          {hasTodos && (
-                                            <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                              {todoCount}
-                                            </span>
-                                          )}
-                                        </button>
-                                      );
-                                    })()}
                                   </div>
                                 </td>
                                 {fieldsForTab.map(f => {
@@ -4823,9 +4800,32 @@ const App: React.FC = () => {
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">N° Procédure:</span>
                     <span className="text-sm font-black text-blue-900">{editingProcedure.NumProc || 'Non défini'}</span>
                   </div>
-                  {editingProcedure['Numéro de procédure (Afpa)'] && <div className="px-6 py-2 bg-teal-50 border-2 border-teal-200 rounded-xl">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">N° AFPA:</span>
+                  {editingProcedure['Numéro de procédure (Afpa)'] && <div className="flex items-center gap-2 px-6 py-2 bg-teal-50 border-2 border-teal-200 rounded-xl">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">N° AFPA:</span>
                     <span className="text-sm font-black text-teal-900">{editingProcedure['Numéro de procédure (Afpa)']}</span>
+                    {(() => {
+                      const todoCount = getTodoCount(editingProcedure);
+                      const hasTodos = todoCount > 0;
+                      return (
+                        <button 
+                          onClick={() => { 
+                            setSelectedProcedureTodo(editingProcedure); 
+                            setShowTodoListe(true); 
+                          }} 
+                          className={`ml-2 p-1 rounded transition-all relative ${hasTodos ? 'bg-emerald-200 text-emerald-600 hover:bg-emerald-300' : 'bg-gray-200 text-gray-400 hover:bg-gray-300'}`}
+                          title={`TODO Liste${hasTodos ? ` (${todoCount} tâches)` : ' (aucune tâche)'}`}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                          </svg>
+                          {hasTodos && (
+                            <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[8px] font-black rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none">
+                              {todoCount}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })()}
                   </div>}
                 </div>}
                 {editingProcedure && editingProcedure.IDProjet && (
