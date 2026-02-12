@@ -1,7 +1,7 @@
 {
   "name": "gestionnaire-de-marchés-publics",
   "private": true,
-  "version": "1.0.47",
+  "version": "1.0.48",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -34,6 +34,7 @@
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.3",
     "react-is": "^19.2.4",
+    "react-simple-maps": "^3.0.0",
     "recharts": "^3.6.0",
     "xlsx": "0.18.5",
     "zustand": "^5.0.9"
