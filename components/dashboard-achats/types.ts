@@ -54,7 +54,7 @@ export interface KPIData {
   nbLignes: number;
 }
 
-export type TabType = 'overview' | 'families' | 'suppliers' | 'regions' | 'data';
+export type TabType = 'overview' | 'families' | 'suppliers' | 'regions' | 'regul' | 'data';
 
 export interface ChartDataset {
   label: string;

@@ -10,6 +10,7 @@ import { DataTable } from './DataTable';
 import { FamiliesTab } from './FamiliesTab';
 import { SuppliersTab } from './SuppliersTab';
 import { RegionsTab } from './RegionsTab';
+import { RegulTab } from './RegulTab';
 import { parseNumber, sumBy } from './utils';
 import { MONEY_COLS } from './constants';
 import { PDFExport } from './PDFExport';
@@ -196,6 +197,7 @@ export const DashboardAchats: React.FC<{ onBack: () => void }> = ({ onBack }) =>
     { id: 'families', label: 'Familles & Catégories' },
     { id: 'suppliers', label: 'Fournisseurs' },
     { id: 'regions', label: 'Entités & Régions' },
+    { id: 'regul', label: 'Analyses Régul & Appro' },
     { id: 'data', label: 'Données détaillées' }
   ];
 
@@ -275,6 +277,10 @@ export const DashboardAchats: React.FC<{ onBack: () => void }> = ({ onBack }) =>
 
         {activeTab === 'regions' && (
           <RegionsTab data={filteredData} />
+        )}
+
+        {activeTab === 'regul' && (
+          <RegulTab data={filteredData} />
         )}
 
         {activeTab === 'data' && (
