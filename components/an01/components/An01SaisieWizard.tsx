@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, ChevronRight, Save, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { supabase } from '@/lib/supabase';
 import type { AN01Project } from '../types/saisie';
 import { createDefaultProject } from '../types/saisie';
 import { projectToAnalysisData } from '../utils/saisieToAnalysis';
@@ -48,6 +49,71 @@ const saveStored = (project: AN01Project) => {
   }
 };
 
+const buildAnalyseTechPayload = (project: AN01Project) => ({
+  source: 'an01_step_5',
+  updated_at: new Date().toISOString(),
+  meta: {
+    consultation_number: project.meta?.consultation_number || '',
+  },
+  lots: project.lots.map((lot) => ({
+    id: lot.id,
+    lot_number: lot.lot_number,
+    lot_name: lot.lot_name,
+    criteria: lot.criteria,
+    notations: lot.notations,
+    candidates: lot.candidates.map((c) => ({ id: c.id, company_name: c.company_name })),
+  })),
+});
+
+const resolveProcedureNumProc = async (consultationNumber: string): Promise<{ numProc?: string; error?: string }> => {
+  const trimmed = String(consultationNumber || '').trim();
+  const digitsMatch = trimmed.match(/\d{5}/);
+  const short = digitsMatch ? digitsMatch[0] : trimmed;
+
+  const baseSelect = 'NumProc, "numero court procédure afpa", "Numéro de procédure (Afpa)"';
+
+  const exactShort = await supabase
+    .from('procédures')
+    .select(baseSelect)
+    .eq('numero court procédure afpa', short)
+    .limit(1);
+
+  if (exactShort.error) {
+    return { error: exactShort.error.message || 'Erreur recherche procedure.' };
+  }
+  if (exactShort.data?.length) {
+    return { numProc: exactShort.data[0]?.NumProc };
+  }
+
+  const ilikeShort = await supabase
+    .from('procédures')
+    .select(baseSelect)
+    .ilike('numero court procédure afpa', `%${short}%`)
+    .limit(1);
+
+  if (ilikeShort.error) {
+    return { error: ilikeShort.error.message || 'Erreur recherche procedure.' };
+  }
+  if (ilikeShort.data?.length) {
+    return { numProc: ilikeShort.data[0]?.NumProc };
+  }
+
+  const ilikeAfpa = await supabase
+    .from('procédures')
+    .select(baseSelect)
+    .ilike('Numéro de procédure (Afpa)', `%${trimmed}%`)
+    .limit(1);
+
+  if (ilikeAfpa.error) {
+    return { error: ilikeAfpa.error.message || 'Erreur recherche procedure.' };
+  }
+  if (ilikeAfpa.data?.length) {
+    return { numProc: ilikeAfpa.data[0]?.NumProc };
+  }
+
+  return { error: `Aucune procedure trouvee pour: ${trimmed}` };
+};
+
 const An01SaisieWizard: React.FC<An01SaisieWizardProps> = ({ initialProject, initialStep, onComplete, onBack }) => {
   const [step, setStep] = useState<StepIndex>(initialStep ?? 0);
   const [project, setProject] = useState<AN01Project>(() => {
@@ -56,14 +122,67 @@ const An01SaisieWizard: React.FC<An01SaisieWizardProps> = ({ initialProject, ini
     return stored || createDefaultProject();
   });
   const [selectedLotIndex, setSelectedLotIndex] = useState<number>(0);
-  const [saveFeedback, setSaveFeedback] = useState<'idle' | 'saved' | 'exported'>('idle');
+  const [saveFeedback, setSaveFeedback] = useState<'idle' | 'saving' | 'saved' | 'exported' | 'error'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     saveStored(project);
   }, [project]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     saveStored(project);
+    setSaveError(null);
+    setSaveFeedback('saving');
+
+    let targetNumProc = String(project.meta?.num_proc || '').trim();
+
+    if (!targetNumProc) {
+      const numeroCourt = String(project.meta?.procedure_short || project.meta?.consultation_number || '').trim();
+      if (!numeroCourt) {
+        setSaveFeedback('error');
+        setSaveError('Numero de procedure manquant.');
+        const t = setTimeout(() => setSaveFeedback('idle'), 2500);
+        return () => clearTimeout(t);
+      }
+
+      const resolved = await resolveProcedureNumProc(numeroCourt);
+      if (!resolved.numProc) {
+        setSaveFeedback('error');
+        setSaveError(resolved.error || 'Procedure introuvable.');
+        const t = setTimeout(() => setSaveFeedback('idle'), 3000);
+        return () => clearTimeout(t);
+      }
+      targetNumProc = resolved.numProc;
+    }
+
+    const payload = buildAnalyseTechPayload(project);
+    console.log('💾 Sauvegarde analyse_tech pour NumProc:', targetNumProc);
+    console.log('📦 Payload:', payload);
+
+    const { data: updated, error } = await supabase
+      .from('procédures')
+      .update({ analyse_tech: payload })
+      .eq('NumProc', targetNumProc)
+      .select('NumProc, analyse_tech');
+
+    if (error) {
+      console.error('❌ AN01 sauvegarde analyse_tech:', error);
+      setSaveFeedback('error');
+      setSaveError(error.message || 'Erreur lors de la sauvegarde.');
+      const t = setTimeout(() => setSaveFeedback('idle'), 3000);
+      return () => clearTimeout(t);
+    }
+
+    if (!updated || updated.length === 0) {
+      console.error('❌ Aucune ligne mise à jour pour NumProc:', targetNumProc);
+      setSaveFeedback('error');
+      setSaveError('Aucune procedure mise a jour.');
+      const t = setTimeout(() => setSaveFeedback('idle'), 3000);
+      return () => clearTimeout(t);
+    }
+
+    console.log('✅ Sauvegarde réussie pour NumProc:', updated[0].NumProc);
+    console.log('📊 Analyse_tech enregistrée:', JSON.stringify(updated[0].analyse_tech, null, 2));
     setSaveFeedback('saved');
     const t = setTimeout(() => setSaveFeedback('idle'), 2000);
     return () => clearTimeout(t);
@@ -170,7 +289,7 @@ const An01SaisieWizard: React.FC<An01SaisieWizardProps> = ({ initialProject, ini
 
           {/* Ligne 2 : Enregistrement (toujours visible, pas de chevauchement) */}
           <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-100 dark:border-gray-700">
-            <Button variant="outline" size="sm" icon={<Save className="w-4 h-4" />} onClick={handleSave} title="Enregistrer dans le navigateur">
+            <Button variant="outline" size="sm" icon={<Save className="w-4 h-4" />} onClick={handleSave} title="Enregistrer dans Supabase">
               Sauvegarder
             </Button>
             <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />} onClick={handleExportJson} title="Télécharger une copie (JSON)">
@@ -179,11 +298,17 @@ const An01SaisieWizard: React.FC<An01SaisieWizardProps> = ({ initialProject, ini
             <Button variant="outline" size="sm" icon={<Upload className="w-4 h-4" />} onClick={handleLoadFromFile} title="Charger un projet (fichier JSON)">
               Importer
             </Button>
+            {saveFeedback === 'saving' && (
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap ml-1">Sauvegarde...</span>
+            )}
             {saveFeedback === 'saved' && (
               <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap ml-1">Enregistré</span>
             )}
             {saveFeedback === 'exported' && (
               <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap ml-1">Téléchargé</span>
+            )}
+            {saveFeedback === 'error' && saveError && (
+              <span className="text-xs text-red-600 dark:text-red-400 font-medium whitespace-nowrap ml-1">{saveError}</span>
             )}
           </div>
         </div>

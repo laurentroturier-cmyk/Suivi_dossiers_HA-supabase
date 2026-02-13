@@ -23,7 +23,7 @@ export interface LoadAN01FromProcedureResult {
 async function loadProcedure(numeroProcedure: string): Promise<ProjectData | null> {
   const { data, error } = await supabase
     .from('procédures')
-    .select('*')
+    .select('*, analyse_tech')
     .eq('numero court procédure afpa', numeroProcedure)
     .limit(2)
     .order('numero court procédure afpa', { ascending: false });
@@ -60,7 +60,8 @@ export async function loadAN01ProjectFromProcedure(numeroProcedure: string): Pro
     }
 
     const base = createDefaultProject();
-    const numAfpa = String(procedure['Numéro de procédure (Afpa)'] || procedure['NumProc'] || numero);
+    const numProc = String(procedure['NumProc'] || '');
+    const numAfpa = String(procedure['Numéro de procédure (Afpa)'] || numProc || numero);
     const titre = String(procedure['Intitulé'] || procedure['Nom de la procédure'] || '');
     const acheteur = String(procedure['Acheteur'] || '');
 
@@ -69,6 +70,8 @@ export async function loadAN01ProjectFromProcedure(numeroProcedure: string): Pro
       id: `an01-${Date.now()}`,
       meta: {
         consultation_number: numAfpa,
+        procedure_short: numero,
+        num_proc: numProc,
         description: titre,
         buyer: acheteur,
         requester: '',
@@ -138,6 +141,30 @@ export async function loadAN01ProjectFromProcedure(numeroProcedure: string): Pro
           lot_name: l.lot_name || `Lot ${l.lot_number}`,
         }));
       }
+    }
+
+    // Enrichir avec la sauvegarde analyse_tech (critères techniques + notations)
+    const analyseTech = procedure['analyse_tech'] as any;
+    if (analyseTech && Array.isArray(analyseTech.lots)) {
+      console.log('📥 Chargement analyse_tech depuis Supabase:', analyseTech);
+      const techLotsByNum = new Map<string, any>();
+      analyseTech.lots.forEach((techLot: any) => {
+        if (techLot.lot_number) techLotsByNum.set(String(techLot.lot_number), techLot);
+      });
+      
+      project.lots = project.lots.map((lot) => {
+        const techLot = techLotsByNum.get(lot.lot_number);
+        if (!techLot) return lot;
+        
+        return {
+          ...lot,
+          criteria: techLot.criteria && Array.isArray(techLot.criteria) ? techLot.criteria : lot.criteria,
+          notations: techLot.notations && typeof techLot.notations === 'object' ? techLot.notations : lot.notations,
+          candidates: techLot.candidates && Array.isArray(techLot.candidates) && techLot.candidates.length > 0
+            ? techLot.candidates
+            : lot.candidates,
+        };
+      });
     }
 
     return { success: true, project };

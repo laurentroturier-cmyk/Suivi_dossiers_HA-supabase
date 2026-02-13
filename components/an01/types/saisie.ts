@@ -5,6 +5,8 @@
 
 export interface AN01ProjectMeta {
   consultation_number: string;
+  procedure_short?: string;
+  num_proc?: string;
   description: string;
   buyer: string;
   requester: string;
@@ -78,6 +80,8 @@ export function createDefaultProject(): AN01Project {
     id,
     meta: {
       consultation_number: '',
+      procedure_short: '',
+      num_proc: '',
       description: '',
       buyer: '',
       requester: '',
