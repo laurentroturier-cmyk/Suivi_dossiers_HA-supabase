@@ -189,17 +189,20 @@ export function DCEComplet({ onClose }: DCECompletProps) {
 
   /**
    * Gestion de la sauvegarde d'une section
-   * Met à jour l'état local SANS sauvegarder immédiatement en base
-   * La sauvegarde globale se fera via le bouton "Sauvegarder"
+   * Met à jour l'état local ET sauvegarde immédiatement en base
    */
   const handleSectionSave = async (section: DCESectionType, data: any) => {
-    console.log(`📝 Section ${section} modifiée localement (pas encore sauvegardée en base)`);
+    console.log(`📝 Section ${section} - Sauvegarde en cours...`);
     
-    // Mise à jour locale uniquement - pas de sauvegarde immédiate
-    updateSectionLocal(section, data);
+    // Utiliser updateSection qui sauvegarde directement en base
+    const success = await updateSection(section, data);
     
-    // Optionnel : afficher un message de confirmation
-    // console.log(`✓ Section ${section} mise à jour localement. N'oubliez pas de sauvegarder !`);
+    if (!success) {
+      // L'erreur sera affichée par le composant appelant
+      throw new Error(`Échec de la sauvegarde de la section ${section}`);
+    }
+    
+    console.log(`✅ Section ${section} sauvegardée avec succès`);
   };
 
   /**
@@ -288,7 +291,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
             procedureId={numeroProcedure}
             onSave={data => handleSectionSave('ccap', data)}
             initialData={dceState.ccap}
-            openTypeSelectorOnMount
+            openTypeSelectorOnMount={!dceState.ccap?.typeCCAP}
             onBackToHub={() => setActiveSection('clausesContractuelles')}
           />
         );

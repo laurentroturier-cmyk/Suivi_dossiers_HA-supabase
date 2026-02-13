@@ -1,7 +1,31 @@
 import React, { useEffect, useState, useRef } from 'react';
 import type { CCAPData } from '../../types';
-import { Trash2, Plus, ChevronDown, ChevronRight, Upload } from 'lucide-react';
+import { Trash2, Plus, ChevronDown, ChevronRight, Upload, GripVertical, Indent, Outdent } from 'lucide-react';
 import { parseWordToCCAP } from './ccapWordParser';
+import { RichTextEditor } from './RichTextEditor';
+
+/**
+ * Calcule la numérotation automatique des sections selon leur niveau
+ * Exemple: "1", "1.1", "1.2", "1.2.1", "2", "2.1"...
+ */
+function calculateSectionNumbers(sections: CCAPData['sections']): string[] {
+  const counters = [0, 0, 0, 0]; // Compteurs pour niveaux 1, 2, 3, 4
+  
+  return sections.map(section => {
+    const niveau = section.niveau || 1;
+    
+    // Incrémenter le compteur du niveau actuel
+    counters[niveau - 1]++;
+    
+    // Réinitialiser les compteurs des niveaux inférieurs
+    for (let i = niveau; i < counters.length; i++) {
+      counters[i] = 0;
+    }
+    
+    // Construire le numéro: "1.2.3" pour niveau 3
+    return counters.slice(0, niveau).join('.');
+  });
+}
 
 interface Props {
   data: CCAPData;
@@ -12,13 +36,34 @@ interface Props {
 
 export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
   const [form, setForm] = useState<CCAPData>(data);
-  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0, 1, 2])); // Les 3 premières sections ouvertes par défaut
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set()); // Toutes les sections fermées par défaut
   const [isImporting, setIsImporting] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [showInsertMenu, setShowInsertMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const insertMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setForm(data);
   }, [data]);
+
+  // Fermer le menu d'insertion si on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showInsertMenu && insertMenuRef.current) {
+        const target = e.target as HTMLElement;
+        if (!insertMenuRef.current.contains(target)) {
+          setShowInsertMenu(false);
+        }
+      }
+    };
+    
+    if (showInsertMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showInsertMenu]);
 
   const handleImportWord = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -84,15 +129,60 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
     });
   };
 
-  const addSection = () => {
+  const changeSectionLevel = (index: number, delta: number) => {
     setForm(prev => {
+      const section = prev.sections[index];
+      const currentLevel = section.niveau || 1;
+      const newLevel = Math.min(4, Math.max(1, currentLevel + delta)); // Entre 1 et 4
+      
       const next = {
         ...prev,
-        sections: [...prev.sections, { titre: 'Nouvelle section', contenu: '' }]
+        sections: prev.sections.map((s, i) =>
+          i === index ? { ...s, niveau: newLevel } : s
+        )
       };
       onChange?.(next);
       return next;
     });
+  };
+
+  const addSection = (afterIndex?: number, niveau: number = 1) => {
+    setForm(prev => {
+      const newSection = { titre: 'Nouvelle section', contenu: '', niveau };
+      const sections = [...prev.sections];
+      let insertedIndex = sections.length; // Par défaut, à la fin
+      
+      if (afterIndex === -1) {
+        // Insérer au début
+        sections.unshift(newSection);
+        insertedIndex = 0;
+      } else if (afterIndex !== undefined && afterIndex >= 0) {
+        // Insérer après la section spécifiée
+        sections.splice(afterIndex + 1, 0, newSection);
+        insertedIndex = afterIndex + 1;
+      } else {
+        // Ajouter à la fin par défaut
+        sections.push(newSection);
+        insertedIndex = sections.length - 1;
+      }
+      
+      // Ouvrir automatiquement la section nouvellement créée
+      setExpandedSections(prevExpanded => {
+        const newExpanded = new Set(prevExpanded);
+        newExpanded.add(insertedIndex);
+        return newExpanded;
+      });
+      
+      const next = {
+        ...prev,
+        sections
+      };
+      onChange?.(next);
+      return next;
+    });
+    
+    // Fermer le menu d'insertion
+    setShowInsertMenu(false);
   };
 
   const deleteSection = (index: number) => {
@@ -106,6 +196,47 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
         return next;
       });
     }
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    setForm(prev => {
+      const sections = [...prev.sections];
+      const [draggedSection] = sections.splice(draggedIndex, 1);
+      sections.splice(targetIndex, 0, draggedSection);
+      
+      const next = { ...prev, sections };
+      onChange?.(next);
+      return next;
+    });
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   const toggleSection = (index: number) => {
@@ -158,15 +289,118 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
           {isImporting ? 'Import...' : 'Importer Word'}
         </button>
 
-        {/* Bouton Ajouter section */}
-        <button
-          type="button"
-          onClick={addSection}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-        >
-          <Plus className="w-4 h-4" />
-          Ajouter une section
-        </button>
+        {/* Bouton Ajouter section avec menu */}
+        <div ref={insertMenuRef} className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              if (form.sections.length === 0) {
+                // Si aucune section, ajouter directement
+                addSection();
+              } else {
+                // Sinon, afficher le menu de positionnement
+                setShowInsertMenu(!showInsertMenu);
+              }
+            }}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+          >
+            <Plus className="w-4 h-4" />
+            Ajouter une section
+          </button>
+
+          {/* Menu déroulant pour choisir la position et le niveau */}
+          {showInsertMenu && form.sections.length > 0 && (
+            <div className="absolute left-0 top-full mt-1 w-[450px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 max-h-96 overflow-y-auto">
+              <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/20">
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  📌 Choisissez la position et le type de section
+                </p>
+              </div>
+              <div className="py-1">
+                {/* Option : Insérer au début */}
+                <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                  <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Au début :</div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => addSection(-1, 1)}
+                      className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition"
+                    >
+                      📄 Chapitre
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => addSection(-1, 2)}
+                      className="px-2 py-1 text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition"
+                    >
+                      📑 Sous-chapitre
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => addSection(-1, 3)}
+                      className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition"
+                    >
+                      📃 Sous-sous-chapitre
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Liste des sections existantes */}
+                {form.sections.map((section, index) => {
+                  const sectionNumbers = calculateSectionNumbers(form.sections);
+                  const niveau = section.niveau || 1;
+                  const niveauIcon = niveau === 1 ? '📄' : niveau === 2 ? '📑' : '📃';
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="px-3 py-2 border-b border-gray-100 dark:border-gray-700"
+                    >
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1.5 flex items-center gap-2">
+                        <span className="font-mono">{sectionNumbers[index]}</span>
+                        <span className="truncate">{niveauIcon} {section.titre || '(Sans titre)'}</span>
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => addSection(index, 1)}
+                          className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition"
+                        >
+                          📄 Chapitre
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => addSection(index, 2)}
+                          className="px-2 py-1 text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition"
+                        >
+                          📑 Sous-chapitre
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => addSection(index, 3)}
+                          className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition"
+                        >
+                          📃 Sous-sous-chap.
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Bouton annuler */}
+              <div className="p-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <button
+                  type="button"
+                  onClick={() => setShowInsertMenu(false)}
+                  className="w-full px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition rounded"
+                >
+                  ✕ Annuler
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <section className="space-y-2">
@@ -182,56 +416,113 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
           </div>
         ) : (
           <div className="space-y-3">
-            {form.sections.map((section, index) => (
-              <div key={index} className="border rounded-lg bg-white shadow-sm">
-                {/* En-tête de section */}
-                <div className="flex items-center gap-2 p-3 bg-gray-50 border-b">
-                  <button
-                    type="button"
-                    onClick={() => toggleSection(index)}
-                    className="text-gray-600 hover:text-gray-900"
-                  >
-                    {expandedSections.has(index) ? (
-                      <ChevronDown className="w-5 h-5" />
-                    ) : (
-                      <ChevronRight className="w-5 h-5" />
-                    )}
-                  </button>
-                  <input
-                    value={section.titre}
-                    onChange={e => updateSection(index, 'titre', e.target.value)}
-                    className="flex-1 border-0 bg-transparent font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-green-500 rounded px-2 py-1"
-                    placeholder="Titre de la section"
-                  />
-                  <span className="text-xs text-gray-500 min-w-[60px] text-right">
-                    Section {index + 1}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => deleteSection(index)}
-                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition"
-                    title="Supprimer cette section"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Contenu de section (visible si expanded) */}
-                {expandedSections.has(index) && (
-                  <div className="p-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Contenu
-                    </label>
-                    <textarea
-                      value={section.contenu}
-                      onChange={e => updateSection(index, 'contenu', e.target.value)}
-                      className="w-full border rounded-lg px-3 py-2 text-sm min-h-[120px] focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      placeholder="Saisissez le contenu de cette section..."
+            {form.sections.map((section, index) => {
+              const isDragging = draggedIndex === index;
+              const isDropTarget = dragOverIndex === index && draggedIndex !== index;
+              const sectionNumbers = calculateSectionNumbers(form.sections);
+              const niveau = section.niveau || 1;
+              const indentClass = niveau === 1 ? '' : niveau === 2 ? 'ml-6' : niveau === 3 ? 'ml-12' : 'ml-16';
+              const niveauColor = niveau === 1 ? 'text-blue-600 dark:text-blue-400' : 
+                                  niveau === 2 ? 'text-emerald-600 dark:text-emerald-400' :
+                                  niveau === 3 ? 'text-purple-600 dark:text-purple-400' :
+                                  'text-orange-600 dark:text-orange-400';
+              
+              return (
+                <div
+                  key={index}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`border rounded-lg bg-white shadow-sm transition-all ${indentClass} ${
+                    isDragging ? 'opacity-50 scale-95 cursor-grabbing' : 'cursor-grab'
+                  } ${
+                    isDropTarget ? 'ring-2 ring-emerald-500 ring-offset-2' : ''
+                  }`}
+                >
+                  {/* En-tête de section */}
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 border-b">
+                    {/* Poignée de glissement */}
+                    <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-emerald-600 transition">
+                      <GripVertical className="w-5 h-5" />
+                    </div>
+                    
+                    {/* Numérotation automatique */}
+                    <span className={`font-mono text-sm font-bold ${niveauColor} min-w-[3rem]`}>
+                      {sectionNumbers[index]}
+                    </span>
+                    
+                    {/* Boutons de niveau */}
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => changeSectionLevel(index, -1)}
+                        disabled={niveau <= 1}
+                        className="p-0.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        title="Diminuer le niveau (← Chapitre)"
+                      >
+                        <Outdent className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => changeSectionLevel(index, 1)}
+                        disabled={niveau >= 4}
+                        className="p-0.5 text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        title="Augmenter le niveau (→ Sous-chapitre)"
+                      >
+                        <Indent className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(index)}
+                      className="text-gray-600 hover:text-gray-900"
+                    >
+                      {expandedSections.has(index) ? (
+                        <ChevronDown className="w-5 h-5" />
+                      ) : (
+                        <ChevronRight className="w-5 h-5" />
+                      )}
+                    </button>
+                    
+                    <input
+                      value={section.titre}
+                      onChange={e => updateSection(index, 'titre', e.target.value)}
+                      className="flex-1 border-0 bg-transparent font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-green-500 rounded px-2 py-1"
+                      placeholder="Titre de la section"
                     />
+                    <span className="text-xs text-gray-500 min-w-[60px] text-right">
+                      Section {index + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => deleteSection(index)}
+                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition"
+                      title="Supprimer cette section"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* Contenu de section (visible si expanded) */}
+                  {expandedSections.has(index) && (
+                    <div className="p-3">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Contenu
+                      </label>
+                      <RichTextEditor
+                        value={section.contenu}
+                        onChange={(value) => updateSection(index, 'contenu', value)}
+                        placeholder="Saisissez le contenu de cette section..."
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

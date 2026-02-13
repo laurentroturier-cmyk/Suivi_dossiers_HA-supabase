@@ -6,8 +6,9 @@ import { CCAP_TYPES, createCCAPFromTemplate, getCCAPTypeLabel } from './ccapTemp
 import { exportCCAPToWord } from './ccapExportWord';
 import { exportCCAPToPdf } from './ccapExportPdf';
 import { parseWordToCCAP } from './ccapWordParser';
+import { CCAPViewer } from './CCAPViewer';
 import type { CCAPData, CCAPType } from '../../types';
-import { Save, FileCheck, AlertCircle, Sparkles, FileDown, Upload, FileText } from 'lucide-react';
+import { Save, FileCheck, AlertCircle, Sparkles, FileDown, Upload, FileText, Eye } from 'lucide-react';
 
 interface Props {
   procedureId: string;
@@ -44,18 +45,31 @@ export function CCAPMultiLots({
     openTypeSelectorOnMount || !initialData?.typeCCAP,
   );
   const [selectedType, setSelectedType] = useState<CCAPType | null>(initialData?.typeCCAP || null);
+  const [showViewer, setShowViewer] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Effet pour initialiser le type et le sélecteur au premier montage
   useEffect(() => {
     if (initialData) {
       setCcapData(initialData);
       setSelectedType(initialData.typeCCAP || null);
-      setShowTypeSelector(openTypeSelectorOnMount || !initialData.typeCCAP);
+      // Ne montrer le sélecteur de type que si aucun type n'est défini
+      // et non pas à chaque changement de données
+      if (!initialData.typeCCAP) {
+        setShowTypeSelector(true);
+      }
     } else if (openTypeSelectorOnMount) {
       // Pas de données initiales : on force l'ouverture du sélecteur de type
       setShowTypeSelector(true);
     }
-  }, [initialData, openTypeSelectorOnMount]);
+  }, [initialData?.typeCCAP, openTypeSelectorOnMount]); // Dépendance uniquement sur le type, pas sur toutes les données
+
+  // Effet pour mettre à jour les données CCAP quand initialData change (après sauvegarde)
+  useEffect(() => {
+    if (initialData) {
+      setCcapData(initialData);
+    }
+  }, [initialData]);
 
   const handleSave = async (data: CCAPData) => {
     setIsSaving(true);
@@ -192,9 +206,17 @@ export function CCAPMultiLots({
                 </>
               )}
               <button
+                onClick={() => setShowViewer(true)}
+                className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-md hover:bg-emerald-700 transition-colors"
+                title="Prévisualiser le document CCAP"
+              >
+                <Eye className="w-4 h-4" />
+                Aperçu
+              </button>
+              <button
                 onClick={handleExportWord}
                 disabled={isExporting}
-                className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 bg-[#2F5B58] text-white text-xs font-medium rounded-md hover:bg-[#234441] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#2F5B58] text-white text-xs font-medium rounded-md hover:bg-[#234441] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <FileDown className="w-4 h-4" />
                 {isExporting ? 'Export en cours...' : 'Exporter en Word'}
@@ -296,6 +318,24 @@ export function CCAPMultiLots({
           onSave={handleSave}
           isSaving={isSaving}
           onChange={setCcapData}
+        />
+      )}
+
+      {/* Visionneuse CCAP */}
+      {showViewer && (
+        <CCAPViewer
+          ccapData={ccapData}
+          numeroProcedure={numeroProcedure}
+          onClose={() => setShowViewer(false)}
+          onExportWord={handleExportWord}
+          onExportPdf={handleExportPdf}
+          onChange={(updatedData) => {
+            setCcapData(updatedData);
+            // Optionnellement, sauvegarder automatiquement
+            if (onSave) {
+              onSave(updatedData);
+            }
+          }}
         />
       )}
     </div>

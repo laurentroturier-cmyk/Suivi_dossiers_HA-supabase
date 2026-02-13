@@ -249,6 +249,7 @@ export const ensureCCAP = (data: DCEState['ccap']): CCAPData => {
   const defaults = createDefaultCCAP();
   if (!data) return defaults;
   return {
+    ...data, // ✅ Préserver TOUS les champs existants (typeCCAP, clausesSpecifiques, etc.)
     dispositionsGenerales: { ...defaults.dispositionsGenerales, ...data.dispositionsGenerales },
     prixPaiement: { ...defaults.prixPaiement, ...data.prixPaiement },
     execution: { ...defaults.execution, ...data.execution },

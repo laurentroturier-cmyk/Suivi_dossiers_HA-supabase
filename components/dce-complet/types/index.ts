@@ -134,10 +134,11 @@ export interface CCAPData {
     ethique?: string;
   };
   
-  // Sections personnalisées
+  // Sections personnalisées avec support de hiérarchie
   sections: Array<{
     titre: string;
     contenu: string;
+    niveau?: number; // 1 = chapitre, 2 = sous-chapitre, 3 = sous-sous-chapitre (défaut: 1)
   }>;
 }
 
