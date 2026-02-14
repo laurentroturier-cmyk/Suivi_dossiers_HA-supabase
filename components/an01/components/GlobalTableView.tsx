@@ -125,19 +125,19 @@ const GlobalTableView: React.FC<Props> = ({ lots, globalMetadata, onBack, onSele
     };
 
     return (
-        <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden h-screen">
+        <div className="an01-page flex-1 flex flex-col bg-gray-50 dark:bg-[#0f172a] overflow-hidden h-screen">
             <ExportSelectModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} title="Synthèse Globale" />
-            <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10 shrink-0">
+            <header className="bg-white dark:bg-slate-800 shadow-sm border-b border-gray-200 dark:border-slate-600 px-6 py-4 flex justify-between items-center z-10 shrink-0">
                 <div className="flex items-center gap-4">
                     <button onClick={onBack} className="text-gray-500 hover:text-green-700 transition p-2 rounded-full hover:bg-gray-100" title="Retour aux cartes">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">Synthèse Globale</h1>
+                        <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">Synthèse Globale</h1>
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <button onClick={() => setShowExportModal(true)} className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg text-sm font-medium transition shadow" title="Exporter des éléments sous forme d'image">
+                                                    <button onClick={() => setShowExportModal(true)} className="flex items-center gap-2 bg-indigo-50 dark:bg-slate-700 hover:bg-indigo-100 dark:hover:bg-slate-600 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-slate-600 px-4 py-2 rounded-lg text-sm font-medium transition shadow" title="Exporter des éléments sous forme d'image">
                         <ImageIcon className="w-4 h-4" />
                         <span className="hidden sm:inline">Img Export</span>
                     </button>
@@ -166,10 +166,10 @@ const GlobalTableView: React.FC<Props> = ({ lots, globalMetadata, onBack, onSele
                             </div>
                         </div>
                     )}
-                    <div data-export-id="global-table" data-export-label="Tableau Synthèse Lots" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div data-export-id="global-table" data-export-label="Tableau Synthèse Lots" className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-600 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs">
+                                <thead className="bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-slate-300 uppercase font-bold text-xs">
                                     <tr>
                                         <th className="px-6 py-3">Lot</th>
                                         <th className="px-6 py-3">Lauréat</th>
@@ -180,12 +180,12 @@ const GlobalTableView: React.FC<Props> = ({ lots, globalMetadata, onBack, onSele
                                         <th className="px-6 py-3 text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-gray-100 dark:divide-slate-600">
                                     {lots.map((lot, index) => {
                                         const winner = lot.stats.winner;
                                         return (
-                                            <tr key={index} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-6 py-4 font-bold text-gray-800">{lot.lotName}</td>
+                                            <tr key={index} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                                                <td className="px-6 py-4 font-bold text-gray-800 dark:text-white">{lot.lotName}</td>
                                                 <td className="px-6 py-4">
                                                     {winner ? (
                                                         <div className="flex items-center gap-2">

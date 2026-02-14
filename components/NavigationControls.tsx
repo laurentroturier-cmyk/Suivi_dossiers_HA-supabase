@@ -82,7 +82,7 @@ export const NavigationControls: React.FC<NavigationControlsProps> = ({
 
   // Mode complet : avec labels et fil d'Ariane
   return (
-    <div className={`bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 ${className}`}>
+    <div className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Boutons de navigation */}
@@ -103,7 +103,7 @@ export const NavigationControls: React.FC<NavigationControlsProps> = ({
             {!isHome && (
               <button
                 onClick={onHome}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#004d3d] hover:bg-[#003d2d] text-white font-semibold transition-all hover:shadow-md"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 text-white font-semibold transition-all shadow-lg shadow-blue-400/30"
                 aria-label="Retour au menu principal"
               >
                 <Home className="w-5 h-5" />

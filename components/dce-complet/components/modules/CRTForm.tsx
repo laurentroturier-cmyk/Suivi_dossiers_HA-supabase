@@ -28,7 +28,7 @@ export function CRTForm({ data, onSave, isSaving = false }: CRTFormProps) {
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50"
+          className="px-3 py-1.5 text-sm bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition disabled:opacity-50 shadow-md"
         >
           <Save className="w-4 h-4 inline mr-1" />
           {isSaving ? 'Sauvegarde...' : 'Enregistrer la section'}

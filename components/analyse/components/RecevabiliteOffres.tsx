@@ -111,7 +111,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
   const inputBase = 'w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2F5B58] focus:border-[#2F5B58] outline-none';
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="ouverture-plis-module recevabilite-offres-module min-h-screen bg-white dark:bg-gray-900">
       {/* Header — thème app (teal #2F5B58) */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -147,7 +147,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
               <button
                 onClick={handleSaveRecevabilite}
                 disabled={saving || !candidats.length}
-                className="px-4 py-2 bg-[#2F5B58] hover:bg-[#234441] disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg transition flex items-center gap-2 font-medium"
+                className="px-4 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg transition flex items-center gap-2 font-medium shadow-md"
               >
                 {saving ? (
                   <>
@@ -175,7 +175,7 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
       {/* Contenu principal */}
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         {/* En-tête avec métadonnées — style DQE (teal / vert clair) */}
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+        <div className="recevabilite-info-band bg-gradient-to-r from-green-50 to-emerald-50 dark:bg-slate-800 rounded-lg p-6 border border-gray-200 dark:border-slate-600">
           <h3 className="text-lg font-bold text-[#2F5B58] dark:text-teal-400 mb-4 flex items-center gap-2">
             <FileCheck className="w-5 h-5" />
             Recevabilité des offres

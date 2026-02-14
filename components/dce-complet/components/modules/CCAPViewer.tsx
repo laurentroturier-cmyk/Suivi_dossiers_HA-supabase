@@ -122,7 +122,7 @@ export function CCAPViewer({ ccapData, numeroProcedure, onClose, onExportWord, o
             {hasImportedSections && !isEditing && onChange && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-emerald-500 to-emerald-600 text-white text-sm font-medium rounded-md hover:from-emerald-600 hover:to-emerald-700 transition-colors shadow-md"
               >
                 <Edit2 className="w-4 h-4" />
                 Modifier
@@ -132,7 +132,7 @@ export function CCAPViewer({ ccapData, numeroProcedure, onClose, onExportWord, o
               <>
                 <button
                   onClick={handleSaveEdits}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-green-500 to-green-600 text-white text-sm font-medium rounded-md hover:from-green-600 hover:to-green-700 transition-colors shadow-md"
                 >
                   <Check className="w-4 h-4" />
                   Enregistrer
@@ -149,18 +149,20 @@ export function CCAPViewer({ ccapData, numeroProcedure, onClose, onExportWord, o
             {!isEditing && onExportWord && (
               <button
                 onClick={onExportWord}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-blue-500 to-blue-600 text-white text-sm font-medium rounded-md hover:from-blue-600 hover:to-blue-700 transition-colors shadow-md"
+                title="Exporter en Word (.docx)"
               >
-                <Download className="w-4 h-4" />
+                <FileText className="w-4 h-4" />
                 Word
               </button>
             )}
             {!isEditing && onExportPdf && (
               <button
                 onClick={onExportPdf}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-red-500 to-red-600 text-white text-sm font-medium rounded-md hover:from-red-600 hover:to-red-700 transition-colors shadow-md"
+                title="Exporter en PDF"
               >
-                <Download className="w-4 h-4" />
+                <FileText className="w-4 h-4" />
                 PDF
               </button>
             )}

@@ -48,7 +48,7 @@ export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderPr
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex-shrink-0 px-3 py-1.5 bg-[#2F5B58] hover:bg-[#234441] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+          className="flex-shrink-0 px-3 py-1.5 bg-gradient-to-b from-teal-600 to-teal-800 hover:from-teal-700 hover:to-teal-900 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-md"
           title="Visualiser les détails de la procédure"
         >
           <Eye className="w-3.5 h-3.5" />

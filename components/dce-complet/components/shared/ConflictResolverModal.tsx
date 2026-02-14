@@ -234,7 +234,7 @@ export function ConflictResolverModal({
           </button>
           <button
             onClick={handleApply}
-            className="px-6 py-2 bg-[#2F5B58] text-white text-sm font-medium rounded-lg hover:bg-[#234441] transition-colors flex items-center gap-2"
+            className="px-6 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 shadow-md"
           >
             Appliquer les résolutions
             <ArrowRight className="w-4 h-4" />

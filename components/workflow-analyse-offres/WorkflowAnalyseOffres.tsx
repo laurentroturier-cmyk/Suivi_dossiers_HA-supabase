@@ -251,7 +251,7 @@ export function WorkflowAnalyseOffres({
             )}
             {(exportSuccess || exportError) && (
               <div className="mt-4 flex justify-end">
-                <button type="button" onClick={closeExportModal} className="px-4 py-2 rounded-lg bg-[#004d3d] dark:bg-cyan-600 text-white font-medium hover:bg-[#006d57] dark:hover:bg-cyan-500 transition">
+                <button type="button" onClick={closeExportModal} className="px-4 py-2 rounded-lg bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 dark:from-blue-500 dark:to-indigo-600 text-white font-medium transition shadow-lg shadow-blue-400/30">
                   Fermer
                 </button>
               </div>

@@ -395,7 +395,7 @@ export function ActeEngagementMultiLots({ procedureId, onSave, configurationGlob
         <button
           onClick={handleExportAllLotsAsZip}
           disabled={exportingZip || totalLots === 0}
-          className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
         >
           <PackageOpen className="w-4 h-4" />
           {exportingZip ? 'Export en cours...' : `Export ZIP (${totalLots} lot${totalLots > 1 ? 's' : ''})`}

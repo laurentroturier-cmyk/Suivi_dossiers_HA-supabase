@@ -419,7 +419,7 @@ export default function ReglementConsultation({
               <button
                 onClick={handleGenerateWord}
                 disabled={isSaving}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 rounded-lg shadow-lg shadow-blue-400/30 disabled:opacity-50 transition-all"
               >
                 <Download className="w-4 h-4 inline mr-1" />
                 {isSaving ? 'Génération...' : 'Télécharger Word'}
@@ -758,7 +758,7 @@ export default function ReglementConsultation({
                 <div className="flex justify-end gap-4 sticky bottom-0 bg-white dark:bg-gray-800 p-4 border-t border-gray-200 dark:border-gray-700">
                   <button
                     onClick={handleSave}
-                    className="px-6 py-3 text-sm font-medium text-white bg-[#2F5B58] rounded-lg hover:bg-[#234441] flex items-center gap-2"
+                    className="px-6 py-3 text-sm font-medium text-white bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] rounded-lg flex items-center gap-2 shadow-md"
                   >
                     <Save className="w-5 h-5" />
                     Sauvegarder les modifications

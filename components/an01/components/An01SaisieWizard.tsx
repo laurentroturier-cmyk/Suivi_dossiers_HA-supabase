@@ -255,8 +255,8 @@ const An01SaisieWizard: React.FC<An01SaisieWizardProps> = ({ initialProject, ini
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+    <div className="an01-page min-h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col">
+      <header className="an01-wizard-header border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-3 space-y-3">
           {/* Ligne 1 : Retour + Fil d'étapes (scroll horizontal si besoin) */}
           <div className="flex items-center gap-3">
@@ -288,7 +288,7 @@ const An01SaisieWizard: React.FC<An01SaisieWizardProps> = ({ initialProject, ini
           </div>
 
           {/* Ligne 2 : Enregistrement (toujours visible, pas de chevauchement) */}
-          <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-700">
             <Button variant="outline" size="sm" icon={<Save className="w-4 h-4" />} onClick={handleSave} title="Enregistrer dans Supabase">
               Sauvegarder
             </Button>
@@ -363,10 +363,10 @@ const An01SaisieWizard: React.FC<An01SaisieWizardProps> = ({ initialProject, ini
           return (
             <div className="max-w-6xl mx-auto space-y-6">
               <div className="flex justify-between pb-2">
-                <Button variant="secondary" onClick={goPrev}>
+                <Button variant="secondary" onClick={goPrev} rounded="2xl" className="rounded-2xl">
                   Retour
                 </Button>
-                <Button variant="primary" onClick={handleCompleteFromSynthèse}>
+                <Button variant="primary" onClick={handleCompleteFromSynthèse} rounded="2xl" className="rounded-2xl">
                   Voir l&apos;analyse
                 </Button>
               </div>

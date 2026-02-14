@@ -73,7 +73,7 @@ const An01StepSynthèseRecap: React.FC<An01StepSynthèseRecapProps> = ({ data, m
   return (
     <div className="space-y-6 text-sm">
       {/* En-tête consultation */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-600">
         <div className="space-y-1">
           <div className="flex gap-2">
             <span className="font-semibold text-gray-600 dark:text-gray-400 min-w-[140px]">Consultation n°</span>
@@ -112,18 +112,18 @@ const An01StepSynthèseRecap: React.FC<An01StepSynthèseRecapProps> = ({ data, m
             </>
           )}
         </div>
-        <div className="flex flex-col gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
+        <div className="an01-card-poids flex flex-col gap-2 p-3 rounded-lg bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-600">
           <div className="flex justify-between items-center">
-            <span className="text-gray-700 dark:text-gray-300">Taux de TVA</span>
-            <span className="font-semibold text-right tabular-nums min-w-[4rem]">{metadata.tva || '20%'}</span>
+            <span className="text-gray-700 dark:text-slate-300">Taux de TVA</span>
+            <span className="font-semibold text-right tabular-nums min-w-[4rem] text-gray-900 dark:text-white">{metadata.tva || '20%'}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-700 dark:text-gray-300">Poids financier</span>
-            <span className="font-semibold text-right tabular-nums min-w-[4rem]">{poidsFin}</span>
+            <span className="text-gray-700 dark:text-slate-300">Poids financier</span>
+            <span className="font-semibold text-right tabular-nums min-w-[4rem] text-gray-900 dark:text-white">{poidsFin}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-700 dark:text-gray-300">Poids technique</span>
-            <span className="font-semibold text-right tabular-nums min-w-[4rem]">{poidsTech}</span>
+            <span className="text-gray-700 dark:text-slate-300">Poids technique</span>
+            <span className="font-semibold text-right tabular-nums min-w-[4rem] text-gray-900 dark:text-white">{poidsTech}</span>
           </div>
         </div>
       </div>
@@ -153,7 +153,7 @@ const An01StepSynthèseRecap: React.FC<An01StepSynthèseRecapProps> = ({ data, m
                 );
               })}
             </tr>
-            <tr className="bg-gray-50 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400">
+            <tr className="bg-gray-50 dark:bg-slate-700/80 text-gray-600 dark:text-slate-300">
               <th className="p-2 border-b border-gray-200 dark:border-gray-600" />
               <th className="p-2 border-b border-l border-gray-200 dark:border-gray-600 text-center">Rang</th>
               <th className="p-2 border-b border-l border-gray-200 dark:border-gray-600 text-right tabular-nums">Note (sur 100)</th>
@@ -171,7 +171,7 @@ const An01StepSynthèseRecap: React.FC<An01StepSynthèseRecapProps> = ({ data, m
             {offers.map((o) => (
               <tr
                 key={o.id}
-                className={o.rankFinal === 1 ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}
+                className={o.rankFinal === 1 ? 'bg-emerald-50 dark:bg-slate-700/80' : ''}
               >
                 <td className="p-2 border-b border-gray-200 dark:border-gray-600 font-medium">{o.name}</td>
                 <td className="p-2 border-b border-l border-gray-200 dark:border-gray-600 text-center tabular-nums">{o.rankFinal}</td>
@@ -216,7 +216,7 @@ const An01StepSynthèseRecap: React.FC<An01StepSynthèseRecapProps> = ({ data, m
                 <td className="p-2 border-l border-gray-200 dark:border-gray-600 text-right tabular-nums">{formatCurrency(averageTTC)}</td>
                 <td className="p-2 border-l border-gray-200 dark:border-gray-600 text-right tabular-nums">-</td>
               </tr>
-              <tr className="border-b border-gray-200 dark:border-gray-600 bg-green-50 dark:bg-green-900/20">
+              <tr className="border-b border-gray-200 dark:border-gray-600 bg-green-50 dark:bg-slate-700/80">
                 <td className="p-2 font-medium">Offre minimum</td>
                 <td className="p-2 border-l border-gray-200 dark:border-gray-600 text-right tabular-nums">{formatCurrency(minHT)}</td>
                 <td className="p-2 border-l border-gray-200 dark:border-gray-600 text-right tabular-nums">{formatCurrency(stats.min)}</td>
@@ -233,7 +233,7 @@ const An01StepSynthèseRecap: React.FC<An01StepSynthèseRecapProps> = ({ data, m
                 </td>
               </tr>
               {winner && (
-                <tr className="border-b border-gray-200 dark:border-gray-600 bg-emerald-50 dark:bg-emerald-900/20">
+                <tr className="border-b border-gray-200 dark:border-gray-600 bg-emerald-50 dark:bg-slate-700/80">
                   <td className="p-2 font-medium">Offre retenue</td>
                   <td className="p-2 border-l border-gray-200 dark:border-gray-600 text-right tabular-nums">{formatCurrency(winnerHT)}</td>
                   <td className="p-2 border-l border-gray-200 dark:border-gray-600 text-right tabular-nums">{formatCurrency(winner.amountTTC)}</td>
@@ -242,7 +242,7 @@ const An01StepSynthèseRecap: React.FC<An01StepSynthèseRecapProps> = ({ data, m
                   </td>
                 </tr>
               )}
-              <tr className="border-b border-gray-200 dark:border-gray-600 bg-amber-50 dark:bg-amber-900/20">
+              <tr className="border-b border-gray-200 dark:border-gray-600 bg-amber-50 dark:bg-slate-700/80">
                 <td className="p-2 font-medium">Valeur de référence</td>
                 <td className="p-2 border-l border-gray-200 dark:border-gray-600 text-right tabular-nums">{formatCurrency(averageHT)}</td>
                 <td className="p-2 border-l border-gray-200 dark:border-gray-600 text-right tabular-nums">{formatCurrency(averageTTC)}</td>

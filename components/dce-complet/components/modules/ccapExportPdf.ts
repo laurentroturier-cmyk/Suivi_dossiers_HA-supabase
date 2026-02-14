@@ -263,21 +263,33 @@ export async function exportCCAPToPdf(ccapData: CCAPData, numeroProcedure?: stri
   };
   
   /**
-   * Ajoute un titre de section avec numérotation
+   * Convertit une couleur hex en RGB pour jsPDF
+   */
+  const hexToRgb = (hex: string): [number, number, number] | null => {
+    const m = hex.replace(/^#/, '').match(/^([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    if (!m) return null;
+    return [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+  };
+
+  /**
+   * Ajoute un titre de section avec numérotation.
+   * Si titreCouleur ou titreTaille sont fournis, ils remplacent les valeurs par défaut (niveau).
    */
   const addHeading = (
-    number: string, 
-    text: string, 
-    level: 1 | 2 | 3 | 4 = 1, 
-    recordInToc: boolean = true
+    number: string,
+    text: string,
+    level: 1 | 2 | 3 | 4 = 1,
+    recordInToc: boolean = true,
+    titreCouleur?: string,
+    titreTaille?: number
   ) => {
-    const size = level === 1 ? 16 : level === 2 ? 14 : level === 3 ? 12 : 11;
+    const defaultSize = level === 1 ? 16 : level === 2 ? 14 : level === 3 ? 12 : 11;
+    const size = titreTaille ?? defaultSize;
     const leftMargin = (level - 1) * 5;
     const fullTitle = `${number} ${text}`;
-    
+
     checkPageBreak(15);
-    
-    // Enregistrer dans le sommaire
+
     if (recordInToc) {
       tocEntries.push({
         number,
@@ -286,22 +298,23 @@ export async function exportCCAPToPdf(ccapData: CCAPData, numeroProcedure?: stri
         level
       });
     }
-    
-    // Couleur selon le niveau
-    const colors: Record<number, [number, number, number]> = {
-      1: [0, 102, 204],    // Bleu
-      2: [16, 185, 129],   // Emerald
-      3: [147, 51, 234],   // Purple
-      4: [249, 115, 22]    // Orange
+
+    const defaultColors: Record<number, [number, number, number]> = {
+      1: [0, 102, 204],
+      2: [16, 185, 129],
+      3: [147, 51, 234],
+      4: [249, 115, 22]
     };
-    
+    const rgb = titreCouleur ? hexToRgb(titreCouleur) : null;
+    const color = rgb ?? (defaultColors[level] || [0, 0, 0]);
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(size);
-    doc.setTextColor(...(colors[level] || [0, 0, 0]));
-    
+    doc.setTextColor(...color);
+
     const actualMargin = margin + leftMargin;
     doc.text(fullTitle, actualMargin, y);
-    
+
     y += size * 0.5 + 3;
     doc.setTextColor(0, 0, 0);
   };
@@ -440,8 +453,15 @@ export async function exportCCAPToPdf(ccapData: CCAPData, numeroProcedure?: stri
       const sectionNumber = sectionNumbers[index];
       const leftMargin = (niveau - 1) * 5;
       
-      // Ajouter le titre de la section
-      addHeading(sectionNumber, section.titre, niveau, true);
+      // Ajouter le titre de la section (couleur/taille personnalisées si définies)
+      addHeading(
+        sectionNumber,
+        section.titre,
+        niveau,
+        true,
+        section.titreCouleur,
+        section.titreTaille
+      );
       
       y += 2;
       

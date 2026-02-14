@@ -351,7 +351,7 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack, onBackToStep6 }) =>
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-100 overflow-hidden relative h-screen">
+    <div className="an01-page flex-1 flex flex-col bg-gray-100 dark:bg-[#0f172a] overflow-hidden relative h-screen">
       
       <ExportSelectModal 
         isOpen={showExportModal} 
@@ -478,35 +478,35 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack, onBackToStep6 }) =>
             <div 
               data-export-id="winner-card" 
               data-export-label="Carte du Lauréat"
-              className="pdf-avoid-break bg-gradient-to-r from-green-50 to-emerald-100 border border-green-200 rounded-xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between relative overflow-hidden"
+              className="an01-winner-card pdf-avoid-break bg-gradient-to-r from-green-50 to-emerald-100 dark:from-slate-800 dark:to-slate-800 border border-green-200 dark:border-slate-600 rounded-xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between relative overflow-hidden"
             >
-              <div className="absolute top-0 right-0 -mt-4 -mr-4 text-green-200 opacity-50 pointer-events-none">
+              <div className="absolute top-0 right-0 -mt-4 -mr-4 text-green-200 dark:text-emerald-900/50 opacity-50 pointer-events-none">
                 <Trophy className="w-32 h-32" />
               </div>
               
               <div className="z-10 w-full md:w-auto">
-                <span className="bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Candidat Recommandé</span>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-2 truncate max-w-xl" title={winner.name}>{winner.name}</h2>
+                <span className="bg-green-600 dark:bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Candidat Recommandé</span>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mt-2 truncate max-w-xl" title={winner.name}>{winner.name}</h2>
                 <div className="flex flex-wrap items-center gap-4 mt-3">
-                  <div className="flex items-center text-green-800 bg-white/50 px-3 py-1 rounded-full">
+                  <div className="flex items-center text-green-800 dark:text-emerald-200 bg-white/50 dark:bg-slate-700/80 px-3 py-1 rounded-full">
                     <Star className="w-5 h-5 mr-1 fill-current" />
                     <span className="font-bold text-lg">{winner.scoreFinal.toFixed(2)}/100</span>
                   </div>
-                  <div className="h-4 w-px bg-green-300 hidden md:block"></div>
-                  <div className="font-mono text-xl text-green-900 font-bold">{formatCurrency(winner.amountTTC)}</div>
+                  <div className="h-4 w-px bg-green-300 dark:bg-slate-500 hidden md:block"></div>
+                  <div className="font-mono text-xl text-green-900 dark:text-white font-bold">{formatCurrency(winner.amountTTC)}</div>
                 </div>
               </div>
 
               <div className="z-10 mt-4 md:mt-0 flex gap-4 md:gap-6 text-center w-full md:w-auto">
-                <div className="bg-white/80 backdrop-blur rounded-lg p-3 shadow-sm border border-green-100 flex-1 md:flex-none min-w-[120px]">
-                  <p className="text-xs text-gray-500 uppercase font-semibold">Économie / Moyenne</p>
-                  <p className={`text-xl md:text-2xl font-bold ${stats.savingPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className="bg-white/80 dark:bg-slate-700/80 backdrop-blur rounded-lg p-3 shadow-sm border border-green-100 dark:border-slate-600 flex-1 md:flex-none min-w-[120px]">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 uppercase font-semibold">Économie / Moyenne</p>
+                  <p className={`text-xl md:text-2xl font-bold ${stats.savingPercent >= 0 ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                     {stats.savingPercent > 0 ? '+' : ''}{stats.savingPercent.toFixed(1)}%
                   </p>
                 </div>
-                <div className="bg-white/80 backdrop-blur rounded-lg p-3 shadow-sm border border-green-100 flex-1 md:flex-none min-w-[120px]">
-                  <p className="text-xs text-gray-500 uppercase font-semibold">Gain Monétaire</p>
-                  <p className={`text-xl md:text-2xl font-bold ${stats.savingAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className="bg-white/80 dark:bg-slate-700/80 backdrop-blur rounded-lg p-3 shadow-sm border border-green-100 dark:border-slate-600 flex-1 md:flex-none min-w-[120px]">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 uppercase font-semibold">Gain Monétaire</p>
+                  <p className={`text-xl md:text-2xl font-bold ${stats.savingAmount >= 0 ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                     {stats.savingAmount > 0 ? '+' : ''}{formatCurrency(stats.savingAmount)}
                   </p>
                 </div>
@@ -648,7 +648,7 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack, onBackToStep6 }) =>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs select-none">
+                <thead className="bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-slate-300 uppercase font-bold text-xs select-none">
                   <tr>
                     <th 
                         className="px-6 py-3 text-center w-16 cursor-pointer hover:bg-gray-100 group transition-colors"
@@ -709,7 +709,7 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack, onBackToStep6 }) =>
                         onClick={() => setSelectedOffer(offer)}
                         className={`
                           hover:bg-gray-50 cursor-pointer transition-colors duration-150
-                          ${isWinner ? 'bg-green-50/50 hover:bg-green-50 border-l-4 border-l-green-500' : 'bg-white border-l-4 border-l-transparent'}
+                          ${isWinner ? 'bg-green-50/50 dark:bg-slate-700/80 hover:bg-green-50 dark:hover:bg-slate-700 border-l-4 border-l-green-500 dark:border-l-emerald-500' : 'bg-white dark:bg-slate-800 border-l-4 border-l-transparent'}
                         `}
                       >
                         <td className="px-6 py-4 font-bold text-center text-gray-700">
@@ -738,7 +738,7 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack, onBackToStep6 }) =>
               
               {/* Pagination Controls */}
               {totalPages > 1 && (
-                  <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50/50 no-print">
+                  <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-slate-600 bg-gray-50/50 dark:bg-slate-800/80 no-print">
                     <div className="text-xs text-gray-500">
                         Affichage de {((currentPage - 1) * itemsPerPage) + 1} à {Math.min(currentPage * itemsPerPage, processedOffers.length)} sur {processedOffers.length} offres
                     </div>

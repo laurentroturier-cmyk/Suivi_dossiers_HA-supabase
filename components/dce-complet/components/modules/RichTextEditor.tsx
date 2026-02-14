@@ -543,7 +543,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
                 <button
                   type="button"
                   onClick={setLink}
-                  className="flex-1 px-2 py-1 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                  className="flex-1 px-2 py-1 text-xs bg-gradient-to-b from-emerald-500 to-emerald-600 text-white rounded hover:from-emerald-600 hover:to-emerald-700 shadow-sm"
                 >
                   Insérer
                 </button>
@@ -637,7 +637,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
                   type="button"
                   onClick={addImage}
                   disabled={!imageUrl}
-                  className="flex-1 px-2 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-2 py-1.5 text-xs bg-gradient-to-b from-emerald-500 to-emerald-600 text-white rounded hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   Insérer URL
                 </button>

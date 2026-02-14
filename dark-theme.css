@@ -723,39 +723,876 @@ html.dark button.contrats-view-btn:hover {
 }
 
 /* ========================================
-   LANDING PAGE - MODE SOMBRE
-   Force le fond sombre et la lisibilité
+   MODE SOMBRE - APPLICATION ENTIÈRE (entête + fond + landing)
    ======================================== */
 
-/* Conteneur principal - Force le fond sombre avec gradient */
+/* Fond global de l'app (couche fixe derrière tout) */
+html.dark .app-bg-layer {
+  background-color: #0f172a !important;
+}
+
+/* En-tête principal (barre de navigation) */
+html.dark .app-header {
+  background-color: rgb(15, 23, 42) !important;
+  border-bottom-color: rgb(51, 65, 85) !important;
+}
+
+html.dark .app-version {
+  color: rgb(148, 163, 184) !important;
+}
+
+/* ========================================
+   LANDING PAGE - MODE SOMBRE (tous les éléments)
+   ======================================== */
+
+/* Conteneur principal - Fond bleu nuit */
 html.dark .landing-page {
-  background: linear-gradient(to bottom right, #0d0f12, #121212, #0d0f12) !important;
+  background-color: #0f172a !important;
 }
 
-/* Header sticky - Force le fond sombre */
+/* Header landing (sous la barre app) - Barre sombre */
 html.dark .landing-header {
-  background-color: rgba(30, 30, 30, 0.8) !important;
-  border-bottom-color: #333333 !important;
+  background-color: rgba(15, 23, 42, 0.98) !important;
+  border-bottom-color: rgb(51, 65, 85) !important;
 }
 
-/* Section contenu du milieu - Supprime tout fond blanc */
+/* Section contenu - Transparent */
 html.dark .landing-content-section {
   background-color: transparent !important;
 }
 
-/* Container du titre - Supprime tout fond blanc */
-html.dark .landing-section-header {
+/* Sous-titre "Choisissez un domaine..." */
+html.dark .landing-subtitle {
+  color: rgb(203, 213, 225) !important;
+}
+
+/* Cartes des modules - Fond sombre, bordure, texte lisible */
+html.dark .landing-card {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .landing-card:hover {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(100, 116, 139) !important;
+}
+
+/* Titres des cartes (ex: "Indicateurs & Pilotage") */
+html.dark .landing-card h3 {
+  color: rgb(248, 250, 252) !important;
+}
+
+/* Descriptions dans les cartes */
+html.dark .landing-card p {
+  color: rgb(203, 213, 225) !important;
+}
+
+/* Boutons secondaires dans les cartes (ex: "Registres", "Ouverture des plis") */
+html.dark .landing-card-action {
+  background-color: rgba(51, 65, 85, 0.9) !important;
+  color: rgb(226, 232, 240) !important;
+}
+
+html.dark .landing-card-action:hover {
+  background-color: rgba(71, 85, 105, 0.95) !important;
+}
+
+/* Sous-liens (ex: "Registre des retraits") */
+html.dark .landing-card-subaction {
+  color: rgb(203, 213, 225) !important;
+}
+
+html.dark .landing-card-subaction:hover {
+  color: rgb(248, 250, 252) !important;
+  background-color: rgba(71, 85, 105, 0.5) !important;
+}
+
+/* --- Fond sombre garanti partout (éviter fond clair en mode sombre) --- */
+html.dark,
+html.dark body,
+html.dark #root,
+html.dark #root > div,
+html.dark .app-shell {
+  background-color: #0f172a !important;
+}
+
+/* Couche de fond fixe (App) */
+html.dark .app-bg-layer {
+  background-color: #0f172a !important;
+  z-index: -10;
+}
+
+/* Couche de fond fixe (Landing) - forcer sombre même si Tailwind dark: ne s'applique pas */
+html.dark .landing-bg-layer {
+  background-color: #0f172a !important;
+  z-index: -10;
+}
+
+/* Contenu principal et section landing : pas de fond blanc qui ressort */
+html.dark main,
+html.dark .landing-content-section {
   background-color: transparent !important;
 }
 
-/* Titre "Domaines fonctionnels" - Force blanc */
-html.dark .landing-title {
-  color: #FFFFFF !important;
+/* Container landing : fond sombre au cas où le calque fixe ne couvre pas */
+html.dark .landing-page {
+  background-color: #0f172a !important;
 }
 
-/* Sous-titre - Force gris clair */
-html.dark .landing-subtitle {
-  color: #B0B0B0 !important;
+/* Pas de grossissement en mode sombre (taille de base identique au mode clair) */
+html.dark {
+  font-size: 100%;
+}
+
+/* En-tête : barre épurée, pas de gros arrondi qui déforme */
+html.dark .app-header {
+  background-color: rgb(15, 23, 42) !important;
+  border-bottom: 1px solid rgb(51, 65, 85) !important;
+  border-radius: 0 !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+/* Éviter chevauchements : nav peut défiler si besoin */
+html.dark .app-header-nav {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html.dark .app-header-nav::-webkit-scrollbar {
+  display: none;
+}
+
+/* Boutons et liens du header : fond identique à l'en-tête, pas de "boîtes" visibles */
+html.dark .app-header button {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  border-width: 0 !important;
+  padding: 0.5rem 0.4rem !important;
+  border-radius: 0.375rem !important;
+}
+html.dark .app-header button:hover {
+  background-color: rgba(51, 65, 85, 0.5) !important;
+  border-color: transparent !important;
+  color: inherit !important;
+}
+
+/* ========================================
+   TABLEAU DE BORD - MODE SOMBRE
+   ======================================== */
+
+/* Bloc Indicateurs globaux : fond sombre, pas de blanc */
+html.dark .dashboard-kpi-section {
+  background: linear-gradient(to bottom right, rgb(30, 41, 59), rgb(15, 23, 42)) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+html.dark .dashboard-kpi-section h2,
+html.dark .dashboard-kpi-section .text-slate-900 {
+  color: rgb(248, 250, 252) !important;
+}
+html.dark .dashboard-kpi-section .text-slate-500 {
+  color: rgb(203, 213, 225) !important;
+}
+
+/* Tuiles KPI à l'intérieur (NB PROJETS, etc.) : fond sombre, texte clair */
+html.dark .dashboard-kpi-section .dashboard-kpi-grid > div,
+html.dark .dashboard-kpi-section div.rounded-xl.bg-white {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+html.dark .dashboard-kpi-section .dashboard-kpi-grid .text-gray-400 {
+  color: rgb(148, 163, 184) !important;
+}
+html.dark .dashboard-kpi-section .dashboard-kpi-grid .text-gray-900 {
+  color: rgb(248, 250, 252) !important;
+}
+html.dark .dashboard-kpi-section .dashboard-kpi-grid .text-gray-500 {
+  color: rgb(203, 213, 225) !important;
+}
+
+/* Cartes sections Projets / Procédures : fond sombre */
+html.dark .dashboard-section-card {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+html.dark .dashboard-section-projets {
+  border-color: rgb(59, 130, 246) !important;
+}
+html.dark .dashboard-section-procedures {
+  border-color: rgb(34, 197, 94) !important;
+}
+
+/* En-tête cliquable des sections (Projets / Procédures) : fond sombre */
+html.dark .dashboard-section-header {
+  background: linear-gradient(to right, rgba(30, 58, 138, 0.5), rgba(22, 78, 99, 0.5)) !important;
+}
+html.dark .dashboard-section-header:hover {
+  background: linear-gradient(to right, rgba(30, 58, 138, 0.7), rgba(22, 78, 99, 0.7)) !important;
+}
+
+/* Contenu déplié (zone sous le header) : fond sombre */
+html.dark .dashboard-section-content {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+
+/* Bannière d'info (💡 Ces filtres affectent...) : bleu/vert foncé, pas clair */
+html.dark .dashboard-info-banner-projets {
+  background-color: rgba(30, 58, 138, 0.5) !important;
+  border-left-color: rgb(96, 165, 250) !important;
+}
+html.dark .dashboard-info-banner-projets .text-blue-900,
+html.dark .dashboard-info-banner-projets .text-blue-100 {
+  color: rgb(224, 242, 254) !important;
+}
+html.dark .dashboard-info-banner-projets .text-blue-700,
+html.dark .dashboard-info-banner-projets .text-blue-300 {
+  color: rgb(191, 219, 254) !important;
+}
+
+html.dark .dashboard-info-banner-procedures {
+  background-color: rgba(20, 83, 45, 0.5) !important;
+  border-left-color: rgb(74, 222, 128) !important;
+}
+html.dark .dashboard-info-banner-procedures .text-green-900,
+html.dark .dashboard-info-banner-procedures .text-green-100 {
+  color: rgb(220, 252, 231) !important;
+}
+html.dark .dashboard-info-banner-procedures .text-green-700,
+html.dark .dashboard-info-banner-procedures .text-green-300 {
+  color: rgb(187, 247, 208) !important;
+}
+
+/* Bloc Filtres Projets / Filtres Procédures : fond sombre, pas gris clair */
+html.dark .dashboard-filters-box {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+html.dark .dashboard-section-projets .dashboard-filters-box {
+  border-color: rgba(59, 130, 246, 0.6) !important;
+}
+html.dark .dashboard-section-procedures .dashboard-filters-box {
+  border-color: rgba(34, 197, 94, 0.6) !important;
+}
+html.dark .dashboard-filters-box h3,
+html.dark .dashboard-filters-box .text-blue-900,
+html.dark .dashboard-filters-box .text-green-900 {
+  color: rgb(248, 250, 252) !important;
+}
+
+/* ========================================
+   GANTT (PLANNING) - MODE SOMBRE
+   ======================================== */
+
+/* Barre de filtres Gantt */
+html.dark .gantt-filters-bar {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+
+/* Champs de formulaire dans le Gantt (recherche, dates) */
+html.dark .gantt-panel .gantt-input {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+
+/* Cartes des vues (Projets / Procédures) */
+html.dark .gantt-view-card {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+
+/* Carte synthèse (stats Projets filtrés) */
+html.dark .gantt-synthese-card {
+  background: linear-gradient(to bottom right, rgb(30, 41, 59), rgb(15, 23, 42)) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+
+/* Cartes de la liste détaillée synthèse */
+html.dark .gantt-list-card {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+
+/* Boutons vue Gantt (Synthèse / Projets / Procédures) inactifs : pas le style global button */
+html.dark .gantt-panel .gantt-view-btn:not([class*="from-blue"]) {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(203, 213, 225) !important;
+}
+
+/* Bouton période actuelle / toutes périodes */
+html.dark .gantt-period-btn {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(203, 213, 225) !important;
+}
+
+/* Bloc "Date cible manquante" (sans date) : fond sombre et texte bien lisible */
+html.dark .gantt-sans-date-block {
+  background-color: rgb(51, 65, 85) !important;
+}
+html.dark .gantt-sans-date-block,
+html.dark .gantt-sans-date-block * {
+  color: rgb(248, 250, 252) !important;
+}
+
+/* Bloc "Retard" (rayures roses) : fond sombre, texte blanc pour bonne lisibilité */
+html.dark .gantt-retard-block {
+  background: repeating-linear-gradient(45deg, rgb(127, 29, 29), rgb(127, 29, 29) 10px, rgb(153, 27, 27) 10px, rgb(153, 27, 27) 20px) !important;
+  background-color: rgb(127, 29, 29) !important;
+}
+html.dark .gantt-retard-block,
+html.dark .gantt-retard-block * {
+  color: rgb(255, 255, 255) !important;
+}
+
+/* Bloc "En cours" (barre verte) : fond vert sombre, texte blanc */
+html.dark .gantt-en-cours-block {
+  background: linear-gradient(to right, rgb(4, 120, 87), rgb(5, 150, 105)) !important;
+  background-color: rgb(4, 120, 87) !important;
+}
+html.dark .gantt-en-cours-block,
+html.dark .gantt-en-cours-block * {
+  color: rgb(255, 255, 255) !important;
+}
+
+/* ========================================
+   DCE COMPLET - Zones de saisie distinctes
+   ========================================
+   En mode sombre, input/textarea/select ont un fond légèrement
+   plus clair que le contenu pour bien repérer les champs à saisir.
+*/
+
+/* Contenu et sections en fond sombre pour cohérence */
+html.dark .dce-complet-content,
+html.dark .dce-complet-content section.bg-white,
+html.dark .dce-complet-content .bg-white {
+  background-color: rgb(30, 41, 59) !important;
+}
+
+html.dark .dce-complet-content input:not([type="checkbox"]):not([type="radio"]),
+html.dark .dce-complet-content textarea,
+html.dark .dce-complet-content select {
+  background-color: rgb(71, 85, 105) !important;
+  border-color: rgb(100, 116, 139) !important;
+  color: rgb(248, 250, 252) !important;
+}
+
+html.dark .dce-complet-content input::placeholder,
+html.dark .dce-complet-content textarea::placeholder {
+  color: rgb(148, 163, 184) !important;
+}
+
+html.dark .dce-complet-content input:focus,
+html.dark .dce-complet-content textarea:focus,
+html.dark .dce-complet-content select:focus {
+  background-color: rgb(71, 85, 105) !important;
+  border-color: rgb(34, 197, 94) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+}
+
+/* Titres et libellés lisibles sur fond sombre */
+html.dark .dce-complet-content h1,
+html.dark .dce-complet-content h2,
+html.dark .dce-complet-content h3,
+html.dark .dce-complet-content label,
+html.dark .dce-complet-content .text-gray-700,
+html.dark .dce-complet-content .text-gray-900 {
+  color: rgb(248, 250, 252) !important;
+}
+html.dark .dce-complet-content .text-gray-600,
+html.dark .dce-complet-content .text-gray-500 {
+  color: rgb(203, 213, 225) !important;
+}
+
+/* --- DCE : zones pastel (bg-green-50, bg-gray-50, etc.) → fond sombre + texte lisible --- */
+html.dark .dce-complet-content .bg-green-50,
+html.dark .dce-complet-content .bg-gray-50,
+html.dark .dce-complet-content .bg-emerald-50 {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+html.dark .dce-complet-content .bg-green-50 .text-green-800,
+html.dark .dce-complet-content .bg-green-50 .text-green-700,
+html.dark .dce-complet-content .bg-emerald-50 .text-emerald-700 {
+  color: rgb(203, 213, 225) !important;
+}
+
+/* Tableaux BPU / DQE : lignes alternées blanches/grises → fond sombre, texte clair */
+html.dark .dce-complet-content table tbody tr.bg-white {
+  background-color: rgb(51, 65, 85) !important;
+}
+html.dark .dce-complet-content table tbody tr.bg-gray-50 {
+  background-color: rgb(30, 41, 59) !important;
+}
+html.dark .dce-complet-content table td,
+html.dark .dce-complet-content table tbody th {
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+html.dark .dce-complet-content table td input.bg-transparent,
+html.dark .dce-complet-content table td input[class*="bg-transparent"] {
+  color: rgb(248, 250, 252) !important;
+  background-color: transparent !important;
+}
+html.dark .dce-complet-content table td input::placeholder {
+  color: rgb(148, 163, 184) !important;
+}
+html.dark .dce-complet-content table .text-gray-600 {
+  color: rgb(203, 213, 225) !important;
+}
+html.dark .dce-complet-content div.border-gray-300.rounded-lg.overflow-hidden {
+  border-color: rgb(71, 85, 105) !important;
+}
+
+/* Boutons barre d'outils (Modifier en-tête, Ajouter des lignes/colonnes) en mode sombre */
+html.dark .dce-complet-content button.bg-white,
+html.dark .dce-complet-content .bg-white.border-gray-300 {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+html.dark .dce-complet-content button.bg-white:hover,
+html.dark .dce-complet-content button.hover\:bg-gray-50:hover {
+  background-color: rgb(71, 85, 105) !important;
+}
+
+/* ========================================
+   DCE BPU (pleine page) - Éléments encore clairs
+   ========================================
+   Le BPU s'ouvre en fixed fullpage hors .dce-complet-content :
+   bouton Retour, zone procédure, scrollbar, etc.
+*/
+
+html.dark .dce-bpu-fullpage {
+  background-color: rgb(15, 23, 42) !important;
+}
+
+html.dark .dce-bpu-fullpage .dce-bpu-retour {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+
+html.dark .dce-bpu-fullpage .dce-bpu-retour:hover {
+  background-color: rgb(71, 85, 105) !important;
+}
+
+html.dark .dce-bpu-fullpage .dce-bpu-select {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+
+html.dark .dce-bpu-fullpage .dce-bpu-procedure-info {
+  background: linear-gradient(to right, rgb(51, 65, 85), rgb(30, 41, 59)) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+
+/* Scrollbar du tableau BPU : tons sombres (pas de teal vif) */
+html.dark .dce-bpu-table-scroll {
+  scrollbar-color: rgb(71, 85, 105) rgb(30, 41, 59);
+}
+html.dark .dce-bpu-table-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+html.dark .dce-bpu-table-scroll::-webkit-scrollbar-track {
+  background: rgb(30, 41, 59);
+}
+html.dark .dce-bpu-table-scroll::-webkit-scrollbar-thumb {
+  background: rgb(71, 85, 105);
+  border-radius: 6px;
+}
+html.dark .dce-bpu-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(100, 116, 139);
+}
+
+/* ========================================
+   DCE DQE (pleine page) - Même traitement que BPU
+   ======================================== */
+
+html.dark .dce-dqe-fullpage {
+  background-color: rgb(15, 23, 42) !important;
+}
+
+html.dark .dce-dqe-fullpage .dce-dqe-retour {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+
+html.dark .dce-dqe-fullpage .dce-dqe-retour:hover {
+  background-color: rgb(71, 85, 105) !important;
+}
+
+html.dark .dce-dqe-fullpage .dce-dqe-select {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+
+html.dark .dce-dqe-fullpage .dce-dqe-procedure-info {
+  background: linear-gradient(to right, rgb(51, 65, 85), rgb(30, 41, 59)) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+
+/* Scrollbar du tableau DQE : tons sombres */
+html.dark .dce-dqe-table-scroll {
+  scrollbar-color: rgb(71, 85, 105) rgb(30, 41, 59);
+}
+html.dark .dce-dqe-table-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+html.dark .dce-dqe-table-scroll::-webkit-scrollbar-track {
+  background: rgb(30, 41, 59);
+}
+html.dark .dce-dqe-table-scroll::-webkit-scrollbar-thumb {
+  background: rgb(71, 85, 105);
+  border-radius: 6px;
+}
+html.dark .dce-dqe-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(100, 116, 139);
+}
+
+/* Tableau DQE pleine page : lignes et cellules sombres (hors .dce-complet-content) */
+html.dark .dce-dqe-fullpage table tbody tr.bg-white {
+  background-color: rgb(51, 65, 85) !important;
+}
+html.dark .dce-dqe-fullpage table tbody tr.bg-gray-50 {
+  background-color: rgb(30, 41, 59) !important;
+}
+html.dark .dce-dqe-fullpage table td {
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+html.dark .dce-dqe-fullpage table td input.bg-transparent,
+html.dark .dce-dqe-fullpage table td input[class*="bg-transparent"] {
+  color: rgb(248, 250, 252) !important;
+}
+/* Cellules calculées DQE (fond pastel #E8F5F3) → sombre */
+html.dark .dce-dqe-fullpage table td[class*="E8F5F3"],
+html.dark .dce-dqe-fullpage table td.bg-slate-700 {
+  background-color: rgb(51, 65, 85) !important;
+}
+
+/* ========================================
+   QUESTIONNAIRE TECHNIQUE (DCE)
+   ========================================
+   Alignement avec le thème DCE : fond slate, zones de saisie distinctes.
+*/
+
+html.dark .dce-questionnaire-technique {
+  background-color: rgb(15, 23, 42) !important;
+}
+
+/* Cartes et blocs (procédure, critères, liste vide) */
+html.dark .dce-questionnaire-technique .bg-white,
+html.dark .dce-questionnaire-technique .dark\:bg-gray-800 {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+
+/* Zones pastel teal/amber/blue/green → fond sombre lisible */
+html.dark .dce-questionnaire-technique .bg-teal-50,
+html.dark .dce-questionnaire-technique .bg-amber-50,
+html.dark .dce-questionnaire-technique .bg-blue-50,
+html.dark .dce-questionnaire-technique [class*="bg-teal-50"],
+html.dark .dce-questionnaire-technique [class*="bg-amber-50"],
+html.dark .dce-questionnaire-technique [class*="bg-blue-50"] {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+
+/* Inputs / select dans le questionnaire : fond légèrement plus clair pour repérage */
+html.dark .dce-questionnaire-technique input:not([type="checkbox"]):not([type="radio"]),
+html.dark .dce-questionnaire-technique textarea,
+html.dark .dce-questionnaire-technique select {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+
+html.dark .dce-questionnaire-technique input::placeholder,
+html.dark .dce-questionnaire-technique textarea::placeholder {
+  color: rgb(148, 163, 184) !important;
+}
+
+/* Bandeau critère (teal-100) */
+html.dark .dce-questionnaire-technique .bg-teal-100,
+html.dark .dce-questionnaire-technique [class*="bg-teal-100"] {
+  background-color: rgb(30, 58, 58) !important;
+  border-color: rgb(45, 93, 93) !important;
+}
+
+/* Zone liste des lots (modal duplication) déjà en dark:bg-gray-* ; on force si besoin */
+html.dark .dce-questionnaire-technique .dark\:bg-gray-700 {
+  background-color: rgb(51, 65, 85) !important;
+}
+
+/* ========================================
+   DOCUMENTS ANNEXES (DCE)
+   ========================================
+   Barre sticky, textarea et labels en mode sombre.
+*/
+html.dark .dce-documents-annexes {
+  color: rgb(248, 250, 252);
+}
+html.dark .dce-documents-annexes-bar {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+html.dark .dce-documents-annexes-textarea {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+html.dark .dce-documents-annexes-textarea::placeholder {
+  color: rgb(148, 163, 184) !important;
+}
+
+/* ========================================
+   DOCUMENTS ANNEXES – PLACEHOLDER "EN COURS" (DCE)
+   ========================================
+   Carte "ModuleComingSoon" : fond sombre, texte lisible.
+*/
+html.dark .dce-module-coming-soon .bg-amber-50,
+html.dark .dce-documents-annexes-placeholder .dce-module-coming-soon > div {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+html.dark .dce-module-coming-soon h3,
+html.dark .dce-module-coming-soon p {
+  color: rgb(248, 250, 252) !important;
+}
+html.dark .dce-module-coming-soon button {
+  color: rgb(226, 232, 240) !important;
+}
+html.dark .dce-module-coming-soon button:hover {
+  color: rgb(241, 245, 249) !important;
+}
+
+/* ========================================
+   OUVERTURE DES PLIS
+   ========================================
+   Page d'accueil (recherche procédure), vue Analyse candidatures,
+   et Recevabilité des offres : fonds et cartes en mode sombre.
+*/
+html.dark .ouverture-plis-module.bg-white,
+html.dark .ouverture-plis-module .bg-white {
+  background-color: rgb(17, 24, 39) !important;
+}
+html.dark .ouverture-plis-module .bg-white\/80 {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+}
+/* Fond de la page "autour" des cartes = même que le reste de l'app (#0f172a) */
+html.dark .ouverture-plis-module {
+  background: rgb(15, 23, 42) !important;
+  background-image: none !important;
+}
+html.dark .ouverture-plis-module .from-gray-50,
+html.dark .ouverture-plis-module .via-white,
+html.dark .ouverture-plis-module .to-gray-50 {
+  --tw-gradient-from: rgb(15, 23, 42) !important;
+  --tw-gradient-via: rgb(15, 23, 42) !important;
+  --tw-gradient-to: rgb(15, 23, 42) !important;
+}
+html.dark .ouverture-plis-module .bg-green-50,
+html.dark .ouverture-plis-module .from-green-50,
+html.dark .ouverture-plis-module .to-emerald-50 {
+  background-color: rgb(30, 51, 51) !important;
+  border-color: rgb(45, 93, 93) !important;
+}
+html.dark .ouverture-plis-module .border-gray-200 {
+  border-color: rgb(51, 65, 85) !important;
+}
+
+/* Bandeau "Procédure / Marché / Acheteur / Candidats" (Analyse candidatures) */
+html.dark .ouverture-plis-info-band {
+  background: rgb(30, 41, 59) !important;
+  background-image: none !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+
+/* Carte "1 Sélectionner une procédure" — forcer fond et champs en mode sombre */
+html.dark .ouverture-plis-card-selection {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+  box-shadow: none !important;
+}
+html.dark .ouverture-plis-card-selection h2,
+html.dark .ouverture-plis-card-selection label {
+  color: rgb(226, 232, 240) !important;
+}
+html.dark .ouverture-plis-input-numero {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
+}
+html.dark .ouverture-plis-input-numero::placeholder {
+  color: rgb(148, 163, 184) !important;
+}
+
+/* Cartes action "Analyse candidature" et "Recevabilité des offres" */
+html.dark .ouverture-plis-action-card {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+  box-shadow: none !important;
+}
+html.dark .ouverture-plis-card {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+  box-shadow: none !important;
+}
+
+/* Scrollbar zone tableau (évite la ligne claire en bas) */
+html.dark .ouverture-plis-table-scroll {
+  scrollbar-color: rgb(71, 85, 105) rgb(30, 41, 59);
+}
+html.dark .ouverture-plis-table-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+html.dark .ouverture-plis-table-scroll::-webkit-scrollbar-track {
+  background: rgb(30, 41, 59);
+}
+html.dark .ouverture-plis-table-scroll::-webkit-scrollbar-thumb {
+  background: rgb(71, 85, 105);
+  border-radius: 6px;
+}
+html.dark .ouverture-plis-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(100, 116, 139);
+}
+
+/* Recevabilité des offres */
+html.dark .recevabilite-offres-module .bg-white {
+  background-color: rgb(17, 24, 39) !important;
+}
+html.dark .recevabilite-info-band {
+  background: rgb(30, 41, 59) !important;
+  background-image: none !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+html.dark .recevabilite-offres-module .from-green-50,
+html.dark .recevabilite-offres-module .to-emerald-50 {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+html.dark .recevabilite-offres-module .bg-gray-50 {
+  background-color: rgb(30, 41, 59) !important;
+}
+html.dark .recevabilite-offres-module tbody.bg-white {
+  background-color: rgb(17, 24, 39) !important;
+}
+html.dark .recevabilite-offres-module .hover\:bg-gray-50:hover {
+  background-color: rgb(30, 41, 59) !important;
+}
+
+/* ========================================
+   AN01 — fond "autour" des cartes = même que le reste de l'app (#0f172a)
+   ======================================== */
+html.dark .an01-wrapper {
+  background: rgb(15, 23, 42) !important;
+}
+html.dark .an01-page {
+  background-color: rgb(15, 23, 42) !important;
+}
+/* Conteneur header du wizard AN01 (étapes + Sauvegarder/Exporter/Importer) = même fond que la page */
+html.dark .an01-wizard-header {
+  background-color: rgb(15, 23, 42) !important;
+  background-image: none !important;
+  border-color: rgb(51, 65, 85) !important;
+}
+html.dark .an01-wrapper .bg-gray-100,
+html.dark .an01-wrapper .bg-gray-50 {
+  background-color: rgb(15, 23, 42) !important;
+}
+
+/* ========================================
+   AN01 — éléments internes : supprimer les couleurs pastel
+   (Analyse financière, Grille technique, Synthèse, Dashboard, etc.)
+   ======================================== */
+/* Teintes émeraude / vert clair → fond sombre teal */
+html.dark .an01-wrapper [class*="bg-emerald-50"],
+html.dark .an01-wrapper .bg-emerald-50 {
+  background-color: rgb(30, 51, 51) !important;
+  border-color: rgb(45, 93, 93) !important;
+}
+html.dark .an01-wrapper [class*="bg-emerald-100"],
+html.dark .an01-wrapper .bg-emerald-100 {
+  background-color: rgb(22, 43, 43) !important;
+  border-color: rgb(45, 93, 93) !important;
+}
+/* Teintes ambre / jaune clair → fond sombre */
+html.dark .an01-wrapper [class*="bg-amber-50"],
+html.dark .an01-wrapper .bg-amber-50 {
+  background-color: rgb(51, 45, 30) !important;
+  border-color: rgb(100, 85, 50) !important;
+}
+/* Vert clair (green-50) → fond sombre */
+html.dark .an01-wrapper [class*="bg-green-50"],
+html.dark .an01-wrapper .bg-green-50 {
+  background-color: rgb(30, 51, 51) !important;
+  border-color: rgb(45, 93, 93) !important;
+}
+/* Teal clair */
+html.dark .an01-wrapper [class*="bg-teal-50"],
+html.dark .an01-wrapper .bg-teal-50 {
+  background-color: rgb(30, 51, 51) !important;
+  border-color: rgb(45, 93, 93) !important;
+}
+/* Indigo / bleu clair */
+html.dark .an01-wrapper [class*="bg-indigo-50"],
+html.dark .an01-wrapper .bg-indigo-50,
+html.dark .an01-wrapper [class*="bg-blue-50"],
+html.dark .an01-wrapper .bg-blue-50 {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+/* Orange clair */
+html.dark .an01-wrapper [class*="bg-orange-50"],
+html.dark .an01-wrapper .bg-orange-50 {
+  background-color: rgb(51, 45, 30) !important;
+  border-color: rgb(100, 85, 50) !important;
+}
+/* En-têtes de tableaux gris clair */
+html.dark .an01-wrapper thead.bg-gray-50,
+html.dark .an01-wrapper tr.bg-gray-50 {
+  background-color: rgb(30, 41, 59) !important;
+}
+html.dark .an01-wrapper .hover\:bg-gray-50:hover,
+html.dark .an01-wrapper .group-hover\:bg-gray-50\/50:hover {
+  background-color: rgb(30, 41, 59) !important;
+}
+/* Carte "Taux TVA, Poids technique" (Synthèse) */
+html.dark .an01-wrapper .an01-card-poids {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+/* Rangs 1 / gagnant (emerald-50) dans tableaux */
+html.dark .an01-wrapper tr.bg-emerald-50 {
+  background-color: rgb(30, 51, 51) !important;
+}
+/* Carte "Candidat Recommandé" (synthèse AN01 Dashboard) */
+html.dark .an01-winner-card {
+  background: rgb(30, 41, 59) !important;
+  background-image: none !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+/* Inputs et zones de saisie restés clairs */
+html.dark .an01-wrapper input.bg-white,
+html.dark .an01-wrapper select.bg-white,
+html.dark .an01-wrapper textarea.bg-white {
+  background-color: rgb(51, 65, 85) !important;
+  border-color: rgb(71, 85, 105) !important;
+  color: rgb(248, 250, 252) !important;
 }
 
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import type { CCAPData } from '../../types';
-import { Trash2, Plus, ChevronDown, ChevronRight, Upload, GripVertical, Indent, Outdent } from 'lucide-react';
+import { Trash2, Plus, ChevronDown, ChevronRight, Upload, GripVertical, Indent, Outdent, FileText } from 'lucide-react';
 import { parseWordToCCAP } from './ccapWordParser';
 import { RichTextEditor } from './RichTextEditor';
 
@@ -116,13 +116,22 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
     });
   };
 
-  const updateSection = (index: number, field: 'titre' | 'contenu', value: string) => {
+  const updateSection = (
+    index: number,
+    field: 'titre' | 'contenu' | 'titreCouleur' | 'titreTaille',
+    value: string | number | undefined
+  ) => {
     setForm(prev => {
       const next = {
         ...prev,
-        sections: prev.sections.map((s, i) =>
-          i === index ? { ...s, [field]: value } : s
-        )
+        sections: prev.sections.map((s, i) => {
+          if (i !== index) return s;
+          const updated = { ...s, [field]: value };
+          if (value === undefined && (field === 'titreCouleur' || field === 'titreTaille')) {
+            delete updated[field as 'titreCouleur' | 'titreTaille'];
+          }
+          return updated;
+        })
       };
       onChange?.(next);
       return next;
@@ -140,6 +149,31 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
         sections: prev.sections.map((s, i) =>
           i === index ? { ...s, niveau: newLevel } : s
         )
+      };
+      onChange?.(next);
+      return next;
+    });
+  };
+
+  /**
+   * Applique la couleur et la taille du titre de la section donnée à toutes les sections du même niveau.
+   */
+  const applyStyleToAllOfLevel = (index: number) => {
+    const section = form.sections[index];
+    if (!section) return;
+    const niveau = section.niveau || 1;
+    setForm(prev => {
+      const next = {
+        ...prev,
+        sections: prev.sections.map((s, i) => {
+          const sNiveau = s.niveau || 1;
+          if (sNiveau !== niveau) return s;
+          return {
+            ...s,
+            titreCouleur: section.titreCouleur,
+            titreTaille: section.titreTaille,
+          };
+        }),
       };
       onChange?.(next);
       return next;
@@ -263,7 +297,7 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50"
+          className="px-3 py-1.5 text-sm bg-gradient-to-b from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition disabled:opacity-50 shadow-md"
         >
           {isSaving ? 'Enregistrement...' : 'Enregistrer le CCAP'}
         </button>
@@ -282,10 +316,11 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={isImporting}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-[#2F5B58] text-white rounded-md hover:bg-[#234441] transition disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-gradient-to-b from-blue-500 to-blue-600 text-white rounded-md hover:from-blue-600 hover:to-blue-700 transition disabled:opacity-50 shadow-md"
           title="Importer un CCAP Word (.docx)"
         >
-          <Upload className="w-4 h-4" />
+          <FileText className="w-4 h-4" />
+          <Upload className="w-3.5 h-3.5" />
           {isImporting ? 'Import...' : 'Importer Word'}
         </button>
 
@@ -302,7 +337,7 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
                 setShowInsertMenu(!showInsertMenu);
               }
             }}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-b from-green-500 to-green-600 text-white rounded-md hover:from-green-600 hover:to-green-700 transition shadow-md"
           >
             <Plus className="w-4 h-4" />
             Ajouter une section
@@ -426,6 +461,8 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
                                   niveau === 2 ? 'text-emerald-600 dark:text-emerald-400' :
                                   niveau === 3 ? 'text-purple-600 dark:text-purple-400' :
                                   'text-orange-600 dark:text-orange-400';
+              const sameLevelCount = form.sections.filter(s => (s.niveau || 1) === niveau).length;
+              const niveauLabel = niveau === 1 ? 'titres' : niveau === 2 ? 'sous-titres' : niveau === 3 ? 'sous-sous-titres' : 'niv. 4';
               
               return (
                 <div
@@ -491,9 +528,51 @@ export function CCAPForm({ data, onSave, isSaving = false, onChange }: Props) {
                     <input
                       value={section.titre}
                       onChange={e => updateSection(index, 'titre', e.target.value)}
+                      style={{ color: section.titreCouleur || undefined }}
                       className="flex-1 border-0 bg-transparent font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-green-500 rounded px-2 py-1"
                       placeholder="Titre de la section"
                     />
+                    {/* Style du titre (couleur + taille, utilisés dans l'app et à l'export PDF) */}
+                    <div className="flex items-center gap-1 shrink-0" title="Style du titre (affiché ici et à l'export PDF)">
+                      <input
+                        type="color"
+                        value={section.titreCouleur || '#0066cc'}
+                        onChange={e => updateSection(index, 'titreCouleur', e.target.value)}
+                        className="w-6 h-6 rounded cursor-pointer border border-gray-300"
+                        title="Couleur du titre"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateSection(index, 'titreCouleur', undefined)}
+                        className="text-[10px] text-gray-500 hover:text-gray-700 px-1"
+                        title="Réinitialiser la couleur"
+                      >
+                        Déf.
+                      </button>
+                      <select
+                        value={section.titreTaille ?? ''}
+                        onChange={e => updateSection(index, 'titreTaille', e.target.value === '' ? undefined : Number(e.target.value))}
+                        className="text-xs border border-gray-300 rounded px-1 py-0.5 bg-white max-w-[4rem]"
+                        title="Taille du titre (PDF)"
+                      >
+                        <option value="">Déf.</option>
+                        <option value={18}>18</option>
+                        <option value={16}>16</option>
+                        <option value={14}>14</option>
+                        <option value={12}>12</option>
+                        <option value={11}>11</option>
+                      </select>
+                      {sameLevelCount >= 2 && (
+                        <button
+                          type="button"
+                          onClick={() => applyStyleToAllOfLevel(index)}
+                          className="text-[10px] whitespace-nowrap px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:hover:bg-emerald-800/50 transition"
+                          title={`Appliquer cette couleur et taille à tous les ${niveauLabel} (niveau ${niveau}) — ${sameLevelCount} section(s)`}
+                        >
+                          → Tous {niveauLabel}
+                        </button>
+                      )}
+                    </div>
                     <span className="text-xs text-gray-500 min-w-[60px] text-right">
                       Section {index + 1}
                     </span>

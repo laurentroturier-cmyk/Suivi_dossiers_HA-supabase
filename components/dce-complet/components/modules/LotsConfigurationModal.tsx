@@ -105,7 +105,7 @@ export function LotsConfigurationModal({ isOpen, onClose, lots, nbLots, onSave }
             </p>
             <button
               onClick={addLot}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition shadow-md"
             >
               <Plus size={16} />
               Ajouter un lot
@@ -201,7 +201,7 @@ export function LotsConfigurationModal({ isOpen, onClose, lots, nbLots, onSave }
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition"
+            className="px-4 py-2 text-sm bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition shadow-md"
           >
             Appliquer les lots
           </button>

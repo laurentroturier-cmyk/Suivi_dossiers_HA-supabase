@@ -137,7 +137,7 @@ export function BPUTMAForm({ data, onSave, isSaving = false }: Props) {
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50"
+          className="px-4 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition disabled:opacity-50 shadow-md"
         >
           {isSaving ? 'Enregistrement...' : 'Enregistrer la section'}
         </button>

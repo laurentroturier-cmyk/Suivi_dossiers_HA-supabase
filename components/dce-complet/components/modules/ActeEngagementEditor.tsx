@@ -1629,7 +1629,7 @@ export function ActeEngagementEditor({
           {/* Bouton Aperçu */}
           <button
             onClick={() => setShowPreview(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 font-medium shadow-md"
             title="Prévisualiser le document"
           >
             <Eye className="w-4 h-4" />
@@ -1640,7 +1640,7 @@ export function ActeEngagementEditor({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md"
           >
             <Save className="w-4 h-4" />
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
@@ -1650,7 +1650,7 @@ export function ActeEngagementEditor({
           <button
             onClick={handleExportWord}
             disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md"
             title="Exporter au format Word (ATTRI1)"
           >
             <FileDown className="w-4 h-4" />
@@ -1875,9 +1875,9 @@ export function ActeEngagementEditor({
                   handleExportWord();
                 }}
                 disabled={isExporting}
-                className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-md hover:bg-[#234441] disabled:opacity-50 font-medium text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 text-white rounded-md hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 font-medium text-sm shadow-md"
               >
-                <FileDown className="w-4 h-4" />
+                <FileText className="w-4 h-4" />
                 {isExporting ? 'Export...' : 'Exporter en Word'}
               </button>
             </div>

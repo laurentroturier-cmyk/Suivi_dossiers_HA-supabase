@@ -320,10 +320,10 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-[#004d3d] to-[#003329] text-white shadow-xl">
+      <aside className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-blue-600 to-indigo-800 text-white shadow-xl backdrop-blur-xl border-r border-white/10">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-[#006d57] rounded-lg flex items-center justify-center relative">
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center relative border border-white/20">
               <LayoutDashboard className="w-6 h-6" />
               {accessRequests.filter(r => r.status === 'pending').length > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
@@ -333,26 +333,26 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             </div>
             <div>
               <h1 className="text-lg font-bold">DNA Gestprojet</h1>
-              <p className="text-xs text-emerald-200">Dashboard</p>
+              <p className="text-xs text-blue-200">Dashboard</p>
             </div>
           </div>
 
           {/* User Profile */}
-          <div className="bg-[#003329]/50 rounded-lg p-4 mb-6 border border-[#006d57]/30">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/20">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#006d57] to-[#004d3d] rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/30 ring-2 ring-white/20">
                 <User className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{profile.email}</p>
                 <div className="mt-2">
                   {profile.role === 'admin' ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-400/20 text-emerald-200 text-xs font-medium rounded-full border border-emerald-400/30">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/20 text-blue-100 text-xs font-medium rounded-full border border-white/30 backdrop-blur-sm">
                       <Shield className="w-3 h-3" />
                       Admin
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#006d57]/20 text-emerald-200 text-xs font-medium rounded-full border border-[#006d57]/30">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 text-blue-100 text-xs font-medium rounded-full border border-white/20 backdrop-blur-sm">
                       <User className="w-3 h-3" />
                       User
                     </span>
@@ -366,8 +366,8 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
           <nav className="space-y-2">
             <button 
               onClick={() => setActiveTab('data')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'data' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === 'data' ? 'bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg' : 'text-blue-100 hover:bg-white/10 border border-transparent'
               }`}
             >
               <Database className="w-4 h-4" />
@@ -378,8 +378,8 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
               <>
                 <button 
                   onClick={() => setActiveTab('requests')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'requests' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    activeTab === 'requests' ? 'bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg' : 'text-blue-100 hover:bg-white/10 border border-transparent'
                   }`}
                 >
                   <UserPlus className="w-4 h-4" />
@@ -393,8 +393,8 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
 
                 <button 
                   onClick={() => setActiveTab('import')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'import' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    activeTab === 'import' ? 'bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg' : 'text-blue-100 hover:bg-white/10 border border-transparent'
                   }`}
                 >
                   <FileSpreadsheet className="w-4 h-4" />
@@ -403,8 +403,8 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
 
                 <button 
                   onClick={() => setActiveTab('centres')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'centres' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    activeTab === 'centres' ? 'bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg' : 'text-blue-100 hover:bg-white/10 border border-transparent'
                   }`}
                 >
                   <Building2 className="w-4 h-4" />
@@ -413,8 +413,8 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
 
                 <button 
                   onClick={() => setActiveTab('commandes-fina')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'commandes-fina' ? 'bg-[#006d57]' : 'text-emerald-100 hover:bg-[#003329]/50'
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    activeTab === 'commandes-fina' ? 'bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg' : 'text-blue-100 hover:bg-white/10 border border-transparent'
                   }`}
                 >
                   <ShoppingCart className="w-4 h-4" />
@@ -424,7 +424,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                 <button 
                   onClick={testPowerAutomate}
                   disabled={powerAutomateLoading}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-emerald-100 rounded-lg text-sm font-medium hover:bg-[#003329]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-emerald-500/30"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-blue-100 rounded-xl text-sm font-medium hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/20"
                 >
                   {powerAutomateLoading ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -439,7 +439,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             {onBackToApp && (
               <button 
                 onClick={onBackToApp}
-                className="w-full flex items-center gap-3 px-4 py-3 text-emerald-100 rounded-lg text-sm font-medium hover:bg-[#003329]/50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 text-blue-100 rounded-xl text-sm font-medium hover:bg-white/10 transition-all border border-transparent"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Retour à l'application
@@ -449,10 +449,10 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         </div>
 
         {/* Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-[#006d57]/30">
+        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-white/20">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600/10 text-red-400 rounded-lg text-sm font-medium hover:bg-red-600/20 border border-red-600/30 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/10 backdrop-blur-sm text-red-200 rounded-xl text-sm font-medium hover:bg-red-500/20 border border-white/20 hover:border-red-400/30 transition-all"
           >
             <LogOut className="w-4 h-4" />
             Déconnexion
@@ -473,7 +473,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-500">Total Entrées</span>
-              <Database className="w-5 h-5 text-[#004d3d]" />
+              <Database className="w-5 h-5 text-indigo-600" />
             </div>
             <p className="text-3xl font-bold text-gray-900">{data.length}</p>
           </div>
@@ -491,9 +491,9 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-500">Statut</span>
-              <Shield className="w-5 h-5 text-green-500" />
+              <Shield className="w-5 h-5 text-indigo-500" />
             </div>
-            <p className="text-sm font-semibold text-green-600">Connecté</p>
+            <p className="text-sm font-semibold text-indigo-600">Connecté</p>
             <p className="text-xs text-gray-500 mt-1">Rôle: {profile.role}</p>
           </div>
         </div>
@@ -502,23 +502,23 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         {powerAutomateResult && profile.role === 'admin' && (
           <div className={`mb-8 p-6 rounded-2xl border ${
             powerAutomateResult.success 
-              ? 'bg-green-50 border-green-200' 
+              ? 'bg-indigo-50 border-indigo-200' 
               : 'bg-red-50 border-red-200'
           }`}>
             <div className="flex items-start gap-3">
               {powerAutomateResult.success ? (
-                <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />
+                <CheckCircle className="w-6 h-6 text-indigo-600 mt-0.5" />
               ) : (
                 <XCircle className="w-6 h-6 text-red-600 mt-0.5" />
               )}
               <div className="flex-1">
                 <h3 className={`font-semibold mb-1 ${
-                  powerAutomateResult.success ? 'text-green-800' : 'text-red-800'
+                  powerAutomateResult.success ? 'text-indigo-800' : 'text-red-800'
                 }`}>
                   Test Power Automate
                 </h3>
                 <p className={`text-sm ${
-                  powerAutomateResult.success ? 'text-green-700' : 'text-red-700'
+                  powerAutomateResult.success ? 'text-indigo-700' : 'text-red-700'
                 }`}>
                   {powerAutomateResult.message}
                 </p>
@@ -539,7 +539,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             {profile.role === 'admin' && (
           <div className="bg-white border border-gray-100 rounded-2xl p-6 mb-8 shadow-sm">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-[#004d3d] rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 bg-gradient-to-br from-sky-400 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/30 ring-2 ring-white/20">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
@@ -549,28 +549,28 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <button
                     onClick={exportFieldsStructure}
-                    className="inline-flex items-center gap-3 px-4 py-3 bg-[#004d3d] border border-[#004d3d] rounded-lg hover:bg-[#006d57] transition-all group"
+                    className="inline-flex items-center gap-3 px-4 py-3 bg-gradient-to-br from-sky-400 to-indigo-600 hover:from-sky-500 hover:to-indigo-700 border border-white/20 rounded-xl transition-all group shadow-lg shadow-indigo-500/25 ring-2 ring-white/20"
                   >
-                    <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                    <div className="w-10 h-10 bg-white/15 rounded-lg flex items-center justify-center group-hover:bg-white/25 transition-colors backdrop-blur-sm">
                       <FileSpreadsheet className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1 text-left">
                       <p className="text-sm font-semibold text-white">Exporter la structure</p>
-                      <p className="text-xs text-emerald-100">Tous les champs en Excel</p>
+                      <p className="text-xs text-blue-100/90">Tous les champs en Excel</p>
                     </div>
                     <Download className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
                   </button>
 
                   <button 
                     onClick={() => setShowUserManagement(!showUserManagement)}
-                    className="inline-flex items-center gap-3 px-4 py-3 bg-[#004d3d] border border-[#004d3d] rounded-lg hover:bg-[#006d57] transition-all group"
+                    className="inline-flex items-center gap-3 px-4 py-3 bg-gradient-to-br from-sky-400 to-indigo-600 hover:from-sky-500 hover:to-indigo-700 border border-white/20 rounded-xl transition-all group shadow-lg shadow-indigo-500/25 ring-2 ring-white/20"
                   >
-                    <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                    <div className="w-10 h-10 bg-white/15 rounded-lg flex items-center justify-center group-hover:bg-white/25 transition-colors backdrop-blur-sm">
                       <User className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1 text-left">
                       <p className="text-sm font-semibold text-white">Gestion des utilisateurs</p>
-                      <p className="text-xs text-emerald-100">{users.length} utilisateur{users.length !== 1 ? 's' : ''}</p>
+                      <p className="text-xs text-blue-100/90">{users.length} utilisateur{users.length !== 1 ? 's' : ''}</p>
                     </div>
                   </button>
 
@@ -612,7 +612,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
               <button
                 onClick={fetchUsers}
                 disabled={usersLoading}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-gradient-to-br from-sky-400 to-indigo-600 hover:from-sky-500 hover:to-indigo-700 rounded-xl shadow-lg shadow-indigo-500/25 ring-2 ring-white/20 disabled:opacity-50 transition-all"
               >
                 <RefreshCw className={`w-4 h-4 ${usersLoading ? 'animate-spin' : ''}`} />
                 Actualiser
@@ -621,7 +621,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
 
             {usersLoading ? (
               <div className="flex items-center justify-center py-12">
-                <RefreshCw className="w-8 h-8 text-[#004d3d] animate-spin" />
+                <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
               </div>
             ) : users.length === 0 ? (
               <div className="text-center py-12">
@@ -652,7 +652,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                       <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 bg-gradient-to-br from-[#006d57] to-[#004d3d] rounded-full flex items-center justify-center flex-shrink-0">
+                            <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ring-2 ring-white/20">
                               {user.role === 'admin' ? (
                                 <Shield className="w-5 h-5 text-white" />
                               ) : (
@@ -664,7 +664,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                                 {user.email?.split('@')[0]}
                               </p>
                               {user.id === profile.id && (
-                                <span className="text-xs text-emerald-600 font-medium">(Vous)</span>
+                                <span className="text-xs text-indigo-600 font-medium">(Vous)</span>
                               )}
                             </div>
                           </div>
@@ -676,7 +676,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                           {user.id === profile.id ? (
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${
                               user.role === 'admin' 
-                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                                ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' 
                                 : 'bg-blue-100 text-blue-700 border border-blue-200'
                             } text-xs font-medium rounded-full`}>
                               {user.role === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
@@ -686,7 +686,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                             <select
                               value={user.role}
                               onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'user')}
-                              className="text-sm border border-gray-200 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#004d3d]/20 outline-none"
+                              className="text-sm border border-gray-200 rounded-lg px-2 py-1 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                             >
                               <option value="user">user</option>
                               <option value="admin">admin</option>
@@ -703,7 +703,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                                   handleRoleChange(user.id, user.role === 'admin' ? 'user' : 'admin');
                                 }
                               }}
-                              className="text-[#004d3d] hover:text-[#006d57] font-medium"
+                              className="text-indigo-600 hover:text-indigo-700 font-medium"
                             >
                               {user.role === 'admin' ? 'Rétrograder' : 'Promouvoir'}
                             </button>
@@ -772,7 +772,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             <button
               onClick={fetchData}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-gradient-to-br from-sky-400 to-indigo-600 hover:from-sky-500 hover:to-indigo-700 rounded-xl shadow-lg shadow-indigo-500/25 ring-2 ring-white/20 disabled:opacity-50 transition-all"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Actualiser
@@ -783,7 +783,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <div className="text-center">
-                  <RefreshCw className="w-8 h-8 text-[#004d3d] animate-spin mx-auto mb-4" />
+                  <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-4" />
                   <p className="text-gray-600">Chargement des données...</p>
                 </div>
               </div>
@@ -840,7 +840,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                 <button
                   onClick={fetchAccessRequests}
                   disabled={requestsLoading}
-                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#004d3d] rounded-lg hover:bg-[#006d57] disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-gradient-to-br from-sky-400 to-indigo-600 hover:from-sky-500 hover:to-indigo-700 rounded-xl shadow-lg shadow-indigo-500/25 ring-2 ring-white/20 disabled:opacity-50 transition-all"
                 >
                   <RefreshCw className={`w-4 h-4 ${requestsLoading ? 'animate-spin' : ''}`} />
                   Actualiser
@@ -850,7 +850,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
               <div className="p-6">
                 {requestsLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <RefreshCw className="w-8 h-8 text-[#004d3d] animate-spin" />
+                    <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
                   </div>
                 ) : accessRequests.length === 0 ? (
                   <div className="text-center py-12">
@@ -896,7 +896,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => handleApproveRequest(request.id)}
-                                    className="inline-flex items-center gap-1 px-3 py-2 bg-[#004d3d] text-white text-sm font-medium rounded-lg hover:bg-[#006d57] transition-colors"
+                                    className="inline-flex items-center gap-1 px-3 py-2 bg-gradient-to-br from-sky-400 to-indigo-600 hover:from-sky-500 hover:to-indigo-700 text-white text-sm font-medium rounded-xl shadow-lg shadow-indigo-500/25 ring-2 ring-white/20 transition-all"
                                   >
                                     <UserCheck className="w-4 h-4" />
                                     Approuver
@@ -920,12 +920,12 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                     {accessRequests.filter(r => r.status === 'approved').length > 0 && (
                       <div>
                         <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <CheckCircle className="w-4 h-4 text-indigo-600" />
                           Approuvées ({accessRequests.filter(r => r.status === 'approved').length})
                         </h4>
                         <div className="space-y-2">
                           {accessRequests.filter(r => r.status === 'approved').slice(0, 5).map(request => (
-                            <div key={request.id} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div key={request.id} className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
                               <div className="flex items-center justify-between">
                                 <div>
                                   <p className="font-medium text-gray-900 text-sm">
@@ -934,7 +934,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                                   <p className="text-xs text-gray-600">{request.email}</p>
                                 </div>
                                 <div className="text-right">
-                                  <span className="px-2 py-0.5 bg-green-200 text-green-800 text-xs rounded-full">
+                                  <span className="px-2 py-0.5 bg-indigo-200 text-indigo-800 text-xs rounded-full">
                                     Approuvée
                                   </span>
                                   <p className="text-xs text-gray-500 mt-1">

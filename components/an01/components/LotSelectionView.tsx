@@ -15,7 +15,7 @@ const LotSelectionView: React.FC<Props> = ({ lots, onSelectLot, onReset, onSwitc
   const formatCurrency = (val: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden h-screen">
+    <div className="an01-page flex-1 flex flex-col bg-gray-50 dark:bg-[#0f172a] overflow-hidden h-screen">
       <ExportSelectModal 
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}

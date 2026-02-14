@@ -366,11 +366,13 @@ export function DCEComplet({ onClose }: DCECompletProps) {
         );
       case 'documentsAnnexes':
         return (
-          <ModuleComingSoon
-            title="Annexes au CCAP / CCTP – en cours de préparation"
-            description="Ce module centralisera prochainement les annexes communes (administratives et techniques) rattachées au CCAP et au CCTP."
-            onBack={() => setActiveSection('clausesContractuelles')}
-          />
+          <div className="dce-documents-annexes-placeholder">
+            <ModuleComingSoon
+              title="Annexes au CCAP / CCTP – en cours de préparation"
+              description="Ce module centralisera prochainement les annexes communes (administratives et techniques) rattachées au CCAP et au CCTP."
+              onBack={() => setActiveSection('clausesContractuelles')}
+            />
+          </div>
         );
       case 'reponseTechnique':
         return (
@@ -656,8 +658,8 @@ export function DCEComplet({ onClose }: DCECompletProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mr-4">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  <div className="dce-complet-content bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-sm p-6 mr-4">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-4">
                       {activeSection === 'reglementConsultation'
                         ? `Règlement de Consultation – ${RC_SECTIONS[rcSelectedSection]}`
                         : sections.find(s => s.key === activeSection)?.label}

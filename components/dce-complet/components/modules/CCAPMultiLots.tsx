@@ -207,7 +207,7 @@ export function CCAPMultiLots({
               )}
               <button
                 onClick={() => setShowViewer(true)}
-                className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-md hover:bg-emerald-700 transition-colors"
+                className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-emerald-500 to-emerald-600 text-white text-xs font-medium rounded-md hover:from-emerald-600 hover:to-emerald-700 transition-colors shadow-md"
                 title="Prévisualiser le document CCAP"
               >
                 <Eye className="w-4 h-4" />
@@ -216,15 +216,17 @@ export function CCAPMultiLots({
               <button
                 onClick={handleExportWord}
                 disabled={isExporting}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#2F5B58] text-white text-xs font-medium rounded-md hover:bg-[#234441] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-blue-500 to-blue-600 text-white text-xs font-medium rounded-md hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
+                title="Exporter au format Word (.docx)"
               >
-                <FileDown className="w-4 h-4" />
+                <FileText className="w-4 h-4" />
                 {isExporting ? 'Export en cours...' : 'Exporter en Word'}
               </button>
               <button
                 onClick={handleExportPdf}
                 disabled={isExportingPdf}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-red-500 to-red-600 text-white text-xs font-medium rounded-md hover:from-red-600 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
+                title="Exporter au format PDF"
               >
                 <FileText className="w-4 h-4" />
                 {isExportingPdf ? 'Export PDF...' : 'Exporter en PDF'}
@@ -258,10 +260,11 @@ export function CCAPMultiLots({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isImporting}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-[#2F5B58] text-white rounded-md hover:bg-[#234441] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-gradient-to-b from-blue-500 to-blue-600 text-white rounded-md hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               title="Importer un CCAP Word (.docx)"
             >
-              <Upload className="w-4 h-4" />
+              <FileText className="w-4 h-4" />
+              <Upload className="w-3.5 h-3.5" />
               {isImporting ? 'Import en cours...' : 'Importer Word'}
             </button>
           </div>

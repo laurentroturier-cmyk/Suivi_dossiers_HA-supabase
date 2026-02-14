@@ -261,10 +261,10 @@ const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
         <h4 className={`font-medium text-gray-700 dark:text-gray-300 mb-2 ${isLarge ? 'text-base' : 'text-sm'}`}>
           Synthèse des totaux et sous-totaux (par critère, par sous-critère, total)
         </h4>
-        <div className="overflow-x-auto rounded-xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-900/10 mb-4 w-full">
+        <div className="an01-synthese-technique overflow-x-auto rounded-xl border border-emerald-200 dark:border-slate-600 bg-emerald-50/50 dark:bg-slate-800 mb-4 w-full">
           <table className={`w-full border-collapse min-w-[600px] ${textSize}`}>
             <thead>
-              <tr className="bg-emerald-100 dark:bg-emerald-900/30">
+              <tr className="bg-emerald-100 dark:bg-slate-700">
                 <th className="text-right p-2 w-20 border-b border-r border-emerald-200 dark:border-emerald-700 font-semibold text-gray-700 dark:text-gray-300">Barème</th>
                 <th className="text-left p-2 min-w-[200px] border-b border-r border-emerald-200 dark:border-emerald-700 font-semibold text-gray-700 dark:text-gray-300">Désignation</th>
                 {currentLot.candidates.map((c) => (
@@ -276,7 +276,7 @@ const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
             </thead>
             <tbody>
               {summaryData.byCriterion.map((row) => (
-                <tr key={`crit-${row.code}`} className="border-b border-emerald-200 dark:border-emerald-700 bg-emerald-50/80 dark:bg-emerald-900/20">
+                <tr key={`crit-${row.code}`} className="border-b border-emerald-200 dark:border-slate-600 bg-emerald-50/80 dark:bg-slate-700/80">
                   <td className="text-right p-2 border-r border-emerald-200 dark:border-emerald-700 tabular-nums font-medium">{row.basePoints}</td>
                   <td className="p-2 border-r border-emerald-200 dark:border-emerald-700 font-semibold text-gray-900 dark:text-white">Critère {row.code} — {row.label}</td>
                   {currentLot.candidates.map((c) => (
@@ -287,7 +287,7 @@ const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
                 </tr>
               ))}
               {summaryData.bySubCriterion.map((row) => (
-                <tr key={`sub-${row.code}`} className="border-b border-emerald-200 dark:border-emerald-700 bg-amber-50/50 dark:bg-amber-900/10">
+                <tr key={`sub-${row.code}`} className="border-b border-emerald-200 dark:border-slate-600 bg-amber-50/50 dark:bg-slate-700/50">
                   <td className="text-right p-2 pl-4 border-r border-emerald-200 dark:border-emerald-700 tabular-nums">{row.basePoints}</td>
                   <td className="p-2 pl-4 border-r border-emerald-200 dark:border-emerald-700 text-gray-800 dark:text-gray-200">{row.code} — {row.label}</td>
                   {currentLot.candidates.map((c) => (
@@ -297,7 +297,7 @@ const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
                   ))}
                 </tr>
               ))}
-              <tr className="bg-emerald-100 dark:bg-emerald-900/30 font-semibold">
+              <tr className="bg-emerald-100 dark:bg-slate-700 font-semibold">
                 <td className="text-right p-2 border-r border-emerald-200 dark:border-emerald-700 tabular-nums">{summaryData.total.basePoints}</td>
                 <td className="p-2 border-r border-emerald-200 dark:border-emerald-700 text-gray-900 dark:text-white">Total</td>
                 {currentLot.candidates.map((c) => (
@@ -340,9 +340,9 @@ const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
               {rows.map((row, ri) => {
                 if (row.type === 'criterion') {
                   return (
-                    <tr key={`crit-${ri}-${row.code}`} className="border-b border-gray-200 dark:border-gray-700 bg-emerald-50 dark:bg-emerald-900/20">
-                      <td className={`border-r border-gray-200 dark:border-gray-600 sticky left-0 z-[1] bg-emerald-50 dark:bg-emerald-900/20 ${cellPad}`} />
-                      <td className={`border-r border-gray-200 dark:border-gray-600 font-semibold text-gray-900 dark:text-white sticky left-16 z-[1] bg-emerald-50 dark:bg-emerald-900/20 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${cellPad}`} colSpan={1 + currentLot.candidates.length * 2}>
+                    <tr key={`crit-${ri}-${row.code}`} className="border-b border-gray-200 dark:border-gray-700 bg-emerald-50 dark:bg-slate-700/80">
+                      <td className={`border-r border-gray-200 dark:border-gray-600 sticky left-0 z-[1] bg-emerald-50 dark:bg-slate-700/80 ${cellPad}`} />
+                      <td className={`border-r border-gray-200 dark:border-gray-600 font-semibold text-gray-900 dark:text-white sticky left-16 z-[1] bg-emerald-50 dark:bg-slate-700/80 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${cellPad}`} colSpan={1 + currentLot.candidates.length * 2}>
                         Critère {row.code} — {row.label}
                       </td>
                     </tr>
@@ -350,9 +350,9 @@ const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
                 }
                 if (row.type === 'sub_criterion') {
                   return (
-                    <tr key={`sub-${ri}-${row.code}`} className="border-b border-gray-200 dark:border-gray-700 bg-amber-50/80 dark:bg-amber-900/20">
-                      <td className={`border-r border-gray-200 dark:border-gray-600 sticky left-0 z-[1] bg-amber-50/80 dark:bg-amber-900/20 ${cellPad}`} />
-                      <td className={`pl-4 border-r border-gray-200 dark:border-gray-600 font-medium text-gray-800 dark:text-gray-200 sticky left-16 z-[1] bg-amber-50/80 dark:bg-amber-900/20 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${cellPad}`} colSpan={1 + currentLot.candidates.length * 2}>
+                    <tr key={`sub-${ri}-${row.code}`} className="border-b border-gray-200 dark:border-gray-700 bg-amber-50/80 dark:bg-slate-700/50">
+                      <td className={`border-r border-gray-200 dark:border-gray-600 sticky left-0 z-[1] bg-amber-50/80 dark:bg-slate-700/50 ${cellPad}`} />
+                      <td className={`pl-4 border-r border-gray-200 dark:border-gray-600 font-medium text-gray-800 dark:text-gray-200 sticky left-16 z-[1] bg-amber-50/80 dark:bg-slate-700/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${cellPad}`} colSpan={1 + currentLot.candidates.length * 2}>
                         {row.code} — {row.label}
                       </td>
                     </tr>
@@ -414,8 +414,8 @@ const An01StepTechnique: React.FC<An01StepTechniqueProps> = ({
   return (
     <>
       {isFullScreen && currentLot?.criteria?.length > 0 && currentLot?.candidates?.length > 0 && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900">
-          <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-slate-900">
+          <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800">
             <Button variant="ghost" size="sm" icon={<ArrowLeft className="w-5 h-5" />} onClick={() => setIsFullScreen(false)}>
               Retour
             </Button>

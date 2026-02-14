@@ -36,7 +36,7 @@ export function QTForm({ data, onSave, isSaving = false }: QTFormProps) {
         <button
           onClick={addQuestion}
           type="button"
-          className="inline-flex items-center gap-2 px-2 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441]"
+          className="inline-flex items-center gap-2 px-2 py-1.5 text-sm bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg shadow-md"
         >
           <Plus className="w-4 h-4" />
           Ajouter une question
@@ -93,7 +93,7 @@ export function QTForm({ data, onSave, isSaving = false }: QTFormProps) {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg disabled:opacity-50 shadow-md"
         >
           <Save className="w-4 h-4" />
           {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}

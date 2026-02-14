@@ -221,7 +221,7 @@ export function DCEStatusBar({
               <button
                 onClick={onSave}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-[#2F5B58] text-white hover:bg-[#234441] shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-gradient-to-b from-teal-600 to-teal-800 hover:from-teal-700 hover:to-teal-900 text-white shadow-md disabled:opacity-50"
                 title={isDirty ? 'Sauvegarder les modifications' : 'Sauvegarder le DCE'}
               >
                 {isSaving ? (
@@ -243,7 +243,7 @@ export function DCEStatusBar({
               <button
                 onClick={onPublish}
                 disabled={isSaving || progress.percentage < 80}
-                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-green-500 to-green-600 text-white rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 title={progress.percentage < 80 ? 'Complétez au moins 80% du DCE pour publier' : ''}
               >
                 <Upload className="w-5 h-5" />

@@ -328,7 +328,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
   if (ongletActif === 'candidature' && selectedProcedure) {
     const colClasses = 'border border-gray-300 dark:border-gray-600 px-2 py-1.5 text-sm bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2F5B58] focus:border-[#2F5B58] rounded min-w-0';
     return (
-      <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 overflow-hidden flex flex-col">
+      <div className="ouverture-plis-module ouverture-plis-candidature fixed inset-0 bg-white dark:bg-gray-900 z-50 overflow-hidden flex flex-col">
         {/* En-tête fixe — style DQE */}
         <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm z-20 flex-shrink-0">
           <div className="px-6 py-4">
@@ -355,7 +355,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                 <button
                   onClick={handleSaveCandidature}
                   disabled={saving || !candidats.length}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] hover:bg-[#234441] disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg transition font-medium"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg transition font-medium shadow-md"
                 >
                   {saving ? (
                     <>
@@ -378,7 +378,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
               </div>
             </div>
             {/* Infos procédure — style DQE */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-800 rounded-lg p-4">
+            <div className="ouverture-plis-info-band bg-gradient-to-r from-green-50 to-emerald-50 dark:bg-slate-800 rounded-lg p-4 border border-transparent dark:border-slate-600">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <span className="font-semibold text-gray-600 dark:text-gray-400">Procédure :</span>{' '}
@@ -404,7 +404,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
         </div>
 
         {/* Tableau pleine page — une seule ligne d'en-tête teal */}
-        <div className="flex-1 overflow-auto">
+        <div className="ouverture-plis-table-scroll flex-1 overflow-auto">
           <div className="min-w-full inline-block align-top">
             <table className="w-full border-collapse">
               <thead>
@@ -816,7 +816,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                   <button onClick={handleCancelEdit} className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                     Annuler
                   </button>
-                  <button onClick={handleSaveEdit} className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[#2F5B58] text-white font-semibold hover:bg-[#234441] transition-colors">
+                  <button onClick={handleSaveEdit} className="flex items-center gap-2 px-6 py-2 rounded-lg bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white font-semibold transition-colors shadow-md">
                     <Save className="w-4 h-4" />
                     Enregistrer tout
                   </button>
@@ -847,9 +847,9 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#0d0f12] dark:via-[#121212] dark:to-[#0d0f12]">
+    <div className="ouverture-plis-module min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:bg-[#0f172a]">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 dark:bg-[#1E1E1E]/80 dark:border-[#333333] sticky top-0 z-10">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 dark:bg-[#0f172a]/95 dark:border-slate-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -876,7 +876,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
       {/* Contenu principal */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Étape 1 : Sélectionner une procédure */}
-        <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-gray-200 dark:border-[#333333] p-6 mb-6">
+        <div className="ouverture-plis-card ouverture-plis-card-selection bg-white dark:bg-slate-800 rounded-2xl border-2 border-gray-200 dark:border-slate-600 p-6 mb-6 shadow-none dark:shadow-none">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 rounded-lg bg-[#2F5B58]/10 dark:bg-teal-500/20 flex items-center justify-center">
               <span className="text-[#2F5B58] dark:text-teal-400 font-black">1</span>
@@ -897,11 +897,11 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                   onKeyPress={(e) => e.key === 'Enter' && handleSearchProcedure()}
                   placeholder="Ex: 25006"
                   maxLength={5}
-                  className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-[#333333] bg-white dark:bg-[#252525] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#2F5B58] dark:focus:border-teal-400 transition-colors"
+                  className="ouverture-plis-input-numero flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-slate-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:border-[#2F5B58] dark:focus:border-teal-400 transition-colors"
                 />
                 <button
                   onClick={handleSearchProcedure}
-                  className="px-6 py-3 bg-[#2F5B58] hover:bg-[#234441] dark:bg-teal-600 dark:hover:bg-teal-500 text-white font-semibold rounded-xl transition-colors flex items-center gap-2"
+                  className="px-6 py-3 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] dark:from-teal-600 dark:to-teal-700 dark:hover:from-teal-500 dark:hover:to-teal-600 text-white font-semibold rounded-xl transition-colors flex items-center gap-2 shadow-md"
                 >
                   <Search className="w-4 h-4" />
                   Rechercher
@@ -943,7 +943,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
 
         {/* Informations complémentaires (si procédure sélectionnée) */}
         {selectedProcedure && (
-          <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-gray-200 dark:border-[#333333] p-6 mb-6">
+          <div className="ouverture-plis-card bg-white dark:bg-slate-800 rounded-2xl border-2 border-gray-200 dark:border-slate-600 p-6 mb-6 shadow-none dark:shadow-none">
             <h2 className="text-lg font-black text-gray-900 dark:text-white mb-4">Informations complémentaires</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -993,7 +993,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <button
               onClick={() => setOngletActif('candidature')}
-              className="group bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-[#2F5B58]/20 dark:border-teal-500/40 hover:border-[#2F5B58] dark:hover:border-teal-400 p-8 transition-all hover:shadow-xl hover:-translate-y-1"
+              className="ouverture-plis-action-card group bg-white dark:bg-slate-800 rounded-2xl border-2 border-[#2F5B58]/20 dark:border-slate-600 hover:border-[#2F5B58] dark:hover:border-teal-400 p-8 transition-all hover:shadow-lg dark:hover:shadow-none hover:-translate-y-1"
             >
               <div className="flex flex-col items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-[#2F5B58]/10 dark:bg-teal-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -1010,7 +1010,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
 
             <button
               onClick={() => setShowRecevabilite(true)}
-              className="group bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-emerald-200 dark:border-emerald-500/40 hover:border-emerald-400 dark:hover:border-emerald-400 p-8 transition-all hover:shadow-xl hover:-translate-y-1"
+              className="ouverture-plis-action-card group bg-white dark:bg-slate-800 rounded-2xl border-2 border-emerald-200 dark:border-slate-600 hover:border-emerald-400 dark:hover:border-teal-400 p-8 transition-all hover:shadow-lg dark:hover:shadow-none hover:-translate-y-1"
             >
               <div className="flex flex-col items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -1029,7 +1029,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
 
         {/* Liste des dépôts */}
         {selectedProcedure && depotsData && (
-          <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border-2 border-gray-200 dark:border-[#333333] p-6 mb-6">
+          <div className="ouverture-plis-card bg-white dark:bg-slate-800 rounded-2xl border-2 border-gray-200 dark:border-slate-600 p-6 mb-6 shadow-none dark:shadow-none">
             <h2 className="text-lg font-black text-gray-900 dark:text-white mb-4">Liste des candidatures reçues</h2>
             
             {/* Informations de la procédure */}
@@ -1180,7 +1180,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
 
         {/* Message si aucune procédure sélectionnée */}
         {!selectedProcedure && (
-          <div className="bg-gray-50 dark:bg-[#252525] rounded-2xl border-2 border-dashed border-gray-300 dark:border-[#333333] p-12 text-center">
+          <div className="ouverture-plis-card bg-gray-50 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-gray-300 dark:border-slate-600 p-12 text-center">
             <PackageOpen className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-gray-600 dark:text-gray-400 font-medium">
               Veuillez sélectionner une procédure pour commencer l'analyse

@@ -139,6 +139,10 @@ export interface CCAPData {
     titre: string;
     contenu: string;
     niveau?: number; // 1 = chapitre, 2 = sous-chapitre, 3 = sous-sous-chapitre (défaut: 1)
+    /** Couleur du titre (hex, ex: #0066cc) — utilisée dans l'app et à l'export PDF */
+    titreCouleur?: string;
+    /** Taille du titre en pt pour l'export PDF (ex: 16). Si absent, taille par défaut selon le niveau. */
+    titreTaille?: number;
   }>;
 }
 

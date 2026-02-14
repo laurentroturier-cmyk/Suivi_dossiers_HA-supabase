@@ -115,7 +115,7 @@ export const LotSelector: React.FC<LotSelectorProps> = ({
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                 disabled || loading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gradient-to-b from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
               }`}
               title="Créer un nouveau lot"
             >
@@ -132,7 +132,7 @@ export const LotSelector: React.FC<LotSelectorProps> = ({
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                 disabled || loading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-[#2F5B58] text-white hover:bg-[#234441]'
+                  : 'bg-gradient-to-b from-[#2F5B58] to-[#234441] text-white hover:from-[#234441] hover:to-[#1a3330] shadow-md'
               }`}
               title="Dupliquer le lot actuel"
             >
@@ -145,7 +145,7 @@ export const LotSelector: React.FC<LotSelectorProps> = ({
           {canDelete && (
             <button
               onClick={onDeleteLot}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 font-medium transition-colors shadow-md"
               title="Supprimer le lot actuel"
             >
               <Trash2 className="w-4 h-4" />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Download, Edit2, ArrowLeft, Save, Upload, ChevronLeft, ChevronRight, AlertTriangle, Copy, FileDown, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Download, Edit2, ArrowLeft, Save, Upload, ChevronLeft, ChevronRight, AlertTriangle, Copy, FileDown, RefreshCw, Table } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../../../lib/supabase';
 import JSZip from 'jszip';
@@ -1357,7 +1357,7 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
           </p>
           <button
             onClick={() => setIsFullPage(true)}
-            className="px-6 py-3 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition font-medium"
+            className="px-6 py-3 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition font-medium shadow-md"
           >
             Ouvrir en pleine page
           </button>
@@ -1369,37 +1369,37 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
   const totalWidth = columns.reduce((sum, col) => sum + parseInt(col.width || '150'), 0) + 50 + 60; // # + Actions
 
   return (
-    <div className="fixed inset-0 bg-white z-50 overflow-hidden flex flex-col">
+    <div className="dce-dqe-fullpage fixed inset-0 bg-white dark:bg-slate-900 z-50 overflow-hidden flex flex-col">
       {/* En-tête fixe */}
-      <div className="bg-white border-b border-gray-200 shadow-sm z-20">
+      <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-600 shadow-sm z-20">
         <div className="px-6 py-4">
           {/* Bouton retour et actions principales */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsFullPage(false)}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                className="dce-dqe-retour flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 dark:border dark:border-slate-600 hover:bg-gray-100 rounded-lg transition"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Retour
               </button>
 
               {/* Titre du module */}
-              <h1 className="text-xl font-bold text-[#2F5B58] border-l border-gray-300 pl-4">
+              <h1 className="text-xl font-bold text-[#2F5B58] dark:text-emerald-300 border-l border-gray-300 dark:border-slate-600 pl-4">
                 DÉCOMPTE QUANTITATIF ESTIMATIF (DQE)
               </h1>
 
               {/* Navigation entre les lots */}
               {totalLots && totalLots > 1 && currentLot && onLotChange && (
-                <div className="flex items-center gap-3 border-l border-gray-300 pl-4">
+                <div className="flex items-center gap-3 border-l border-gray-300 dark:border-slate-600 pl-4">
                   {/* Bouton précédent */}
                   <button
                     onClick={() => currentLot > 1 && onLotChange(currentLot - 1)}
                     disabled={currentLot <= 1}
                     className={`p-2 rounded-lg transition-colors ${
                       currentLot > 1
-                        ? 'text-gray-700 hover:bg-gray-100'
-                        : 'text-gray-300 cursor-not-allowed'
+                        ? 'text-gray-700 dark:text-slate-200 dark:hover:bg-slate-600 hover:bg-gray-100'
+                        : 'text-gray-300 dark:text-slate-500 cursor-not-allowed'
                     }`}
                     title="Lot précédent"
                   >
@@ -1408,11 +1408,11 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
 
                   {/* Sélecteur de lot */}
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-600">Lot</span>
+                    <span className="text-sm font-medium text-gray-600 dark:text-slate-300">Lot</span>
                     <select
                       value={currentLot}
                       onChange={(e) => onLotChange(Number(e.target.value))}
-                      className="px-3 py-2 border border-gray-300 rounded-lg font-medium focus:ring-2 focus:ring-[#2F5B58] focus:border-[#2F5B58] bg-white"
+                      className="dce-dqe-select px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg font-medium focus:ring-2 focus:ring-[#2F5B58] focus:border-[#2F5B58] bg-white dark:bg-slate-700 dark:text-slate-100"
                     >
                       {Array.from({ length: totalLots }, (_, i) => i + 1).map((lot) => (
                         <option key={lot} value={lot}>
@@ -1420,7 +1420,7 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
                         </option>
                       ))}
                     </select>
-                    <span className="text-sm text-gray-500">/ {totalLots}</span>
+                    <span className="text-sm text-gray-500 dark:text-slate-400">/ {totalLots}</span>
                   </div>
 
                   {/* Bouton suivant */}
@@ -1429,8 +1429,8 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
                     disabled={currentLot >= totalLots}
                     className={`p-2 rounded-lg transition-colors ${
                       currentLot < totalLots
-                        ? 'text-gray-700 hover:bg-gray-100'
-                        : 'text-gray-300 cursor-not-allowed'
+                        ? 'text-gray-700 dark:text-slate-200 dark:hover:bg-slate-600 hover:bg-gray-100'
+                        : 'text-gray-300 dark:text-slate-500 cursor-not-allowed'
                     }`}
                     title="Lot suivant"
                   >
@@ -1450,10 +1450,11 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
               />
               <button
                 onClick={triggerFileImport}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                className="flex items-center gap-2 px-3 py-2 bg-gradient-to-b from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition text-sm shadow-md"
                 title="Importer un fichier Excel ou CSV"
               >
-                <Upload className="w-4 h-4" />
+                <Table className="w-4 h-4" />
+                <Upload className="w-3.5 h-3.5" />
                 Importer Excel
               </button>
               <button
@@ -1467,15 +1468,16 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
               </button>
               <button
                 onClick={() => totalLots && totalLots > 1 ? setShowExportModal(true) : exportToExcel()}
-                className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+                className="flex items-center gap-2 px-3 py-2 bg-gradient-to-b from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition text-sm shadow-md"
                 title={totalLots && totalLots > 1 ? "Options d'export avancées" : "Exporter vers Excel"}
               >
-                <Download className="w-4 h-4" />
+                <Table className="w-4 h-4" />
+                <Download className="w-3.5 h-3.5" />
                 Exporter Excel
               </button>
               <button
                 onClick={handleClearData}
-                className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+                className="flex items-center gap-2 px-3 py-2 bg-gradient-to-b from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition text-sm shadow-md"
                 title="Effacer toutes les données"
               >
                 <Trash2 className="w-4 h-4" />
@@ -1494,7 +1496,7 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
               <button
                 onClick={handleSave}
                 disabled={isSavingData}
-                className="flex items-center gap-2 px-3 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50 text-sm"
+                className="flex items-center gap-2 px-3 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition disabled:opacity-50 text-sm shadow-md"
                 title="Enregistrer le DQE"
               >
                 <Save className="w-4 h-4" />
@@ -1505,27 +1507,27 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
 
           {/* Informations de la procédure */}
           {procedureInfo && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 mb-4">
+            <div className="dce-dqe-procedure-info bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-700 dark:to-slate-800 rounded-lg p-4 mb-4 dark:border dark:border-slate-600">
               <div className="grid grid-cols-5 gap-4 text-sm">
                 <div>
-                  <span className="font-semibold text-gray-700">Procédure :</span>{' '}
-                  <span className="text-gray-900">{procedureInfo.numeroProcedure || 'N/A'}</span>
+                  <span className="font-semibold text-gray-700 dark:text-slate-300">Procédure :</span>{' '}
+                  <span className="text-gray-900 dark:text-slate-100">{procedureInfo.numeroProcedure || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-700">Marché :</span>{' '}
-                  <span className="text-gray-900">{procedureInfo.titreMarche || 'N/A'}</span>
+                  <span className="font-semibold text-gray-700 dark:text-slate-300">Marché :</span>{' '}
+                  <span className="text-gray-900 dark:text-slate-100">{procedureInfo.titreMarche || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-700">Acheteur :</span>{' '}
-                  <span className="text-gray-900">{procedureInfo.acheteur || 'N/A'}</span>
+                  <span className="font-semibold text-gray-700 dark:text-slate-300">Acheteur :</span>{' '}
+                  <span className="text-gray-900 dark:text-slate-100">{procedureInfo.acheteur || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-700">Lot N° :</span>{' '}
-                  <span className="text-gray-900">{procedureInfo.numeroLot || 'N/A'}</span>
+                  <span className="font-semibold text-gray-700 dark:text-slate-300">Lot N° :</span>{' '}
+                  <span className="text-gray-900 dark:text-slate-100">{procedureInfo.numeroLot || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-700">Nom du lot :</span>{' '}
-                  <span className="text-gray-900">{procedureInfo.libelleLot || 'N/A'}</span>
+                  <span className="font-semibold text-gray-700 dark:text-slate-300">Nom du lot :</span>{' '}
+                  <span className="text-gray-900 dark:text-slate-100">{procedureInfo.libelleLot || 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -1666,7 +1668,7 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
               <Plus className="w-4 h-4" />
               Ajouter des colonnes
             </button>
-            <span className="text-sm text-gray-600 ml-auto">
+            <span className="text-sm text-gray-600 dark:text-slate-300 ml-auto">
               {rows.length} ligne{rows.length > 1 ? 's' : ''} × {columns.length} colonne{columns.length > 1 ? 's' : ''}
             </span>
           </div>
@@ -1687,10 +1689,10 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
       <div className="flex-1 overflow-hidden">
         <div 
           ref={tableScrollRef}
-          className="h-full overflow-auto px-6 py-6"
+          className="dce-dqe-table-scroll h-full overflow-auto px-6 py-6"
           onScroll={() => syncScroll('table')}
         >
-          <div className="border border-gray-300 rounded-lg overflow-hidden inline-block min-w-full">
+          <div className="border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden inline-block min-w-full">
             <table className="text-sm border-collapse" style={{ minWidth: `${totalWidth}px`, width: 'max-content' }}>
               <thead>
                 <tr className="bg-[#2F5B58] text-white">
@@ -1742,12 +1744,12 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
                     {columns.map((col) => (
                       <td 
                         key={col.id} 
-                        className={`border border-gray-300 px-2 py-1 ${col.isCalculated ? 'bg-[#E8F5F3]' : ''}`}
+                        className={`border border-gray-300 dark:border-slate-600 px-2 py-1 ${col.isCalculated ? 'bg-[#E8F5F3] dark:bg-slate-700' : ''}`}
                         style={{ width: col.width || '150px', minWidth: col.width || '150px' }}
                       >
                         {col.isCalculated ? (
                           // Colonne calculée : affichage en lecture seule
-                          <div className="w-full px-2 py-1 text-sm font-medium text-gray-700">
+                          <div className="w-full px-2 py-1 text-sm font-medium text-gray-700 dark:text-slate-200">
                             {row[col.id] || ''}
                           </div>
                         ) : (
@@ -1803,7 +1805,7 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
               </button>
               <button
                 onClick={addRows}
-                className="px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition"
+                className="px-4 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition shadow-md"
               >
                 Ajouter
               </button>
@@ -1836,7 +1838,7 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
               </button>
               <button
                 onClick={addColumns}
-                className="px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition"
+                className="px-4 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition shadow-md"
               >
                 Ajouter
               </button>
@@ -1869,7 +1871,7 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
               </button>
               <button
                 onClick={confirmClearData}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                className="px-4 py-2 bg-gradient-to-b from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition shadow-md"
               >
                 Effacer tout
               </button>
@@ -2125,8 +2127,9 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
               <button
                 onClick={handleAdvancedExport}
                 disabled={isExporting || (exportMode === 'select' && selectedLotsForExport.length === 0)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition disabled:opacity-50 shadow-md"
               >
+                <Table className="w-4 h-4" />
                 {isExporting 
                   ? 'Export en cours...' 
                   : `Exporter ${exportMode === 'all' ? totalLots : selectedLotsForExport.length} lot(s)`}

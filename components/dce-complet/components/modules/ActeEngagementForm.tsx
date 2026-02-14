@@ -36,7 +36,7 @@ export function ActeEngagementForm({ data, onSave, isSaving = false }: Props) {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] disabled:opacity-50 font-medium shadow-sm flex items-center gap-2"
+          className="px-4 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg disabled:opacity-50 font-medium shadow-md flex items-center gap-2"
         >
           {isSaving ? 'Enregistrement...' : 'Enregistrer la section'}
         </button>

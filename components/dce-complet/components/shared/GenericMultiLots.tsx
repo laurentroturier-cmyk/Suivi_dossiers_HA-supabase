@@ -307,7 +307,7 @@ export function GenericMultiLots<T>({
                           <button
                             type="button"
                             onClick={() => openLotFullPage(lotNum)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition text-sm font-medium"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition text-sm font-medium shadow-md"
                             title="Ouvrir ce lot en pleine page"
                           >
                             <Maximize2 className="w-4 h-4" />

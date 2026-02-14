@@ -299,17 +299,17 @@ const KPITile: React.FC<{ label: string, value: number, unit?: string }> = ({ la
   const formattedValue = formatNumberFR(value);
   
   return (
-    <div className="bg-white flex flex-col h-full rounded-xl border border-gray-100">
+    <div className="bg-white dark:bg-slate-800 flex flex-col h-full rounded-xl border border-gray-100 dark:border-slate-600">
       <div className="px-4 py-4 flex flex-col justify-between h-full">
-        <p className="text-[9px] font-medium text-gray-400 uppercase tracking-[0.08em] mb-3 leading-tight text-center">
+        <p className="text-[9px] font-medium text-gray-400 dark:text-slate-400 uppercase tracking-[0.08em] mb-3 leading-tight text-center">
           {label}
         </p>
         <div className="flex items-baseline gap-1 justify-end text-right">
-          <p className="text-2xl font-bold text-gray-900 leading-none tabular-nums tracking-tight">
+          <p className="text-2xl font-bold text-gray-900 dark:text-slate-100 leading-none tabular-nums tracking-tight">
             {formattedValue}
           </p>
           {unit && (
-            <p className="text-sm font-normal text-gray-500 leading-none ml-0.5">
+            <p className="text-sm font-normal text-gray-500 dark:text-slate-400 leading-none ml-0.5">
               {unit}
             </p>
           )}
@@ -2556,7 +2556,7 @@ const App: React.FC = () => {
                   disabled={isFieldReadOnly}
                   className={`w-full ${key === "Numéro de procédure (Afpa)" ? 'pr-14' : 'px-5'} py-4 ${isFieldReadOnly ? 'bg-gray-50 text-gray-700 cursor-not-allowed' : 'bg-gray-50'} border border-gray-100 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-[#004d3d]/5 outline-none`} 
                 />
-                {key === "Numéro de procédure (Afpa)" && <button onClick={generateAfpaNumber} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-[#004d3d] text-white rounded-xl shadow-lg hover:scale-105 transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></button>}
+                {key === "Numéro de procédure (Afpa)" && <button onClick={generateAfpaNumber} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-gradient-to-b from-blue-400 to-indigo-500 text-white rounded-xl shadow-lg shadow-blue-400/30 hover:scale-105 transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></button>}
               </div>
               {key === "Numéro de procédure (Afpa)" && powerAutomateMessage && (
                 <div className={`px-4 py-2 rounded-lg text-xs font-semibold ${powerAutomateMessage.includes('✅') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-orange-50 text-orange-700 border border-orange-200'}`}>
@@ -2713,7 +2713,9 @@ const App: React.FC = () => {
 
 
   return (
-    <div className="app-shell min-h-screen pb-12">
+    <div className="app-shell min-h-screen pb-12 relative bg-transparent">
+      {/* Fond unifié (clair / sombre) - ciblé aussi par dark-theme.css */}
+      <div className="app-bg-layer fixed inset-0 pointer-events-none -z-10 bg-[#f5f6fb] dark:bg-[#0f172a]" />
       {/* Overlay de chargement bloquant */}
       {isLoading && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center">
@@ -2732,38 +2734,38 @@ const App: React.FC = () => {
           onClose={() => setViewingFile(null)} 
         />
       )}
-      <header className="surface-card border-b sticky top-0 z-40 shadow-sm h-20 flex items-center justify-between px-8">
-        <div className="flex items-center gap-4">
+      <header className="app-header sticky top-0 z-40 min-h-[5rem] flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-white/60 dark:bg-slate-900 dark:border-slate-700 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700 rounded-b-2xl dark:rounded-none shadow-sm">
+        <div className="flex-shrink-0 flex items-center gap-3">
           <button 
             type="button"
             onClick={() => handleGoToHome()}
-            className="flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <img src="/logo.png" alt="Logo" className="h-12 object-contain" />
+            <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
             <div className="flex flex-col">
-              <h1 className="text-xl font-black text-[#004d3d]">GestProjet</h1>
-                  <AppVersion className="text-[9px] font-bold text-gray-400 tracking-wide" />
+              <h1 className="text-lg font-black text-indigo-700 dark:text-indigo-300">GestProjet</h1>
+                  <AppVersion className="app-version text-[9px] font-bold text-gray-400 dark:text-slate-400 tracking-wide" />
             </div>
           </button>
         </div>
-        <div className="flex items-center gap-6">
-          <nav className="flex gap-6">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1 justify-end">
+          <nav className="app-header-nav flex items-center gap-3 sm:gap-4 flex-shrink min-w-0">
             {/* Accueil */}
             <button
               onClick={() => handleGoToHome()}
               className={`text-[10px] font-black uppercase tracking-widest transition-all ${
-                activeTab === 'home' ? 'text-[#004d3d] dark:text-cyan-400' : 'text-gray-300 hover:text-gray-500 dark:hover:text-gray-400'
-              }`}
+                activeTab === 'home' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
+              } whitespace-nowrap`}
             >
               Accueil
             </button>
 
             {/* Indicateurs */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 onClick={() => setOpenMenu(openMenu === 'indicateurs' ? null : 'indicateurs')}
-                className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1 ${
-                  activeTab === 'dashboard' || activeTab === 'gantt' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+                className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1 whitespace-nowrap ${
+                  activeTab === 'dashboard' || activeTab === 'gantt' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 Indicateurs
@@ -2772,16 +2774,16 @@ const App: React.FC = () => {
                 </svg>
               </button>
               {openMenu === 'indicateurs' && (
-                <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[160px] z-50">
+                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-800 shadow-lg rounded-lg border border-gray-200 dark:border-slate-600 py-2 min-w-[160px] z-50">
                   <button
                     onClick={() => navigateTo('dashboard', 'Tableau de bord')}
-                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   >
                     Tableau de bord
                   </button>
                   <button
                     onClick={() => navigateTo('gantt', 'Planning Gantt')}
-                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   >
                     Gantt
                   </button>
@@ -2792,8 +2794,8 @@ const App: React.FC = () => {
             {/* Projets achats */}
             <button
               onClick={() => navigateTo('dossiers', 'Projets achats')}
-              className={`text-[10px] font-black uppercase tracking-widest transition-all ${
-                activeTab === 'dossiers' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+              className={`text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                activeTab === 'dossiers' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               Projets achats
@@ -2802,19 +2804,19 @@ const App: React.FC = () => {
             {/* Procédures */}
             <button
               onClick={() => navigateTo('procedures', 'Procédures')}
-              className={`text-[10px] font-black uppercase tracking-widest transition-all ${
-                activeTab === 'procedures' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+              className={`text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                activeTab === 'procedures' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               Procédures
             </button>
 
             {/* Exécution des marchés */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 onClick={() => setOpenMenu(openMenu === 'execution' ? null : 'execution')}
-                className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1 ${
-                  activeTab === 'contrats' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+                className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1 whitespace-nowrap ${
+                  activeTab === 'contrats' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 Exécution
@@ -2823,10 +2825,10 @@ const App: React.FC = () => {
                 </svg>
               </button>
               {openMenu === 'execution' && (
-                <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 py-2 min-w-[160px] z-50">
+                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-800 shadow-lg rounded-lg border border-gray-200 dark:border-slate-600 py-2 min-w-[160px] z-50">
                   <button
                     onClick={() => navigateTo('contrats', 'Contrats')}
-                    className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   >
                     Contrats
                   </button>
@@ -2837,8 +2839,8 @@ const App: React.FC = () => {
             {/* Exports & données */}
             <button
               onClick={() => navigateTo('export', 'Exports & données')}
-              className={`text-[10px] font-black uppercase tracking-widest transition-all ${
-                activeTab === 'export' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+              className={`text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                activeTab === 'export' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               Exports & données
@@ -2849,7 +2851,7 @@ const App: React.FC = () => {
               <button
                 onClick={() => navigateTo('detail', 'Détail')}
                 className={`text-[10px] font-black uppercase tracking-widest transition-all ${
-                  activeTab === 'detail' ? 'text-[#004d3d]' : 'text-gray-300 hover:text-gray-500'
+                  activeTab === 'detail' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 Détail
@@ -2857,19 +2859,19 @@ const App: React.FC = () => {
             )}
           </nav>
           
-          {/* User Badge & Admin Access */}
-          <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
+          {/* User Badge & Admin Access - ne pas rétrécir */}
+          <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3 pl-3 border-l border-gray-200 dark:border-slate-600">
             {authState.profile && (
               <>
                 {authState.profile.role === 'admin' ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-lg border border-amber-300">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded-lg border border-indigo-200 dark:border-indigo-700">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                     Admin
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 text-xs font-bold rounded-lg border border-blue-300">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-600">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
@@ -2878,7 +2880,7 @@ const App: React.FC = () => {
                 )}
                 <button
                   onClick={() => setShowAdminDashboard(true)}
-                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 relative"
+                  className="px-3 py-1.5 bg-gradient-to-b from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs font-semibold rounded-lg transition-all shadow-md flex items-center gap-1.5 relative"
                   title="Accéder à l'Administration"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2895,7 +2897,7 @@ const App: React.FC = () => {
                   onClick={async () => {
                     await supabase.auth.signOut();
                   }}
-                  className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-xs font-semibold rounded-lg transition-all shadow-md flex items-center gap-1.5"
                   title="Déconnexion"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3170,32 +3172,32 @@ const App: React.FC = () => {
             )}
             {activeTab === 'export' && (
               <div className="max-w-2xl mx-auto py-12 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <button onClick={exportToExcel} className="w-full bg-[#004d3d] text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:scale-105 transition-all">Télécharger la base (.xlsx)</button>
+                <button onClick={exportToExcel} className="w-full bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-400/30 hover:scale-105 transition-all">Télécharger la base (.xlsx)</button>
               </div>
             )}
             {activeTab === 'gantt' && (
-              <div className="space-y-8 animate-in fade-in duration-700">
-                <div className="flex flex-col md:flex-row flex-wrap items-end gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100" ref={dropdownRef}>
+              <div className="gantt-panel space-y-8 animate-in fade-in duration-700">
+                <div className="gantt-filters-bar flex flex-col md:flex-row flex-wrap items-end gap-4 bg-white dark:bg-slate-800 p-6 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-600" ref={dropdownRef}>
                   <div className="flex-1 min-w-[220px]">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-1">Recherche</label>
-                    <input type="text" placeholder="N° Procédure, Titre..." value={projectSearch} onChange={e => setProjectSearch(e.target.value)} className="w-full px-6 py-4 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none h-[54px] focus:border-gray-300 transition-colors" />
+                    <label className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-2 block px-1">Recherche</label>
+                    <input type="text" placeholder="N° Procédure, Titre..." value={projectSearch} onChange={e => setProjectSearch(e.target.value)} className="gantt-input w-full px-6 py-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl text-sm font-medium text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 outline-none h-[54px] focus:border-gray-300 dark:focus:border-slate-500 transition-colors" />
                   </div>
                   <div className="flex-1 min-w-[220px]">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-1">
+                    <label className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-2 block px-1">
                       {ganttView === 'procedures' ? 'Lancement procédure' : 'Date de lancement projet'}
                     </label>
                     <div className="grid grid-cols-2 gap-2">
-                      <input type="date" value={launchFrom} onChange={e => setLaunchFrom(e.target.value)} placeholder="Du" className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none h-[54px] focus:border-gray-300 transition-colors" />
-                      <input type="date" value={launchTo} onChange={e => setLaunchTo(e.target.value)} placeholder="Au" className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none h-[54px] focus:border-gray-300 transition-colors" />
+                      <input type="date" value={launchFrom} onChange={e => setLaunchFrom(e.target.value)} placeholder="Du" className="gantt-input px-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl text-sm font-medium text-gray-900 dark:text-slate-100 outline-none h-[54px] focus:border-gray-300 dark:focus:border-slate-500 transition-colors" />
+                      <input type="date" value={launchTo} onChange={e => setLaunchTo(e.target.value)} placeholder="Au" className="gantt-input px-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl text-sm font-medium text-gray-900 dark:text-slate-100 outline-none h-[54px] focus:border-gray-300 dark:focus:border-slate-500 transition-colors" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-[220px]">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-1">
+                    <label className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-2 block px-1">
                       {ganttView === 'procedures' ? 'Fin de publication (offres / ouverture)' : 'Date de déploiement projet'}
                     </label>
                     <div className="grid grid-cols-2 gap-2">
-                      <input type="date" value={deployFrom} onChange={e => setDeployFrom(e.target.value)} placeholder="Du" className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none h-[54px] focus:border-gray-300 transition-colors" />
-                      <input type="date" value={deployTo} onChange={e => setDeployTo(e.target.value)} placeholder="Au" className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none h-[54px] focus:border-gray-300 transition-colors" />
+                      <input type="date" value={deployFrom} onChange={e => setDeployFrom(e.target.value)} placeholder="Du" className="gantt-input px-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl text-sm font-medium text-gray-900 dark:text-slate-100 outline-none h-[54px] focus:border-gray-300 dark:focus:border-slate-500 transition-colors" />
+                      <input type="date" value={deployTo} onChange={e => setDeployTo(e.target.value)} placeholder="Au" className="gantt-input px-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl text-sm font-medium text-gray-900 dark:text-slate-100 outline-none h-[54px] focus:border-gray-300 dark:focus:border-slate-500 transition-colors" />
                     </div>
                   </div>
                   {(() => {
@@ -3272,23 +3274,23 @@ const App: React.FC = () => {
                     onToggle={(opt) => setSelectedTimeStatuses(prev => prev.includes(opt) ? prev.filter(s => s !== opt) : [...prev, opt])}
                   />
                   {(selectedAcheteurs.length > 0 || selectedClientsInternes.length > 0 || selectedStatuses.length > 0 || selectedPriorities.length > 0 || selectedCcags.length > 0 || selectedProcTypes.length > 0 || selectedTimeStatuses.length > 0 || projectSearch || launchFrom || launchTo || deployFrom || deployTo) && (
-                    <button onClick={resetFilters} className="px-6 py-4 text-xs font-black text-orange-600 uppercase tracking-widest hover:bg-orange-50 rounded-2xl transition-all flex items-center gap-2 h-[54px]">
+                    <button onClick={resetFilters} className="px-6 py-4 text-xs font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-2xl transition-all flex items-center gap-2 h-[54px]">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>Reset
                     </button>
                   )}
                 </div>
                 
                 {/* Sélecteur de vue Gantt (synthèse / projets / procédures) + option de période */}
-                <div className="flex flex-wrap items-center justify-between gap-4 px-1">
-                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                <div className="gantt-view-row flex flex-wrap items-center justify-between gap-4 px-1">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-400">
                     <span>Vue Gantt :</span>
                     <button
                       type="button"
                       onClick={() => setGanttView('synthese')}
-                      className={`px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                      className={`gantt-view-btn px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
                         ganttView === 'synthese'
-                          ? 'bg-[#004d3d] text-white border-[#004d3d]'
-                          : 'bg-white text-gray-600 border-gray-200 hover:bg-emerald-50 hover:text-[#004d3d] hover:border-[#004d3d]/30'
+                          ? 'bg-gradient-to-b from-blue-400 to-indigo-500 text-white border-indigo-500 shadow-lg shadow-blue-400/30'
+                          : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-300 hover:border-indigo-300 dark:hover:border-indigo-500'
                       }`}
                     >
                       Synthèse
@@ -3296,10 +3298,10 @@ const App: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setGanttView('projets')}
-                      className={`px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                      className={`gantt-view-btn px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
                         ganttView === 'projets'
-                          ? 'bg-[#004d3d] text-white border-[#004d3d]'
-                          : 'bg-white text-gray-600 border-gray-200 hover:bg-emerald-50 hover:text-[#004d3d] hover:border-[#004d3d]/30'
+                          ? 'bg-gradient-to-b from-blue-400 to-indigo-500 text-white border-indigo-500 shadow-lg shadow-blue-400/30'
+                          : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-300 hover:border-indigo-300 dark:hover:border-indigo-500'
                       }`}
                     >
                       Projets
@@ -3307,10 +3309,10 @@ const App: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setGanttView('procedures')}
-                      className={`px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                      className={`gantt-view-btn px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
                         ganttView === 'procedures'
-                          ? 'bg-[#004d3d] text-white border-[#004d3d]'
-                          : 'bg-white text-gray-600 border-gray-200 hover:bg-emerald-50 hover:text-[#004d3d] hover:border-[#004d3d]/30'
+                          ? 'bg-gradient-to-b from-blue-400 to-indigo-500 text-white border-indigo-500 shadow-lg shadow-blue-400/30'
+                          : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-300 hover:border-indigo-300 dark:hover:border-indigo-500'
                       }`}
                     >
                       Procédures
@@ -3326,10 +3328,10 @@ const App: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setGanttLimitToCurrentPeriod(v => !v)}
-                    className={`ml-auto inline-flex items-center gap-2 px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                    className={`gantt-period-btn ml-auto inline-flex items-center gap-2 px-3 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
                       ganttLimitToCurrentPeriod
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                        : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                        ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-600'
+                        : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
                   >
                     <span className="h-2 w-2 rounded-full" style={{ backgroundColor: ganttLimitToCurrentPeriod ? '#10b981' : '#d1d5db' }} />
@@ -3339,7 +3341,7 @@ const App: React.FC = () => {
 
                 {/* Vue Gantt - Synthèse existante */}
                 {ganttView === 'synthese' && (
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 p-6 rounded-[2rem] shadow-sm">
+                <div className="gantt-synthese-card bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 border border-blue-100 dark:border-slate-600 p-6 rounded-[2rem] shadow-sm">
                   {(() => {
                     const procByProject: Record<string, { types: Set<string>; ccags: Set<string>; }> = {};
                     procedures.forEach(p => {
@@ -3503,24 +3505,24 @@ const App: React.FC = () => {
                     return (
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-2">Projets filtrés</p>
-                          <p className="text-4xl font-black text-blue-600 mb-3">{filtered.length}</p>
+                          <p className="text-[10px] font-black text-blue-400 dark:text-blue-300 uppercase tracking-[0.2em] mb-2">Projets filtrés</p>
+                          <p className="text-4xl font-black text-blue-600 dark:text-blue-400 mb-3">{filtered.length}</p>
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 bg-red-600 rounded-full"></div>
-                              <span className="text-sm font-bold text-red-600">{late} en retard</span>
+                              <span className="text-sm font-bold text-red-600 dark:text-red-400">{late} en retard</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 bg-green-700 rounded-full"></div>
-                              <span className="text-sm font-bold text-green-700">{ongoing} en cours</span>
+                              <span className="text-sm font-bold text-green-700 dark:text-green-400">{ongoing} en cours</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                              <span className="text-sm font-bold text-gray-600">{missing} sans date</span>
+                              <div className="w-3 h-3 bg-gray-400 dark:bg-slate-500 rounded-full"></div>
+                              <span className="text-sm font-bold text-gray-600 dark:text-slate-400">{missing} sans date</span>
                             </div>
                           </div>
                         </div>
-                        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center">
+                        <div className="w-16 h-16 bg-blue-600 dark:bg-blue-700 rounded-2xl flex items-center justify-center">
                           <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" /></svg>
                         </div>
                       </div>
@@ -3530,17 +3532,17 @@ const App: React.FC = () => {
                 )}
 
                 {ganttView === 'synthese' && (
-                <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                  <div className="flex items-center gap-2"><span className="w-8 h-3 bg-gradient-to-r from-emerald-200 to-emerald-500 rounded"></span> <span>En cours (futur)</span></div>
+                <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-400">
+                  <div className="flex items-center gap-2"><span className="w-8 h-3 bg-gradient-to-r from-emerald-200 to-emerald-500 dark:from-emerald-600 dark:to-emerald-400 rounded"></span> <span>En cours (futur)</span></div>
                   <div className="flex items-center gap-2"><span className="w-8 h-3 rounded" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fee2e2, #fee2e2 8px, #fecaca 8px, #fecaca 16px)' }}></span> <span>Retard</span></div>
-                  <div className="flex items-center gap-2"><span className="w-8 h-3 rounded" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #e5e7eb, #e5e7eb 8px, #d1d5db 8px, #d1d5db 16px)' }}></span> <span>Sans date</span></div>
-                  <div className="ml-auto text-gray-300">Repère: Aujourd'hui</div>
+                  <div className="flex items-center gap-2"><span className="w-8 h-3 rounded bg-slate-300 dark:bg-slate-500"></span> <span>Sans date</span></div>
+                  <div className="ml-auto text-gray-300 dark:text-slate-500">Repère: Aujourd'hui</div>
                 </div>
                 )}
 
                 {/* Vue Gantt - Projets (mensuelle) */}
                 {ganttView === 'projets' && (
-                  <div className="bg-white border border-gray-100 rounded-[2rem] shadow-sm p-6 space-y-4">
+                  <div className="gantt-view-card bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-600 rounded-[2rem] shadow-sm p-6 space-y-4">
                     {(() => {
                       const toDate = (s: any): Date | null => {
                         if (!s && s !== 0) return null;
@@ -3644,7 +3646,7 @@ const App: React.FC = () => {
                         .filter(Boolean) as { id: string; title: string; start: Date; end: Date; }[];
 
                       if (items.length === 0) {
-                        return <p className="text-xs text-gray-500 px-1">Aucun projet ne peut être positionné sur la frise (dates manquantes).</p>;
+                        return <p className="text-xs text-gray-500 dark:text-slate-400 px-1">Aucun projet ne peut être positionné sur la frise (dates manquantes).</p>;
                       }
 
                       const today = new Date();
@@ -3656,7 +3658,7 @@ const App: React.FC = () => {
                         : items;
 
                       if (visibleItems.length === 0) {
-                        return <p className="text-xs text-gray-500 px-1">Aucun projet à afficher pour les filtres sélectionnés.</p>;
+                        return <p className="text-xs text-gray-500 dark:text-slate-400 px-1">Aucun projet à afficher pour les filtres sélectionnés.</p>;
                       }
 
                       const minStart = new Date(Math.min(...visibleItems.map(i => i.start.getTime())));
@@ -3708,12 +3710,12 @@ const App: React.FC = () => {
                         <>
                           <div className="flex items-center justify-between mb-4">
                             <div>
-                              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Projets (vue mensuelle)</p>
-                              <p className="text-lg font-bold text-gray-900">
+                              <p className="text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1">Projets (vue mensuelle)</p>
+                              <p className="text-lg font-bold text-gray-900 dark:text-slate-100">
                                 {items.length} projet{items.length > 1 ? 's' : ''} sur {totalFilteredProjects}
                               </p>
                               {items.length < totalFilteredProjects && (
-                                <p className="text-[11px] text-gray-500">
+                                <p className="text-[11px] text-gray-500 dark:text-slate-400">
                                   Certains projets filtrés n&apos;ont pas de date de lancement ou de déploiement et ne peuvent pas être affichés sur le Gantt.
                                 </p>
                               )}
@@ -3723,13 +3725,13 @@ const App: React.FC = () => {
                           <div className="overflow-x-auto">
                             <div className="min-w-[800px]">
                               {/* En-tête années */}
-                              <div className="grid grid-cols-[220px_1fr] text-[10px] font-black uppercase tracking-widest text-gray-400">
+                              <div className="grid grid-cols-[220px_1fr] text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-400">
                                 <div className="px-2" />
                                 <div className="flex">
                                   {yearGroups.map(group => (
                                     <div
                                       key={group.year}
-                                      className="text-center border-l border-gray-100 first:border-l-0 flex items-center justify-center"
+                                      className="text-center border-l border-gray-100 dark:border-slate-600 first:border-l-0 flex items-center justify-center"
                                       style={{ flex: group.count }}
                                     >
                                       {group.year}
@@ -3739,13 +3741,13 @@ const App: React.FC = () => {
                               </div>
 
                               {/* En-tête des mois */}
-                              <div className="grid grid-cols-[220px_1fr] mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-1">
+                              <div className="grid grid-cols-[220px_1fr] mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-400 border-b border-gray-100 dark:border-slate-600 pb-1">
                                 <div className="px-2">Projet</div>
                                 <div className="flex">
                                   {months.map((m, idx) => (
                                     <div
                                       key={idx}
-                                      className="flex-1 text-center border-l border-gray-100 first:border-l-0"
+                                      className="flex-1 text-center border-l border-gray-100 dark:border-slate-600 first:border-l-0"
                                     >
                                       {m.toLocaleString('fr-FR', { month: 'short' })}
                                     </div>
@@ -3779,19 +3781,19 @@ const App: React.FC = () => {
                                       onClick={() => setGanttSelectedProject(project)}
                                       className="w-full text-left"
                                     >
-                                      <div className="grid grid-cols-[260px_1fr] items-center gap-2 hover:bg-slate-800/40 rounded-xl px-1 py-1">
-                                        <div className="pr-2 text-xs font-semibold text-gray-900">
-                                          <div className="text-[10px] uppercase tracking-widest text-emerald-600 mb-1">
+                                      <div className="grid grid-cols-[260px_1fr] items-center gap-2 hover:bg-slate-800/40 dark:hover:bg-slate-700/60 rounded-xl px-1 py-1">
+                                        <div className="pr-2 text-xs font-semibold text-gray-900 dark:text-slate-100">
+                                          <div className="text-[10px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1">
                                             ID Projet
                                           </div>
-                                          <div className="inline-flex px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-700 max-w-full truncate">
+                                          <div className="inline-flex px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-700 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 max-w-full truncate">
                                             {item.id || 'N/C'}
                                           </div>
-                                          <div className="mt-1 text-[11px] font-medium text-gray-900 truncate">
+                                          <div className="mt-1 text-[11px] font-medium text-gray-900 dark:text-slate-200 truncate">
                                             {item.title}
                                           </div>
                                         </div>
-                                        <div className="relative h-8 bg-slate-900/40 rounded-xl overflow-hidden border border-slate-700/60">
+                                        <div className="relative h-8 bg-slate-900/40 dark:bg-slate-700/80 rounded-xl overflow-hidden border border-slate-700/60 dark:border-slate-600">
                                           {/* Trait vertical date du jour */}
                                           {todayPct !== null && (
                                             <div
@@ -3826,12 +3828,12 @@ const App: React.FC = () => {
                           </div>
 
                           {/* Légende jalons projets */}
-                          <div className="flex flex-wrap gap-4 mt-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                          <div className="flex flex-wrap gap-4 mt-4 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-400">
                             <div className="flex items-center gap-1">
-                              <span className="w-4 h-1 rounded-full bg-emerald-300" /> <span>Lancement</span>
+                              <span className="w-4 h-1 rounded-full bg-emerald-300 dark:bg-emerald-500" /> <span>Lancement</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <span className="w-4 h-1 rounded-full bg-indigo-300" /> <span>Déploiement</span>
+                              <span className="w-4 h-1 rounded-full bg-indigo-300 dark:bg-indigo-500" /> <span>Déploiement</span>
                             </div>
                           </div>
                         </>
@@ -3842,7 +3844,7 @@ const App: React.FC = () => {
 
                 {/* Vue Gantt - Procédures (jalons de publication) */}
                 {ganttView === 'procedures' && (
-                  <div className="bg-white border border-gray-100 rounded-[2rem] shadow-sm p-6 space-y-4">
+                  <div className="gantt-view-card bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-600 rounded-[2rem] shadow-sm p-6 space-y-4">
                     {(() => {
                       const toDate = (s: any): Date | null => {
                         if (!s && s !== 0) return null;
@@ -3980,7 +3982,7 @@ const App: React.FC = () => {
                         }[];
 
                       if (items.length === 0) {
-                        return <p className="text-xs text-gray-500 px-1">Aucune procédure ne peut être positionnée sur la frise (dates manquantes).</p>;
+                        return <p className="text-xs text-gray-500 dark:text-slate-400 px-1">Aucune procédure ne peut être positionnée sur la frise (dates manquantes).</p>;
                       }
 
                       const today = new Date();
@@ -3990,7 +3992,7 @@ const App: React.FC = () => {
                         : items;
 
                       if (visibleItems.length === 0) {
-                        return <p className="text-xs text-gray-500 px-1">Aucune procédure à afficher pour les filtres sélectionnés.</p>;
+                        return <p className="text-xs text-gray-500 dark:text-slate-400 px-1">Aucune procédure à afficher pour les filtres sélectionnés.</p>;
                       }
 
                       const minStart = new Date(Math.min(...visibleItems.map(i => i.start.getTime())));
@@ -4038,12 +4040,12 @@ const App: React.FC = () => {
                         <>
                           <div className="flex items-center justify-between mb-4">
                             <div>
-                              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Procédures (jalons de publication)</p>
-                              <p className="text-lg font-bold text-gray-900">
+                              <p className="text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1">Procédures (jalons de publication)</p>
+                              <p className="text-lg font-bold text-gray-900 dark:text-slate-100">
                                 {items.length} procédure{items.length > 1 ? 's' : ''} sur {totalFilteredProcedures}
                               </p>
                               {items.length < totalFilteredProcedures && (
-                                <p className="text-[11px] text-gray-500">
+                                <p className="text-[11px] text-gray-500 dark:text-slate-400">
                                   Certaines procédures filtrées n&apos;ont pas de dates suffisantes pour être affichées sur le Gantt.
                                 </p>
                               )}
@@ -4053,13 +4055,13 @@ const App: React.FC = () => {
                           <div className="overflow-x-auto">
                             <div className="min-w-[900px]">
                               {/* En-tête années */}
-                              <div className="grid grid-cols-[260px_1fr] text-[10px] font-black uppercase tracking-widest text-gray-400">
+                              <div className="grid grid-cols-[260px_1fr] text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-400">
                                 <div className="px-2" />
                                 <div className="flex">
                                   {yearGroups.map(group => (
                                     <div
                                       key={group.year}
-                                      className="text-center border-l border-gray-100 first:border-l-0 flex items-center justify-center"
+                                      className="text-center border-l border-gray-100 dark:border-slate-600 first:border-l-0 flex items-center justify-center"
                                       style={{ flex: group.count }}
                                     >
                                       {group.year}
@@ -4069,13 +4071,13 @@ const App: React.FC = () => {
                               </div>
 
                               {/* En-tête des mois */}
-                              <div className="grid grid-cols-[260px_1fr] mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-1">
+                              <div className="grid grid-cols-[260px_1fr] mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-400 border-b border-gray-100 dark:border-slate-600 pb-1">
                                 <div className="px-2">Procédure</div>
                                 <div className="flex">
                                   {months.map((m, idx) => (
                                     <div
                                       key={idx}
-                                      className="flex-1 text-center border-l border-gray-100 first:border-l-0"
+                                      className="flex-1 text-center border-l border-gray-100 dark:border-slate-600 first:border-l-0"
                                     >
                                       {m.toLocaleString('fr-FR', { month: 'short' })}
                                     </div>
@@ -4115,19 +4117,19 @@ const App: React.FC = () => {
                                       onClick={() => setGanttSelectedProcedure(fullProcedure)}
                                       className="w-full text-left"
                                     >
-                                      <div className="grid grid-cols-[260px_1fr] items-center gap-2 hover:bg-slate-800/40 rounded-xl px-1 py-1">
-                                      <div className="pr-2 text-xs font-semibold text-gray-900">
-                                        <div className="text-[10px] uppercase tracking-widest text-emerald-600 mb-1">
+                                      <div className="grid grid-cols-[260px_1fr] items-center gap-2 hover:bg-slate-800/40 dark:hover:bg-slate-700/60 rounded-xl px-1 py-1">
+                                      <div className="pr-2 text-xs font-semibold text-gray-900 dark:text-slate-100">
+                                        <div className="text-[10px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1">
                                             N° Afpa
                                           </div>
-                                        <div className="inline-flex px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-700 max-w-full truncate">
+                                        <div className="inline-flex px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-700 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 max-w-full truncate">
                                             {item.afpa || item.id || 'N/C'}
                                           </div>
-                                          <div className="mt-1 text-[11px] font-medium text-gray-900 truncate">
+                                          <div className="mt-1 text-[11px] font-medium text-gray-900 dark:text-slate-200 truncate">
                                             {item.title}
                                           </div>
                                         </div>
-                                        <div className="relative h-8 bg-slate-900/40 rounded-xl overflow-hidden border border-slate-700/60">
+                                        <div className="relative h-8 bg-slate-900/40 dark:bg-slate-700/80 rounded-xl overflow-hidden border border-slate-700/60 dark:border-slate-600">
                                           {/* Trait vertical date du jour */}
                                           {todayPct !== null && (
                                             <div
@@ -4380,37 +4382,37 @@ const App: React.FC = () => {
                       const priorite = String(getProp(d, 'Priorite') || '').split(' - ')[0] || 'N/C';
                       const deployTxt = deploy ? formatDisplayDate(deploy.toISOString().slice(0,10)) : 'N/C';
                       const amountTxt = `${Math.round(amount).toLocaleString()} €`;
-                      const statutClass = statut.startsWith('4') ? 'bg-emerald-50 text-emerald-700' : statut.startsWith('3') ? 'bg-orange-50 text-orange-600' : statut.startsWith('5') ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500';
-                      const prColor = priorite.startsWith('P1') ? 'bg-red-600' : priorite.startsWith('P2') ? 'bg-orange-500' : 'bg-gray-400';
+                      const statutClass = statut.startsWith('4') ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : statut.startsWith('3') ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300' : statut.startsWith('5') ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300' : 'bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-slate-400';
+                      const prColor = priorite.startsWith('P1') ? 'bg-red-600' : priorite.startsWith('P2') ? 'bg-orange-500' : 'bg-gray-400 dark:bg-slate-500';
                       const isMissing = diffDays === null;
                       const isLate = diffDays !== null && diffDays <= 0;
                       const widthPct = isMissing ? 100 : isLate ? 100 : Math.max(6, Math.round((diffDays / maxDays) * 100));
                       return (
-                        <div key={i} className="bg-white border border-gray-100 rounded-[2rem] shadow-sm overflow-hidden group">
+                        <div key={i} className="gantt-list-card bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-600 rounded-[2rem] shadow-sm overflow-hidden group">
                           <div className="grid grid-cols-1 md:grid-cols-5">
                             <div className="md:col-span-2 p-6 flex flex-col gap-3">
                               <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{acheteur}</span>
+                                <span className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest">{acheteur}</span>
                                 <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${statutClass}`}>{statut || 'N/C'}</span>
                               </div>
-                              <div className="text-base font-bold text-gray-900 leading-relaxed">{titre}</div>
+                              <div className="text-base font-bold text-gray-900 dark:text-slate-100 leading-relaxed">{titre}</div>
                               <div className="flex items-center gap-3 mt-2">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Target: {deployTxt}</span>
+                                <span className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest">Target: {deployTxt}</span>
                                 <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg text-white ${prColor}`}>{priorite}</span>
                               </div>
                             </div>
                             <div className="md:col-span-3 p-6 relative">
-                              <div className="absolute left-6 top-6 bottom-6 w-px bg-gray-200" />
+                              <div className="absolute left-6 top-6 bottom-6 w-px bg-gray-200 dark:bg-slate-600" />
                               <div className="ml-6">
                                 {isMissing ? (
-                                  <div className="w-full h-10 rounded-xl relative flex items-center justify-between px-4" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #e5e7eb, #e5e7eb 10px, #d1d5db 10px, #d1d5db 20px)' }}>
-                                    <div className="flex items-center gap-2 text-gray-600 font-black text-[10px] uppercase tracking-widest"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01M4.93 4.93a10 10 0 1114.14 14.14A10 10 0 014.93 4.93z"/></svg> Date cible manquante</div>
-                                    <div className="text-[10px] font-black text-gray-700 uppercase tracking-widest">{numProc || 'N° N/C'} — {amountTxt}</div>
+                                  <div className="gantt-sans-date-block w-full h-10 rounded-xl relative flex items-center justify-between px-4 bg-slate-200 dark:bg-slate-600">
+                                    <div className="flex items-center gap-2 text-gray-700 dark:text-slate-100 font-black text-[10px] uppercase tracking-widest"><svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01M4.93 4.93a10 10 0 1114.14 14.14A10 10 0 014.93 4.93z"/></svg> Date cible manquante</div>
+                                    <div className="text-[10px] font-black text-gray-800 dark:text-slate-100 uppercase tracking-widest">{numProc || 'N° N/C'} — {amountTxt}</div>
                                   </div>
                                 ) : isLate ? (
-                                  <div className="w-full h-10 rounded-xl relative flex items-center justify-between px-4" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff1f2, #fff1f2 10px, #fecaca 10px, #fecaca 20px)' }}>
-                                    <div className="flex items-center gap-2 text-red-600 font-black text-[10px] uppercase tracking-widest"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01M4.93 4.93a10 10 0 1114.14 14.14A10 10 0 014.93 4.93z"/></svg> Retard: {Math.abs(diffDays)}j</div>
-                                    <div className="text-[10px] font-black text-gray-700 uppercase tracking-widest">{numProc || 'N° N/C'} — {amountTxt}</div>
+                                  <div className="gantt-retard-block w-full h-10 rounded-xl relative flex items-center justify-between px-4" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff1f2, #fff1f2 10px, #fecaca 10px, #fecaca 20px)' }}>
+                                    <div className="flex items-center gap-2 text-red-700 dark:text-white font-black text-[10px] uppercase tracking-widest"><svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01M4.93 4.93a10 10 0 1114.14 14.14A10 10 0 014.93 4.93z"/></svg> Retard: {Math.abs(diffDays)}j</div>
+                                    <div className="text-[10px] font-black text-gray-800 dark:text-white uppercase tracking-widest">{numProc || 'N° N/C'} — {amountTxt}</div>
                                   </div>
                                 ) : (
                                   <button
@@ -4419,9 +4421,9 @@ const App: React.FC = () => {
                                       const proc = procedures.find(p => String(getProp(p, 'IDProjet') || '') === pid) || null;
                                       setGanttSelectedProcedure(proc);
                                     }}
-                                    className="h-10 w-full rounded-xl bg-gradient-to-r from-emerald-200 to-emerald-500 relative flex items-center justify-between px-4 text-left hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    className="gantt-en-cours-block h-10 w-full rounded-xl bg-gradient-to-r from-emerald-200 to-emerald-500 dark:from-emerald-700 dark:to-emerald-600 relative flex items-center justify-between px-4 text-left hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                   >
-                                    <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">
+                                    <span className="text-[10px] font-black text-emerald-900 dark:text-white uppercase tracking-widest">
                                       {diffDays}j
                                     </span>
                                     <span className="text-[10px] font-black text-white uppercase tracking-widest">
@@ -4430,7 +4432,7 @@ const App: React.FC = () => {
                                   </button>
                                 )}
                               </div>
-                              <div className="absolute right-6 top-3 text-[10px] font-black text-gray-300 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Fin: {deployTxt}</div>
+                              <div className="absolute right-6 top-3 text-[10px] font-black text-gray-300 dark:text-slate-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Fin: {deployTxt}</div>
                             </div>
                           </div>
                         </div>
@@ -4480,7 +4482,7 @@ const App: React.FC = () => {
                           setEditingProcedure(null);
                           navigateTo('detail', `Détail - ${detailData.title}`);
                         }}
-                        className="px-4 py-2 bg-[#004d3d] text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-[#003d2d] transition-all flex items-center gap-2"
+                        className="px-4 py-2 bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-blue-400/30"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -4651,7 +4653,7 @@ const App: React.FC = () => {
                       };
                       setEditingProcedure(newProcedure);
                     }
-                  }} className={`whitespace-nowrap px-10 py-4 rounded-xl text-white font-semibold text-sm bg-[#004d3d] hover:bg-[#006d57] h-[54px] transition-colors flex items-center gap-2`}>
+                  }} className="whitespace-nowrap px-10 py-4 rounded-xl text-white font-semibold text-sm bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 h-[54px] transition-colors flex items-center gap-2 shadow-lg shadow-blue-400/30">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
                     {activeTab === 'dossiers' ? 'Nouveau Projet' : 'Nouvelle Procédure'}
                   </button>
@@ -4864,7 +4866,7 @@ const App: React.FC = () => {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <button onClick={() => save(editingProject ? 'project' : 'procedure')} disabled={isSaving} className="px-12 py-4 rounded-2xl text-white font-black text-xs uppercase tracking-widest transition-all bg-[#004d3d] hover:bg-[#006d57]">{isSaving ? 'Enregistrement...' : 'Enregistrer'}</button>
+                <button onClick={() => save(editingProject ? 'project' : 'procedure')} disabled={isSaving} className="px-12 py-4 rounded-2xl text-white font-black text-xs uppercase tracking-widest transition-all bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 shadow-lg shadow-blue-400/30 disabled:opacity-50">{isSaving ? 'Enregistrement...' : 'Enregistrer'}</button>
                 <button onClick={() => { setEditingProject(null); setEditingProcedure(null); }} className="px-8 py-4 rounded-2xl bg-gray-700 text-white font-black text-xs uppercase tracking-widest hover:bg-gray-600 transition-all">Quitter</button>
               </div>
             </div>
@@ -4991,7 +4993,7 @@ const App: React.FC = () => {
                   <div className="space-y-10">
                     <div className="flex flex-col items-center justify-center border-4 border-dashed rounded-[3rem] p-16 transition-all hover:border-[#004d3d]/20 hover:bg-emerald-50/10 group relative border-gray-50 bg-white">
                       <input type="file" multiple onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                      <div className={`w-20 h-20 rounded-3xl flex items-center justify-center transition-all ${isUploading ? 'bg-[#004d3d] text-white animate-pulse' : 'bg-gray-50 text-gray-300 group-hover:scale-110 group-hover:bg-[#004d3d]/10 group-hover:text-[#004d3d]'}`}>{isUploading ? <svg className="w-10 h-10 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> : <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>}</div>
+                      <div className={`w-20 h-20 rounded-3xl flex items-center justify-center transition-all ${isUploading ? 'bg-gradient-to-b from-blue-400 to-indigo-500 text-white animate-pulse' : 'bg-gray-50 text-gray-300 group-hover:scale-110 group-hover:bg-blue-100 group-hover:text-indigo-600'}`}>{isUploading ? <svg className="w-10 h-10 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> : <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>}</div>
                       <div className="mt-8 text-center">
                         <p className="text-sm font-black text-gray-900 uppercase tracking-widest">{isUploading ? 'Téléchargement en cours...' : 'Déposez vos documents ici'}</p>
                         <p className="mt-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tous formats acceptés (PDF, Excel, Images, etc.)</p>
@@ -5025,7 +5027,7 @@ const App: React.FC = () => {
                 )}
                 {activeSubTab === 'procedures_liees' && editingProject && (
                   <div className="space-y-6">
-                    <div className="flex justify-between items-center"><h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Liste des procédures rattachées à ce projet</h4><button onClick={() => { const projId = editingProject.IDProjet; const existingForProject = procedures.filter(p => String(getProp(p, 'IDProjet')) === String(projId)); let maxIdx = 0; existingForProject.forEach(p => { const num = String(getProp(p, 'NumProc')); if (num.includes('-P-')) { const parts = num.split('-P-'); const idx = parseInt(parts[parts.length - 1]); if (!isNaN(idx) && idx > maxIdx) maxIdx = idx; } }); const nextIdx = maxIdx + 1; const newProcId = `${projId}-P-${nextIdx}`; setEditingProcedure({ IDProjet: projId, Acheteur: getProp(editingProject, 'Acheteur'), "Objet court": getProp(editingProject, 'Titre_du_dossier'), NumProc: newProcId }); setEditingProject(null); setActiveSubTab('general'); }} className="px-6 py-3 bg-[#004d3d] hover:bg-[#006d57] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-colors">+ Nouvelle Procédure</button></div>
+                    <div className="flex justify-between items-center"><h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Liste des procédures rattachées à ce projet</h4><button onClick={() => { const projId = editingProject.IDProjet; const existingForProject = procedures.filter(p => String(getProp(p, 'IDProjet')) === String(projId)); let maxIdx = 0; existingForProject.forEach(p => { const num = String(getProp(p, 'NumProc')); if (num.includes('-P-')) { const parts = num.split('-P-'); const idx = parseInt(parts[parts.length - 1]); if (!isNaN(idx) && idx > maxIdx) maxIdx = idx; } }); const nextIdx = maxIdx + 1; const newProcId = `${projId}-P-${nextIdx}`; setEditingProcedure({ IDProjet: projId, Acheteur: getProp(editingProject, 'Acheteur'), "Objet court": getProp(editingProject, 'Titre_du_dossier'), NumProc: newProcId }); setEditingProject(null); setActiveSubTab('general'); }} className="px-6 py-3 bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-400/30 transition-colors">+ Nouvelle Procédure</button></div>
                     <div className="overflow-x-auto rounded-2xl border border-gray-50">
                       <table className="themed-table min-w-full divide-y divide-gray-50"><thead className="bg-gray-50/50 dark:bg-[#252525]"><tr><th className="px-6 py-4 text-center text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Actions</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">N° Afpa</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Nom Procédure</th><th className="px-6 py-4 text-left text-[9px] font-black text-gray-400 dark:text-[#40E0D0] uppercase tracking-widest">Statut</th></tr></thead><tbody className="divide-y divide-gray-50 dark:divide-[#333333]">{associatedProcedures.length === 0 ? <tr><td colSpan={4} className="px-6 py-12 text-center text-xs font-bold text-gray-300 italic">Aucune procédure trouvée</td></tr> : associatedProcedures.map((proc, idx) => (<tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-[#1E1E1E]"><td className="px-6 py-4 text-center"><button onClick={() => { setEditingProcedure(proc); setEditingProject(null); setActiveSubTab('general'); }} className="p-2 text-[#004d3d] bg-green-50 dark:text-green-400 dark:bg-green-400/10 rounded-lg hover:bg-green-100 dark:hover:bg-green-400/20 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button></td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Numéro de procédure (Afpa)') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Nom de la procédure') || '-'}</td><td className="px-6 py-4 text-xs font-bold text-gray-600 dark:text-[#B3B3B3]">{getProp(proc, 'Statut de la consultation') || '-'}</td></tr>))}</tbody></table>
                     </div>
@@ -5039,7 +5041,7 @@ const App: React.FC = () => {
         {activeTab === 'an01' && (
           <div className="an01-wrapper">
             {!an01Data ? (
-              <div className="h-screen w-full font-sans text-gray-900 bg-gray-100 dark:bg-gray-900 flex flex-col">
+              <div className="an01-page h-screen w-full font-sans text-gray-900 bg-gray-100 dark:bg-[#0f172a] flex flex-col">
                 {an01EntryMode === 'choice' && (
                   <An01EntryView
                     onChoice={(choice) => {
@@ -5078,7 +5080,7 @@ const App: React.FC = () => {
                         <button
                           onClick={() => an01ProcedureNumber && handleAn01LoadFromSupabase(an01ProcedureNumber)}
                           disabled={!an01ProcedureNumber || an01IsLoading}
-                          className="flex-1 px-8 py-4 bg-[#004d3d] dark:bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-[#006d57] dark:hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex-1 px-8 py-4 bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 dark:from-blue-500 dark:to-indigo-600 dark:hover:from-blue-600 dark:hover:to-indigo-700 text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-400/30"
                         >
                           {an01IsLoading ? 'Chargement...' : 'Charger depuis la base'}
                         </button>
@@ -5119,7 +5121,7 @@ const App: React.FC = () => {
                 )}
               </div>
             ) : an01SelectedLotIndex !== null && an01Data.lots[an01SelectedLotIndex] ? (
-              <div className="h-screen w-full font-sans text-gray-900 bg-gray-100 flex flex-col">
+              <div className="an01-page h-screen w-full font-sans text-gray-900 bg-gray-100 dark:bg-[#0f172a] flex flex-col">
                 <Dashboard 
                   data={an01Data.lots[an01SelectedLotIndex]} 
                   onReset={handleAn01Reset}
@@ -5136,7 +5138,7 @@ const App: React.FC = () => {
                 />
               </div>
             ) : an01ViewMode === 'table' ? (
-              <div className="h-screen w-full font-sans text-gray-900 bg-gray-100 flex flex-col">
+              <div className="an01-page h-screen w-full font-sans text-gray-900 bg-gray-100 dark:bg-[#0f172a] flex flex-col">
                 <GlobalTableView 
                   lots={an01Data.lots}
                   globalMetadata={an01Data.globalMetadata}
@@ -5145,7 +5147,7 @@ const App: React.FC = () => {
                 />
               </div>
             ) : (
-              <div className="h-screen w-full font-sans text-gray-900 bg-gray-100 flex flex-col">
+              <div className="an01-page h-screen w-full font-sans text-gray-900 bg-gray-100 dark:bg-[#0f172a] flex flex-col">
                 <LotSelectionView 
                   lots={an01Data.lots}
                   onSelectLot={setAn01SelectedLotIndex}
@@ -5339,7 +5341,7 @@ const App: React.FC = () => {
                               }
                               // On garde detailData pour pouvoir revenir
                             }}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#004d3d]/10 text-[#004d3d] hover:bg-[#004d3d] hover:text-white transition-all"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-indigo-600 hover:bg-gradient-to-b hover:from-blue-400 hover:to-indigo-500 hover:text-white transition-all"
                             title={detailData.type === 'project' ? 'Modifier la procédure' : 'Modifier le dossier'}
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

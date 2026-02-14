@@ -149,7 +149,7 @@ const An01StepFinancier: React.FC<An01StepFinancierProps> = ({ lots, onChange, o
                 {(() => {
                   const { totalQuantity, byCandidate } = computeTotals(currentLot);
                   return (
-                    <tr className="border-t border-b-2 border-gray-300 dark:border-gray-600 bg-emerald-50 dark:bg-emerald-900/20 font-medium">
+                    <tr className="an01-row-total border-t border-b-2 border-gray-300 dark:border-gray-600 bg-emerald-50 dark:bg-slate-800 font-medium">
                       <td className="p-2 w-8 border-r border-gray-200 dark:border-gray-600" />
                       <td className="p-2 text-left text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">Total</td>
                       <td className="p-2 w-24 text-center text-gray-900 dark:text-white tabular-nums border-r border-gray-200 dark:border-gray-600 align-middle">{formatDecimal2(totalQuantity)}</td>

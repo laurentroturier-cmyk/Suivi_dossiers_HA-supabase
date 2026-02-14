@@ -43,27 +43,27 @@ export function DocumentsAnnexesForm({ data, onSave, isSaving = false }: Props) 
   };
 
   return (
-    <div className="space-y-8">
+    <div className="dce-documents-annexes space-y-8">
       {/* Bouton d'enregistrement en haut */}
-      <div className="flex justify-end sticky top-0 bg-white z-10 pb-4 border-b border-gray-200">
+      <div className="dce-documents-annexes-bar flex justify-end sticky top-0 bg-white dark:bg-slate-800 z-10 pb-4 border-b border-gray-200 dark:border-slate-600">
         <button
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50"
+          className="px-3 py-1.5 text-sm bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition disabled:opacity-50 shadow-md"
         >
           {isSaving ? 'Enregistrement...' : 'Enregistrer la section'}
         </button>
       </div>
 
-      <p className="text-sm text-gray-700">Format: "nom | type | taille (octets) | url | description" par ligne.</p>
+      <p className="text-sm text-gray-700 dark:text-slate-300">Format: "nom | type | taille (octets) | url | description" par ligne.</p>
 
       <section className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Documents</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Documents</label>
         <textarea
           value={docsText}
           onChange={e => setDocsText(e.target.value)}
-          className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[160px] font-mono text-sm"
+          className="dce-documents-annexes-textarea w-full border border-gray-300 dark:border-slate-600 rounded-lg px-2 py-1.5 text-sm min-h-[160px] font-mono bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 placeholder-gray-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-[#2F5B58] focus:border-[#2F5B58]"
           placeholder="Annexe technique | pdf | 102400 | https://... | Optionnel"
         />
       </section>

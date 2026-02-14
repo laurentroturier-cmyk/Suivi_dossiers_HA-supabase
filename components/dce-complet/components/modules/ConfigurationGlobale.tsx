@@ -20,7 +20,8 @@ import {
   Settings,
   Settings2,
   Download,
-  Upload
+  Upload,
+  Table
 } from 'lucide-react';
 import type { ConfigurationGlobale, LotConfiguration } from '../../types';
 import type { ProjectData } from '../../../../types';
@@ -390,7 +391,7 @@ export function ConfigurationGlobaleForm({
                 <>
                   <button
                     onClick={() => setIsLotsModalOpen(true)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition whitespace-nowrap"
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition whitespace-nowrap shadow-md"
                     title="Ouvrir le configurateur de lots"
                   >
                     <Settings2 size={16} />
@@ -398,14 +399,15 @@ export function ConfigurationGlobaleForm({
                   </button>
                   <button
                     onClick={handleExportExcel}
-                    className="flex items-center gap-2 px-3 py-2 text-sm border border-[#2F5B58] text-[#2F5B58] rounded-lg hover:bg-[#2F5B58]/10 transition whitespace-nowrap"
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-gradient-to-b from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition whitespace-nowrap shadow-md"
                     title="Exporter les lots vers Excel"
                   >
-                    <Download size={16} />
+                    <Table size={16} />
                     Export Excel
                   </button>
-                  <label className="flex items-center gap-2 px-3 py-2 text-sm border border-[#2F5B58] text-[#2F5B58] rounded-lg hover:bg-[#2F5B58]/10 transition cursor-pointer whitespace-nowrap">
-                    <Upload size={16} />
+                  <label className="flex items-center gap-2 px-3 py-2 text-sm bg-gradient-to-b from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition cursor-pointer whitespace-nowrap shadow-md">
+                    <Table size={16} />
+                    <Upload size={14} />
                     Import Excel
                     <input
                       type="file"
@@ -418,7 +420,7 @@ export function ConfigurationGlobaleForm({
               )}
               <button
                 onClick={addLot}
-                className="flex items-center gap-2 px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition-colors whitespace-nowrap"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-b from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-colors whitespace-nowrap shadow-md"
               >
                 <Plus className="w-4 h-4" />
                 Ajouter un lot

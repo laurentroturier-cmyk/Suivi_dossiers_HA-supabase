@@ -52,7 +52,7 @@ const cards: Array<{
 
 const An01EntryView: React.FC<An01EntryViewProps> = ({ onChoice }) => {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="an01-page min-h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col">
       <div className="max-w-4xl mx-auto px-6 py-10 w-full">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">

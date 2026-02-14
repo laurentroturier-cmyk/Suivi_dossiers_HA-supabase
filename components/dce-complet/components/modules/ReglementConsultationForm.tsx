@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Settings2, Download, Upload } from 'lucide-react';
+import { Settings2, Download, Upload, Table } from 'lucide-react';
 import type { RapportCommissionData } from '../../../redaction/types/rapportCommission';
 import { LotsConfigurationModal } from './LotsConfigurationModal';
 import { exportLotsToExcel, importLotsFromExcel, type LotExcel } from '../../utils/lotsExcelService';
@@ -284,7 +284,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
               <button
                 type="button"
                 onClick={() => setIsLotsModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition shadow-md"
               >
                 <Settings2 size={16} />
                 Configurer
@@ -292,14 +292,15 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
               <button
                 type="button"
                 onClick={handleExportExcel}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#2F5B58] text-[#2F5B58] rounded-lg hover:bg-[#2F5B58]/10 transition"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-b from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition shadow-md"
                 title="Exporter les lots vers Excel"
               >
-                <Download size={16} />
+                <Table size={16} />
                 Export Excel
               </button>
-              <label className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#2F5B58] text-[#2F5B58] rounded-lg hover:bg-[#2F5B58]/10 transition cursor-pointer">
-                <Upload size={16} />
+              <label className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-b from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition cursor-pointer shadow-md">
+                <Table size={16} />
+                <Upload size={14} />
                 Import Excel
                 <input
                   ref={fileInputRef}
@@ -409,7 +410,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="px-4 py-2 bg-[#2F5B58] text-white rounded-lg hover:bg-[#234441] transition disabled:opacity-50"
+          className="px-4 py-2 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white rounded-lg transition disabled:opacity-50 shadow-md"
         >
           {isSaving ? 'Enregistrement...' : 'Enregistrer la section'}
         </button>

@@ -1020,7 +1020,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
             <button
               type="button"
               onClick={exportToExcel}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#2F5B58] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#234441]"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] px-3 py-1.5 text-xs font-semibold text-white shadow-md"
             >
               <FileDown className="h-3.5 w-3.5" />
               Exporter Excel
@@ -1220,7 +1220,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
               <button
                 type="button"
                 onClick={exportToExcel}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#2F5B58] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#234441]"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] px-3 py-1.5 text-xs font-semibold text-white shadow-md"
               >
                 <FileDown className="h-3.5 w-3.5" />
                 Exporter Excel
@@ -1641,7 +1641,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={loadingFile}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2F5B58] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#234441] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] px-4 py-3 text-sm font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loadingFile ? (
                         <>
@@ -1693,7 +1693,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                       type="button"
                       onClick={confirmSheetAndImport}
                       disabled={loadingFile || !selectedSheet}
-                      className="inline-flex items-center gap-2 rounded-lg bg-[#2F5B58] px-4 py-2 text-sm font-semibold text-white hover:bg-[#234441] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] px-4 py-2 text-sm font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loadingFile ? (
                         <>
@@ -2162,7 +2162,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                               <button
                                 type="button"
                                 onClick={exportToExcel}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2F5B58] text-xs font-semibold text-white shadow-sm hover:bg-[#234441]"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-xs font-semibold text-white shadow-md"
                               >
                                 <FileDown className="w-3.5 h-3.5" />
                                 Exporter Excel

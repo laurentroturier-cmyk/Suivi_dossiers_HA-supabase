@@ -85,7 +85,8 @@ body {
 }
 
 .app-shell {
-  background-color: var(--bg);
+  /* Fond remplacé par le dégradé glassmorphism dans App.tsx */
+  background-color: transparent;
   color: var(--text-primary);
 }
 

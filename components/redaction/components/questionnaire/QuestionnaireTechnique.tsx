@@ -779,7 +779,7 @@ const QuestionnaireTechnique: React.FC<QuestionnaireTechniqueProps> = ({
   }, [state.numeroLot]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="dce-questionnaire-technique min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 py-4">
         {/* Header */}
         <div className="mb-4">

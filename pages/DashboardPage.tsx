@@ -137,7 +137,7 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
     <div className="space-y-8 animate-in fade-in duration-700">
       
       {/* KPI Globaux (non filtrés) */}
-      <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 p-6 rounded-3xl border-2 border-slate-200 dark:border-slate-700">
+      <div className="dashboard-kpi-section bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 p-6 rounded-3xl border-2 border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-2 h-8 bg-slate-600 rounded-full"></div>
           <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
@@ -146,7 +146,7 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
           <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">(Non filtrés)</span>
         </div>
         {KPITile && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="dashboard-kpi-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <KPITile label="NB PROJETS" value={kpis.nbP} />
             <KPITile label="NB PROCÉDURES" value={kpis.nbProc} />
             <KPITile label="TOTAL PROJET" value={Math.round(kpis.amtP)} unit="€" />
@@ -157,11 +157,11 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
       </div>
 
       {/* SECTION PROJETS - Accordion */}
-      <div className="bg-white dark:bg-gray-800 rounded-3xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden shadow-lg">
+      <div className="dashboard-section-card dashboard-section-projets bg-white dark:bg-gray-800 rounded-3xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden shadow-lg">
         {/* Header cliquable */}
         <button
           onClick={() => setProjectsSectionExpanded(!projectsSectionExpanded)}
-          className="w-full px-6 py-5 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/50 dark:hover:to-cyan-900/50 transition-all flex items-center justify-between group"
+          className="dashboard-section-header w-full px-6 py-5 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/50 dark:hover:to-cyan-900/50 transition-all flex items-center justify-between group"
         >
           <div className="flex items-center gap-4">
             <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
@@ -191,10 +191,10 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
         
         {/* Contenu */}
         {projectsSectionExpanded && (
-          <div className="p-6 space-y-6 bg-blue-50/30 dark:bg-blue-950/20">
+          <div className="dashboard-section-content p-6 space-y-6 bg-blue-50/30 dark:bg-blue-950/20">
             
             {/* Message explicatif */}
-            <div className="bg-blue-100 dark:bg-blue-900/40 border-l-4 border-blue-600 p-4 rounded-r-2xl">
+            <div className="dashboard-info-banner dashboard-info-banner-projets bg-blue-100 dark:bg-blue-900/40 border-l-4 border-blue-600 p-4 rounded-r-2xl">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
@@ -210,7 +210,7 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
             
             {/* Filtres Projets */}
             {FilterDropdown && (
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border-2 border-blue-200 dark:border-blue-700 space-y-4">
+              <div className="dashboard-filters-box bg-white dark:bg-gray-800 p-6 rounded-2xl border-2 border-blue-200 dark:border-blue-700 space-y-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-black text-blue-900 dark:text-blue-100 uppercase tracking-widest flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
@@ -318,11 +318,11 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
       </div>
 
       {/* SECTION PROCÉDURES - Accordion */}
-      <div className="bg-white dark:bg-gray-800 rounded-3xl border-2 border-green-200 dark:border-green-800 overflow-hidden shadow-lg">
+      <div className="dashboard-section-card dashboard-section-procedures bg-white dark:bg-gray-800 rounded-3xl border-2 border-green-200 dark:border-green-800 overflow-hidden shadow-lg">
         {/* Header cliquable */}
         <button
           onClick={() => setProceduresSectionExpanded(!proceduresSectionExpanded)}
-          className="w-full px-6 py-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/50 dark:hover:to-emerald-900/50 transition-all flex items-center justify-between group"
+          className="dashboard-section-header w-full px-6 py-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/50 dark:hover:to-emerald-900/50 transition-all flex items-center justify-between group"
         >
           <div className="flex items-center gap-4">
             <div className="w-3 h-3 bg-green-600 rounded-full animate-pulse"></div>
@@ -352,10 +352,10 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
         
         {/* Contenu */}
         {proceduresSectionExpanded && (
-          <div className="p-6 space-y-6 bg-green-50/30 dark:bg-green-950/20">
+          <div className="dashboard-section-content p-6 space-y-6 bg-green-50/30 dark:bg-green-950/20">
             
             {/* Message explicatif */}
-            <div className="bg-green-100 dark:bg-green-900/40 border-l-4 border-green-600 p-4 rounded-r-2xl">
+            <div className="dashboard-info-banner dashboard-info-banner-procedures bg-green-100 dark:bg-green-900/40 border-l-4 border-green-600 p-4 rounded-r-2xl">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                 <div>
@@ -371,7 +371,7 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
             
             {/* Filtres Procédures */}
             {FilterDropdown && (
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border-2 border-green-200 dark:border-green-700 space-y-4">
+              <div className="dashboard-filters-box bg-white dark:bg-gray-800 p-6 rounded-2xl border-2 border-green-200 dark:border-green-700 space-y-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-black text-green-900 dark:text-green-100 uppercase tracking-widest flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-600 rounded-full"></div>
