@@ -1516,6 +1516,35 @@ html.dark .an01-wrapper .bg-gray-50 {
 }
 
 /* ========================================
+   DASHBOARD ADMINISTRATION — fonds et conteneurs en mode sombre
+   ======================================== */
+html.dark .admin-dashboard .bg-white {
+  background-color: rgb(30, 41, 59) !important;
+  border-color: rgb(71, 85, 105) !important;
+}
+html.dark .admin-dashboard .bg-gray-50 {
+  background-color: rgb(30, 41, 59) !important;
+}
+html.dark .admin-dashboard .bg-orange-50 {
+  background-color: rgba(124, 45, 18, 0.25) !important;
+  border-color: rgb(154, 52, 18) !important;
+}
+html.dark .admin-dashboard .bg-indigo-50 {
+  background-color: rgba(49, 46, 129, 0.25) !important;
+  border-color: rgb(67, 56, 202) !important;
+}
+html.dark .admin-dashboard .bg-red-50 {
+  background-color: rgba(127, 29, 29, 0.25) !important;
+  border-color: rgb(153, 27, 27) !important;
+}
+
+/* Sidebar admin : fond slate uniquement en mode sombre (pas de dégradé bleu) */
+html.dark .admin-dashboard aside.fixed.left-0 {
+  background: rgb(30, 41, 59) !important;
+  background-image: none !important;
+}
+
+/* ========================================
    AN01 — éléments internes : supprimer les couleurs pastel
    (Analyse financière, Grille technique, Synthèse, Dashboard, etc.)
    ======================================== */

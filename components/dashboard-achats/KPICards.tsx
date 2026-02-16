@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatCurrencyShort, percentage } from './utils';
+import { formatMillions, percentage } from './utils';
 import { KPIData } from './types';
 
 interface KPICardsProps {
@@ -10,25 +10,25 @@ export const KPICards: React.FC<KPICardsProps> = ({ data }) => {
   const kpis = [
     {
       label: 'CA Commandé',
-      value: formatCurrencyShort(data.totalCommande),
+      value: formatMillions(data.totalCommande),
       sub: `${data.nbLignes} lignes`,
       gradient: 'from-cyan-500 to-blue-600'
     },
     {
       label: 'CA Facturé',
-      value: formatCurrencyShort(data.totalFacture),
+      value: formatMillions(data.totalFacture),
       sub: `Taux: ${percentage(data.totalFacture, data.totalCommande)}`,
       gradient: 'from-emerald-500 to-teal-600'
     },
     {
       label: 'CA Livré',
-      value: formatCurrencyShort(data.totalLivre),
+      value: formatMillions(data.totalLivre),
       sub: `Taux: ${percentage(data.totalLivre, data.totalCommande)}`,
       gradient: 'from-orange-500 to-amber-600'
     },
     {
       label: 'Montant Total (TTC)',
-      value: formatCurrencyShort(data.totalMontant),
+      value: formatMillions(data.totalMontant),
       sub: '',
       gradient: 'from-violet-500 to-purple-600'
     },

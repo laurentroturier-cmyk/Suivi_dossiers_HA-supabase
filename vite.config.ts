@@ -14,6 +14,19 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      optimizeDeps: {
+        exclude: ['@duckdb/duckdb-wasm']
+      },
+      worker: {
+        format: 'iife',
+        plugins: [],
+        rollupOptions: {
+          output: {
+            format: 'iife',
+            inlineDynamicImports: true
+          }
+        }
       }
     };
 });

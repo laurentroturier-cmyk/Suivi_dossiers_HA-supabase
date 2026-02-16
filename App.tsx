@@ -1475,14 +1475,21 @@ const App: React.FC = () => {
         afpaNum = createNewAfpaNumber(abrege, objetCourt, trigramme);
       }
     } else {
-      // Pas de numéro existant : création d'un nouveau numéro
-      afpaNum = createNewAfpaNumber(abrege, objetCourt, trigramme);
+      // Pas de numéro encore affecté : on ne crée PLUS de numéro ici.
+      // Il sera généré automatiquement lors du premier enregistrement.
+      alert("Le numéro Afpa sera généré automatiquement lors du premier enregistrement de la procédure.");
+      return;
     }
     
+    // Extraire le numéro court (5 premiers caractères) si possible
+    const shortNumMatch = afpaNum.match(/^\d{5}/);
+    const shortNum = shortNumMatch ? shortNumMatch[0] : '';
+
     setEditingProcedure(prev => ({ 
       ...prev, 
       "Numéro de procédure (Afpa)": afpaNum,
       "Objet court": objetCourt,
+      "numero court procédure afpa": shortNum || (prev as any)?.["numero court procédure afpa"] || null
     }));
 
     // Envoyer la requête HTTP vers Power Automate
@@ -2583,6 +2590,36 @@ const App: React.FC = () => {
         throw new Error("Le projet de rattachement est obligatoire. Veuillez sélectionner un projet.");
       }
       
+      // Génération automatique du numéro Afpa lors du PREMIER enregistrement de la procédure
+      if (type === 'procedure' && data && !data["Numéro de procédure (Afpa)"]) {
+        const typeProc = data["Type de procédure"] || "";
+        const acheteur = data["Acheteur"] || "";
+        const objetCourt = data["Objet court"] || (data as any)["Nom de la procédure"] || "SANS OBJET";
+
+        const abrege = (refProcedures.find(rp => getProp(rp, 'Type procédure') === typeProc) || {})['Abrégé'] || 'ZZZZZ';
+        const trigramme = (refAcheteurs.find(a => getProp(a, 'Personne') === acheteur) || {}).Trigramme || 'ZZZ';
+
+        const afpaNum = createNewAfpaNumber(abrege, objetCourt, trigramme);
+        const shortNumMatch = afpaNum.match(/^\d{5}/);
+        const shortNum = shortNumMatch ? shortNumMatch[0] : null;
+
+        // Mettre à jour les données en cours d'enregistrement
+        data = {
+          ...(data as any),
+          "Numéro de procédure (Afpa)": afpaNum,
+          "numero court procédure afpa": shortNum,
+          "Objet court": objetCourt
+        } as any;
+
+        // Mettre aussi à jour l'état local pour refléter le numéro généré
+        setEditingProcedure(prev => prev ? {
+          ...prev,
+          "Numéro de procédure (Afpa)": afpaNum,
+          "numero court procédure afpa": shortNum,
+          "Objet court": objetCourt
+        } : prev);
+      }
+
       // Validation conditionnelle: si Nombre de lots === 1, 'Motivation non allotissement' est obligatoire
       if (type === 'procedure' && data) {
         const lotsRaw = String((data as any)["Nombre de lots"] || '').trim();

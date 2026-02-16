@@ -3,20 +3,34 @@ import { X, Search } from 'lucide-react';
 import { Filters } from './types';
 import { AchatRow } from './types';
 
+export interface DistinctColumns {
+  Trimestre: string[];
+  "Famille d'achats": string[];
+  Fournisseur: string[];
+  "Description du CRT": string[];
+  "Signification du statut du document": string[];
+  "Catégorie d'achats": string[];
+}
+
 interface FiltersBarProps {
   filters: Filters;
   onFilterChange: (key: keyof Filters, value: string) => void;
   onReset: () => void;
-  data: AchatRow[];
+  data?: AchatRow[];
+  distinctColumns?: DistinctColumns;
 }
 
 export const FiltersBar: React.FC<FiltersBarProps> = ({
   filters,
   onFilterChange,
   onReset,
-  data
+  data = [],
+  distinctColumns
 }) => {
-  const uniqueValues = (key: keyof AchatRow): string[] => {
+  const uniqueValues = (key: 'Trimestre' | "Famille d'achats" | 'Fournisseur' | 'Description du CRT' | 'Signification du statut du document' | "Catégorie d'achats"): string[] => {
+    if (distinctColumns) {
+      return distinctColumns[key] ?? [];
+    }
     const set = new Set(
       data.map(row => row[key]).filter(v => v != null && v !== '').map(v => String(v))
     );

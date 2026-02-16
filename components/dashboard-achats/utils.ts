@@ -67,6 +67,15 @@ export function formatCurrencyShort(value: number): string {
 }
 
 /**
+ * Formate un montant en millions d'euros avec 3 décimales.
+ * Exemple : 195258325 -> 195.258 M€
+ */
+export function formatMillions(value: number): string {
+  const millions = value / 1_000_000;
+  return `${millions.toFixed(3)} M€`;
+}
+
+/**
  * Calcule un pourcentage
  */
 export function percentage(a: number, b: number): string {

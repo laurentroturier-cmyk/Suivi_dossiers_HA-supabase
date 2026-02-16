@@ -11,13 +11,18 @@ interface UploadZoneProps {
   onFilesAdd: (files: FileList) => void;
   onFileRemove: (id: string) => void;
   onAnalyze: () => void;
+  loading?: boolean;
+  /** Message affiché quand il n'y a pas encore de données (premier chargement). */
+  emptyMessage?: string;
 }
 
 export const UploadZone: React.FC<UploadZoneProps> = ({
   files,
   onFilesAdd,
   onFileRemove,
-  onAnalyze
+  onAnalyze,
+  loading = false,
+  emptyMessage
 }) => {
   const [dragOver, setDragOver] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -35,14 +40,14 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-8 py-12 bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#0d0f12] dark:via-[#121212] dark:to-[#0d0f12]">
+    <div className="min-h-screen flex flex-col items-center justify-center px-8 py-12 bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#0f172a] dark:via-[#0f172a] dark:to-[#0f172a]">
       <div className="max-w-2xl w-full">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black mb-3 bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400 bg-clip-text text-transparent">
             📊 Commandes Fina par Trimestre
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400">
-            Chargez vos fichiers Excel ou CSV pour générer un tableau de bord commandes
+            {emptyMessage ?? 'Chargez vos fichiers Excel ou CSV pour générer un tableau de bord commandes'}
           </p>
         </div>
 
@@ -51,10 +56,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-14 text-center cursor-pointer transition-all duration-300 bg-white dark:bg-[#1E1E1E] ${
+          className={`border-2 border-dashed rounded-2xl p-14 text-center cursor-pointer transition-all duration-300 bg-white dark:bg-slate-800 dark:border-slate-600 ${
             dragOver
-              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-500/10 shadow-lg'
-              : 'border-gray-300 dark:border-[#444444] hover:border-cyan-400 hover:shadow-md'
+              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-500/10 dark:border-cyan-500 shadow-lg'
+              : 'border-gray-300 dark:border-slate-600 hover:border-cyan-400 dark:hover:border-slate-500 hover:shadow-md'
           }`}
         >
           <div className="mb-4 flex justify-center">
@@ -112,9 +117,17 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         {files.length > 0 && (
           <button
             onClick={onAnalyze}
-            className="mt-6 w-full py-3.5 px-12 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+            disabled={loading}
+            className="mt-6 w-full py-3.5 px-12 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Analyser les données
+            {loading ? (
+              <>
+                <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Chargement…
+              </>
+            ) : (
+              'Charger les données'
+            )}
           </button>
         )}
       </div>

@@ -370,20 +370,20 @@ export default function DataImport() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-slate-600">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Database className="w-6 h-6 text-blue-600" />
+          <div className="p-2 bg-blue-100 dark:bg-slate-700 rounded-lg">
+            <Database className="w-6 h-6 text-blue-600 dark:text-slate-300" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Import de données</h2>
-            <p className="text-sm text-gray-600">Chargez vos données depuis Excel ou CSV</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Import de données</h2>
+            <p className="text-sm text-gray-600 dark:text-slate-400">Chargez vos données depuis Excel ou CSV</p>
           </div>
         </div>
 
         {/* Sélection de la table */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
             Table de destination
           </label>
           <div className="flex gap-4">
@@ -397,7 +397,7 @@ export default function DataImport() {
               rounded="lg"
               icon={<Table className="w-5 h-5" />}
               fullWidth
-              className={selectedTable === 'projets' ? '' : 'border-gray-200 hover:border-gray-300'}
+              className={selectedTable === 'projets' ? 'dark:bg-indigo-600 dark:border-indigo-500 dark:hover:bg-indigo-500' : 'border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white hover:border-gray-300 dark:hover:bg-slate-600 dark:hover:border-slate-500'}
             >
               <span className="font-medium">Projets</span>
             </Button>
@@ -411,7 +411,7 @@ export default function DataImport() {
               rounded="lg"
               icon={<FileSpreadsheet className="w-5 h-5" />}
               fullWidth
-              className={selectedTable === 'procédures' ? '' : 'border-gray-200 hover:border-gray-300'}
+              className={selectedTable === 'procédures' ? 'dark:bg-indigo-600 dark:border-indigo-500 dark:hover:bg-indigo-500' : 'border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white hover:border-gray-300 dark:hover:bg-slate-600 dark:hover:border-slate-500'}
             >
               <span className="font-medium">Procédures</span>
             </Button>
@@ -420,17 +420,17 @@ export default function DataImport() {
 
         {/* Upload de fichier */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
             Fichier Excel ou CSV
           </label>
           <div className="flex items-center gap-4">
-            <label className="flex-1 flex items-center justify-center px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all">
+            <label className="flex-1 flex items-center justify-center px-4 py-8 border-2 border-dashed border-gray-300 dark:border-slate-600 dark:bg-slate-700/50 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:border-slate-500 dark:hover:bg-slate-700 transition-all">
               <div className="text-center">
-                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <span className="text-sm text-gray-600">
+                <Upload className="w-8 h-8 text-gray-400 dark:text-slate-400 mx-auto mb-2" />
+                <span className="text-sm text-gray-600 dark:text-slate-300">
                   Cliquez pour sélectionner un fichier
                 </span>
-                <span className="text-xs text-gray-400 block mt-1">
+                <span className="text-xs text-gray-400 dark:text-slate-500 block mt-1">
                   Excel (.xlsx) ou CSV
                 </span>
               </div>
@@ -448,9 +448,9 @@ export default function DataImport() {
         {/* Message */}
         {message && (
           <div className={`mb-6 p-4 rounded-lg flex items-start gap-3 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' :
-            message.type === 'error' ? 'bg-red-50 text-red-800' :
-            'bg-blue-50 text-blue-800'
+            message.type === 'success' ? 'bg-green-50 dark:bg-green-950/40 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800' :
+            message.type === 'error' ? 'bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800' :
+            'bg-blue-50 dark:bg-slate-700 text-blue-800 dark:text-slate-200 border border-blue-200 dark:border-slate-600'
           }`}>
             {message.type === 'success' ? (
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -466,30 +466,30 @@ export default function DataImport() {
         {/* Mapping des colonnes */}
         {importedData && columnMappings.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Mapping des colonnes
             </h3>
-            <div className="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto">
+            <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 max-h-64 overflow-y-auto border border-gray-100 dark:border-slate-600">
               <div className="grid grid-cols-2 gap-3">
                 {columnMappings.map((mapping, index) => (
                   <div key={index} className="flex items-center gap-2 text-sm">
                     <div className={`flex-1 px-3 py-2 rounded ${
-                      mapping.mapped ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      mapping.mapped ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200' : 'bg-yellow-100 dark:bg-amber-900/40 text-yellow-800 dark:text-amber-200'
                     }`}>
                       <span className="font-medium">{mapping.excelColumn}</span>
                     </div>
-                    <span className="text-gray-400">→</span>
-                    <div className="flex-1 px-3 py-2 bg-white rounded border border-gray-200">
-                      <span className="text-gray-700">{mapping.supabaseColumn}</span>
+                    <span className="text-gray-400 dark:text-slate-500">→</span>
+                    <div className="flex-1 px-3 py-2 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600">
+                      <span className="text-gray-700 dark:text-slate-300">{mapping.supabaseColumn}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              <span className="inline-block w-3 h-3 bg-green-100 rounded mr-1"></span>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
+              <span className="inline-block w-3 h-3 bg-green-100 dark:bg-green-700 rounded mr-1"></span>
               Mapping automatique détecté
-              <span className="inline-block w-3 h-3 bg-yellow-100 rounded mr-1 ml-3"></span>
+              <span className="inline-block w-3 h-3 bg-yellow-100 dark:bg-amber-700 rounded mr-1 ml-3"></span>
               Colonne déduite automatiquement
             </p>
           </div>
@@ -498,41 +498,41 @@ export default function DataImport() {
         {/* Aperçu des données */}
         {previewData.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Aperçu des données ({previewData.length} premières lignes)
             </h3>
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="overflow-x-auto border border-gray-200 dark:border-slate-600 rounded-lg">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-600">
+                <thead className="bg-gray-50 dark:bg-slate-700">
                   <tr>
                     {importedData?.headers.slice(0, 8).map((header, index) => (
                       <th
                         key={index}
-                        className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider"
                       >
                         {header}
                       </th>
                     ))}
                     {importedData && importedData.headers.length > 8 && (
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
                         ... +{importedData.headers.length - 8} colonnes
                       </th>
                     )}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-600">
                   {previewData.map((row, rowIndex) => (
-                    <tr key={rowIndex} className="hover:bg-gray-50">
+                    <tr key={rowIndex} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
                       {importedData?.headers.slice(0, 8).map((header, colIndex) => (
                         <td
                           key={colIndex}
-                          className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap"
+                          className="px-3 py-2 text-sm text-gray-900 dark:text-slate-300 whitespace-nowrap"
                         >
                           {row[header] || '-'}
                         </td>
                       ))}
                       {importedData && importedData.headers.length > 8 && (
-                        <td className="px-3 py-2 text-sm text-gray-400">...</td>
+                        <td className="px-3 py-2 text-sm text-gray-400 dark:text-slate-500">...</td>
                       )}
                     </tr>
                   ))}
@@ -569,17 +569,17 @@ export default function DataImport() {
       </div>
 
       {/* Informations */}
-      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+      <div className="bg-blue-50 dark:bg-slate-800 rounded-lg p-4 border border-blue-200 dark:border-slate-600">
         <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-800">
-            <p className="font-medium mb-2">Informations importantes :</p>
-            <ul className="list-disc list-inside space-y-1 text-xs">
+          <AlertCircle className="w-5 h-5 text-blue-600 dark:text-slate-400 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-800 dark:text-slate-300">
+            <p className="font-medium mb-2 dark:text-white">Informations importantes :</p>
+            <ul className="list-disc list-inside space-y-1 text-xs dark:text-slate-400">
               <li>Les colonnes sont mappées automatiquement selon leurs en-têtes</li>
               <li>Seules les lignes non vides sont importées</li>
               <li>Les doublons éventuels seront gérés par les contraintes de la base</li>
               <li>Vérifiez l'aperçu avant de lancer l'import</li>
-              <li>Table sélectionnée : <strong>{selectedTable}</strong></li>
+              <li>Table sélectionnée : <strong className="dark:text-white">{selectedTable}</strong></li>
             </ul>
           </div>
         </div>
