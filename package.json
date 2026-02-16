@@ -1,7 +1,7 @@
 {
   "name": "gestionnaire-de-marchés-publics",
   "private": true,
-  "version": "1.0.55",
+  "version": "1.0.56",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,6 +17,7 @@
     "@duckdb/duckdb-wasm": "^1.30.0",
     "dexie": "^4.0.10",
     "@react-pdf/renderer": "^4.3.2",
+    "apache-arrow": "^21.1.0",
     "@supabase/supabase-js": "2.48.1",
     "@tiptap/extension-color": "^3.19.0",
     "@tiptap/extension-font-family": "^3.19.0",
