@@ -3,6 +3,8 @@ import { X, FileSignature, FileCheck, FileText, Loader2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { Noti1Modal, Noti3Modal, Noti5Modal } from '../../analyse';
 import MultiLotsDashboard from './MultiLotsDashboard';
+import NotiParLots from './NotiParLots';
+import NotiModeSelector from './NotiModeSelector';
 import { analyzeMultiLots, isMultiLots } from '../utils/multiLotsAnalyzer';
 import type { Noti1Data } from '../types/noti1';
 import type { Noti5Data } from '../types/noti5';
@@ -140,6 +142,8 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
   const [cachedData, setCachedData] = useState<any>(preloadedData || null); // Initialiser avec preloadedData
   const [multiLotsAnalysis, setMultiLotsAnalysis] = useState<MultiLotsAnalysis | null>(null);
   const [showMultiLotsDashboard, setShowMultiLotsDashboard] = useState(false);
+  const [showNotiParLots, setShowNotiParLots] = useState(false);
+  const [showModeSelector, setShowModeSelector] = useState(false);
   
   // États des modals
   const [showNoti1Modal, setShowNoti1Modal] = useState(false);
@@ -234,7 +238,8 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
           const analysis = analyzeMultiLots(preloadedData.rapportData, candidats);
           setMultiLotsAnalysis(analysis);
           if (analysis && analysis.totalLots > 1) {
-            setShowMultiLotsDashboard(true);
+            // Afficher le sélecteur de mode au lieu d'aller directement au dashboard
+            setShowModeSelector(true);
           }
         } catch (error) {
           console.error('Erreur chargement candidats:', error);
@@ -248,6 +253,8 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
       setCachedData(null);
       setMultiLotsAnalysis(null);
       setShowMultiLotsDashboard(false);
+      setShowNotiParLots(false);
+      setShowModeSelector(false);
       setNoti1Data(null);
       setNoti5Data(null);
       setNoti3Data([]);
@@ -372,11 +379,14 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
         console.log('🎯 Procédure multi-lots détectée');
         const analysis = analyzeMultiLots(rapportData, candidats);
         setMultiLotsAnalysis(analysis);
-        setShowMultiLotsDashboard(true);
+        // Afficher le sélecteur de mode au lieu d'aller directement au dashboard
+        setShowModeSelector(true);
       } else {
         console.log('📌 Procédure mono-lot');
         setMultiLotsAnalysis(null);
         setShowMultiLotsDashboard(false);
+        setShowNotiParLots(false);
+        setShowModeSelector(false);
       }
 
       setDataLoaded(true);
@@ -666,16 +676,35 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
     setSelectedProcedure('');
     setSearchTerm('');
     setShowMultiLotsDashboard(false);
+    setShowNotiParLots(false);
+    setShowModeSelector(false);
     setMultiLotsAnalysis(null);
     setNoti1Data(null);
     setNoti5Data(null);
     setNoti3Data([]);
   };
 
+  const handleModeSelection = (mode: 'par-candidat' | 'par-lots') => {
+    setShowModeSelector(false);
+    if (mode === 'par-candidat') {
+      setShowMultiLotsDashboard(true);
+      setShowNotiParLots(false);
+    } else {
+      setShowNotiParLots(true);
+      setShowMultiLotsDashboard(false);
+    }
+  };
+
+  const backToModeSelection = () => {
+    setShowMultiLotsDashboard(false);
+    setShowNotiParLots(false);
+    setShowModeSelector(true);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       {/* Conteneur principal : format paysage sur desktop, plein écran léger */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl px-6 py-4 w-full mx-4 max-w-6xl h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl px-6 py-4 w-full mx-2 max-w-[98vw] h-[90vh] flex flex-col">
         {/* Barre de titre globale */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -760,6 +789,10 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
               )}
             </button>
           </div>
+        ) : showModeSelector && multiLotsAnalysis && cachedData ? (
+          <div className="flex-1 overflow-y-auto p-6">
+            <NotiModeSelector onSelectMode={handleModeSelection} />
+          </div>
         ) : showMultiLotsDashboard && multiLotsAnalysis && cachedData ? (
           <div className="flex-1 min-h-0">
             <MultiLotsDashboard
@@ -772,6 +805,20 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
               procedureData={cachedData.procedure}
               rapportData={cachedData.rapportData}
               onClose={resetToProcedureSelection}
+            />
+          </div>
+        ) : showNotiParLots && multiLotsAnalysis && cachedData ? (
+          <div className="flex-1 min-h-0">
+            <NotiParLots
+              analysis={multiLotsAnalysis}
+              procedureInfo={{
+                numeroAfpa: cachedData.procedure['Numéro de procédure (Afpa)'] || '',
+                numProc: cachedData.procedure.NumProc || '',
+                objet: cachedData.procedure['Nom de la procédure'] || '',
+                numeroCourt: cachedData.numeroCourt || cachedData.procedure.NumProc?.substring(0, 5) || '',
+              }}
+              onClose={resetToProcedureSelection}
+              onBackToModeSelection={backToModeSelection}
             />
           </div>
         ) : cachedData ? (

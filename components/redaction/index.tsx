@@ -12,6 +12,8 @@ export { default as NOTI5Section } from './components/NOTI5Section';
 export { default as NotificationsQuickAccess } from './components/NotificationsQuickAccess';
 export { default as NotiMultiAttributaires } from './components/NotiMultiAttributaires';
 export { default as MultiLotsDashboard } from './components/MultiLotsDashboard';
+export { default as NotiParLots } from './components/NotiParLots';
+export { default as NotiModeSelector } from './components/NotiModeSelector';
 
 // Composants modaux
 export { default as Noti1MultiModal } from './components/Noti1MultiModal';

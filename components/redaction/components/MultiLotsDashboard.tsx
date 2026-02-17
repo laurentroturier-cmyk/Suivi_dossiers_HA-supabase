@@ -10,18 +10,18 @@ import { saveAs } from 'file-saver';
 import {
   generateNoti1Html,
   generateNoti1HtmlAsBlob,
-  generateNoti1PdfAsBlob,
 } from '../utils/noti1HtmlGenerator';
+import { generateNoti1PdfBlobReact } from '../utils/noti1PdfReactExport';
 import {
   generateNoti5Html,
   generateNoti5HtmlAsBlob,
-  generateNoti5PdfAsBlob,
 } from '../utils/noti5HtmlGenerator';
+import { generateNoti5PdfBlobReact } from '../utils/noti5PdfReactExport';
 import {
   generateNoti3Html,
   generateNoti3HtmlAsBlob,
-  generateNoti3PdfAsBlob,
 } from '../utils/noti3HtmlGenerator';
+import { generateNoti3PdfBlobReact } from '../utils/noti3PdfReactExport';
 import { loadNoti1 } from '../utils/noti1Storage';
 import { loadNoti5 } from '../utils/noti5Storage';
 import { loadNoti3 } from '../utils/noti3Storage';
@@ -133,7 +133,7 @@ export default function MultiLotsDashboard({
 
       for (const candidat of candidatsAvecLots) {
         const noti1Data = buildNoti1Data(candidat);
-        const blob = await generateNoti1PdfAsBlob(noti1Data);
+        const blob = await generateNoti1PdfBlobReact(noti1Data);
         const fileName = `NOTI1_${sanitizeFileName(candidat.nom)}.pdf`;
         zip.file(fileName, blob);
       }
@@ -183,7 +183,7 @@ export default function MultiLotsDashboard({
 
       for (const candidat of candidatsAvecLots) {
         const noti5Data = buildNoti5Data(candidat);
-        const blob = await generateNoti5PdfAsBlob(noti5Data);
+        const blob = await generateNoti5PdfBlobReact(noti5Data);
         const fileName = `NOTI5_${sanitizeFileName(candidat.nom)}.pdf`;
         zip.file(fileName, blob);
       }
@@ -239,7 +239,7 @@ export default function MultiLotsDashboard({
         // 1 document par lot perdu
         for (const lotPerdu of candidat.lotsPerdus) {
           const noti3Data = buildNoti3DataForLot(candidat, lotPerdu);
-          const blob = await generateNoti3PdfAsBlob(noti3Data);
+          const blob = await generateNoti3PdfBlobReact(noti3Data);
           const fileName = `NOTI3_Lot${lotPerdu.numero}_${sanitizeFileName(candidat.nom)}.pdf`;
           zip.file(fileName, blob);
         }

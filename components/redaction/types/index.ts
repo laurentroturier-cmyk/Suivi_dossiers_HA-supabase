@@ -17,5 +17,8 @@ export * from './rapportCommission';
 // Types Multi-lots
 export * from './multiLots';
 
+// Types NOTI Par Lots
+export * from './notiParLots';
+
 // Types Questionnaire Technique
 export * from './questionnaire';

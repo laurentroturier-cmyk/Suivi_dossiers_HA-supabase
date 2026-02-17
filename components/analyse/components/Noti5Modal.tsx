@@ -22,8 +22,8 @@ const Noti5Modal: React.FC<Noti5ModalProps> = ({ isOpen, onClose, initialData, p
       <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
       
       {/* Modal */}
-      <div className="relative min-h-screen flex items-start justify-center p-4">
-        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-7xl w-full my-8">
+      <div className="relative min-h-screen flex items-start justify-center px-2">
+        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-[98vw] my-4">
           {/* Header */}
           <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10 rounded-t-lg">
             <div>
