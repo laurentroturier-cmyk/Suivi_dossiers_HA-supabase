@@ -32,6 +32,8 @@ export const DOSSIER_FIELDS = [
   { id: 'Priorite', label: 'Priorité' },
   { id: 'Programme', label: 'Programme' },
   { id: 'Operation', label: 'Opération' },
+  // Nouveau : levier d'achat (liste alimentée par LeviersHA)
+  { id: 'Levier_Achat', label: 'Levier d\'achat' },
   { id: 'CodesCPVDAE', label: 'Codes CPV DAE' },
   { id: 'Prescripteur', label: 'Prescripteur' },
   { id: 'Statut_du_Dossier', label: 'Statut Dossier' },

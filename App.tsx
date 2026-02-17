@@ -405,6 +405,7 @@ const App: React.FC = () => {
   const [refClientsInternes, setRefClientsInternes] = useState<string[]>([]);
   const [refCpv, setRefCpv] = useState<string[]>([]);
   const [refSegSousfamilles, setRefSegSousfamilles] = useState<string[]>([]);
+  const [refLeviersHA, setRefLeviersHA] = useState<string[]>([]);
   
   const [selectedAcheteurs, setSelectedAcheteurs] = useState<string[]>([]);
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([]);
@@ -786,14 +787,24 @@ const App: React.FC = () => {
   const fetchData = async (client: SupabaseClient) => {
     setIsLoading(true);
     try {
-      const [{ data: d }, { data: p }, { data: ra }, { data: rp }, { data: ci }, { data: cpvData }, { data: seg }] = await Promise.all([
+      const [
+        { data: d },
+        { data: p },
+        { data: ra },
+        { data: rp },
+        { data: ci },
+        { data: cpvData },
+        { data: seg },
+        { data: leviers },
+      ] = await Promise.all([
         client.from('projets').select('*'),
         client.from('procédures').select('*'),
         client.from('Referentiel_acheteurs').select('*'),
         client.from('Referentiel_liste_procédures').select('*'),
         client.from('Clients_internes').select('dna_title'),
         client.from('codes_cpv_long').select('TitreLong').limit(5000),
-        client.from('Referentiel_segmentation').select('dna_sousfamille').limit(5000)
+        client.from('Referentiel_segmentation').select('dna_sousfamille').limit(5000),
+        client.from('LeviersHA').select('*'),
       ]);
       setDossiers(d || []);
       setProcedures(p || []);
@@ -802,6 +813,26 @@ const App: React.FC = () => {
       setRefClientsInternes(Array.from(new Set((ci || []).map((x: any) => x.dna_title).filter(Boolean))).sort());
       setRefCpv((cpvData || []).map(x => x.TitreLong).filter(Boolean));
       setRefSegSousfamilles(Array.from(new Set((seg || []).map((x: any) => x.dna_sousfamille).filter(Boolean))).sort());
+      // Construire la liste des leviers à partir de la table LeviersHA (on tente plusieurs noms de colonnes possibles)
+      const leviersList = Array.from(
+        new Set(
+          (leviers || [])
+            // On couvre les différents schémas possibles, y compris dna_title (cas actuel)
+            .map((x: any) =>
+              x.Levier_Achat ??
+              x.levier_achat ??
+              x.Levier ??
+              x.levier ??
+              x.dna_title ??   // ← colonne réelle de LeviersHA
+              x.libelle ??
+              x.nom ??
+              x.label
+            )
+            .filter(Boolean)
+            .map((s: any) => String(s))
+        )
+      ).sort();
+      setRefLeviersHA(leviersList);
     } catch (e) { console.error(e); } finally { setIsLoading(false); }
   };
 
@@ -1839,6 +1870,26 @@ const App: React.FC = () => {
           };
           if (key === "CodesCPVDAE" || key === "Code CPV Principal") return <SearchableSelect key={key} label={label} options={refCpv} value={val} placeholder="CPV..." onChange={v => handleFieldChange(type, key, v)} onRemoteSearch={remoteSearchCpv} />;
           if (key === "Type de procédure" && type === 'procedure') return <SearchableSelect key={key} label={label} options={uniqueTypeProcs} value={val} placeholder="Type..." onChange={v => handleFieldChange(type, key, v)} />;
+
+          // Levier d'achat : liste déroulante alimentée par la table LeviersHA
+          if (key === "Levier_Achat" && type === 'project') {
+            const options = refLeviersHA;
+            return (
+              <div key={key} className="flex flex-col gap-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Levier d'achat</label>
+                <select
+                  value={val}
+                  onChange={e => handleFieldChange(type, key, e.target.value)}
+                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-semibold outline-none appearance-none cursor-pointer"
+                >
+                  <option value="">Sélectionner...</option>
+                  {options.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            );
+          }
 
           if (key === "Statut de la consultation" && type === 'procedure') {
             // Calculer le statut automatiquement
