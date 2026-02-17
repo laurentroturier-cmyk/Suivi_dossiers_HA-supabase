@@ -704,7 +704,7 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       {/* Conteneur principal : format paysage sur desktop, plein écran léger */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl px-6 py-4 w-full mx-2 max-w-[98vw] h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl px-6 py-4 w-full mx-2 max-w-[98vw] h-[90vh] flex flex-col">
         {/* Barre de titre globale */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -712,7 +712,7 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
               <button
                 type="button"
                 onClick={resetToProcedureSelection}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-[#252525] text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#2a2a2a] transition-colors"
               >
                 <span className="text-lg leading-none">←</span>
                 <span>Choisir une autre procédure</span>
@@ -724,7 +724,7 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700/50 rounded-lg transition-colors"
             aria-label="Fermer"
           >
             <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
@@ -732,13 +732,13 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
         </div>
 
         {!dataLoaded ? (
-          <div className="space-y-4 flex-1 overflow-y-auto">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="space-y-4 flex-1 overflow-y-auto p-6">
+            <p className="text-sm text-gray-600 dark:text-slate-300">
               Sélectionnez une procédure pour charger les données nécessaires aux notifications
             </p>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Rechercher
               </label>
               <input
@@ -746,23 +746,23 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Tapez un numéro (ex: 25001) ou un nom..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               {searchTerm && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                   {filteredProcedures.length} procédure{filteredProcedures.length > 1 ? 's' : ''} trouvée{filteredProcedures.length > 1 ? 's' : ''}
                 </p>
               )}
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Procédure
               </label>
               <select
                 value={selectedProcedure}
                 onChange={(e) => setSelectedProcedure(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                 size={Math.min(filteredProcedures.length + 1, 8)}
               >
                 <option value="">-- Sélectionner une procédure --</option>
@@ -822,7 +822,7 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
             />
           </div>
         ) : cachedData ? (
-          <div className="space-y-4 flex-1 overflow-y-auto">
+          <div className="space-y-4 flex-1 overflow-y-auto p-6">
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
               <p className="text-sm font-medium text-green-800 dark:text-green-200">
                 ✓ Données chargées pour : {cachedData.procedure['Nom de la procédure']}

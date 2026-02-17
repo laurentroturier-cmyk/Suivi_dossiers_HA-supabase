@@ -629,12 +629,12 @@ export default function NotiParLots({
   if (!currentLot) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-2">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-[98vw] p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-[98vw] p-6">
           <div className="text-center">
-            <p className="text-gray-700 dark:text-gray-300">Aucun lot trouvé dans l'analyse.</p>
+            <p className="text-gray-700 dark:text-slate-300">Aucun lot trouvé dans l'analyse.</p>
             <button
               onClick={onClose}
-              className="mt-4 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg"
+              className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a] text-gray-800 dark:text-white rounded-lg"
             >
               Fermer
             </button>
@@ -647,7 +647,7 @@ export default function NotiParLots({
   return (
     <>
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-2 overflow-y-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-[98vw] max-h-[90vh] overflow-y-auto my-4">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-[98vw] max-h-[90vh] overflow-y-auto my-4">
           {/* En-tête */}
           <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-teal-700 text-white p-6 rounded-t-xl z-10">
             <div className="flex items-center justify-between">
@@ -671,25 +671,25 @@ export default function NotiParLots({
           </div>
 
           {/* Navigation et sélection du lot */}
-          <div className="p-6 border-b dark:border-gray-700">
+          <div className="p-6 border-b border-slate-300/70 dark:border-slate-600">
             <div className="flex items-center justify-between gap-4">
               <button
                 onClick={goToPreviousLot}
                 disabled={isFirstLot}
-                className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed dark:bg-gray-700 dark:hover:bg-gray-600"
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed dark:bg-[#252525] dark:hover:bg-[#2a2a2a] text-gray-900 dark:text-white"
                 title="Lot précédent"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Sélectionner un lot
                 </label>
                 <select
                   value={currentLotIndex}
                   onChange={(e) => setCurrentLotIndex(parseInt(e.target.value, 10))}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500"
+                  className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500"
                 >
                   {lotsStatus.map((lot, index) => (
                     <option key={lot.numeroLot} value={index}>
@@ -697,7 +697,7 @@ export default function NotiParLots({
                     </option>
                   ))}
                 </select>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">
                   Lot {currentLotIndex + 1} sur {lotsStatus.length}
                 </p>
               </div>
@@ -705,7 +705,7 @@ export default function NotiParLots({
               <button
                 onClick={goToNextLot}
                 disabled={isLastLot}
-                className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed dark:bg-gray-700 dark:hover:bg-gray-600"
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed dark:bg-[#252525] dark:hover:bg-[#2a2a2a] text-gray-900 dark:text-white"
                 title="Lot suivant"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -723,24 +723,24 @@ export default function NotiParLots({
 
           {/* Informations du lot courant */}
           <div className="p-6 space-y-6">
-            <div className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-teal-900 dark:text-teal-100 mb-2">
+            <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-2xl border border-gray-200 dark:border-slate-600">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Lot {currentLot.numeroLot}
               </h3>
-              <p className="text-teal-800 dark:text-teal-200 mb-4">{currentLot.intituleLot}</p>
+              <p className="text-gray-600 dark:text-slate-300 mb-4">{currentLot.intituleLot}</p>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-teal-900 dark:text-teal-100 mb-1">Attributaires :</p>
-                  <ul className="text-sm text-teal-800 dark:text-teal-200 list-disc list-inside">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">Attributaires :</p>
+                  <ul className="text-sm text-gray-700 dark:text-slate-300 list-disc list-inside">
                     {currentLot.candidatsAttributaires.map((nom) => (
                       <li key={nom}>{nom}</li>
                     ))}
                   </ul>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-teal-900 dark:text-teal-100 mb-1">Perdants :</p>
-                  <ul className="text-sm text-teal-800 dark:text-teal-200 list-disc list-inside">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">Perdants :</p>
+                  <ul className="text-sm text-gray-700 dark:text-slate-300 list-disc list-inside">
                     {currentLot.candidatsPerdants.map((nom) => (
                       <li key={nom}>{nom}</li>
                     ))}
@@ -757,12 +757,12 @@ export default function NotiParLots({
 
               {/* NOTI1 */}
               {currentLot.candidatsAttributaires.length > 0 && (
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl">
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5 text-blue-600" />
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">NOTI1 - Notification d'attribution</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-gray-600 dark:text-slate-300">
                         {currentLot.candidatsAttributaires.length} candidat(s)
                       </p>
                     </div>
@@ -796,12 +796,12 @@ export default function NotiParLots({
 
               {/* NOTI3 */}
               {currentLot.candidatsPerdants.length > 0 && (
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl">
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5 text-red-600" />
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">NOTI3 - Notification de rejet</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-gray-600 dark:text-slate-300">
                         {currentLot.candidatsPerdants.length} candidat(s)
                       </p>
                     </div>
@@ -835,12 +835,12 @@ export default function NotiParLots({
 
               {/* NOTI5 */}
               {currentLot.candidatsAttributaires.length > 0 && (
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl">
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5 text-green-600" />
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">NOTI5 - Notification du marché public</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-gray-600 dark:text-slate-300">
                         {currentLot.candidatsAttributaires.length} candidat(s)
                       </p>
                     </div>
@@ -874,7 +874,7 @@ export default function NotiParLots({
             </div>
 
             {/* Export ZIP */}
-            <div className="border-t dark:border-gray-700 pt-6 space-y-3">
+            <div className="border-t border-slate-300/70 dark:border-slate-600 pt-6 space-y-3">
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Download className="w-5 h-5" />
                 Exporter les NOTI en PDF
