@@ -30,6 +30,7 @@ export { exportNoti1Html, generateNoti1HtmlAsBlob } from './utils/noti1HtmlGener
 export { saveNoti5, loadNoti5 } from './utils/noti5Storage';
 export { exportNoti5Html, generateNoti5HtmlAsBlob } from './utils/noti5HtmlGenerator';
 export { exportNoti3Html, generateNoti3HtmlAsBlob } from './utils/noti3HtmlGenerator';
+export { exportAllNoti3ToZip, getZipExportInfo } from './utils/noti3ZipExport';
 export { saveReglementConsultation, loadReglementConsultation } from './utils/reglementConsultationStorage';
 export { generateReglementConsultationWord } from './utils/reglementConsultationGenerator';
 export { generateRapportCommissionWord } from './utils/rapportCommissionGenerator';

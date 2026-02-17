@@ -512,7 +512,7 @@ export function DCEComplet({ onClose }: DCECompletProps) {
         ) : (
           <>
             {/* En-tête de procédure */}
-            <div className="p-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
+            <div className="p-3 dce-header-bg dce-header-container dce-fixed-header border-b border-gray-200 flex-shrink-0">
               <div className="flex items-start justify-between gap-6">
                 {/* Colonne gauche : carte procédure */}
                 <div className="flex flex-col gap-3">

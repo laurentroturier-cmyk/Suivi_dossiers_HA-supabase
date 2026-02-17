@@ -43,6 +43,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const root = document.documentElement;
     
+    // Add transitioning class to disable transitions during theme change
+    root.classList.add('theme-transitioning');
+    
     // Remove both classes first
     root.classList.remove('light', 'dark');
     
@@ -55,6 +58,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         root.classList.add(resolvedTheme);
       }
     });
+    
+    // Remove transitioning class after theme is applied
+    const timer = setTimeout(() => {
+      root.classList.remove('theme-transitioning');
+    }, 200);
+    
+    return () => clearTimeout(timer);
   }, [resolvedTheme, mounted]);
 
   // Listen to system theme changes

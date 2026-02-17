@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Package, Loader2 } from 'lucide-react';
 import { Noti3Section, type Noti3Data } from '../../redaction';
+import { exportAllNoti3ToZip } from '../../redaction/utils/noti3ZipExport';
 
 interface Noti3ModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface Noti3ModalProps {
 
 const Noti3Modal: React.FC<Noti3ModalProps> = ({ isOpen, onClose, perdants, procedureInfo }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isExportingZip, setIsExportingZip] = useState(false);
 
   if (!isOpen || perdants.length === 0) return null;
 
@@ -24,6 +26,19 @@ const Noti3Modal: React.FC<Noti3ModalProps> = ({ isOpen, onClose, perdants, proc
 
   const handleNext = () => {
     setCurrentIndex(prev => Math.min(perdants.length - 1, prev + 1));
+  };
+
+  const handleExportZip = async () => {
+    setIsExportingZip(true);
+    try {
+      await exportAllNoti3ToZip(perdants, procedureInfo.numeroAfpa);
+      // Notification de succès optionnelle ici
+    } catch (error) {
+      console.error('Erreur lors de l\'export ZIP:', error);
+      alert('Erreur lors de l\'export ZIP des NOTI3. Voir la console pour plus de détails.');
+    } finally {
+      setIsExportingZip(false);
+    }
   };
 
   return (
@@ -71,6 +86,28 @@ const Noti3Modal: React.FC<Noti3ModalProps> = ({ isOpen, onClose, perdants, proc
                     <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                   </button>
                 </div>
+              )}
+              
+              {/* Bouton Export ZIP - Visible si plusieurs perdants */}
+              {perdants.length > 1 && (
+                <button
+                  onClick={handleExportZip}
+                  disabled={isExportingZip}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white text-sm font-semibold rounded-lg transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed mr-3"
+                  title={`Exporter tous les ${perdants.length} NOTI3 en ZIP (un PDF par candidat)`}
+                >
+                  {isExportingZip ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Export en cours...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Package className="w-4 h-4" />
+                      <span>Exporter ZIP ({perdants.length} PDFs)</span>
+                    </>
+                  )}
+                </button>
               )}
               
               <button

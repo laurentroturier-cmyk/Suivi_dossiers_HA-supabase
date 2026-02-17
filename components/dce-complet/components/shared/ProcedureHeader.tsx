@@ -3,7 +3,7 @@
 // Affiche les informations clés de la procédure
 // ============================================
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FileText, Calendar, Euro, Building2, MapPin, Eye } from 'lucide-react';
 import type { ProjectData } from '../../../types';
 import { ProcedureDetailsModal } from './ProcedureDetailsModal';
@@ -13,22 +13,31 @@ interface ProcedureHeaderProps {
   className?: string;
 }
 
-export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderProps) {
+export const ProcedureHeader = React.memo(function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderProps) {
   const [showModal, setShowModal] = useState(false);
 
-  if (!procedure) return null;
+  // Mémoïsation des données calculées pour éviter les re-renders
+  const procedureData = useMemo(() => {
+    if (!procedure) return null;
 
-  const numeroProcedure = String(procedure['Numéro de procédure (Afpa)'] || procedure['NumProc'] || '');
-  const titre = String(procedure['Nom de la procédure'] || 'Sans titre');
-  const montantRaw = String(procedure['Montant de la procédure'] || '').replace(/[^0-9.,-]/g, '').replace(',', '.');
-  const montant = montantRaw ? Number(montantRaw) : 0;
-  const acheteur = String(procedure['Acheteur'] || '');
-  const ville = String(procedure['Ville'] || '');
-  const codePostal = String(procedure['Code postal'] || '');
-  const dateLimite = String(procedure['Date limite de transmission des offres'] || procedure['Date limite de candidature'] || '');
+    const numeroProcedure = String(procedure['Numéro de procédure (Afpa)'] || procedure['NumProc'] || '');
+    const titre = String(procedure['Nom de la procédure'] || 'Sans titre');
+    const montantRaw = String(procedure['Montant de la procédure'] || '').replace(/[^0-9.,-]/g, '').replace(',', '.');
+    const montant = montantRaw ? Number(montantRaw) : 0;
+    const acheteur = String(procedure['Acheteur'] || '');
+    const ville = String(procedure['Ville'] || '');
+    const codePostal = String(procedure['Code postal'] || '');
+    const dateLimite = String(procedure['Date limite de transmission des offres'] || procedure['Date limite de candidature'] || '');
+
+    return { numeroProcedure, titre, montant, acheteur, ville, codePostal, dateLimite };
+  }, [procedure]);
+
+  if (!procedureData) return null;
+
+  const { numeroProcedure, titre, montant, acheteur, ville, codePostal, dateLimite } = procedureData;
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg p-3 ${className}`}>
+    <div className={`dce-header-card-bg dce-stable-card border border-gray-200 rounded-lg p-3 ${className}`}>
       {/* Titre principal + bouton Visualiser */}
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-start gap-2 min-w-0 flex-1">
@@ -48,7 +57,7 @@ export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderPr
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex-shrink-0 px-3 py-1.5 bg-gradient-to-b from-teal-600 to-teal-800 hover:from-teal-700 hover:to-teal-900 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-md"
+          className="flex-shrink-0 px-3 py-1.5 bg-gradient-to-b from-teal-600 to-teal-800 hover:from-teal-700 hover:to-teal-900 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 dce-smooth-transition shadow-md"
           title="Visualiser les détails de la procédure"
         >
           <Eye className="w-3.5 h-3.5" />
@@ -59,7 +68,7 @@ export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderPr
       {/* Informations en grille */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mt-2">
         {/* Montant de la procédure */}
-        <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+        <div className="flex items-center gap-2 p-2 dce-info-card-bg rounded-lg dce-smooth-transition">
           <Euro className="w-4 h-4 text-green-600 flex-shrink-0" />
           <div className="min-w-0">
             <p className="text-xs text-gray-500 font-medium">Montant de la procédure</p>
@@ -71,7 +80,7 @@ export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderPr
 
         {/* Acheteur */}
         {acheteur && (
-          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2 p-2 dce-info-card-bg rounded-lg dce-smooth-transition">
             <Building2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-xs text-gray-500 font-medium">Acheteur</p>
@@ -84,7 +93,7 @@ export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderPr
 
         {/* Localisation */}
         {(ville || codePostal) && (
-          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2 p-2 dce-info-card-bg rounded-lg dce-smooth-transition">
             <MapPin className="w-4 h-4 text-red-600 flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-xs text-gray-500 font-medium">Localisation</p>
@@ -97,7 +106,7 @@ export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderPr
 
         {/* Date limite */}
         {dateLimite && (
-          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2 p-2 dce-info-card-bg rounded-lg dce-smooth-transition">
             <Calendar className="w-4 h-4 text-orange-600 flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-xs text-gray-500 font-medium">Date limite</p>
@@ -117,4 +126,5 @@ export function ProcedureHeader({ procedure, className = '' }: ProcedureHeaderPr
       />
     </div>
   );
-}
+});
+

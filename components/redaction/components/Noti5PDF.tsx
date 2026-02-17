@@ -511,74 +511,60 @@ export const Noti5PDF = ({
           <Text style={styles.sectionHeader}>E – Retenue de garantie ou garantie à première demande</Text>
           <View style={styles.sectionContent}>
             <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#14532d', marginBottom: 8 }]}>
-              [La retenue de garantie peut être remplacée, au choix du titulaire, soit par une garantie à première demande, soit par une caution personnelle et solidaire.
-              Celle-ci ne s'applique pas en cas d'allotissement lorsque le montant du marché public est inférieur à 90 000 € HT.
-              Les documents de la consultation précisent si elle a été prévue ou non ainsi que son éventuel taux et ses modalités.]
+              [En cas d'allotissement, cette rubrique est à renseigner pour chacun des lots de la procédure de passation du marché public ou de l'accord-cadre qui est notifié. Préciser pour chaque lot, son numéro et son intitulé tels qu'ils figurent dans les documents de la consultation.]
             </Text>
-            <Checkbox 
-              checked={data.garantie?.pasPrevue || data.garanties?.aucuneGarantie || false} 
-              label="Les documents de la consultation ne prévoient pas de retenue de garantie ou de garantie à première demande."
-            />
-            <Checkbox 
-              checked={data.garantie?.prevueSansAllotissement || false} 
-              label="En l'absence d'allotissement de ce marché public :"
-            />
-            {data.garantie?.prevueSansAllotissement && (
-              <View style={{ paddingLeft: 20, marginTop: 4 }}>
-                <Checkbox 
-                  checked={data.garantie?.retenueGarantieSansAllotissement || false} 
-                  label="Une retenue de garantie est prévue par les documents de la consultation (préciser son taux et ses modalités)."
-                  sub
-                />
-                <Checkbox 
-                  checked={data.garantie?.garantiePremiereDemandeOuCautionSansAllotissement || false} 
-                  label="Une garantie à première demande ou une caution personnelle et solidaire est prévue par les documents de la consultation (préciser son taux et ses modalités)."
-                  sub
-                />
-              </View>
-            )}
-            <Checkbox 
-              checked={data.garantie?.prevueAvecAllotissement || false} 
-              label="En cas d'allotissement de ce marché public :"
-            />
-            {data.garantie?.prevueAvecAllotissement && (
-              <View style={{ paddingLeft: 20, marginTop: 4 }}>
-                <Checkbox 
-                  checked={data.garantie?.montantInferieur90k || false} 
-                  label="Le montant de votre offre est inférieur à 90 000 € HT. Aucune retenue de garantie ou garantie à première demande n'est exigée pour le(s) lot(s) dont vous êtes attributaire."
-                  sub
-                />
-                <Checkbox 
-                  checked={data.garantie?.montantSuperieur90kRetenue || false} 
-                  label="Le montant de votre offre est supérieur ou égal à 90 000 € HT. Une retenue de garantie est prévue par les documents de la consultation pour le(s) lot(s) dont vous êtes attributaire (préciser son taux et ses modalités)."
-                  sub
-                />
-                <Checkbox 
-                  checked={data.garantie?.montantSuperieur90kGarantie || false} 
-                  label="Le montant de votre offre est supérieur ou égal à 90 000 € HT. Une garantie à première demande ou une caution personnelle et solidaire est prévue par les documents de la consultation pour le(s) lot(s) dont vous êtes attributaire (préciser son taux et ses modalités)."
-                  sub
-                />
-              </View>
-            )}
             
-            {/* Rétro-compatibilité avec l'ancienne structure */}
+            <Text style={[styles.paragraph, { marginBottom: 6, fontWeight: 'bold' }]}>
+              Le marché public qui vous est notifié comporte :
+            </Text>
+            <Text style={[styles.paragraph, { fontStyle: 'italic', fontSize: 7, color: '#666', marginBottom: 8 }]}>
+              (Cocher la ou les cases correspondantes.)
+            </Text>
+
+            {/* Option 1: Aucune garantie */}
+            <Checkbox 
+              checked={data.garanties?.aucuneGarantie || false} 
+              label="aucune retenue de garantie ou garantie à première demande."
+            />
+
+            {/* Option 2: Retenue de garantie avec pourcentage */}
+            <Checkbox 
+              checked={data.garanties?.retenue?.active || false} 
+              label={`une retenue de garantie d'un montant de ${data.garanties?.retenue?.pourcentage || 0} % du montant initial du marché public ou de l'accord-cadre, que vous pouvez remplacer par :`}
+            />
             {data.garanties?.retenue?.active && (
-              <View style={{ marginTop: 10, padding: 8, backgroundColor: '#f0fdf4', borderRadius: 4, borderWidth: 1, borderColor: '#bbf7d0' }}>
-                <Text style={[styles.paragraph, { fontWeight: 'bold', marginBottom: 4 }]}>Retenue de garantie :</Text>
-                <Text style={styles.paragraph}>{data.garanties.retenue.pourcentage}%</Text>
-                {data.garanties.retenue.remplacablePar.garantiePremieredemande && (
-                  <Text style={styles.paragraph}>• Remplaçable par garantie à première demande</Text>
-                )}
-                {data.garanties.retenue.remplacablePar.cautionPersonnelle && (
-                  <Text style={styles.paragraph}>• Remplaçable par caution personnelle et solidaire</Text>
-                )}
+              <View style={{ paddingLeft: 20, marginTop: 4, marginBottom: 8 }}>
+                <Checkbox 
+                  checked={data.garanties?.retenue?.remplacablePar?.garantiePremieredemande || false} 
+                  label="une garantie à première demande."
+                  sub
+                />
+                <Checkbox 
+                  checked={data.garanties?.retenue?.remplacablePar?.cautionPersonnelle || false} 
+                  label="une caution personnelle et solidaire."
+                  sub
+                />
               </View>
             )}
-            
-            {data.garantie?.modalites && (
-              <View style={{ marginTop: 10, padding: 8, backgroundColor: '#f0fdf4', borderRadius: 4, borderWidth: 1, borderColor: '#bbf7d0' }}>
-                <Text style={[styles.paragraph, { fontWeight: 'bold', marginBottom: 4 }]}>Modalités :</Text>
-                <Text style={styles.paragraph}>{data.garantie.modalites}</Text>
+
+            {/* Option 3: Garantie avance > 30% */}
+            <Checkbox 
+              checked={data.garanties?.garantieAvanceSuperieure30 || false} 
+              label="une garantie à première demande en garantie du remboursement d'une avance supérieure à 30%. Vous ne pourrez recevoir cette avance qu'après avoir constitué cette garantie."
+            />
+
+            {/* Option 4: Garantie avance ≤ 30% (collectivités) */}
+            <Checkbox 
+              checked={data.garanties?.garantieAvanceInferieure30?.active || false} 
+              label="(pour les collectivités territoriales uniquement.) une garantie à première demande en garantie du remboursement de toute ou partie d'une avance inférieure ou égale à 30%."
+            />
+            {data.garanties?.garantieAvanceInferieure30?.active && (
+              <View style={{ paddingLeft: 20, marginTop: 4, marginBottom: 8 }}>
+                <Checkbox 
+                  checked={data.garanties?.garantieAvanceInferieure30?.remplacableParCaution || false} 
+                  label="vous pouvez remplacer cette garantie à première demande par une caution personnelle et solidaire."
+                  sub
+                />
               </View>
             )}
           </View>
