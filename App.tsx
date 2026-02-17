@@ -43,6 +43,7 @@ import { supabase } from './lib/supabase';
 // Import Registre Retraits Component
 import RegistreRetraits from './components/RegistreRetraits';
 import RegistreDepots from './components/RegistreDepots';
+import ModuleOuvertureCentral from './components/ModuleOuvertureCentral';
 import Contrats from './components/Contrats';
 import { OuverturePlis } from './components/analyse';
 import LandingPage from './components/LandingPage';
@@ -5248,19 +5249,31 @@ const App: React.FC = () => {
         )}
 
         {activeTab === 'retraits' && (
-          <RegistreRetraits 
-            supabaseClient={supabaseClient} 
-            onOpenProcedure={openProcedureByAfpaNumber}
-            onProcedureUpdated={() => supabaseClient && fetchData(supabaseClient)}
-          />
+          <div className="animate-in fade-in duration-700">
+            <ModuleOuvertureCentral
+              onBack={() => navigateTo('home', 'Accueil')}
+              supabaseClient={supabaseClient}
+              procedures={procedures}
+              dossiers={dossiers}
+              onOpenProcedure={openProcedureByAfpaNumber}
+              onProcedureUpdated={() => supabaseClient && fetchData(supabaseClient)}
+              initialView="retraits"
+            />
+          </div>
         )}
 
         {activeTab === 'depots' && (
-          <RegistreDepots 
-            supabaseClient={supabaseClient} 
-            onOpenProcedure={openProcedureByAfpaNumber}
-            onProcedureUpdated={() => supabaseClient && fetchData(supabaseClient)}
-          />
+          <div className="animate-in fade-in duration-700">
+            <ModuleOuvertureCentral
+              onBack={() => navigateTo('home', 'Accueil')}
+              supabaseClient={supabaseClient}
+              procedures={procedures}
+              dossiers={dossiers}
+              onOpenProcedure={openProcedureByAfpaNumber}
+              onProcedureUpdated={() => supabaseClient && fetchData(supabaseClient)}
+              initialView="depots"
+            />
+          </div>
         )}
         {activeTab === 'rapport-presentation' && (
           <div className="animate-in fade-in duration-700">
@@ -5273,16 +5286,14 @@ const App: React.FC = () => {
 
         {activeTab === 'ouverture-plis' && (
           <div className="animate-in fade-in duration-700">
-            <OuverturePlis
+            <ModuleOuvertureCentral
               onBack={() => navigateTo('home', 'Accueil')}
+              supabaseClient={supabaseClient}
               procedures={procedures}
               dossiers={dossiers}
-              initialNumero={ouverturePlisInitialNumero || undefined}
-              initialSection={ouverturePlisInitialSection ?? undefined}
-              onInitialApplied={() => {
-                setOuverturePlisInitialNumero('');
-                setOuverturePlisInitialSection(null);
-              }}
+              onOpenProcedure={openProcedureByAfpaNumber}
+              onProcedureUpdated={() => supabaseClient && fetchData(supabaseClient)}
+              initialView="home"
             />
           </div>
         )}

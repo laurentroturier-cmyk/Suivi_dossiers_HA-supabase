@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Upload, FileText, Download, Filter, Search, Calendar, Building2, Mail, Phone, MapPin, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, FileText, Download, Filter, Search, Calendar, Building2, Mail, Phone, MapPin, Save, ArrowLeft, ClipboardCheck } from 'lucide-react';
 import { RetraitsData, EntrepriseRetrait } from '../types/retraits';
 import { parseRetraitsFile } from '../utils/retraitsParser';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -8,9 +8,19 @@ interface RegistreRetraitsProps {
   supabaseClient?: SupabaseClient | null;
   onOpenProcedure?: (numeroAfpa: string) => void;
   onProcedureUpdated?: () => void;
+  onBack?: () => void;
+  onNavigateToOuverturePlis?: () => void;
+  memorizedNumero?: string;
 }
 
-const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ supabaseClient, onOpenProcedure, onProcedureUpdated }) => {
+const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ 
+  supabaseClient, 
+  onOpenProcedure, 
+  onProcedureUpdated,
+  onBack,
+  onNavigateToOuverturePlis,
+  memorizedNumero
+}) => {
   const [retraitsData, setRetraitsData] = useState<RetraitsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,6 +108,14 @@ const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ supabaseClient, onO
     try {
       const data = await parseRetraitsFile(file);
       setRetraitsData(data);
+      
+      // Notifier le parent du numéro chargé
+      if (data.procedureInfo.reference) {
+        const afpaMatch = data.procedureInfo.reference.match(/^(\d{5})/);
+        if (afpaMatch && onOpenProcedure) {
+          onOpenProcedure(afpaMatch[1]);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement du fichier');
     } finally {
@@ -225,6 +243,42 @@ const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ supabaseClient, onO
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-4xl mx-auto">
+          {/* Bouton retour */}
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="mb-4 inline-flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-white rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Retour
+            </button>
+          )}
+          
+          {/* Indicateur de numéro mémorisé */}
+          {memorizedNumero && (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ClipboardCheck className="w-5 h-5 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">
+                    Numéro de procédure prêt
+                  </p>
+                  <p className="text-xs text-blue-700">
+                    {memorizedNumero} - Chargez ce registre pour continuer
+                  </p>
+                </div>
+              </div>
+              {onNavigateToOuverturePlis && (
+                <button
+                  onClick={onNavigateToOuverturePlis}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Aller à l'ouverture
+                </button>
+              )}
+            </div>
+          )}
+          
           <div className="bg-white rounded-2xl shadow-lg p-12">
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-[#005c4d] rounded-full mb-6">
@@ -283,6 +337,15 @@ const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ supabaseClient, onO
         <div className="px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Retour"
+                >
+                  <ArrowLeft className="w-5 h-5 text-gray-600" />
+                </button>
+              )}
               <div className="w-12 h-12 bg-[#ff6b35] rounded-lg flex items-center justify-center">
                 <FileText className="w-6 h-6 text-white" />
               </div>
@@ -292,6 +355,15 @@ const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ supabaseClient, onO
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {onNavigateToOuverturePlis && memorizedNumero && (
+                <button
+                  onClick={onNavigateToOuverturePlis}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                >
+                  <ClipboardCheck className="w-4 h-4" />
+                  Continuer vers l'ouverture ({memorizedNumero})
+                </button>
+              )}
               <button
                 onClick={handleVoirProcedure}
                 disabled={!retraitsData?.procedureInfo.reference || !onOpenProcedure}

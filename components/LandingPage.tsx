@@ -9,8 +9,6 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount }) => {
-  // État pour gérer l'expansion de la section Registres dans Analyse
-  const [registresExpanded, setRegistresExpanded] = useState(false);
   // État pour gérer l'expansion de la section NOTI dans Rédaction
   const [notiExpanded, setNotiExpanded] = useState(false);
   
@@ -83,7 +81,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
     {
       id: 'analyse',
       titre: 'Analyse',
-      description: 'Registres Retraits/Dépôts et analyse des offres AN01',
+      description: 'Ouverture des plis, analyse des offres et rapports',
       icon: LineChart,
       iconColor: 'text-emerald-600 dark:text-emerald-400',
       iconBg: 'bg-emerald-100 dark:bg-emerald-500/20',
@@ -93,17 +91,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       btnText: 'text-gray-700 dark:text-gray-200',
       isExperimental: true,
       actions: [
-        { 
-          label: 'Registres', 
-          isGroup: true,
-          icon: BookOpen, 
-          color: 'text-indigo-600 dark:text-indigo-400',
-          subActions: [
-            { label: 'Registre des retraits', tab: 'retraits', isAdmin: false, icon: Download, color: 'text-orange-600 dark:text-orange-400' },
-            { label: 'Registre des dépôts', tab: 'depots', isAdmin: false, icon: Upload, color: 'text-cyan-600 dark:text-cyan-400' },
-          ]
-        },
-        { label: 'Ouverture des plis', tab: 'ouverture-plis', isAdmin: false, icon: PackageOpen, color: 'text-purple-600 dark:text-purple-400' },
+        { label: 'Ouverture des plis', tab: 'ouverture-plis', isAdmin: false, icon: PackageOpen, color: 'text-purple-600 dark:text-purple-400', description: 'Registres des retraits/dépôts et analyse des candidatures' },
         { label: 'Analyse AN01', tab: 'an01', isAdmin: false, icon: LineChart, color: 'text-emerald-600 dark:text-emerald-400' },
         { label: 'Rapport de Présentation', tab: 'rapport-presentation', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
         { label: 'Analyse des offres DQE', tab: 'analyse-offres-dqe', isAdmin: false, icon: BarChart3, color: 'text-[#004d3d] dark:text-cyan-400' },
@@ -232,7 +220,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
             const Icon = domaine.icon;
             const isOpen = openTileId === domaine.id;
             const firstAction = domaine.actions[0];
-            const hasMultiple = domaine.actions.length > 1 || firstAction?.isGroup;
+            const hasMultiple = domaine.actions.length > 1 || (firstAction && 'isGroup' in firstAction && firstAction.isGroup);
 
             return (
               <div
@@ -270,13 +258,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
                           {domaine.actions.map((action, idx) => {
                             const ActionIcon = action.icon;
                             if (action.isGroup && action.subActions) {
-                              const isExpanded = (domaine.id === 'analyse' && registresExpanded) || (domaine.id === 'redaction' && notiExpanded);
+                              const isExpanded = (domaine.id === 'redaction' && notiExpanded);
                               return (
                                 <div key={idx}>
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      if (domaine.id === 'analyse') setRegistresExpanded(!registresExpanded);
                                       if (domaine.id === 'redaction') setNotiExpanded(!notiExpanded);
                                     }}
                                     className="landing-card-action w-full flex items-start justify-between gap-2 px-3 py-2 rounded-lg bg-white/30 dark:bg-slate-700/60 dark:text-slate-200 text-sm text-gray-700 dark:hover:bg-slate-600/60 hover:bg-white/50 transition text-left"
