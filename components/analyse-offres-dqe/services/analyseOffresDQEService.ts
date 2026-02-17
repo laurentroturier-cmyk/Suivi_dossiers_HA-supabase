@@ -51,11 +51,10 @@ export const AnalyseOffresDQEService = {
 
     if (userError || !user) return false;
 
-    // 1. Récupérer toutes les analyses de l'utilisateur pour cette procédure
+    // 1. Récupérer toutes les analyses pour cette procédure (lecture partagée)
     const { data: analyses, error: analysesError } = await supabase
       .from('analyse_offres_dqe')
       .select('id')
-      .eq('user_id', user.id)
       .eq('numero_procedure', numeroProcedure);
 
     if (analysesError) {
@@ -97,11 +96,10 @@ export const AnalyseOffresDQEService = {
 
     if (userError || !user) return [];
 
-    // 1. Récupérer toutes les analyses de l'utilisateur pour cette procédure
+    // 1. Récupérer toutes les analyses pour cette procédure (lecture partagée)
     const { data: analyses, error: analysesError } = await supabase
       .from('analyse_offres_dqe')
       .select('id, numero_lot')
-      .eq('user_id', user.id)
       .eq('numero_procedure', numeroProcedure);
 
     if (analysesError) {
@@ -208,11 +206,10 @@ export const AnalyseOffresDQEService = {
       return { id: numeroProcedure, procedureNumero: numeroProcedure };
     }
 
-    // 1. Chercher une analyse existante
+    // 1. Chercher une analyse existante (lecture partagée)
     const { data: existingAnalyses, error: selectError } = await supabase
       .from('analyse_offres_dqe')
       .select('id, numero_lot')
-      .eq('user_id', user.id)
       .eq('numero_procedure', numeroProcedure)
       .eq('numero_lot', numeroLot)
       .limit(1);
@@ -270,10 +267,10 @@ export const AnalyseOffresDQEService = {
 
     // Supprimer toutes les analyses pour cette procédure (les candidats et lignes
     // sont supprimés automatiquement via ON DELETE CASCADE)
+    // Note: Lecture partagée pour identifier les analyses à supprimer
     const { data: analyses, error: selectError } = await supabase
       .from('analyse_offres_dqe')
       .select('id')
-      .eq('user_id', user.id)
       .eq('numero_procedure', numeroProcedure);
 
     if (selectError) {

@@ -132,12 +132,12 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
       const { data: { user } } = await supabase.auth.getUser();
       
       // 1. Charger la configuration globale pour avoir les lots
-      let dceQuery = supabase
+      // Note: Lecture partagée - tous les users peuvent voir toutes les procédures
+      const { data: dceRow, error: dceError } = await supabase
         .from('dce')
         .select('configuration_globale')
-        .eq('numero_procedure', numeroProcedure);
-      if (user?.id) dceQuery = dceQuery.eq('user_id', user.id);
-      const { data: dceRow, error: dceError } = await dceQuery.single();
+        .eq('numero_procedure', numeroProcedure)
+        .single();
 
       if (dceError) throw dceError;
       

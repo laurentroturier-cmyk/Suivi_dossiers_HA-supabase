@@ -33,12 +33,11 @@ export class DCEService {
         return { success: false, error: 'Numéro de procédure invalide (doit être 5 chiffres)' };
       }
 
-      // Chercher le DCE existant
+      // Chercher le DCE existant (lecture partagée - RLS gère les permissions)
       const { data: existingDCE, error: loadError } = await supabase
         .from('dce')
         .select('*')
         .eq('numero_procedure', numeroProcedure)
-        .eq('user_id', user.id)
         .single();
 
       // Si le DCE existe, le retourner
@@ -184,11 +183,11 @@ export class DCEService {
       
       console.log(`📝 updateSection: Mise à jour ${columnName} pour procédure ${numeroProcedure}`);
       
+      // RLS gère les permissions (propriétaire ou admin peut modifier)
       const { data: updated, error } = await supabase
         .from('dce')
         .update(updateData)
         .eq('numero_procedure', numeroProcedure)
-        .eq('user_id', user.id)
         .select();
 
       if (error) {
@@ -300,11 +299,11 @@ export class DCEService {
         return { success: false, error: 'Utilisateur non authentifié' };
       }
 
+      // RLS gère les permissions (propriétaire ou admin peut modifier)
       const { data: updated, error } = await supabase
         .from('dce')
         .update({ statut })
         .eq('numero_procedure', numeroProcedure)
-        .eq('user_id', user.id)
         .select()
         .single();
 

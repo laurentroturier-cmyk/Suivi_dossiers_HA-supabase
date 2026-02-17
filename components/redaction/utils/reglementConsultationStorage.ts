@@ -141,10 +141,10 @@ export async function listReglementConsultations(): Promise<{
       return { success: false, error: 'Utilisateur non authentifié' };
     }
 
+    // Lecture partagée - tous les users peuvent voir tous les RC
     const { data: results, error } = await supabase
       .from('reglements_consultation')
       .select('*')
-      .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
     if (error) {
@@ -171,11 +171,11 @@ export async function deleteReglementConsultation(
       return { success: false, error: 'Utilisateur non authentifié' };
     }
 
+    // RLS gère les permissions (propriétaire ou admin peut supprimer)
     const { error } = await supabase
       .from('reglements_consultation')
       .delete()
-      .eq('numero_procedure', numeroProcedure)
-      .eq('user_id', user.id);
+      .eq('numero_procedure', numeroProcedure);
 
     if (error) {
       console.error('Erreur suppression RC Supabase:', error);
