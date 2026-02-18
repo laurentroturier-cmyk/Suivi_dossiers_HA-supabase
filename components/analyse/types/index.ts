@@ -34,7 +34,7 @@ export interface RapportContent {
 // Section 1 : Contexte
 export interface Section1Contexte {
   objetMarche: string;
-  dureeMarche: number;
+  dureeMarche: string;
   descriptionPrestations: string; // Texte libre à éditer
 }
 

@@ -45,7 +45,7 @@ function generateContexte(sources: RapportSources): Section1Contexte {
   
   return {
     objetMarche: procedure['Nom de la procédure'] || dossier['Titre_du_dossier'] || '',
-    dureeMarche: parseInt(procedure['Durée du marché (en mois)']) || 0,
+    dureeMarche: procedure['Durée du marché (en mois)'] ? `${parseInt(procedure['Durée du marché (en mois)'])} mois` : '',
     descriptionPrestations: '', // À compléter manuellement
   };
 }

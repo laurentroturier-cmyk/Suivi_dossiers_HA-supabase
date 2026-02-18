@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Upload, Check, X, FileSpreadsheet, FileCog, Download, Edit2, Eye, AlertCircle, Save, FolderOpen, Clock, FileSignature, FileCheck, Construction } from 'lucide-react';
+import { RichTextEditor } from '../../dce-complet/components/modules/RichTextEditor';
 import { RapportContent, RapportState } from '../types';
 import { generateRapportData } from '../utils/generateRapportData';
 import { parseExcelFile, AnalysisData } from '@/components/an01';
@@ -667,6 +668,25 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     });
   };
 
+  // Convertit du HTML Tiptap en texte brut compatible avec createParagraphsFromText
+  const htmlToDocxText = (html: string): string => {
+    if (!html) return '';
+    return html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/h[1-6]>/gi, '\n')
+      .replace(/<li>/gi, '- ')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  };
+
   // Helper pour créer des cellules de tableau avec police
   const createTableCell = (text: string, bold: boolean = false): TableCell => {
     return new TableCell({ 
@@ -839,12 +859,12 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             }),
             
             // Objet du marché avec support des listes à puces
-            ...createParagraphsFromText(state.rapportGenere.section1_contexte.objetMarche),
+            ...createParagraphsFromText(htmlToDocxText(state.rapportGenere.section1_contexte.objetMarche)),
             
             // Durée du marché
             new Paragraph({
               children: [
-                createBodyText(`Pour une durée totale de ${state.rapportGenere.section1_contexte.dureeMarche} mois.`),
+                createBodyText(`Pour une durée totale de ${state.rapportGenere.section1_contexte.dureeMarche}.`),
               ],
               spacing: { after: 200 },
             }),
@@ -970,7 +990,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     return paragraphs;
                   } else {
                     // Sinon, utiliser le comportement par défaut
-                    return createParagraphsFromText(contenuChapitre3);
+                    return createParagraphsFromText(htmlToDocxText(contenuChapitre3));
                   }
                 })()
               : [new Paragraph({
@@ -987,7 +1007,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             }),
             
             ...(contenuChapitre4
-              ? createParagraphsFromText(contenuChapitre4)
+              ? createParagraphsFromText(htmlToDocxText(contenuChapitre4))
               : [new Paragraph({
                   children: [new TextRun({ text: "[À compléter : Questions posées et réponses apportées]", italics: true, color: "FF8800", font: "Aptos", size: 22 })],
                   spacing: { after: 200 },
@@ -1320,7 +1340,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   new Paragraph({
                     children: [
                       createBodyText("Autres éléments du calendrier : ", true),
-                      createBodyText(chapitre10.autresElements),
+                      createBodyText(htmlToDocxText(chapitre10.autresElements)),
                     ],
                     spacing: { after: 200 },
                   }),
@@ -1772,34 +1792,39 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Objet du marché</label>
-                      <textarea
+                      <RichTextEditor
                         value={rapportEditable.section1_contexte.objetMarche}
-                        onChange={(e) => setRapportEditable({
+                        onChange={(value) => setRapportEditable({
                           ...rapportEditable,
-                          section1_contexte: { ...rapportEditable.section1_contexte, objetMarche: e.target.value }
+                          section1_contexte: { ...rapportEditable.section1_contexte, objetMarche: value }
                         })}
-                        className="w-full p-3 border border-gray-300 rounded-lg text-sm font-sans resize-y"
-                        rows={10}
                         placeholder="Décrivez l'objet du marché..."
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Durée du marché (mois)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Durée du marché</label>
                       <input
-                        type="number"
+                        type="text"
                         value={rapportEditable.section1_contexte.dureeMarche}
                         onChange={(e) => setRapportEditable({
                           ...rapportEditable,
-                          section1_contexte: { ...rapportEditable.section1_contexte, dureeMarche: parseInt(e.target.value) || 0 }
+                          section1_contexte: { ...rapportEditable.section1_contexte, dureeMarche: e.target.value }
                         })}
+                        placeholder="Ex : 12 mois, 1 an, 36 mois reconductible..."
                         className="w-full p-2 border border-gray-300 rounded-lg text-sm"
                       />
                     </div>
                   </div>
                 ) : (
                   <>
-                    <p><strong>Objet du marché :</strong> {state.rapportGenere.section1_contexte.objetMarche}</p>
-                    <p><strong>Durée du marché :</strong> {state.rapportGenere.section1_contexte.dureeMarche} mois</p>
+                    <div>
+                      <strong>Objet du marché :</strong>
+                      <div
+                        className="prose prose-sm max-w-none mt-1"
+                        dangerouslySetInnerHTML={{ __html: state.rapportGenere.section1_contexte.objetMarche }}
+                      />
+                    </div>
+                    <p className="mt-2"><strong>Durée du marché :</strong> {state.rapportGenere.section1_contexte.dureeMarche}</p>
                   </>
                 )
               ) : (
@@ -1946,14 +1971,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     )}
                   </button>
                 </div>
-                <textarea
+                <RichTextEditor
                   value={contenuChapitre3}
-                  onChange={(e) => setContenuChapitre3(e.target.value)}
-                  placeholder="Description du DCE et des documents fournis...\n\nExemple :\n- Acte d'engagement\n- CCAP\n- CCTP\n- BPU\n- etc.\n\nOu cliquez sur 'Charger depuis DCE' pour importer automatiquement la liste des documents."
-                  className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={setContenuChapitre3}
+                  placeholder="Description du DCE et des documents fournis..."
                 />
                 {contenuChapitre3 && (
-                  <p className="text-xs text-teal-700">✓ {contenuChapitre3.length} caractères saisis</p>
+                  <p className="text-xs text-teal-700">✓ Contenu saisi</p>
                 )}
                 {dceData && (
                   <div className="mt-2 p-2 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg">
@@ -1975,14 +1999,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             >
               <div className="space-y-2">
                 <p className="text-sm text-gray-700 font-medium">✏️ Saisissez ou collez le contenu ci-dessous :</p>
-                <textarea
+                <RichTextEditor
                   value={contenuChapitre4}
-                  onChange={(e) => setContenuChapitre4(e.target.value)}
-                  placeholder="Questions posées et réponses apportées...\n\nExemple :\nQ1: [Question du candidat]\nR1: [Réponse apportée]\n\nQ2: ..."
-                  className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={setContenuChapitre4}
+                  placeholder="Questions posées et réponses apportées..."
                 />
                 {contenuChapitre4 && (
-                  <p className="text-xs text-teal-700">✓ {contenuChapitre4.length} caractères saisis</p>
+                  <p className="text-xs text-teal-700">✓ Contenu saisi</p>
                 )}
               </div>
             </ChapterPreview>
@@ -1998,14 +2021,13 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Texte principal</label>
-                    <textarea
-                      value={rapportEditable.section5_proposition?.texteAnalyse || "L'analyse des capacités juridiques, techniques et financières a été réalisée à partir de la recevabilité des documents administratifs demandés dans chacune de nos procédures."}
-                      onChange={(e) => setRapportEditable({
+                    <RichTextEditor
+                      value={rapportEditable.section5_proposition?.texteAnalyse || "<p>L'analyse des capacités juridiques, techniques et financières a été réalisée à partir de la recevabilité des documents administratifs demandés dans chacune de nos procédures.</p>"}
+                      onChange={(value) => setRapportEditable({
                         ...rapportEditable,
-                        section5_proposition: { ...rapportEditable.section5_proposition, texteAnalyse: e.target.value }
+                        section5_proposition: { ...rapportEditable.section5_proposition, texteAnalyse: value }
                       })}
-                      className="w-full p-2 border border-gray-300 rounded-lg text-sm"
-                      rows={3}
+                      placeholder="Décrivez l'analyse des candidatures..."
                     />
                   </div>
                   <div>
@@ -2481,11 +2503,10 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   <label className="text-sm font-semibold text-gray-900 mb-2 block">
                     Autres éléments du calendrier (optionnel) :
                   </label>
-                  <textarea
+                  <RichTextEditor
                     value={chapitre10.autresElements}
-                    onChange={(e) => setCharpitre10({...chapitre10, autresElements: e.target.value})}
+                    onChange={(value) => setCharpitre10({...chapitre10, autresElements: value})}
                     placeholder="Ajoutez d'autres jalons ou informations..."
-                    className="w-full h-24 p-2 border border-purple-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
 
@@ -2497,7 +2518,15 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                       <p><strong>Validation :</strong> {chapitre10.validationAttribution}</p>
                       <p><strong>Rejet :</strong> {chapitre10.envoiRejet}</p>
                       <p><strong>Attribution :</strong> {chapitre10.attributionMarche}</p>
-                      {chapitre10.autresElements && <p><strong>Autres :</strong> {chapitre10.autresElements}</p>}
+                      {chapitre10.autresElements && (
+                        <div>
+                          <strong>Autres :</strong>
+                          <div
+                            className="prose prose-xs max-w-none inline-block ml-1"
+                            dangerouslySetInnerHTML={{ __html: chapitre10.autresElements }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

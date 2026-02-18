@@ -9,7 +9,7 @@ import {
   Link
 } from '@react-pdf/renderer';
 
-// Styles professionnels du Rapport de Présentation
+// Styles professionnels du Rapport de Présentation — codes visuels CCAP
 const styles = StyleSheet.create({
   page: {
     paddingTop: 90,
@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
     backgroundColor: '#ffffff',
   },
-  
+
   // ===== HEADER FIXE =====
   headerFixed: {
     position: 'absolute',
@@ -31,19 +31,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 12,
   },
-  
+
   headerTitle: {
     fontSize: 9,
-    color: '#666666',
+    color: '#646464',
     flex: 1,
   },
-  
+
   logo: {
     width: 100,
     height: 60,
     objectFit: 'contain',
   },
-  
+
   // ===== FOOTER FIXE =====
   footerFixed: {
     position: 'absolute',
@@ -51,101 +51,111 @@ const styles = StyleSheet.create({
     left: 50,
     right: 50,
   },
-  
+
   footerLine1: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: '#C8C8C8',
     marginBottom: 4,
   },
-  
+
   footerLeft: {
     fontSize: 7,
-    color: '#666666',
+    color: '#646464',
   },
-  
+
   footerCenter: {
     fontSize: 7,
-    color: '#666666',
+    color: '#646464',
   },
-  
+
   footerRight: {
     fontSize: 7,
-    color: '#666666',
+    color: '#646464',
   },
-  
+
   footerLine2: {
     alignItems: 'center',
   },
-  
+
   footerAfpa: {
     fontSize: 6,
     color: '#94a3b8',
     fontStyle: 'italic',
   },
-  
+
   // ===== CONTENU =====
   content: {
     flex: 1,
   },
-  
+
   // Bandeau titre principal
   titleBanner: {
     marginBottom: 20,
     alignItems: 'center',
   },
-  
+
   titleH1: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: '#0066CC',
     letterSpacing: 1,
     textAlign: 'center',
-    marginBottom: 10,
-    textDecoration: 'underline',
+    marginBottom: 6,
   },
-  
+
+  titleSeparator: {
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#0066CC',
+    marginBottom: 10,
+    width: '60%',
+    alignSelf: 'center',
+  },
+
   titleH2: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: '#334155',
     textAlign: 'center',
     marginBottom: 20,
-    textDecoration: 'underline',
   },
-  
+
   // Chapitre
   chapter: {
     marginBottom: 20,
   },
-  
+
   chapterHeader: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#0f766e',
-    marginBottom: 10,
+    color: '#0066CC',
+    marginBottom: 4,
     marginTop: 10,
-    textDecoration: 'underline',
   },
-  
+
+  chapterSeparator: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#0066CC',
+    marginBottom: 10,
+  },
+
   chapterContent: {
     fontSize: 11,
     color: '#334155',
     lineHeight: 1.5,
   },
-  
+
   // Sous-titre
   subTitle: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#475569',
+    color: '#10B981',
     marginTop: 8,
     marginBottom: 4,
-    textDecoration: 'underline',
   },
-  
+
   // Paragraphe
   paragraph: {
     fontSize: 11,
@@ -153,7 +163,7 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
     marginBottom: 8,
   },
-  
+
   // Liste
   listItem: {
     fontSize: 11,
@@ -162,21 +172,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     paddingLeft: 12,
   },
-  
+
   // Sommaire
   tocItem: {
     fontSize: 10,
-    color: '#0f766e',
+    color: '#0066CC',
     marginBottom: 6,
     fontWeight: 'bold',
   },
-  
+
   tocPage: {
     fontSize: 10,
     color: '#334155',
     fontWeight: 'normal',
   },
-  
+
   // Tableau
   table: {
     marginTop: 8,
@@ -186,16 +196,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     breakInside: 'avoid',
   },
-  
+
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#f0f5ff',
     borderBottomWidth: 2,
-    borderBottomColor: '#0f766e',
+    borderBottomColor: '#0066CC',
     paddingVertical: 6,
     paddingHorizontal: 8,
   },
-  
+
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -203,33 +213,33 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
   },
-  
+
   tableRowAlt: {
     backgroundColor: '#f8fafc',
   },
-  
+
   tableCell: {
     fontSize: 8,
     color: '#334155',
   },
-  
+
   tableCellHeader: {
     fontSize: 8,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: '#0066CC',
   },
-  
+
   // Badge
   badge: {
-    backgroundColor: '#dcfce7',
-    color: '#166534',
+    backgroundColor: '#dbeafe',
+    color: '#1e40af',
     fontSize: 8,
     fontWeight: 'bold',
     paddingVertical: 3,
     paddingHorizontal: 8,
     borderRadius: 3,
   },
-  
+
   // Highlight
   highlight: {
     backgroundColor: '#fef9c3',
@@ -238,21 +248,21 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginVertical: 8,
   },
-  
+
   highlightText: {
     fontSize: 9,
     color: '#713f12',
     fontWeight: 'bold',
   },
-  
+
   // Section signature
   signatureSection: {
     marginTop: 30,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: '#cbd5e1',
+    borderTopColor: '#C8C8C8',
   },
-  
+
   signatureRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -318,41 +328,43 @@ export const RapportPresentationPDF = ({
           {/* Titre principal */}
           <View style={styles.titleBanner}>
             <Text style={styles.titleH1}>RAPPORT DE PRÉSENTATION</Text>
+            <View style={styles.titleSeparator} />
             <Text style={styles.titleH2}>{data?.procedureSelectionnee?.['Nom de la procédure'] || ''}</Text>
           </View>
 
           {/* SOMMAIRE */}
           <View style={styles.chapter} id="sommaire">
             <Text style={styles.chapterHeader}>SOMMAIRE</Text>
-            <View style={{ marginTop: 10 }}>
-              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+            <View style={styles.chapterSeparator} />
+            <View style={{ marginTop: 6 }}>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#C8C8C8', paddingBottom: 4 }}>
                 <Link src="#chapitre1" style={styles.tocItem}>1. CONTEXTE</Link>
               </View>
-              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#C8C8C8', paddingBottom: 4 }}>
                 <Link src="#chapitre2" style={styles.tocItem}>2. DÉROULEMENT DE LA PROCÉDURE</Link>
               </View>
-              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#C8C8C8', paddingBottom: 4 }}>
                 <Link src="#chapitre3" style={styles.tocItem}>3. DOSSIER DE CONSULTATION</Link>
               </View>
-              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#C8C8C8', paddingBottom: 4 }}>
                 <Link src="#chapitre4" style={styles.tocItem}>4. QUESTIONS - RÉPONSES</Link>
               </View>
-              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#C8C8C8', paddingBottom: 4 }}>
                 <Link src="#chapitre5" style={styles.tocItem}>5. ANALYSE DES CANDIDATURES</Link>
               </View>
-              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#C8C8C8', paddingBottom: 4 }}>
                 <Link src="#chapitre6" style={styles.tocItem}>6. MÉTHODOLOGIE D'ANALYSE DES OFFRES</Link>
               </View>
-              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#C8C8C8', paddingBottom: 4 }}>
                 <Link src="#chapitre7" style={styles.tocItem}>7. ANALYSE DE LA VALEUR DES OFFRES</Link>
               </View>
-              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#C8C8C8', paddingBottom: 4 }}>
                 <Link src="#chapitre8" style={styles.tocItem}>8. ANALYSE DE LA PERFORMANCE DU DOSSIER</Link>
               </View>
-              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#C8C8C8', paddingBottom: 4 }}>
                 <Link src="#chapitre9" style={styles.tocItem}>9. PROPOSITION D'ATTRIBUTION</Link>
               </View>
-              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#e2e8f0', paddingBottom: 4 }}>
+              <View style={{ marginBottom: 8, borderBottomWidth: 0.5, borderBottomColor: '#C8C8C8', paddingBottom: 4 }}>
                 <Link src="#chapitre10" style={styles.tocItem}>10. PROPOSITION DE CALENDRIER DE MISE EN ŒUVRE</Link>
               </View>
             </View>
@@ -364,12 +376,13 @@ export const RapportPresentationPDF = ({
           {/* 1. CONTEXTE */}
           <View style={styles.chapter} id="chapitre1">
             <Text style={styles.chapterHeader}>1. CONTEXTE</Text>
+            <View style={styles.chapterSeparator} />
             {data?.section1_contexte?.objetMarche && (
               <Text style={styles.paragraph}>{data.section1_contexte.objetMarche}</Text>
             )}
             {data?.section1_contexte?.dureeMarche && (
               <Text style={styles.paragraph}>
-                Pour une durée totale de {data.section1_contexte.dureeMarche} mois.
+                Pour une durée totale de {data.section1_contexte.dureeMarche}.
               </Text>
             )}
           </View>
@@ -377,6 +390,7 @@ export const RapportPresentationPDF = ({
           {/* 2. DÉROULEMENT DE LA PROCÉDURE */}
           <View style={styles.chapter} id="chapitre2">
             <Text style={styles.chapterHeader}>2. DÉROULEMENT DE LA PROCÉDURE</Text>
+            <View style={styles.chapterSeparator} />
             <Text style={styles.paragraph}>
               La procédure, menée conjointement avec {data?.section2_deroulement?.clientInterne || 'le client interne'} de l'Afpa, 
               a été lancée sur la plateforme « {data?.section2_deroulement?.supportProcedure || '—'} » selon le calendrier suivant :
@@ -391,6 +405,7 @@ export const RapportPresentationPDF = ({
           {/* 3. DOSSIER DE CONSULTATION */}
           <View style={styles.chapter} id="chapitre3">
             <Text style={styles.chapterHeader}>3. DOSSIER DE CONSULTATION</Text>
+            <View style={styles.chapterSeparator} />
             {data?.contenuChapitre3 ? (
               <>
                 <Text style={styles.paragraph}>Le dossier de consultation comprenait :</Text>
@@ -411,6 +426,7 @@ export const RapportPresentationPDF = ({
           {/* 4. QUESTIONS - RÉPONSES */}
           <View style={styles.chapter} id="chapitre4">
             <Text style={styles.chapterHeader}>4. QUESTIONS - RÉPONSES</Text>
+            <View style={styles.chapterSeparator} />
             {data?.contenuChapitre4 ? (
               <Text style={styles.paragraph}>{data.contenuChapitre4}</Text>
             ) : (
@@ -423,6 +439,7 @@ export const RapportPresentationPDF = ({
           {/* 5. ANALYSE DES CANDIDATURES */}
           <View style={styles.chapter} id="chapitre5">
             <Text style={styles.chapterHeader}>5. ANALYSE DES CANDIDATURES</Text>
+            <View style={styles.chapterSeparator} />
             <Text style={styles.paragraph}>
               L'analyse des capacités juridiques, techniques et financières a été réalisée à partir de la recevabilité 
               des documents administratifs demandés dans chacune de nos procédures.
@@ -435,6 +452,7 @@ export const RapportPresentationPDF = ({
           {/* 6. MÉTHODOLOGIE D'ANALYSE DES OFFRES */}
           <View style={styles.chapter} id="chapitre6">
             <Text style={styles.chapterHeader}>6. MÉTHODOLOGIE D'ANALYSE DES OFFRES</Text>
+            <View style={styles.chapterSeparator} />
             <Text style={styles.subTitle}>Critères d'attribution :</Text>
             <Text style={styles.listItem}>
               • Critère technique : {data?.section6_methodologie?.ponderationTechnique || 30}%
@@ -457,6 +475,7 @@ export const RapportPresentationPDF = ({
           {/* 7. ANALYSE DE LA VALEUR DES OFFRES */}
           <View style={styles.chapter} id="chapitre7">
             <Text style={styles.chapterHeader}>7. ANALYSE DE LA VALEUR DES OFFRES</Text>
+            <View style={styles.chapterSeparator} />
             <Text style={styles.paragraph}>
               L'analyse économique et technique dans son détail est jointe au présent document en annexe.
             </Text>
@@ -587,6 +606,7 @@ export const RapportPresentationPDF = ({
           {/* 8. ANALYSE DE LA PERFORMANCE DU DOSSIER */}
           <View style={styles.chapter} id="chapitre8">
             <Text style={styles.chapterHeader}>8. ANALYSE DE LA PERFORMANCE DU DOSSIER</Text>
+            <View style={styles.chapterSeparator} />
             
             {/* SI TABLEAU DÉTAILLÉ : afficher le tableau de performance par lot */}
             {data?.section8_performance?.tableauDetaille ? (
@@ -670,6 +690,7 @@ export const RapportPresentationPDF = ({
           {/* 9. PROPOSITION D'ATTRIBUTION */}
           <View style={styles.chapter} id="chapitre9">
             <Text style={styles.chapterHeader}>9. PROPOSITION D'ATTRIBUTION</Text>
+            <View style={styles.chapterSeparator} />
             
             {/* SI MULTI-LOTS : afficher le tableau des attributaires */}
             {data?.section7_2_syntheseLots?.lots ? (
@@ -731,6 +752,7 @@ export const RapportPresentationPDF = ({
           {/* 10. CALENDRIER DE MISE EN ŒUVRE */}
           <View style={styles.chapter}>
             <Text style={styles.chapterHeader}>10. PROPOSITION DE CALENDRIER DE MISE EN ŒUVRE</Text>
+            <View style={styles.chapterSeparator} />
             {data?.chapitre10 && (
               <>
                 <Text style={styles.paragraph}>
