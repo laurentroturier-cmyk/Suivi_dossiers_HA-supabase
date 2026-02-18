@@ -53,6 +53,9 @@ export default function ReglementConsultation({
   const [isSaving, setIsSaving] = useState(false);
   const [activeSection, setActiveSection] = useState(initialSection ?? 0);
   const [isLoadingProcedure, setIsLoadingProcedure] = useState(false);
+  // Ref pour éviter la boucle infinie :
+  // formData → onDataChange → parent → initialData → setFormData → onDataChange → ...
+  const _skipOnDataChange = useRef(false);
   const [autoFillStatus, setAutoFillStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [loadingCPV, setLoadingCPV] = useState(false);
 
@@ -193,9 +196,11 @@ export default function ReglementConsultation({
     },
   });
 
-  // Synchroniser formData avec initialData quand elle change
+  // Synchroniser formData avec initialData quand elle change (depuis le parent)
   useEffect(() => {
     if (initialData) {
+      // Marquer que le prochain changement de formData vient du parent → ne pas rappeler onDataChange
+      _skipOnDataChange.current = true;
       setFormData(initialData);
     }
   }, [initialData]);
@@ -228,10 +233,16 @@ export default function ReglementConsultation({
     }
   }, []);
 
-  // Notifier le parent à chaque changement de données
-  // Note: onDataChange n'est PAS dans les dépendances pour éviter une boucle infinie
-  // car le parent peut mettre à jour initialData, qui met à jour formData, qui rappellerait onDataChange
+  // Notifier le parent à chaque changement de données INITIÉ PAR L'UTILISATEUR
+  // Le flag _skipOnDataChange évite la boucle :
+  //   formData change → onDataChange → parent met à jour initialData
+  //   → useEffect[initialData] set le flag → setFormData → formData change
+  //   → useEffect[formData] voit le flag → ne rappelle PAS onDataChange ✓
   useEffect(() => {
+    if (_skipOnDataChange.current) {
+      _skipOnDataChange.current = false;
+      return;
+    }
     if (onDataChange) {
       onDataChange(formData);
     }
