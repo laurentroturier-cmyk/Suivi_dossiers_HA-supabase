@@ -3027,7 +3027,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-6 mt-10">
+      <main className={`${activeTab === 'rapport-presentation' ? 'w-full px-6' : 'max-w-7xl mx-auto px-6'} mt-10`}>
         {!editingProject && !editingProcedure && (
           <>
             {activeTab === 'home' && (

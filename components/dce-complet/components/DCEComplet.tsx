@@ -6,8 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, FileText, CheckSquare, FileCheck, FileSpreadsheet, FolderOpen, ArrowLeft, AlertTriangle, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { ProcedureSelector } from './shared/ProcedureSelector';
-import { ProcedureHeader } from './shared/ProcedureHeader';
-import { DCEStatusBar } from './shared/DCEStatusBar';
+import { DCEHeader } from './shared/DCEHeader';
 import { ConflictResolverModal } from './shared/ConflictResolverModal';
 import { useDCEState } from '../hooks/useDCEState';
 import { useProcedure } from '../hooks/useProcedureLoader';
@@ -511,39 +510,21 @@ export function DCEComplet({ onClose }: DCECompletProps) {
           </div>
         ) : (
           <>
-            {/* En-tête de procédure */}
-            <div className="p-3 dce-header-bg dce-header-container dce-fixed-header border-b border-gray-200 flex-shrink-0">
-              <div className="flex items-start justify-between gap-6">
-                {/* Colonne gauche : carte procédure */}
-                <div className="flex flex-col gap-3">
-                  <ProcedureHeader procedure={selectedProcedure} />
-                </div>
-
-                {/* Colonne droite : barre d'état du DCE (avec bouton retour inclus) */}
-                {dceState && (
-                  <div className="flex items-center">
-                    <DCEStatusBar
-                      dceState={dceState}
-                      isDirty={isDirty}
-                      isNew={isNew}
-                      onSave={handleSave}
-                      onPublish={publishDCE}
-                      onRefresh={refreshDCE}
-                      isSaving={isLoadingDCE}
-                      conflicts={conflicts}
-                      onShowConflicts={() => setShowConflictModal(true)}
-                      onBackToSelection={handleBackToSelection}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {dceError && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700">{dceError}</p>
-                </div>
-              )}
-            </div>
+            {/* En-tête unifié */}
+            <DCEHeader
+              procedure={selectedProcedure}
+              dceState={dceState}
+              isDirty={isDirty}
+              isNew={isNew}
+              isSaving={isLoadingDCE}
+              conflicts={conflicts}
+              dceError={dceError}
+              onSave={handleSave}
+              onPublish={publishDCE}
+              onRefresh={refreshDCE}
+              onShowConflicts={() => setShowConflictModal(true)}
+              onBackToSelection={handleBackToSelection}
+            />
 
             {/* Zone de travail : Sidebar + Contenu */}
             <div className="flex-1 flex overflow-hidden">

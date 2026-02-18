@@ -3,7 +3,7 @@
  * Utilise Tiptap avec toutes les fonctionnalités de traitement de texte
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Underline } from '@tiptap/extension-underline';
@@ -112,6 +112,15 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
       },
     },
   });
+
+  // Synchroniser le contenu lorsque la prop `value` change depuis le parent
+  // (ex: chargement depuis DCE, sélection d'un modèle prédéfini)
+  useEffect(() => {
+    if (!editor) return;
+    if (value !== editor.getHTML()) {
+      editor.commands.setContent(value || '', false); // false = ne pas émettre onUpdate
+    }
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setLink = useCallback(() => {
     if (!editor) return;

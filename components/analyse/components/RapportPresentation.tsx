@@ -57,6 +57,20 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   // Contenu des chapitres à compléter manuellement
   const [contenuChapitre3, setContenuChapitre3] = useState('');
   const [contenuChapitre4, setContenuChapitre4] = useState('');
+
+  // Modèles prédéfinis pour le chapitre 4
+  const CHAPITRE4_MODELES = [
+    {
+      id: 'aucune',
+      label: 'Aucune question posée',
+      html: "<p>Au cours de la procédure, les candidats n'ont posé aucune question.</p>",
+    },
+    {
+      id: 'questions',
+      label: 'Questions posées (réponses en annexe)',
+      html: "<p>Au cours de la procédure, les candidats ont posé des questions. Les réponses ont été déposées sur la plateforme à l'attention de l'ensemble des candidats (questions/réponses en annexe du présent Rapport de Présentation).</p>",
+    },
+  ];
   
   // Structure du Chapitre 10 - Calendrier de mise en œuvre
   const [chapitre10, setCharpitre10] = useState({
@@ -211,14 +225,15 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
       setDceData(rcData);
 
       // Auto-remplir le champ "Dossier de Consultation" avec la liste des documents
-      if (rcData.dce?.documents && Array.isArray(rcData.dce.documents)) {
-        const documentsList = rcData.dce.documents
-          .map((doc: string, index: number) => `${index + 1}. ${doc}`)
-          .join('\n');
-        
-        const dceDescription = `Description du DCE et des documents fournis :\n\n${documentsList}`;
+      if (rcData.dce?.documents && Array.isArray(rcData.dce.documents) && rcData.dce.documents.length > 0) {
+        // Générer du HTML valide pour l'éditeur Tiptap (liste ordonnée)
+        const docsHtml = rcData.dce.documents
+          .map((doc: string) => `<li><p>${doc}</p></li>`)
+          .join('');
+
+        const dceDescription = `<p>Le Dossier de Consultation des Entreprises (DCE) comprend les documents suivants :</p><ol>${docsHtml}</ol>`;
         setContenuChapitre3(dceDescription);
-        
+
         alert('✅ Données du DCE chargées avec succès !\n\nLe paragraphe 3 "DOSSIER DE CONSULTATION" a été automatiquement rempli.');
       } else {
         alert('⚠️ Le Règlement de Consultation ne contient pas de liste de documents.');
@@ -1421,7 +1436,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -1820,7 +1835,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     <div>
                       <strong>Objet du marché :</strong>
                       <div
-                        className="prose prose-sm max-w-none mt-1"
+                        className="prose prose-sm max-w-none mt-1 rich-content"
                         dangerouslySetInnerHTML={{ __html: state.rapportGenere.section1_contexte.objetMarche }}
                       />
                     </div>
@@ -1991,19 +2006,45 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             </ChapterPreview>
 
             {/* Chapitre 4 : Questions-Réponses */}
-            <ChapterPreview 
-              number={4} 
-              title="QUESTIONS - RÉPONSES" 
+            <ChapterPreview
+              number={4}
+              title="QUESTIONS - RÉPONSES"
               hasData={!!contenuChapitre4}
               icon="💬"
             >
-              <div className="space-y-2">
-                <p className="text-sm text-gray-700 font-medium">✏️ Saisissez ou collez le contenu ci-dessous :</p>
-                <RichTextEditor
-                  value={contenuChapitre4}
-                  onChange={setContenuChapitre4}
-                  placeholder="Questions posées et réponses apportées..."
-                />
+              <div className="space-y-3">
+                {/* Sélecteur de modèle */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Choisir un modèle :
+                  </label>
+                  <select
+                    className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={CHAPITRE4_MODELES.find(m => m.html === contenuChapitre4)?.id || ''}
+                    onChange={(e) => {
+                      const modele = CHAPITRE4_MODELES.find(m => m.id === e.target.value);
+                      if (modele) setContenuChapitre4(modele.html);
+                    }}
+                  >
+                    <option value="">— Sélectionner un modèle —</option>
+                    {CHAPITRE4_MODELES.map(m => (
+                      <option key={m.id} value={m.id}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Éditeur enrichi — toujours disponible pour modification */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Texte (modifiable si besoin) :
+                  </label>
+                  <RichTextEditor
+                    value={contenuChapitre4}
+                    onChange={setContenuChapitre4}
+                    placeholder="Sélectionnez un modèle ci-dessus ou saisissez librement..."
+                  />
+                </div>
+
                 {contenuChapitre4 && (
                   <p className="text-xs text-teal-700">✓ Contenu saisi</p>
                 )}
@@ -2522,7 +2563,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                         <div>
                           <strong>Autres :</strong>
                           <div
-                            className="prose prose-xs max-w-none inline-block ml-1"
+                            className="prose prose-xs max-w-none inline-block ml-1 rich-content"
                             dangerouslySetInnerHTML={{ __html: chapitre10.autresElements }}
                           />
                         </div>

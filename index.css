@@ -426,32 +426,27 @@ body {
 }
 
 /* ============================================================================
-   STABILISATION DCE COMPLET - FIX TREMBLEMENT EN-TÊTE
+   STABILISATION DCE COMPLET - EN-TÊTE
+   Le header est flex-shrink-0 dans un container fixed+overflow-hidden+flex-col.
+   Pas besoin de position:sticky ni de hacks GPU — ils provoquent le tremblement.
    ============================================================================ */
 
-/* Container d'en-tête stable avec promotion GPU */
+/* Container d'en-tête : pas de transform/will-change pour éviter les conflits GPU */
 .dce-header-container {
-  will-change: transform;
-  transform: translateZ(0);
-  isolation: isolate;
-  backface-visibility: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
 /* Background sémantiques pour DCE - évite les conflits de classes */
 .dce-header-bg {
   background-color: var(--surface-2);
-  transition: background-color 0.15s ease;
 }
 
 .dce-header-card-bg {
   background-color: var(--surface-1);
-  transition: background-color 0.15s ease;
 }
 
 .dce-info-card-bg {
   background-color: var(--surface-2);
-  transition: background-color 0.15s ease;
 }
 
 /* Transitions optimisées - uniquement les propriétés nécessaires */
@@ -459,24 +454,13 @@ body {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-/* Désactivation des transitions pendant le changement de thème */
-html.theme-transitioning .dce-header-container,
-html.theme-transitioning .dce-header-container * {
-  transition: none !important;
-}
-
-/* Optimisation des éléments fixes */
+/* Pas de position:sticky ni de will-change/transform :
+   le header est déjà figé en haut par le layout flex-shrink-0 */
 .dce-fixed-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  will-change: transform;
-  transform: translateZ(0);
+  flex-shrink: 0;
 }
 
 /* Stabilisation des cartes dans l'en-tête */
 .dce-stable-card {
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
 }
