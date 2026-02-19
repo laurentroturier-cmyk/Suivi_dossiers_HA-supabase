@@ -40,7 +40,8 @@ interface Candidat {
   horsDelai: string;
   admisRejete: string;
   motifRejet: string;
-  
+  commentaire: string;
+
   // Recevabilité
   lotRecevabilite: string;
   recevable: string; // 'Recevable' | 'Éliminé' | ''
@@ -149,6 +150,21 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
     return Array.from(map.values());
   }, [depotsData]);
 
+  // Groupement des candidats par entreprise pour la vue tableau (regroupement lignes consécutives)
+  const groupedCandidatsView = useMemo(() => {
+    const groups: Array<{ societe: string; items: Array<{ candidat: Candidat; originalIndex: number }> }> = [];
+    candidats.forEach((candidat, index) => {
+      const key = (candidat.societe || '').trim().toLowerCase();
+      const last = groups[groups.length - 1];
+      if (last && (last.societe || '').trim().toLowerCase() === key) {
+        last.items.push({ candidat, originalIndex: index });
+      } else {
+        groups.push({ societe: candidat.societe, items: [{ candidat, originalIndex: index }] });
+      }
+    });
+    return groups;
+  }, [candidats]);
+
   // Recherche de procédure
   const handleSearchProcedure = () => {
     if (!searchNumero.trim()) return;
@@ -249,6 +265,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
         horsDelai: '',
         admisRejete: '',
         motifRejet: '',
+        commentaire: '',
         // Recevabilité
         lotRecevabilite: '',
         recevable: '',
@@ -509,7 +526,11 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                 </div>
                 <div>
                   <span className="font-semibold text-gray-600 dark:text-gray-400">Candidats :</span>{' '}
-                  <span className="text-gray-900 dark:text-white font-medium">{candidats.length}</span>
+                  <span className="text-gray-900 dark:text-white font-medium">
+                    {groupedCandidatsView.length > 0 && candidats.length !== groupedCandidatsView.length
+                      ? `${groupedCandidatsView.length} entreprise(s) · ${candidats.length} candidature(s)`
+                      : candidats.length}
+                  </span>
                 </div>
               </div>
             </div>
@@ -532,84 +553,99 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                   <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '120px' }}>Ville</th>
                   <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '80px' }}>Lot</th>
                   <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '110px' }}>Admis / Rejeté</th>
+                  <th className="border border-[#234441] px-2 py-3 text-left font-semibold" style={{ minWidth: '180px' }}>Commentaire</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900">
-                {candidats.map((candidat, index) => (
-                  <tr key={index} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="border border-gray-300 dark:border-gray-600 px-1 py-1 text-center sticky left-0 bg-white dark:bg-gray-900 z-[1]">
-                      <button
-                        onClick={() => handleOpenEditModal(index)}
-                        className="p-1.5 rounded hover:bg-[#2F5B58]/10 text-[#2F5B58] dark:text-teal-400 transition"
-                        title="Modifier"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-sm text-gray-900 dark:text-white text-center tabular-nums">{candidat.numero}</td>
-                    <td className="border border-gray-300 dark:border-gray-600 p-0">
-                      <input
-                        value={candidat.prenom}
-                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], prenom: e.target.value }; setCandidats(c); }}
-                        className={`w-full ${colClasses}`}
-                      />
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 p-0">
-                      <input
-                        value={candidat.nom}
-                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], nom: e.target.value }; setCandidats(c); }}
-                        className={`w-full ${colClasses}`}
-                      />
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 p-0">
-                      <input
-                        value={candidat.societe}
-                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], societe: e.target.value }; setCandidats(c); }}
-                        className={`w-full ${colClasses}`}
-                      />
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 p-0">
-                      <input
-                        value={candidat.siret}
-                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], siret: e.target.value }; setCandidats(c); }}
-                        className={`w-full ${colClasses}`}
-                      />
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 p-0">
-                      <input
-                        value={candidat.adresse}
-                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], adresse: e.target.value }; setCandidats(c); }}
-                        className={`w-full ${colClasses}`}
-                      />
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 p-0">
-                      <input
-                        value={candidat.ville}
-                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], ville: e.target.value }; setCandidats(c); }}
-                        className={`w-full ${colClasses}`}
-                      />
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 p-1">
-                      <LotMultiSelector
-                        lots={dceLots}
-                        value={candidat.lot}
-                        onChange={(val) => { const c = [...candidats]; c[index] = { ...c[index], lot: val }; setCandidats(c); }}
-                        compact
-                      />
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 p-0">
-                      <select
-                        value={candidat.admisRejete}
-                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], admisRejete: e.target.value }; setCandidats(c); }}
-                        className={`w-full ${colClasses}`}
-                      >
-                        <option value="">—</option>
-                        <option value="Admis">Admis</option>
-                        <option value="Rejeté">Rejeté</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
+                {groupedCandidatsView.map((group, gi) =>
+                  group.items.map(({ candidat, originalIndex }, ci) => (
+                    <tr key={originalIndex} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="border border-gray-300 dark:border-gray-600 px-1 py-1 text-center sticky left-0 bg-white dark:bg-gray-900 z-[1]">
+                        <button
+                          onClick={() => handleOpenEditModal(originalIndex)}
+                          className="p-1.5 rounded hover:bg-[#2F5B58]/10 text-[#2F5B58] dark:text-teal-400 transition"
+                          title="Modifier"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      </td>
+                      {ci === 0 && (
+                        <>
+                          <td rowSpan={group.items.length} className="border border-gray-300 dark:border-gray-600 px-2 py-1 text-sm text-gray-900 dark:text-white text-center tabular-nums align-middle font-semibold">{gi + 1}</td>
+                          <td rowSpan={group.items.length} className="border border-gray-300 dark:border-gray-600 p-0 align-middle">
+                            <input
+                              value={candidat.prenom}
+                              onChange={(e) => { const c = [...candidats]; c[originalIndex] = { ...c[originalIndex], prenom: e.target.value }; setCandidats(c); }}
+                              className={`w-full ${colClasses}`}
+                            />
+                          </td>
+                          <td rowSpan={group.items.length} className="border border-gray-300 dark:border-gray-600 p-0 align-middle">
+                            <input
+                              value={candidat.nom}
+                              onChange={(e) => { const c = [...candidats]; c[originalIndex] = { ...c[originalIndex], nom: e.target.value }; setCandidats(c); }}
+                              className={`w-full ${colClasses}`}
+                            />
+                          </td>
+                          <td rowSpan={group.items.length} className="border border-gray-300 dark:border-gray-600 p-0 align-middle">
+                            <input
+                              value={candidat.societe}
+                              onChange={(e) => { const c = [...candidats]; c[originalIndex] = { ...c[originalIndex], societe: e.target.value }; setCandidats(c); }}
+                              className={`w-full ${colClasses}`}
+                            />
+                          </td>
+                          <td rowSpan={group.items.length} className="border border-gray-300 dark:border-gray-600 p-0 align-middle">
+                            <input
+                              value={candidat.siret}
+                              onChange={(e) => { const c = [...candidats]; c[originalIndex] = { ...c[originalIndex], siret: e.target.value }; setCandidats(c); }}
+                              className={`w-full ${colClasses}`}
+                            />
+                          </td>
+                          <td rowSpan={group.items.length} className="border border-gray-300 dark:border-gray-600 p-0 align-middle">
+                            <input
+                              value={candidat.adresse}
+                              onChange={(e) => { const c = [...candidats]; c[originalIndex] = { ...c[originalIndex], adresse: e.target.value }; setCandidats(c); }}
+                              className={`w-full ${colClasses}`}
+                            />
+                          </td>
+                          <td rowSpan={group.items.length} className="border border-gray-300 dark:border-gray-600 p-0 align-middle">
+                            <input
+                              value={candidat.ville}
+                              onChange={(e) => { const c = [...candidats]; c[originalIndex] = { ...c[originalIndex], ville: e.target.value }; setCandidats(c); }}
+                              className={`w-full ${colClasses}`}
+                            />
+                          </td>
+                        </>
+                      )}
+                      <td className="border border-gray-300 dark:border-gray-600 p-1">
+                        <LotMultiSelector
+                          lots={dceLots}
+                          value={candidat.lot}
+                          onChange={(val) => { const c = [...candidats]; c[originalIndex] = { ...c[originalIndex], lot: val }; setCandidats(c); }}
+                          compact
+                        />
+                      </td>
+                      <td className="border border-gray-300 dark:border-gray-600 p-0">
+                        <select
+                          value={candidat.admisRejete}
+                          onChange={(e) => { const c = [...candidats]; c[originalIndex] = { ...c[originalIndex], admisRejete: e.target.value }; setCandidats(c); }}
+                          className={`w-full ${colClasses}`}
+                        >
+                          <option value="">—</option>
+                          <option value="Admis">Admis</option>
+                          <option value="Rejeté">Rejeté</option>
+                        </select>
+                      </td>
+                      <td className="border border-gray-300 dark:border-gray-600 p-0">
+                        <input
+                          value={candidat.commentaire}
+                          onChange={(e) => { const c = [...candidats]; c[originalIndex] = { ...c[originalIndex], commentaire: e.target.value }; setCandidats(c); }}
+                          placeholder="—"
+                          className={`w-full ${colClasses}`}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -775,7 +811,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                           <textarea value={editCandidat.dc1Groupement} onChange={e => handleEditField('dc1Groupement', e.target.value)} rows={2} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" placeholder="Laisser vide si candidature individuelle" />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">DC4 — N'est pas dans un cas d'interdiction de soumissionner</label>
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">DC4</label>
                           <select value={editCandidat.dc1NonInterdiction} onChange={e => handleEditField('dc1NonInterdiction', e.target.value)} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none">
                             <option value="">—</option>
                             <option value="Oui">Oui</option>

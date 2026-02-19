@@ -108,6 +108,17 @@ export function ProcessVerbalPreview({ data, onClose, onExport, isExporting }: P
 
   const recv = data.recevabilite;
 
+  // Groupement des candidats par société (même logique que §1)
+  const groupedCandidats = React.useMemo(() => {
+    const map = new Map<string, { societe: string; items: typeof data.candidats }>();
+    data.candidats.forEach(c => {
+      const key = (c.societe || '').trim().toLowerCase();
+      if (!map.has(key)) map.set(key, { societe: c.societe, items: [] });
+      map.get(key)!.items.push(c);
+    });
+    return Array.from(map.values());
+  }, [data.candidats]);
+
   return (
     <div
       className="fixed inset-0 bg-black/60 z-50 flex flex-col"
@@ -293,26 +304,42 @@ export function ProcessVerbalPreview({ data, onClose, onExport, isExporting }: P
                   </tr>
                 </thead>
                 <tbody>
-                  {data.candidats.map((c, i) => (
-                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <Td className="text-center font-semibold text-gray-400">{c.numero}</Td>
-                      <Td className="font-semibold">{c.societe || '—'}</Td>
-                      <Td>
-                        {c.lot ? (
-                          <span className="inline-flex items-center px-1.5 py-0.5 bg-teal-50 text-teal-700 rounded text-[10px] font-medium">
-                            {c.lot}
-                          </span>
-                        ) : '—'}
-                      </Td>
-                      <Td className="text-center">
-                        {c.horsDelai === 'Oui'
-                          ? <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-semibold">Hors délai</span>
-                          : <span className="text-gray-300">—</span>}
-                      </Td>
-                      <Td className="text-center"><DecisionBadge val={c.admisRejete} /></Td>
-                      <Td className="text-gray-500 italic">{c.motifRejet || ''}</Td>
-                    </tr>
-                  ))}
+                  {groupedCandidats.map((g, gi) =>
+                    g.items.map((c, ci) => (
+                      <tr key={`${gi}-${ci}`} className={ci % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        {ci === 0 && (
+                          <>
+                            <Td
+                              rowSpan={g.items.length}
+                              className="text-center font-semibold text-gray-400 align-middle border-r-2 border-teal-100"
+                            >
+                              {gi + 1}
+                            </Td>
+                            <Td
+                              rowSpan={g.items.length}
+                              className="font-semibold text-gray-900 align-middle border-r border-gray-200"
+                            >
+                              {g.societe || '—'}
+                            </Td>
+                          </>
+                        )}
+                        <Td>
+                          {c.lot ? (
+                            <span className="inline-flex items-center px-1.5 py-0.5 bg-teal-50 text-teal-700 rounded text-[10px] font-medium">
+                              {c.lot}
+                            </span>
+                          ) : '—'}
+                        </Td>
+                        <Td className="text-center">
+                          {c.horsDelai === 'Oui'
+                            ? <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-semibold">Hors délai</span>
+                            : <span className="text-gray-300">—</span>}
+                        </Td>
+                        <Td className="text-center"><DecisionBadge val={c.admisRejete} /></Td>
+                        <Td className="text-gray-500 italic">{c.motifRejet || ''}</Td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </TableWrap>
 

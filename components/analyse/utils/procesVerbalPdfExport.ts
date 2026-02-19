@@ -397,16 +397,36 @@ async function buildPV(data: ProcessVerbalData): Promise<jsPDF> {
 
   if (data.candidats.length > 0) {
 
+    // Grouper par société (même pattern que §1)
+    const groupedCand: Array<{ societe: string; items: typeof data.candidats }> = [];
+    data.candidats.forEach(c => {
+      const key = (c.societe || '').trim().toLowerCase();
+      const last = groupedCand[groupedCand.length - 1];
+      if (last && (last.societe || '').trim().toLowerCase() === key) {
+        last.items.push(c);
+      } else {
+        groupedCand.push({ societe: c.societe, items: [c] });
+      }
+    });
+
+    const candRows: string[][] = [];
+    let candNum = 1;
+    groupedCand.forEach(g => {
+      g.items.forEach((c, ci) => {
+        candRows.push([
+          ci === 0 ? String(candNum++) : '',
+          ci === 0 ? (c.societe || '—') : '',
+          c.lot || '—',
+          c.horsDelai === 'Oui' ? 'Oui' : '—',
+          c.admisRejete || '—',
+          c.motifRejet || '',
+        ]);
+      });
+    });
+
     addTable(
       [['N°', 'Société', 'Lot(s)', 'Hors délai', 'Décision', 'Motif rejet']],
-      data.candidats.map(c => [
-        String(c.numero),
-        c.societe || '—',
-        c.lot || '—',
-        c.horsDelai === 'Oui' ? 'Oui' : '—',
-        c.admisRejete || '—',
-        c.motifRejet || '',
-      ]),
+      candRows,
       {
         0: { cellWidth: 8,  halign: 'center' as const },
         1: { cellWidth: 45 },
