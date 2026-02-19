@@ -1,7 +1,7 @@
 export interface UserProfile {
   id: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'gral';
   created_at?: string;
   updated_at?: string;
 }

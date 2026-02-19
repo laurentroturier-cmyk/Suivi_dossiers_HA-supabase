@@ -157,7 +157,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: 'admin' | 'user') => {
+  const handleRoleChange = async (userId: string, newRole: 'admin' | 'user' | 'gral') => {
     try {
       const { error } = await supabase
         .from('profiles')
@@ -685,10 +685,11 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                           ) : (
                             <select
                               value={user.role}
-                              onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'user')}
+                              onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'user' | 'gral')}
                               className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 outline-none"
                             >
                               <option value="user">user</option>
+                              <option value="gral">gral</option>
                               <option value="admin">admin</option>
                             </select>
                           )}
