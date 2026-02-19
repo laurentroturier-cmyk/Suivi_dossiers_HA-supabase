@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, Download, Filter, Search, Calendar, Building2, Mail, Phone, MapPin, Save, ArrowLeft, ClipboardCheck } from 'lucide-react';
+import { Upload, FileText, Download, Filter, Search, Calendar, Building2, Mail, Phone, MapPin, Save, ArrowLeft, ClipboardCheck, PackageOpen } from 'lucide-react';
 import { RetraitsData, EntrepriseRetrait } from '../types/retraits';
 import { parseRetraitsFile } from '../utils/retraitsParser';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -10,15 +10,17 @@ interface RegistreRetraitsProps {
   onProcedureUpdated?: () => void;
   onBack?: () => void;
   onNavigateToOuverturePlis?: () => void;
+  onNavigateToRegistreDepots?: () => void;
   memorizedNumero?: string;
 }
 
-const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({ 
-  supabaseClient, 
-  onOpenProcedure, 
+const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({
+  supabaseClient,
+  onOpenProcedure,
   onProcedureUpdated,
   onBack,
   onNavigateToOuverturePlis,
+  onNavigateToRegistreDepots,
   memorizedNumero
 }) => {
   const [retraitsData, setRetraitsData] = useState<RetraitsData | null>(null);
@@ -355,6 +357,15 @@ const RegistreRetraits: React.FC<RegistreRetraitsProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {onNavigateToRegistreDepots && (
+                <button
+                  onClick={onNavigateToRegistreDepots}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                >
+                  <PackageOpen className="w-4 h-4" />
+                  Registre des dépôts
+                </button>
+              )}
               {onNavigateToOuverturePlis && memorizedNumero && (
                 <button
                   onClick={onNavigateToOuverturePlis}

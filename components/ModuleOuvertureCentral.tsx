@@ -223,6 +223,7 @@ const ModuleOuvertureCentral: React.FC<ModuleOuvertureCentralProps> = ({
         onProcedureUpdated={onProcedureUpdated}
         onBack={handleBackToHome}
         onNavigateToOuverturePlis={handleNavigateToOuverturePlis}
+        onNavigateToRegistreDepots={() => setCurrentView('depots')}
         memorizedNumero={memorizedNumero}
       />
     );

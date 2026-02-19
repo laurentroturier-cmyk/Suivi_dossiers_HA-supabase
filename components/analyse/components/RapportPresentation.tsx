@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Upload, Check, X, FileSpreadsheet, FileCog, Download, Edit2, Eye, AlertCircle, Save, FolderOpen, Clock, FileSignature, FileCheck, Construction } from 'lucide-react';
+import { FileText, Upload, Check, X, FileSpreadsheet, FileCog, Download, Edit2, Eye, AlertCircle, Save, FolderOpen, Clock, FileSignature, FileCheck, Construction, Printer } from 'lucide-react';
+import { RapportPresentationPreview } from './RapportPresentationPreview';
 import { RichTextEditor } from '../../dce-complet/components/modules/RichTextEditor';
 import { RapportContent, RapportState } from '../types';
 import { generateRapportData } from '../utils/generateRapportData';
@@ -83,6 +84,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   
   // Gestion des rapports sauvegardés
   const [rapportsSauvegardes, setRapportsSauvegardes] = useState<RapportSauvegarde[]>([]);
@@ -1400,6 +1402,12 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     }
   };
 
+  // Ouvrir la visionneuse du Rapport de Présentation
+  const handleOpenPreview = () => {
+    if (!state.rapportGenere) return;
+    setShowPreview(true);
+  };
+
   // Export PDF
   const handleExportPDF = async () => {
     if (!state.rapportGenere) return;
@@ -1735,7 +1743,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   <button
                     onClick={handleExportDOCX}
                     disabled={isExporting}
-                    className="py-2 px-4 min-w-[120px] bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="py-2 px-4 min-w-[120px] bg-[#2B579A] hover:bg-[#1e3f73] text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isExporting ? (
                       <>
@@ -1750,11 +1758,21 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     )}
                   </button>
 
+                  {/* Bouton Aperçu PDF (principal) */}
+                  <button
+                    onClick={handleOpenPreview}
+                    className="py-2 px-4 min-w-[120px] bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] text-white font-semibold rounded-lg flex items-center justify-center gap-2 shadow-md"
+                    title="Visualiser le Rapport de Présentation avant export"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Aperçu PDF
+                  </button>
+
                   {/* Bouton Exporter PDF */}
                   <button
                     onClick={handleExportPDF}
                     disabled={isExportingPdf}
-                    className="py-2 px-4 min-w-[120px] bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="py-2 px-4 min-w-[120px] bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isExportingPdf ? (
                       <>
@@ -1779,15 +1797,6 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     Générer NOTI
                   </button>
 
-                  {/* Bouton NOTI Multi-Attributaires (en construction) */}
-                  <button
-                    onClick={() => setShowNotiMultiAttributaires(true)}
-                    className="py-2 px-4 min-w-[120px] bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg flex items-center justify-center gap-2 opacity-70"
-                    title="NOTI Multi-Attributaires (en construction)"
-                  >
-                    <Construction className="w-4 h-4" />
-                    NOTI Multi 🚧
-                  </button>
                 </>
               )}
             </div>
@@ -2782,6 +2791,24 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         <NotiMultiAttributaires
           isOpen={showNotiMultiAttributaires}
           onClose={() => setShowNotiMultiAttributaires(false)}
+        />
+      )}
+
+      {/* ── Visionneuse Rapport de Présentation (overlay z-50) ── */}
+      {showPreview && state.rapportGenere && (
+        <RapportPresentationPreview
+          data={{
+            procedure: procedureSelectionnee,
+            rapportGenere: state.rapportGenere,
+            contenuChapitre3,
+            contenuChapitre4,
+            chapitre10,
+          }}
+          onClose={() => setShowPreview(false)}
+          onExportPDF={handleExportPDF}
+          onExportDOCX={handleExportDOCX}
+          isExportingPdf={isExportingPdf}
+          isExportingDocx={isExporting}
         />
       )}
     </div>
