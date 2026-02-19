@@ -6,9 +6,10 @@ interface LandingPageProps {
   onOpenAdmin: () => void;
   projectsCount: number;
   proceduresCount: number;
+  isAdmin?: boolean;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount, isAdmin = false }) => {
   // État pour gérer l'expansion de la section NOTI dans Rédaction
   const [notiExpanded, setNotiExpanded] = useState(false);
   
@@ -65,6 +66,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       titre: 'Rédaction',
       description: 'Rédaction des documents et DCE',
       icon: Edit3,
+      adminOnly: true,
       iconColor: 'text-amber-600 dark:text-amber-400',
       iconBg: 'bg-amber-100 dark:bg-amber-500/20',
       borderColor: 'border-amber-200 dark:border-amber-500/40',
@@ -96,7 +98,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
         { label: 'Rapport de Présentation', tab: 'rapport-presentation', isAdmin: false, icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
         { label: 'Analyse des offres DQE', tab: 'analyse-offres-dqe', isAdmin: false, icon: BarChart3, color: 'text-[#004d3d] dark:text-cyan-400' },
         { label: 'Analyse DPGF', tab: 'analyse-dpgf', isAdmin: false, icon: FileSpreadsheet, color: 'text-teal-600 dark:text-teal-400' },
-
+        { label: 'Accès rapide NOTI', tab: 'notifications-quick', isAdmin: false, icon: Bell, color: 'text-indigo-600 dark:text-indigo-400' },
       ]
     },
     {
@@ -119,6 +121,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       titre: 'ImmoVision',
       description: 'Module immobilier et gestion des biens',
       icon: Building2,
+      adminOnly: true,
       iconColor: 'text-amber-600 dark:text-amber-400',
       iconBg: 'bg-amber-100 dark:bg-amber-500/20',
       borderColor: 'border-amber-200 dark:border-amber-500/40',
@@ -134,6 +137,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       titre: 'EN Dev',
       description: 'Fonctionnalités en cours de développement et maquettes',
       icon: GitBranch,
+      adminOnly: true,
       iconColor: 'text-amber-600 dark:text-amber-400',
       iconBg: 'bg-amber-100 dark:bg-amber-500/20',
       borderColor: 'border-amber-200 dark:border-amber-500/40',
@@ -178,6 +182,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
   ];
 
   const [openTileId, setOpenTileId] = useState<string | null>(null);
+  const visibleDomaines = domaines.filter(d => !d.adminOnly || isAdmin);
 
   return (
     <div className="landing-page min-h-screen relative overflow-hidden">
@@ -216,7 +221,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       <main className="landing-content-section relative z-10 max-w-6xl mx-auto px-6 py-10">
         <p className="landing-subtitle text-sm text-gray-600 dark:text-slate-300 mb-6">Choisissez un domaine pour accéder aux modules</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {domaines.map((domaine) => {
+          {visibleDomaines.map((domaine) => {
             const Icon = domaine.icon;
             const isOpen = openTileId === domaine.id;
             const firstAction = domaine.actions[0];

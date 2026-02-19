@@ -3058,6 +3058,7 @@ const App: React.FC = () => {
                 onOpenAdmin={() => setShowAdminDashboard(true)}
                 projectsCount={dossiers.length}
                 proceduresCount={procedures.length}
+                isAdmin={authState.profile?.role === 'admin'}
               />
             )}
 
