@@ -412,24 +412,68 @@ export const parsePdfDepots = async (file: File): Promise<DepotsData> => {
       });
     }
 
-    // Rechercher les entrées du tableau en identifiant le pattern clé:
-    // "N Electronique/Papier fichier.crypt" où N est le numéro d'ordre
-    // Exemple: "1 Electronique 1067020_offre_1069220_354205.crypt"
+    // Rechercher les entrées du tableau en identifiant le fichier .crypt
+    // Stratégie robuste : trouver toutes les lignes contenant un .crypt,
+    // puis chercher le numéro d'ordre et le mode dans un voisinage de ±3 lignes.
     
     const entryIndices: { index: number; ordre: string; mode: string; fichier: string }[] = [];
     
     for (let i = 0; i < allLines.length; i++) {
       const line = allLines[i].trim();
-      // Pattern: numéro + mode + fichier.crypt
-      const match = line.match(/^(\d+)\s+(Electronique|Électronique|Papier)\s+(.+\.crypt)/i);
-      if (match) {
+
+      // Cas 1 (idéal) : tout sur une ligne "N Electronique fichier.crypt"
+      const fullMatch = line.match(/^(\d+)\s+(Electronique|Électronique|Papier)\s+(\S+\.crypt)/i);
+      if (fullMatch) {
         entryIndices.push({
           index: i,
-          ordre: match[1],
-          mode: match[2],
-          fichier: match[3]
+          ordre: fullMatch[1],
+          mode: fullMatch[2],
+          fichier: fullMatch[3]
         });
+        continue;
       }
+
+      // Cas 2 : la ligne contient un fichier .crypt mais pas le format complet
+      // (le numéro ou le mode peut être sur une ligne adjacente)
+      const cryptOnLine = line.match(/(\S+\.crypt\b)/i);
+      if (!cryptOnLine) continue;
+
+      // Éviter les doublons si déjà capturé par cas 1
+      const fichier = cryptOnLine[1];
+
+      let ordre = '';
+      let mode = '';
+
+      // Chercher numéro d'ordre et mode dans la ligne courante et ±3 lignes autour
+      const windowStart = Math.max(0, i - 3);
+      const windowEnd = Math.min(allLines.length - 1, i + 3);
+      for (let j = windowStart; j <= windowEnd; j++) {
+        const adj = allLines[j].trim();
+
+        // Numéro seul sur une ligne
+        if (!ordre && /^\d{1,2}$/.test(adj)) {
+          ordre = adj;
+        }
+        // Numéro en début de ligne (ex: "6 JAM CONSTRUCTION ...")
+        if (!ordre) {
+          const m = adj.match(/^(\d{1,2})\s+/);
+          if (m) ordre = m[1];
+        }
+        // Mode seul ou en début de ligne
+        if (!mode) {
+          if (/(^|\s)(Electronique|Électronique)(\s|$)/i.test(adj)) mode = 'Electronique';
+          else if (/(^|\s)Papier(\s|$)/i.test(adj)) mode = 'Papier';
+        }
+      }
+
+      if (!ordre && !mode) continue; // pas une vraie entrée
+
+      entryIndices.push({
+        index: i,
+        ordre: ordre || String(entryIndices.length + 1),
+        mode:  mode  || 'Electronique',
+        fichier,
+      });
     }
 
     // Pour chaque entrée, collecter les données autour
@@ -465,9 +509,9 @@ export const parsePdfDepots = async (file: File): Promise<DepotsData> => {
       // et les lignes APRÈS (heure, taille, téléphone, fax, email)
       
       // Lignes avant (entre l'entrée précédente et celle-ci)
-      const linesBefore = allLines.slice(Math.max(prevEntryIdx + 1, currentLineIdx - 10), currentLineIdx);
+      const linesBefore = allLines.slice(Math.max(prevEntryIdx + 1, currentLineIdx - 20), currentLineIdx);
       // Lignes après (jusqu'à la prochaine entrée)
-      const linesAfter = allLines.slice(currentLineIdx + 1, Math.min(currentLineIdx + 8, nextEntryIdx));
+      const linesAfter = allLines.slice(currentLineIdx + 1, Math.min(currentLineIdx + 15, nextEntryIdx));
 
       // Collecter les lignes candidates pour société et contact
       const candidateLines: string[] = [];

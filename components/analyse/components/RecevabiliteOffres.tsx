@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, FileCheck, Building2, Plus, Trash2, Cloud, CheckCircle2, AlertCircle } from 'lucide-react';
 import { DepotsData } from '../../../types/depots';
 import { useOuverturePlis } from '../../../hooks/useOuverturePlis';
+import { useDCELots } from '../../../hooks/useDCELots';
+import { LotMultiSelector } from '../../shared/LotMultiSelector';
 
 interface RecevabiliteOffresProps {
   onBack: () => void;
@@ -41,6 +43,18 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
   const refProc = procedure?.['Référence procédure (plateforme)'];
   const numProc = typeof refProc === 'string' ? refProc.split(' ')[0] : (refProc || '');
   const { loadData, saveData, autoSave, loading, saving, error, lastSaved } = useOuverturePlis(numProc);
+
+  // Numéro 5 chiffres pour le DCE
+  const numProc5 = useMemo(() => {
+    const n = procedure?.['NumeroAfpa5Chiffres'];
+    if (n) return String(n);
+    const afpa = String(procedure?.['Numéro de procédure (Afpa)'] || '');
+    const m = afpa.match(/^(\d{5})/);
+    return m ? m[1] : null;
+  }, [procedure]);
+
+  // Chargement des lots depuis le DCE Complet
+  const { lots: dceLots } = useDCELots(numProc5);
 
   // Charger les candidats depuis les dépôts
   useEffect(() => {
@@ -241,23 +255,16 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                       </div>
                     </td>
                     <td className="px-4 py-3 border-r border-gray-200 dark:border-gray-700">
-                      <select
+                      <LotMultiSelector
+                        lots={dceLots}
                         value={candidat.lotRecevabilite}
-                        onChange={(e) => {
+                        onChange={(val) => {
                           const newCandidats = [...candidats];
-                          newCandidats[index].lotRecevabilite = e.target.value;
+                          newCandidats[index].lotRecevabilite = val;
                           setCandidats(newCandidats);
                         }}
-                        className={inputBase}
-                      >
-                        <option value="">-</option>
-                        <option value="Unique">Unique</option>
-                        <option value="Lot 1">Lot 1</option>
-                        <option value="Lot 2">Lot 2</option>
-                        <option value="Lot 3">Lot 3</option>
-                        <option value="Lot 4">Lot 4</option>
-                        <option value="Lot 5">Lot 5</option>
-                      </select>
+                        compact
+                      />
                     </td>
                     <td className="px-4 py-3 border-r border-gray-200 dark:border-gray-700">
                       <select
@@ -348,18 +355,16 @@ const RecevabiliteOffres: React.FC<RecevabiliteOffresProps> = ({
                     <div className="flex-1 grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Lot n°
+                          Lot
                         </label>
-                        <input
-                          type="text"
+                        <LotMultiSelector
+                          lots={dceLots}
                           value={lot.lot}
-                          onChange={(e) => {
+                          onChange={(val) => {
                             const newLots = [...lotsInfructueux];
-                            newLots[index].lot = e.target.value;
+                            newLots[index].lot = val;
                             setLotsInfructueux(newLots);
                           }}
-                          placeholder="Numéro du lot"
-                          className={inputBase}
                         />
                       </div>
                       <div>

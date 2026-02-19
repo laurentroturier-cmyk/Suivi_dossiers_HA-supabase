@@ -219,7 +219,6 @@ const ModuleOuvertureCentral: React.FC<ModuleOuvertureCentralProps> = ({
         supabaseClient={supabaseClient}
         onOpenProcedure={(numeroAfpa) => {
           handleRegistreLoaded(numeroAfpa, 'retraits');
-          if (onOpenProcedure) onOpenProcedure(numeroAfpa);
         }}
         onProcedureUpdated={onProcedureUpdated}
         onBack={handleBackToHome}
@@ -238,7 +237,6 @@ const ModuleOuvertureCentral: React.FC<ModuleOuvertureCentralProps> = ({
         supabaseClient={supabaseClient}
         onOpenProcedure={(numeroAfpa) => {
           handleRegistreLoaded(numeroAfpa, 'depots');
-          if (onOpenProcedure) onOpenProcedure(numeroAfpa);
         }}
         onProcedureUpdated={onProcedureUpdated}
         onBack={handleBackToHome}

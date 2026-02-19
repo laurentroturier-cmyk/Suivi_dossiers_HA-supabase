@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, PackageOpen, UserCheck, FileCheck, Building2, Mail, Phone, MapPin, Calendar, Clock, Pencil, Save, X, Cloud, CloudOff, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ArrowLeft, Search, PackageOpen, UserCheck, FileCheck, Building2, Mail, Phone, MapPin, Calendar, Clock, Pencil, Save, X, Cloud, CloudOff, CheckCircle2, AlertCircle, FileDown, Loader2, Printer } from 'lucide-react';
 import { DepotsData } from '../../../types/depots';
 import RecevabiliteOffres from './RecevabiliteOffres';
 import { useOuverturePlis } from '../../../hooks/useOuverturePlis';
+import { supabase } from '../../../lib/supabase';
+import { exportProcessVerbalPdf } from '../utils/procesVerbalPdfExport';
+import { ProcessVerbalPreview } from './ProcessVerbalPreview';
+import { useDCELots } from '../../../hooks/useDCELots';
+import { LotMultiSelector } from '../../shared/LotMultiSelector';
 
 export type OuverturePlisSection = 'candidature' | 'recevabilite';
 
@@ -110,9 +115,39 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
   // Hook de sauvegarde
   const { saving, lastSaved, saveData, loadData, autoSave, error } = useOuverturePlis(searchNumero);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showPVPreview, setShowPVPreview] = useState(false);
+  const [pvData, setPvData] = useState<Parameters<typeof ProcessVerbalPreview>[0]['data'] | null>(null);
   
   // Données des dépôts depuis la procédure
   const depotsData: DepotsData | null = selectedProcedure?.depots || null;
+
+  // Numéro 5 chiffres pour le DCE
+  const numProc5 = useMemo(() => {
+    if (!selectedProcedure) return null;
+    const n = selectedProcedure['NumeroAfpa5Chiffres'];
+    if (n) return String(n);
+    const afpa = String(selectedProcedure['Numéro de procédure (Afpa)'] || '');
+    const m = afpa.match(/^(\d{5})/);
+    return m ? m[1] : null;
+  }, [selectedProcedure]);
+
+  // Lots depuis le DCE Complet
+  const { lots: dceLots } = useDCELots(numProc5);
+
+  // Groupement des dépôts par entreprise pour la liste des candidatures
+  const groupedEntreprises = useMemo(() => {
+    if (!depotsData?.entreprises) return [];
+    const map = new Map<string, { societe: string; contact: string; email: string; ville: string; cp: string; depots: typeof depotsData.entreprises }>();
+    depotsData.entreprises.forEach(e => {
+      const key = (e.societe || '').trim().toLowerCase();
+      if (!map.has(key)) {
+        map.set(key, { societe: e.societe, contact: e.contact, email: e.email, ville: e.ville, cp: e.cp, depots: [] });
+      }
+      map.get(key)!.depots.push(e);
+    });
+    return Array.from(map.values());
+  }, [depotsData]);
 
   // Recherche de procédure
   const handleSearchProcedure = () => {
@@ -282,6 +317,85 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
     setEditIndex(null);
     setEditCandidat(null);
     setActiveTab('info');
+  };
+
+  // Collecte des données PV (utilisé par l'aperçu ET l'export direct)
+  const buildPVData = async () => {
+    // ── 1. Candidature ──────────────────────────────────────────────────────
+    // Les candidats ne sont chargés en état QUE quand ongletActif === 'candidature'.
+    // On force un chargement Supabase pour ne pas dépendre de l'onglet ouvert.
+    const candData = await loadData('candidature');
+    const finalCandidats =
+      candData?.candidats && (candData.candidats as any[]).length > 0
+        ? (candData.candidats as any[])
+        : candidats; // fallback sur l'état si déjà peuplé
+
+    // ── 2. Recevabilité ─────────────────────────────────────────────────────
+    // RecevabiliteOffres sauvegarde avec num_proc = refProc.split(' ')[0]
+    // (ex. "25006_AOO_TMA-EPM_LAY") alors que searchNumero = "25006".
+    // On tente les deux clés pour être robuste.
+    const refProc = selectedProcedure?.['Référence procédure (plateforme)'];
+    const recevKey = typeof refProc === 'string' ? refProc.split(' ')[0] : String(refProc || '');
+    const keysToTry = [...new Set([recevKey, searchNumero].filter(Boolean))];
+
+    let recevabilite = null;
+    for (const key of keysToTry) {
+      const { data: recevRaw } = await supabase
+        .from('ouverture_plis')
+        .select('recevabilite')
+        .eq('num_proc', key)
+        .eq('type_analyse', 'recevabilite')
+        .maybeSingle();
+      if (recevRaw?.recevabilite) {
+        const r = recevRaw.recevabilite as any;
+        recevabilite = {
+          candidats: r.candidats ?? [],
+          raisonInfructuosite: r.raison_infructuosite ?? '',
+          lotsInfructueux: r.lots_infructueux ?? [],
+        };
+        break;
+      }
+    }
+
+    return {
+      procedure: selectedProcedure,
+      depotsData,
+      groupedEntreprises,
+      candidats: finalCandidats,
+      recevabilite,
+      msa: candData?.msa || msa,
+      valideurTechnique: candData?.valideur_technique || valideurTechnique,
+      demandeur: candData?.demandeur || demandeur,
+    };
+  };
+
+  // Ouvrir la visionneuse du Procès Verbal
+  const handleOpenPreview = async () => {
+    if (!selectedProcedure) return;
+    setIsExporting(true); // réutilise le spinner pour le chargement
+    try {
+      const data = await buildPVData();
+      setPvData(data);
+      setShowPVPreview(true);
+    } catch (err) {
+      console.error('Erreur chargement données PV:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Export Procès Verbal PDF (depuis la visionneuse ou directement)
+  const handleExportPV = async () => {
+    if (!selectedProcedure) return;
+    setIsExporting(true);
+    try {
+      const data = pvData ?? await buildPVData();
+      await exportProcessVerbalPdf(data);
+    } catch (err) {
+      console.error('Erreur export PV:', err);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Fonction de sauvegarde manuelle
@@ -475,11 +589,12 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                         className={`w-full ${colClasses}`}
                       />
                     </td>
-                    <td className="border border-gray-300 dark:border-gray-600 p-0">
-                      <input
+                    <td className="border border-gray-300 dark:border-gray-600 p-1">
+                      <LotMultiSelector
+                        lots={dceLots}
                         value={candidat.lot}
-                        onChange={(e) => { const c = [...candidats]; c[index] = { ...c[index], lot: e.target.value }; setCandidats(c); }}
-                        className={`w-full ${colClasses}`}
+                        onChange={(val) => { const c = [...candidats]; c[index] = { ...c[index], lot: val }; setCandidats(c); }}
+                        compact
                       />
                     </td>
                     <td className="border border-gray-300 dark:border-gray-600 p-0">
@@ -611,8 +726,14 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                       <input type="text" value={editCandidat.ville} onChange={e => handleEditField('ville', e.target.value)} className="w-full px-3 py-2 border-2 border-gray-300 dark:border-[#333333] rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:ring-2 focus:ring-[#2F5B58]/20 focus:outline-none" />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">Lot</label>
-                      <input type="text" value={editCandidat.lot} onChange={e => handleEditField('lot', e.target.value)} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
+                      <label className="block text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">
+                        Lot{dceLots ? ' (depuis DCE)' : ' (saisie manuelle)'}
+                      </label>
+                      <LotMultiSelector
+                        lots={dceLots}
+                        value={editCandidat.lot}
+                        onChange={(val) => handleEditField('lot', val)}
+                      />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">Hors Délai</label>
@@ -882,6 +1003,40 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Boutons Procès Verbal — visibles dès qu'une procédure est sélectionnée */}
+            {selectedProcedure && (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Aperçu (principal) */}
+                <button
+                  onClick={handleOpenPreview}
+                  disabled={isExporting}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] disabled:opacity-60 text-white font-semibold rounded-xl transition shadow-md"
+                  title="Visualiser le Procès Verbal avant export"
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Chargement…
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="w-4 h-4" />
+                      Aperçu PV
+                    </>
+                  )}
+                </button>
+                {/* Export direct (secondaire) */}
+                <button
+                  onClick={handleExportPV}
+                  disabled={isExporting}
+                  className="flex items-center gap-2 px-3 py-2.5 bg-white hover:bg-gray-50 disabled:opacity-60 text-[#2F5B58] font-semibold rounded-xl transition shadow-sm border border-[#2F5B58]/30"
+                  title="Exporter directement en PDF sans aperçu"
+                >
+                  <FileDown className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1068,98 +1223,144 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                   <span className="font-semibold text-gray-700 dark:text-gray-300">Date limite candidature :</span>{' '}
                   <span className="text-gray-900 dark:text-white">{depotsData.procedureInfo.dateCandidature}</span>
                 </div>
-                <div>
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">Total candidatures :</span>{' '}
-                  <span className="text-[#2F5B58] dark:text-teal-400 font-bold">
-                    {depotsData.stats.totalEnveloppesElectroniques + depotsData.stats.totalEnveloppesPapier}
-                  </span>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Entreprises :</span>{' '}
+                    <span className="text-[#2F5B58] dark:text-teal-400 font-bold">{groupedEntreprises.length}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Total offres reçues :</span>{' '}
+                    <span className="text-[#2F5B58] dark:text-teal-400 font-bold">
+                      {depotsData.stats.totalEnveloppesElectroniques + depotsData.stats.totalEnveloppesPapier}
+                    </span>
+                    <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
+                      ({depotsData.stats.totalEnveloppesElectroniques} électronique{depotsData.stats.totalEnveloppesElectroniques > 1 ? 's' : ''}
+                      {depotsData.stats.totalEnveloppesPapier > 0 && `, ${depotsData.stats.totalEnveloppesPapier} papier`})
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
             
-            {/* Tableau des candidatures */}
+            {/* Tableau des candidatures — groupé par entreprise */}
             <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-[#333333]">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-[#333333]">
-                <thead className="bg-green-50 dark:bg-teal-950/20">
+              <table className="min-w-full">
+                <thead className="bg-[#2F5B58] dark:bg-teal-900/60">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      N°
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider w-10">N°</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      <div className="flex items-center gap-2"><Building2 className="w-4 h-4" />Entreprise</div>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        Entreprise
-                      </div>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Contact</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      <div className="flex items-center gap-2"><Mail className="w-4 h-4" />Email</div>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Contact
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      <div className="flex items-center gap-2"><MapPin className="w-4 h-4" />Ville</div>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        Email
-                      </div>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">
+                      Total offres
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        Ville
-                      </div>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Lot</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      <div className="flex items-center gap-2"><Calendar className="w-4 h-4" />Date dépôt</div>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Date dépôt
-                      </div>
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        Heure
-                      </div>
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Mode
-                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Mode</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-[#1E1E1E] divide-y divide-gray-200 dark:divide-[#333333]">
-                  {depotsData.entreprises.map((entreprise, index) => (
-                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                        <div className="font-semibold">{entreprise.societe}</div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                        {entreprise.contact}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                        {entreprise.email}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                        <div>{entreprise.ville}</div>
-                        {entreprise.cp && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{entreprise.cp}</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {entreprise.dateReception}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        -
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          entreprise.modeReception === 'Électronique' 
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                            : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
-                        }`}>
-                          {entreprise.modeReception}
-                        </span>
-                      </td>
-                    </tr>
+                <tbody className="bg-white dark:bg-[#1E1E1E]">
+                  {groupedEntreprises.map((groupe, groupIdx) => (
+                    groupe.depots.map((depot, depotIdx) => {
+                      const isFirst = depotIdx === 0;
+                      const rowSpan = groupe.depots.length;
+                      const isMulti = rowSpan > 1;
+                      return (
+                        <tr
+                          key={`${groupIdx}-${depotIdx}`}
+                          className={`
+                            ${isFirst ? 'border-t-2 border-[#2F5B58]/30 dark:border-teal-700/40' : 'border-t border-gray-100 dark:border-[#2a2a2a]'}
+                            ${isFirst ? 'bg-white dark:bg-[#1E1E1E]' : 'bg-gray-50/50 dark:bg-[#1a1a1a]'}
+                            hover:bg-green-50/40 dark:hover:bg-teal-950/10 transition-colors
+                          `}
+                        >
+                          {/* N° — uniquement sur la première ligne du groupe */}
+                          {isFirst && (
+                            <td rowSpan={rowSpan} className="px-4 py-3 text-sm font-bold text-[#2F5B58] dark:text-teal-400 align-top whitespace-nowrap">
+                              {groupIdx + 1}
+                            </td>
+                          )}
+
+                          {/* Entreprise — uniquement sur la première ligne */}
+                          {isFirst && (
+                            <td rowSpan={rowSpan} className="px-4 py-3 text-sm align-top">
+                              <div className="font-bold text-gray-900 dark:text-white">{groupe.societe}</div>
+                            </td>
+                          )}
+
+                          {/* Contact — uniquement sur la première ligne */}
+                          {isFirst && (
+                            <td rowSpan={rowSpan} className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 align-top">
+                              {groupe.contact}
+                            </td>
+                          )}
+
+                          {/* Email — uniquement sur la première ligne */}
+                          {isFirst && (
+                            <td rowSpan={rowSpan} className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 align-top break-all">
+                              {groupe.email}
+                            </td>
+                          )}
+
+                          {/* Ville — uniquement sur la première ligne */}
+                          {isFirst && (
+                            <td rowSpan={rowSpan} className="px-4 py-3 text-sm text-gray-900 dark:text-white align-top">
+                              <div>{groupe.ville}</div>
+                              {groupe.cp && <div className="text-xs text-gray-500 dark:text-gray-400">{groupe.cp}</div>}
+                            </td>
+                          )}
+
+                          {/* Total offres — uniquement sur la première ligne, centré */}
+                          {isFirst && (
+                            <td rowSpan={rowSpan} className="px-4 py-3 text-center align-middle">
+                              <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold
+                                ${isMulti
+                                  ? 'bg-[#2F5B58] text-white shadow-sm'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }`}>
+                                {rowSpan}
+                              </span>
+                            </td>
+                          )}
+
+                          {/* Lot — une ligne par dépôt */}
+                          <td className="px-4 py-2 text-sm">
+                            {depot.lot ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-50 dark:bg-teal-900/30 text-[#2F5B58] dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+                                {depot.lot}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-600 text-xs italic">—</span>
+                            )}
+                          </td>
+
+                          {/* Date dépôt */}
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            {depot.dateReception || '—'}
+                          </td>
+
+                          {/* Mode */}
+                          <td className="px-4 py-2 whitespace-nowrap text-sm">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              depot.modeReception === 'Électronique'
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                            }`}>
+                              {depot.modeReception || '—'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ))}
                 </tbody>
               </table>
@@ -1201,6 +1402,16 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
           </div>
         )}
       </div>
+
+      {/* ── Visionneuse Procès Verbal (overlay z-50) ── */}
+      {showPVPreview && pvData && (
+        <ProcessVerbalPreview
+          data={pvData}
+          onClose={() => setShowPVPreview(false)}
+          onExport={handleExportPV}
+          isExporting={isExporting}
+        />
+      )}
     </div>
   );
 };
