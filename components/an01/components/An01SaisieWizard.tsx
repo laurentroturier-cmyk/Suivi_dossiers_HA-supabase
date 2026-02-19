@@ -257,7 +257,7 @@ const An01SaisieWizard: React.FC<An01SaisieWizardProps> = ({ initialProject, ini
   return (
     <div className="an01-page min-h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col">
       <header className="an01-wizard-header border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3 space-y-3">
+        <div className="w-full px-4 py-3 space-y-3">
           {/* Ligne 1 : Retour + Fil d'étapes (scroll horizontal si besoin) */}
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
@@ -361,7 +361,7 @@ const An01SaisieWizard: React.FC<An01SaisieWizardProps> = ({ initialProject, ini
           const result = projectToAnalysisData(project);
           const currentLot = result.lots[selectedLotIndex];
           return (
-            <div className="max-w-6xl mx-auto space-y-6">
+            <div className="w-full space-y-6">
               <div className="flex justify-between pb-2">
                 <Button variant="secondary" onClick={goPrev} rounded="2xl" className="rounded-2xl">
                   Retour

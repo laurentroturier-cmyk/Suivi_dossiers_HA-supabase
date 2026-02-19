@@ -42,41 +42,41 @@ interface Candidat {
   motifRejetRecevabilite: string;
   
   // DC1
-  dc1Produit: string;
-  dc1PrixHT: string;
-  dc1PrixTTC: string;
-  dc1Delai: string;
-  dc1MoyensProduits: string;
-  dc1MoyensHumains: string;
-  dc1References: string;
-  dc1Titres: string;
-  
+  dc1Presentation: string;
+  dc1Groupement: string;
+  dc1NonInterdiction: string;
+  dc1SousTraitance: string;
+  dc1PourcentageSousTraite: string;
+
   // DC2
-  dc2Produit: string;
   dc2CAN1: string;
   dc2CAN2: string;
   dc2CAN3: string;
-  dc2EffectifMoyen: string;
-  dc2OutillageMateriel: string;
-  dc2MesuresGestion: string;
-  dc2CertificationsQualite: string;
-  
+  dc2CapaciteTechnique: string;
+
+  // Autres documents (oui/non)
+  autresPouvoir: string;
+  autresKbis: string;
+  autresFiscale: string;
+  autresURSSAF: string;
+  autresRedressement: string;
+  autresEffectifs: string;
+  autresMissions: string;
+  autresVisite: string;
+  autresCertification: string;
+
   // Assurances
   assuranceRC: string;
-  assuranceRCMontant: string;
+  assuranceRCSinistre: string;
   assuranceDecennale: string;
-  assuranceDecennaleMontant: string;
-  assuranceAutre: string;
-  assuranceAutreMontant: string;
-  
-  // Offre
-  offrePrixBase: string;
-  offrePrixOptions: string;
-  offrePrixTotal: string;
-  offreDelai: string;
-  offreValidite: string;
-  offreVariantes: string;
-  offreObservations: string;
+  assuranceDecennaleChantier: string;
+
+  // Offre (oui/non)
+  offreActeEngagement: string;
+  offreBPUDQE: string;
+  offreQT: string;
+  offreMemoireTech: string;
+  offreRIB: string;
 }
 
 const OuverturePlis: React.FC<OuverturePlisProps> = ({
@@ -96,7 +96,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editCandidat, setEditCandidat] = useState<Candidat | null>(null);
-  const [activeTab, setActiveTab] = useState<'info' | 'dc1' | 'dc2' | 'assurances' | 'offre'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'dc1dc2dc4' | 'autres' | 'assurances' | 'offre'>('info');
   
   // Champs de saisie
   const [msa, setMsa] = useState('');
@@ -219,38 +219,37 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
         recevable: '',
         motifRejetRecevabilite: '',
         // DC1
-        dc1Produit: '',
-        dc1PrixHT: '',
-        dc1PrixTTC: '',
-        dc1Delai: '',
-        dc1MoyensProduits: '',
-        dc1MoyensHumains: '',
-        dc1References: '',
-        dc1Titres: '',
+        dc1Presentation: '',
+        dc1Groupement: '',
+        dc1NonInterdiction: '',
+        dc1SousTraitance: '',
+        dc1PourcentageSousTraite: '',
         // DC2
-        dc2Produit: '',
         dc2CAN1: '',
         dc2CAN2: '',
         dc2CAN3: '',
-        dc2EffectifMoyen: '',
-        dc2OutillageMateriel: '',
-        dc2MesuresGestion: '',
-        dc2CertificationsQualite: '',
+        dc2CapaciteTechnique: '',
+        // Autres documents
+        autresPouvoir: '',
+        autresKbis: '',
+        autresFiscale: '',
+        autresURSSAF: '',
+        autresRedressement: '',
+        autresEffectifs: '',
+        autresMissions: '',
+        autresVisite: '',
+        autresCertification: '',
         // Assurances
         assuranceRC: '',
-        assuranceRCMontant: '',
+        assuranceRCSinistre: '',
         assuranceDecennale: '',
-        assuranceDecennaleMontant: '',
-        assuranceAutre: '',
-        assuranceAutreMontant: '',
+        assuranceDecennaleChantier: '',
         // Offre
-        offrePrixBase: '',
-        offrePrixOptions: '',
-        offrePrixTotal: '',
-        offreDelai: '',
-        offreValidite: '',
-        offreVariantes: '',
-        offreObservations: '',
+        offreActeEngagement: '',
+        offreBPUDQE: '',
+        offreQT: '',
+        offreMemoireTech: '',
+        offreRIB: '',
       }));
       setCandidats(candidatsInitiaux);
     }
@@ -529,24 +528,24 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                   Info Générale
                 </button>
                 <button
-                  onClick={() => setActiveTab('dc1')}
+                  onClick={() => setActiveTab('dc1dc2dc4')}
                   className={`px-4 py-2 rounded-t-lg font-semibold transition-colors ${
-                    activeTab === 'dc1'
+                    activeTab === 'dc1dc2dc4'
                       ? 'bg-white dark:bg-gray-900 text-orange-600 dark:text-orange-400 border-t-2 border-orange-600'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  DC1
+                  DC1 · DC2 · DC4
                 </button>
                 <button
-                  onClick={() => setActiveTab('dc2')}
+                  onClick={() => setActiveTab('autres')}
                   className={`px-4 py-2 rounded-t-lg font-semibold transition-colors ${
-                    activeTab === 'dc2'
-                      ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 border-t-2 border-blue-600'
+                    activeTab === 'autres'
+                      ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 border-t-2 border-purple-600'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  DC2
+                  Autres documents
                 </button>
                 <button
                   onClick={() => setActiveTab('assurances')}
@@ -621,6 +620,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                         <option value="">-</option>
                         <option value="Oui">Oui</option>
                         <option value="Non">Non</option>
+                              <option value="Non Applicable">Non Applicable</option>
                       </select>
                     </div>
                     <div>
@@ -638,87 +638,117 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                   </div>
                 )}
 
-                {/* Onglet DC1 */}
-                {activeTab === 'dc1' && (
-                  <div className="space-y-4">
+                {/* Onglet DC1 · DC2 · DC4 */}
+                {activeTab === 'dc1dc2dc4' && (
+                  <div className="space-y-6">
+                    {/* DC1 */}
                     <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-xl border border-orange-200 dark:border-orange-500/30">
-                      <h3 className="text-sm font-black text-orange-700 dark:text-orange-300 mb-3">Document de Candidature 1 (DC1)</h3>
+                      <h3 className="text-sm font-black text-orange-700 dark:text-orange-300 mb-3">DC1 — Lettre de candidature</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Produit</label>
-                          <textarea value={editCandidat.dc1Produit} onChange={e => handleEditField('dc1Produit', e.target.value)} rows={3} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" />
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Présentation du candidat</label>
+                          <textarea value={editCandidat.dc1Presentation} onChange={e => handleEditField('dc1Presentation', e.target.value)} rows={3} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Liste des membres du groupement</label>
+                          <textarea value={editCandidat.dc1Groupement} onChange={e => handleEditField('dc1Groupement', e.target.value)} rows={2} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" placeholder="Laisser vide si candidature individuelle" />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Prix HT (€)</label>
-                          <input type="text" value={editCandidat.dc1PrixHT} onChange={e => handleEditField('dc1PrixHT', e.target.value)} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" />
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">DC4 — N'est pas dans un cas d'interdiction de soumissionner</label>
+                          <select value={editCandidat.dc1NonInterdiction} onChange={e => handleEditField('dc1NonInterdiction', e.target.value)} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none">
+                            <option value="">—</option>
+                            <option value="Oui">Oui</option>
+                            <option value="Non">Non</option>
+                              <option value="Non Applicable">Non Applicable</option>
+                          </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Prix TTC (€)</label>
-                          <input type="text" value={editCandidat.dc1PrixTTC} onChange={e => handleEditField('dc1PrixTTC', e.target.value)} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" />
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Sous-traitance</label>
+                          <select value={editCandidat.dc1SousTraitance} onChange={e => handleEditField('dc1SousTraitance', e.target.value)} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none">
+                            <option value="">—</option>
+                            <option value="Oui">Oui</option>
+                            <option value="Non">Non</option>
+                              <option value="Non Applicable">Non Applicable</option>
+                          </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Délai d'exécution</label>
-                          <input type="text" value={editCandidat.dc1Delai} onChange={e => handleEditField('dc1Delai', e.target.value)} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" />
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">% Sous-traité</label>
+                          <input type="number" min={0} max={100} value={editCandidat.dc1PourcentageSousTraite} onChange={e => handleEditField('dc1PourcentageSousTraite', e.target.value)} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" placeholder="Ex : 30" />
                         </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Moyens de production</label>
-                          <textarea value={editCandidat.dc1MoyensProduits} onChange={e => handleEditField('dc1MoyensProduits', e.target.value)} rows={2} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" />
+                      </div>
+                    </div>
+
+                    {/* DC2 */}
+                    <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-200 dark:border-blue-500/30">
+                      <h3 className="text-sm font-black text-blue-700 dark:text-blue-300 mb-3">DC2 — Déclaration du candidat</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">CA n-1 (€ HT)</label>
+                          <input type="number" min={0} value={editCandidat.dc2CAN1} onChange={e => handleEditField('dc2CAN1', e.target.value)} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
                         </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Moyens humains</label>
-                          <textarea value={editCandidat.dc1MoyensHumains} onChange={e => handleEditField('dc1MoyensHumains', e.target.value)} rows={2} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" />
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">CA n-2 (€ HT)</label>
+                          <input type="number" min={0} value={editCandidat.dc2CAN2} onChange={e => handleEditField('dc2CAN2', e.target.value)} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
                         </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Références professionnelles</label>
-                          <textarea value={editCandidat.dc1References} onChange={e => handleEditField('dc1References', e.target.value)} rows={3} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" />
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">CA n-3 (€ HT)</label>
+                          <input type="number" min={0} value={editCandidat.dc2CAN3} onChange={e => handleEditField('dc2CAN3', e.target.value)} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
                         </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Titres et diplômes</label>
-                          <textarea value={editCandidat.dc1Titres} onChange={e => handleEditField('dc1Titres', e.target.value)} rows={2} className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-orange-500 focus:outline-none" />
+                        <div className="md:col-span-3 bg-blue-100 dark:bg-blue-900/30 px-4 py-3 rounded-lg flex items-center justify-between">
+                          <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">Chiffre d'affaires moyen HT (moyenne des 3 exercices)</span>
+                          <span className="text-base font-black text-blue-800 dark:text-blue-200">
+                            {(() => {
+                              const v1 = parseFloat(editCandidat.dc2CAN1) || 0;
+                              const v2 = parseFloat(editCandidat.dc2CAN2) || 0;
+                              const v3 = parseFloat(editCandidat.dc2CAN3) || 0;
+                              const count = [v1, v2, v3].filter(v => v > 0).length;
+                              if (count === 0) return '—';
+                              const moy = (v1 + v2 + v3) / count;
+                              return moy.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+                            })()}
+                          </span>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Capacité technique à répondre au marché</label>
+                          <select value={editCandidat.dc2CapaciteTechnique} onChange={e => handleEditField('dc2CapaciteTechnique', e.target.value)} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none">
+                            <option value="">—</option>
+                            <option value="Oui">Oui</option>
+                            <option value="Non">Non</option>
+                              <option value="Non Applicable">Non Applicable</option>
+                          </select>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Onglet DC2 */}
-                {activeTab === 'dc2' && (
+                {/* Onglet Autres documents */}
+                {activeTab === 'autres' && (
                   <div className="space-y-4">
-                    <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-200 dark:border-blue-500/30">
-                      <h3 className="text-sm font-black text-blue-700 dark:text-blue-300 mb-3">Document de Candidature 2 (DC2)</h3>
+                    <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-xl border border-purple-200 dark:border-purple-500/30">
+                      <h3 className="text-sm font-black text-purple-700 dark:text-purple-300 mb-3">Autres documents fournis</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Produit</label>
-                          <textarea value={editCandidat.dc2Produit} onChange={e => handleEditField('dc2Produit', e.target.value)} rows={3} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">CA n-1 (€)</label>
-                          <input type="text" value={editCandidat.dc2CAN1} onChange={e => handleEditField('dc2CAN1', e.target.value)} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">CA n-2 (€)</label>
-                          <input type="text" value={editCandidat.dc2CAN2} onChange={e => handleEditField('dc2CAN2', e.target.value)} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">CA n-3 (€)</label>
-                          <input type="text" value={editCandidat.dc2CAN3} onChange={e => handleEditField('dc2CAN3', e.target.value)} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Effectif moyen annuel</label>
-                          <input type="text" value={editCandidat.dc2EffectifMoyen} onChange={e => handleEditField('dc2EffectifMoyen', e.target.value)} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Outillage et matériel</label>
-                          <textarea value={editCandidat.dc2OutillageMateriel} onChange={e => handleEditField('dc2OutillageMateriel', e.target.value)} rows={2} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Mesures de gestion environnementale</label>
-                          <textarea value={editCandidat.dc2MesuresGestion} onChange={e => handleEditField('dc2MesuresGestion', e.target.value)} rows={2} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Certifications qualité</label>
-                          <input type="text" value={editCandidat.dc2CertificationsQualite} onChange={e => handleEditField('dc2CertificationsQualite', e.target.value)} className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none" />
-                        </div>
+                        {([
+                          ['autresPouvoir', 'Pouvoir ou délégation de pouvoir de signature'],
+                          ['autresKbis', 'Extrait Kbis'],
+                          ['autresFiscale', 'Attestation Fiscale'],
+                          ['autresURSSAF', 'Attestation URSSAF'],
+                          ['autresRedressement', 'Procédure de redressement judiciaire'],
+                          ['autresEffectifs', 'Effectifs Moyens annuels (moy. 3 années)'],
+                          ['autresMissions', 'Liste de missions similaires et références'],
+                          ['autresVisite', 'Attestation de visite'],
+                          ['autresCertification', 'Certification SS3 / SS4'],
+                        ] as [keyof Candidat, string][]).map(([field, label]) => (
+                          <div key={field}>
+                            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+                            <select value={editCandidat[field] as string} onChange={e => handleEditField(field, e.target.value)} className="w-full px-3 py-2 border-2 border-purple-300 dark:border-purple-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none">
+                              <option value="">—</option>
+                              <option value="Oui">Oui</option>
+                              <option value="Non">Non</option>
+                              <option value="Non Applicable">Non Applicable</option>
+                            </select>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -731,36 +761,30 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                       <h3 className="text-sm font-black text-green-700 dark:text-green-300 mb-3">Assurances</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">RC Professionnelle</label>
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Assurance responsabilité civile</label>
                           <select value={editCandidat.assuranceRC} onChange={e => handleEditField('assuranceRC', e.target.value)} className="w-full px-3 py-2 border-2 border-green-300 dark:border-green-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-green-500 focus:outline-none">
-                            <option value="">-</option>
+                            <option value="">—</option>
                             <option value="Oui">Oui</option>
                             <option value="Non">Non</option>
+                              <option value="Non Applicable">Non Applicable</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Montant RC (€)</label>
-                          <input type="text" value={editCandidat.assuranceRCMontant} onChange={e => handleEditField('assuranceRCMontant', e.target.value)} className="w-full px-3 py-2 border-2 border-green-300 dark:border-green-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-green-500 focus:outline-none" />
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Montant maxi des dommages par sinistre (€)</label>
+                          <input type="text" value={editCandidat.assuranceRCSinistre} onChange={e => handleEditField('assuranceRCSinistre', e.target.value)} className="w-full px-3 py-2 border-2 border-green-300 dark:border-green-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-green-500 focus:outline-none" />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Décennale</label>
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Assurance garantie décennale</label>
                           <select value={editCandidat.assuranceDecennale} onChange={e => handleEditField('assuranceDecennale', e.target.value)} className="w-full px-3 py-2 border-2 border-green-300 dark:border-green-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-green-500 focus:outline-none">
-                            <option value="">-</option>
+                            <option value="">—</option>
                             <option value="Oui">Oui</option>
                             <option value="Non">Non</option>
+                              <option value="Non Applicable">Non Applicable</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Montant Décennale (€)</label>
-                          <input type="text" value={editCandidat.assuranceDecennaleMontant} onChange={e => handleEditField('assuranceDecennaleMontant', e.target.value)} className="w-full px-3 py-2 border-2 border-green-300 dark:border-green-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-green-500 focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Autre assurance</label>
-                          <input type="text" value={editCandidat.assuranceAutre} onChange={e => handleEditField('assuranceAutre', e.target.value)} placeholder="Type d'assurance" className="w-full px-3 py-2 border-2 border-green-300 dark:border-green-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-green-500 focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Montant autre assurance (€)</label>
-                          <input type="text" value={editCandidat.assuranceAutreMontant} onChange={e => handleEditField('assuranceAutreMontant', e.target.value)} className="w-full px-3 py-2 border-2 border-green-300 dark:border-green-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-green-500 focus:outline-none" />
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Montant maxi du chantier (€)</label>
+                          <input type="text" value={editCandidat.assuranceDecennaleChantier} onChange={e => handleEditField('assuranceDecennaleChantier', e.target.value)} className="w-full px-3 py-2 border-2 border-green-300 dark:border-green-900 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-green-500 focus:outline-none" />
                         </div>
                       </div>
                     </div>
@@ -770,37 +794,26 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
                 {/* Onglet Offre */}
                 {activeTab === 'offre' && (
                   <div className="space-y-4">
-                    <div className="bg-green-50 dark:bg-teal-950/20 p-4 rounded-xl border border-[#2F5B58]/20 dark:border-teal-500/30">
-                      <h3 className="text-sm font-black text-[#2F5B58] dark:text-teal-300 mb-3">Détail de l'offre</h3>
+                    <div className="bg-teal-50 dark:bg-teal-950/20 p-4 rounded-xl border border-[#2F5B58]/20 dark:border-teal-500/30">
+                      <h3 className="text-sm font-black text-[#2F5B58] dark:text-teal-300 mb-3">Documents de l'offre</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Prix de base (€)</label>
-                          <input type="text" value={editCandidat.offrePrixBase} onChange={e => handleEditField('offrePrixBase', e.target.value)} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Prix options (€)</label>
-                          <input type="text" value={editCandidat.offrePrixOptions} onChange={e => handleEditField('offrePrixOptions', e.target.value)} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Prix total (€)</label>
-                          <input type="text" value={editCandidat.offrePrixTotal} onChange={e => handleEditField('offrePrixTotal', e.target.value)} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Délai d'exécution</label>
-                          <input type="text" value={editCandidat.offreDelai} onChange={e => handleEditField('offreDelai', e.target.value)} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Validité de l'offre</label>
-                          <input type="text" value={editCandidat.offreValidite} onChange={e => handleEditField('offreValidite', e.target.value)} placeholder="Ex: 90 jours" className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Variantes proposées</label>
-                          <textarea value={editCandidat.offreVariantes} onChange={e => handleEditField('offreVariantes', e.target.value)} rows={3} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Observations</label>
-                          <textarea value={editCandidat.offreObservations} onChange={e => handleEditField('offreObservations', e.target.value)} rows={4} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none" />
-                        </div>
+                        {([
+                          ['offreActeEngagement', "Acte d'engagement"],
+                          ['offreBPUDQE', 'BPU-DQE / CDPGF'],
+                          ['offreQT', 'QT'],
+                          ['offreMemoireTech', 'Mémoire technique'],
+                          ['offreRIB', 'RIB'],
+                        ] as [keyof Candidat, string][]).map(([field, label]) => (
+                          <div key={field}>
+                            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+                            <select value={editCandidat[field] as string} onChange={e => handleEditField(field, e.target.value)} className="w-full px-3 py-2 border-2 border-[#2F5B58]/40 dark:border-teal-700 rounded-lg bg-white dark:bg-[#252525] text-gray-900 dark:text-white focus:border-[#2F5B58] focus:outline-none">
+                              <option value="">—</option>
+                              <option value="Oui">Oui</option>
+                              <option value="Non">Non</option>
+                              <option value="Non Applicable">Non Applicable</option>
+                            </select>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -810,7 +823,7 @@ const OuverturePlis: React.FC<OuverturePlisProps> = ({
               {/* Footer avec boutons */}
               <div className="flex justify-between items-center p-6 border-t border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#252525]">
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Onglet {activeTab === 'info' ? '1/5' : activeTab === 'dc1' ? '2/5' : activeTab === 'dc2' ? '3/5' : activeTab === 'assurances' ? '4/5' : '5/5'} - Toutes les modifications sont enregistrées ensemble
+                  Onglet {activeTab === 'info' ? '1/5' : activeTab === 'dc1dc2dc4' ? '2/5' : activeTab === 'autres' ? '3/5' : activeTab === 'assurances' ? '4/5' : '5/5'} - Toutes les modifications sont enregistrées ensemble
                 </div>
                 <div className="flex gap-3">
                   <button onClick={handleCancelEdit} className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">

@@ -62,7 +62,7 @@ const LotSelectionView: React.FC<Props> = ({ lots, onSelectLot, onReset, onSwitc
 
       {/* Grid Content */}
       <main className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           
           <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900">Tableau de Bord Multi-Lots</h2>

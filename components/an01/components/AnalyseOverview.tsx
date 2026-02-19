@@ -61,7 +61,7 @@ const AnalyseOverview: React.FC<AnalyseOverviewProps> = ({ onNavigate }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="w-full px-6 py-8">
         <div className="flex items-start justify-between mb-8">
           <div>
             <h1 className="text-2xl font-black text-gray-900 dark:text-white">Analyse</h1>

@@ -1366,7 +1366,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="w-full px-4 sm:px-6 py-6 sm:py-8">
         {onClose && (
           <button
             onClick={onClose}
@@ -1641,7 +1641,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={loadingFile}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] px-4 py-3 text-sm font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex w-fit items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#2F5B58] to-[#234441] hover:from-[#234441] hover:to-[#1a3330] px-4 py-3 text-sm font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loadingFile ? (
                         <>

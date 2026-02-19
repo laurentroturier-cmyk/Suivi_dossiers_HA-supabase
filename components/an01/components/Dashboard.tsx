@@ -471,7 +471,7 @@ const Dashboard: React.FC<Props> = ({ data, onReset, onBack, onBackToStep6 }) =>
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto p-4 sm:p-6" id="main-scroll">
-        <div id="dashboard-container" className="pdf-container max-w-7xl mx-auto space-y-6">
+        <div id="dashboard-container" className="pdf-container w-full space-y-6">
           
           {/* Hero Section */}
           {winner && (

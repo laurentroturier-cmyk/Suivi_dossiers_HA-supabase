@@ -150,7 +150,7 @@ const GlobalTableView: React.FC<Props> = ({ lots, globalMetadata, onBack, onSele
                 </div>
             </header>
             <main className="flex-1 overflow-y-auto p-8">
-                <div className="max-w-7xl mx-auto space-y-6">
+                <div className="w-full space-y-6">
                     {Object.keys(globalMetadata).length > 0 && (
                         <div data-export-id="global-metadata" data-export-label="Informations Générales" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                             <h3 className="text-sm font-bold text-gray-400 uppercase mb-4 flex items-center gap-2">

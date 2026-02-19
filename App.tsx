@@ -3013,7 +3013,7 @@ const App: React.FC = () => {
 
       {/* Navigation Controls */}
       {!isOnHomePage && (
-        <div className="max-w-7xl mx-auto px-6 mt-6">
+        <div className={`${activeTab === 'home' ? 'max-w-7xl mx-auto px-6' : 'w-full px-6'} mt-6`}>
           <NavigationControls
             onBack={handleGoBack}
             onHome={handleGoToHome}
@@ -3027,7 +3027,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <main className={`${activeTab === 'rapport-presentation' ? 'w-full px-6' : 'max-w-7xl mx-auto px-6'} mt-10`}>
+      <main className={`${activeTab === 'home' ? 'max-w-7xl mx-auto px-6' : 'w-full px-6'} mt-10`}>
         {!editingProject && !editingProcedure && (
           <>
             {activeTab === 'home' && (

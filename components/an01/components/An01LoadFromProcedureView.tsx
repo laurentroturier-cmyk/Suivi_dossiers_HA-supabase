@@ -52,7 +52,7 @@ const An01LoadFromProcedureView: React.FC<An01LoadFromProcedureViewProps> = ({ o
 
   return (
     <div className="an01-page min-h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col">
-      <div className="max-w-xl mx-auto px-6 py-10 w-full">
+      <div className="w-full px-6 py-10">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-14 h-14 rounded-2xl bg-teal-100 dark:bg-teal-500/20 flex items-center justify-center">
             <Database className="w-7 h-7 text-teal-600 dark:text-teal-400" />

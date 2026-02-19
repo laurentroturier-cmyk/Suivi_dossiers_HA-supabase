@@ -90,7 +90,7 @@ const An01StepFinancier: React.FC<An01StepFinancierProps> = ({ lots, onChange, o
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex justify-between pb-2">
         <Button variant="secondary" onClick={onBack}>
           Retour

@@ -18,7 +18,7 @@ const An01StepProjet: React.FC<An01StepProjetProps> = ({ meta, onChange, onNext 
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex justify-end pb-2">
         <Button onClick={onNext} variant="primary">
           Suivant : Lots

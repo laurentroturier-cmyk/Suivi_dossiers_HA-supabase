@@ -175,7 +175,7 @@ const TechnicalAnalysisView: React.FC<Props> = ({ technicalData, onBack, winnerN
 
         {/* Main Content - Criteria Table */}
         <div className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-4xl mx-auto">
+            <div className="w-full">
                 <div className="flex items-center gap-3 mb-6">
                      <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 md:hidden">
                         {/* Mobile Selector fallback could go here, for now relying on layout */}

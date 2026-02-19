@@ -53,7 +53,7 @@ const cards: Array<{
 const An01EntryView: React.FC<An01EntryViewProps> = ({ onChoice }) => {
   return (
     <div className="an01-page min-h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col">
-      <div className="max-w-4xl mx-auto px-6 py-10 w-full">
+      <div className="w-full px-6 py-10">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
             <LineChart className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
