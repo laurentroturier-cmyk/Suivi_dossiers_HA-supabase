@@ -434,6 +434,7 @@ const App: React.FC = () => {
   const [projectSearch, setProjectSearch] = useState('');
   const [procedureSearch, setProcedureSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [dossierSortColumn, setDossierSortColumn] = useState<string>('');
   const [dossierSortDirection, setDossierSortDirection] = useState<'asc' | 'desc'>('asc');
   const [procedureSortColumn, setProcedureSortColumn] = useState<string>('');
@@ -1439,41 +1440,90 @@ const App: React.FC = () => {
     }
   };
 
-  const exportToExcel = () => {
-    const workbook = XLSX.utils.book_new();
+  const exportToExcel = async () => {
+    if (!supabaseClient) { alert("Connexion Supabase indisponible."); return; }
+    setIsExporting(true);
+    try {
+      // Récupération fraîche des données depuis Supabase
+      const [
+        { data: projetsData, error: projetsError },
+        { data: proceduresData, error: proceduresError },
+      ] = await Promise.all([
+        supabaseClient.from('projets').select('*'),
+        supabaseClient.from('procédures').select('*'),
+      ]);
 
-    // Nettoie les métadonnées et normalise les champs de date (y compris numéros Excel sur 5+ chiffres)
-    const normalizeRecordDates = (rec: any) => {
-      const out: any = {};
-      Object.keys(rec || {}).forEach((key) => {
-        if (key === 'id' || key === 'created_at') return; // on retire les colonnes techniques
-        const val = getProp(rec, key);
-        if (isDateField(key)) {
-          if (val == null || val === '') {
-            out[key] = '';
-          } else {
-            const str = String(val);
-            // Numéros de série Excel (5+ chiffres) -> Date FR
-            if (!isNaN(parseFloat(str)) && /^\d+(\.\d+)?$/.test(str) && str.length >= 5) {
-              const d = excelDateToJSDate(parseFloat(str));
-              out[key] = d ? d.toLocaleDateString('fr-FR') : formatDisplayDate(str);
-            } else {
-              // Formats ISO / FR déjà parsables
-              out[key] = formatDisplayDate(str);
+      if (projetsError || proceduresError) {
+        console.error('Erreur export projets:', projetsError);
+        console.error('Erreur export procédures:', proceduresError);
+        alert('Erreur lors de la récupération des données depuis Supabase.');
+        return;
+      }
+
+      // Colonnes techniques à exclure systématiquement
+      const EXCLUDED_COLS = new Set(['id', 'created_at', 'updated_at']);
+
+      // Détecte les colonnes JSONB en inspectant les valeurs (objet ou tableau → JSONB)
+      const detectJsonbColumns = (records: any[]): Set<string> => {
+        const jsonbCols = new Set<string>();
+        (records || []).forEach((rec) => {
+          Object.keys(rec || {}).forEach((key) => {
+            const val = rec[key];
+            if (val !== null && typeof val === 'object') {
+              jsonbCols.add(key);
             }
-          }
-        } else {
-          out[key] = val;
-        }
-      });
-      return out;
-    };
+          });
+        });
+        return jsonbCols;
+      };
 
-    const dossiersWS = XLSX.utils.json_to_sheet(dossiers.map(normalizeRecordDates));
-    const proceduresWS = XLSX.utils.json_to_sheet(procedures.map(normalizeRecordDates));
-    XLSX.utils.book_append_sheet(workbook, dossiersWS, "Dossiers Projets");
-    XLSX.utils.book_append_sheet(workbook, proceduresWS, "Procédures");
-    XLSX.writeFile(workbook, `Export_GestMarchés_${new Date().toISOString().split('T')[0]}.xlsx`);
+      // Normalise un enregistrement : exclut les colonnes JSONB/techniques, formate les dates
+      const normalizeRecord = (rec: any, jsonbCols: Set<string>) => {
+        const out: any = {};
+        Object.keys(rec || {}).forEach((key) => {
+          if (EXCLUDED_COLS.has(key) || jsonbCols.has(key)) return;
+          const val = rec[key];
+          if (isDateField(key)) {
+            if (val == null || val === '') {
+              out[key] = '';
+            } else {
+              const str = String(val);
+              // Numéros de série Excel (5+ chiffres) → Date FR
+              if (!isNaN(parseFloat(str)) && /^\d+(\.\d+)?$/.test(str) && str.length >= 5) {
+                const d = excelDateToJSDate(parseFloat(str));
+                out[key] = d ? d.toLocaleDateString('fr-FR') : formatDisplayDate(str);
+              } else {
+                out[key] = formatDisplayDate(str);
+              }
+            }
+          } else {
+            out[key] = val ?? '';
+          }
+        });
+        return out;
+      };
+
+      const projetsJsonbCols = detectJsonbColumns(projetsData || []);
+      const proceduresJsonbCols = detectJsonbColumns(proceduresData || []);
+
+      const workbook = XLSX.utils.book_new();
+
+      const projetsWS = XLSX.utils.json_to_sheet(
+        (projetsData || []).map((r) => normalizeRecord(r, projetsJsonbCols))
+      );
+      const proceduresWS = XLSX.utils.json_to_sheet(
+        (proceduresData || []).map((r) => normalizeRecord(r, proceduresJsonbCols))
+      );
+
+      XLSX.utils.book_append_sheet(workbook, projetsWS, "Projets");
+      XLSX.utils.book_append_sheet(workbook, proceduresWS, "Procédures");
+      XLSX.writeFile(workbook, `Export_GestMarchés_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (e) {
+      console.error('Erreur export Excel:', e);
+      alert("Une erreur est survenue lors de l'export.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const priorityOptions = ['P0 - Pas de priorité', 'P1 - Important', 'P2 - Moyen', 'P3 - Faible'];
@@ -3262,7 +3312,7 @@ const App: React.FC = () => {
             )}
             {activeTab === 'export' && (
               <div className="max-w-2xl mx-auto py-12 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <button onClick={exportToExcel} className="w-full bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-400/30 hover:scale-105 transition-all">Télécharger la base (.xlsx)</button>
+                <button onClick={exportToExcel} disabled={isExporting} className="w-full bg-gradient-to-b from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-400/30 hover:scale-105 transition-all">{isExporting ? 'Chargement…' : 'Télécharger la base (.xlsx)'}</button>
               </div>
             )}
             {activeTab === 'gantt' && (
