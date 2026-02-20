@@ -76,6 +76,10 @@ export type CCAPType = 'travaux' | 'tic' | 'mopo' | 'prestations_intellectuelles
 export interface CCAPData {
   // Type de CCAP
   typeCCAP?: CCAPType;
+
+  /** Couleur de fond de l'en-tête principal (bannière titre + section Dispositions générales).
+   *  Hex, ex: '#2F5B58'. Si absent, utilise le teal par défaut. */
+  couleurEntete?: string;
   
   // Dispositions générales
   dispositionsGenerales: {

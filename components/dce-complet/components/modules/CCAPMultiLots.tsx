@@ -205,9 +205,30 @@ export function CCAPMultiLots({
                   </button>
                 </>
               )}
+              {/* Couleur de l'en-tête */}
+              <div className="flex items-center gap-1.5 ml-auto" title="Couleur de fond des titres de section et de l'en-tête">
+                <span className="text-xs text-green-800 dark:text-green-200 font-medium">Couleur titres :</span>
+                <input
+                  type="color"
+                  value={ccapData.couleurEntete || '#2F5B58'}
+                  onChange={e => setCcapData(prev => ({ ...prev, couleurEntete: e.target.value }))}
+                  className="w-7 h-7 rounded cursor-pointer border border-green-300 dark:border-green-700"
+                  title="Couleur de fond des bannières de titre"
+                />
+                {ccapData.couleurEntete && (
+                  <button
+                    type="button"
+                    onClick={() => setCcapData(prev => { const { couleurEntete: _, ...rest } = prev; return rest as typeof prev; })}
+                    className="text-[10px] text-green-700 dark:text-green-300 hover:underline"
+                    title="Réinitialiser la couleur par défaut"
+                  >
+                    Déf.
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setShowViewer(true)}
-                className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-emerald-500 to-emerald-600 text-white text-xs font-medium rounded-md hover:from-emerald-600 hover:to-emerald-700 transition-colors shadow-md"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-emerald-500 to-emerald-600 text-white text-xs font-medium rounded-md hover:from-emerald-600 hover:to-emerald-700 transition-colors shadow-md"
                 title="Prévisualiser le document CCAP"
               >
                 <Eye className="w-4 h-4" />
@@ -332,9 +353,10 @@ export function CCAPMultiLots({
           onClose={() => setShowViewer(false)}
           onExportWord={handleExportWord}
           onExportPdf={handleExportPdf}
+          isExportingWord={isExporting}
+          isExportingPdf={isExportingPdf}
           onChange={(updatedData) => {
             setCcapData(updatedData);
-            // Optionnellement, sauvegarder automatiquement
             if (onSave) {
               onSave(updatedData);
             }

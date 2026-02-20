@@ -1,19 +1,19 @@
 /**
  * Visionneuse du document CCAP final
+ * Modèle visuel basé sur RapportPresentationPreview :
+ * barre d'outils sombre plein-écran + feuille A4 blanche simulée
  */
 
 import React, { useState } from 'react';
-import { X, Download, FileText, Edit2, Save, Check, GripVertical } from 'lucide-react';
+import { X, FileText, Edit2, Check, GripVertical, Loader2, FileStack } from 'lucide-react';
 import type { CCAPData } from '../../types';
 import { getCCAPTypeLabel } from './ccapTemplates';
 import { CCAP_HEADER_TEXT, CCAP_HEADER_TITLE } from './ccapConstants';
 
-/**
- * Calcule la numérotation automatique des sections selon leur niveau
- */
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function calculateSectionNumbers(sections: CCAPData['sections']): string[] {
   const counters = [0, 0, 0, 0];
-  
   return sections.map(section => {
     const niveau = section.niveau || 1;
     counters[niveau - 1]++;
@@ -24,38 +24,90 @@ function calculateSectionNumbers(sections: CCAPData['sections']): string[] {
   });
 }
 
+// ─── Composants document ─────────────────────────────────────────────────────
+
+function SectionHeader({ number, title, color = '#2F5B58' }: { number: string | number; title: string; color?: string }) {
+  return (
+    <div
+      className="flex items-center gap-2.5 px-4 py-2 rounded-lg mb-3 mt-6 first:mt-0"
+      style={{ backgroundColor: color }}
+    >
+      <span className="w-5 h-5 rounded-full bg-white/20 text-white text-[10px] font-black flex items-center justify-center flex-shrink-0 leading-none">
+        {number}
+      </span>
+      <h2 className="text-white font-bold text-xs tracking-wide uppercase">{title}</h2>
+    </div>
+  );
+}
+
+const CCAP_HTML_STYLES = `
+  .ccap-html table { border-collapse: collapse; width: 100%; margin: 6px 0; }
+  .ccap-html table th, .ccap-html table td { border: 1px solid #d1d5db; padding: 4px 8px; font-size: 10px; text-align: left; vertical-align: top; }
+  .ccap-html table th { background-color: #f3f4f6; font-weight: 600; color: #374151; }
+  .ccap-html table tr:nth-child(even) td { background-color: #f9fafb; }
+  .ccap-html p { margin: 0 0 4px 0; }
+  .ccap-html ul, .ccap-html ol { padding-left: 1.2em; margin: 4px 0; }
+  .ccap-html li { margin-bottom: 2px; }
+  .ccap-html strong { font-weight: 600; }
+  .ccap-html em { font-style: italic; }
+  .ccap-html h1, .ccap-html h2, .ccap-html h3 { font-weight: 600; margin: 6px 0 3px; }
+  .ccap-html blockquote { border-left: 3px solid #d1d5db; padding-left: 8px; color: #6b7280; margin: 4px 0; }
+`;
+
+function HtmlContent({ html }: { html: string }) {
+  if (!html) return null;
+  return (
+    <div
+      className="ccap-html max-w-none text-gray-800 leading-relaxed"
+      style={{ fontSize: '10px' }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+// ─── Props ───────────────────────────────────────────────────────────────────
+
 interface CCAPViewerProps {
   ccapData: CCAPData;
   numeroProcedure?: string;
   onClose: () => void;
   onExportWord?: () => void;
   onExportPdf?: () => void;
+  isExportingWord?: boolean;
+  isExportingPdf?: boolean;
   onChange?: (data: CCAPData) => void;
 }
 
-export function CCAPViewer({ ccapData, numeroProcedure, onClose, onExportWord, onExportPdf, onChange }: CCAPViewerProps) {
+// ─── Composant principal ──────────────────────────────────────────────────────
+
+export function CCAPViewer({
+  ccapData,
+  numeroProcedure,
+  onClose,
+  onExportWord,
+  onExportPdf,
+  isExportingWord = false,
+  isExportingPdf = false,
+  onChange,
+}: CCAPViewerProps) {
   const hasImportedSections = Array.isArray(ccapData.sections) && ccapData.sections.length > 0;
   const [isEditing, setIsEditing] = useState(false);
   const [editedSections, setEditedSections] = useState(ccapData.sections || []);
-  const [editingTitleIndex, setEditingTitleIndex] = useState<number | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  
+
+  const isExporting = isExportingWord || isExportingPdf;
+
   const handleSaveEdits = () => {
     if (onChange) {
-      onChange({
-        ...ccapData,
-        sections: editedSections
-      });
+      onChange({ ...ccapData, sections: editedSections });
     }
     setIsEditing(false);
-    setEditingTitleIndex(null);
   };
 
   const handleCancelEdits = () => {
     setEditedSections(ccapData.sections || []);
     setIsEditing(false);
-    setEditingTitleIndex(null);
   };
 
   const handleTitleChange = (index: number, newTitle: string) => {
@@ -64,288 +116,338 @@ export function CCAPViewer({ ccapData, numeroProcedure, onClose, onExportWord, o
     setEditedSections(updated);
   };
 
-  const handleDragStart = (index: number) => {
-    setDraggedIndex(index);
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    setDragOverIndex(index);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverIndex(null);
-  };
-
+  const handleDragStart = (index: number) => setDraggedIndex(index);
+  const handleDragOver = (e: React.DragEvent, index: number) => { e.preventDefault(); setDragOverIndex(index); };
+  const handleDragLeave = () => setDragOverIndex(null);
+  const handleDragEnd = () => { setDraggedIndex(null); setDragOverIndex(null); };
   const handleDrop = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
-    
     if (draggedIndex === null || draggedIndex === targetIndex) {
       setDraggedIndex(null);
       setDragOverIndex(null);
       return;
     }
-
     const updated = [...editedSections];
-    const [draggedSection] = updated.splice(draggedIndex, 1);
-    updated.splice(targetIndex, 0, draggedSection);
+    const [dragged] = updated.splice(draggedIndex, 1);
+    updated.splice(targetIndex, 0, dragged);
     setEditedSections(updated);
-
     setDraggedIndex(null);
     setDragOverIndex(null);
   };
 
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
+  const sectionsToDisplay = isEditing ? editedSections : (ccapData.sections || []);
+  const sectionNumbers = calculateSectionNumbers(sectionsToDisplay);
 
-  const sectionsToDisplay = isEditing ? editedSections : ccapData.sections;
+  const today = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const typeLabel = ccapData.typeCCAP ? getCCAPTypeLabel(ccapData.typeCCAP) : null;
+  const objet = ccapData.dispositionsGenerales?.objet || '';
+  const enteteColor = ccapData.couleurEntete || '#2F5B58';
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-              Aperçu du CCAP
-            </h2>
-            {numeroProcedure && (
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {numeroProcedure}
-              </span>
-            )}
+    <div className="fixed inset-0 bg-black/60 z-50 flex flex-col" onClick={onClose}>
+      <style dangerouslySetInnerHTML={{ __html: CCAP_HTML_STYLES }} />
+
+      {/* ── Barre d'outils sombre ─────────────────────────────────────────── */}
+      <div
+        className="flex-shrink-0 bg-[#1a2e2c] text-white flex items-center justify-between px-5 py-3 shadow-lg z-10"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Info document */}
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+            <FileText className="w-4 h-4 text-white" />
           </div>
-          <div className="flex items-center gap-2">
-            {hasImportedSections && !isEditing && onChange && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-emerald-500 to-emerald-600 text-white text-sm font-medium rounded-md hover:from-emerald-600 hover:to-emerald-700 transition-colors shadow-md"
-              >
-                <Edit2 className="w-4 h-4" />
-                Modifier
-              </button>
+          <div>
+            <p className="font-bold text-sm">Aperçu — CCAP</p>
+            {(numeroProcedure || typeLabel) && (
+              <p className="text-white/60 text-xs">
+                {numeroProcedure && `N° ${numeroProcedure}`}
+                {numeroProcedure && typeLabel && ' · '}
+                {typeLabel}
+              </p>
             )}
-            {isEditing && (
-              <>
-                <button
-                  onClick={handleSaveEdits}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-green-500 to-green-600 text-white text-sm font-medium rounded-md hover:from-green-600 hover:to-green-700 transition-colors shadow-md"
-                >
-                  <Check className="w-4 h-4" />
-                  Enregistrer
-                </button>
-                <button
-                  onClick={handleCancelEdits}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                  Annuler
-                </button>
-              </>
-            )}
-            {!isEditing && onExportWord && (
-              <button
-                onClick={onExportWord}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-blue-500 to-blue-600 text-white text-sm font-medium rounded-md hover:from-blue-600 hover:to-blue-700 transition-colors shadow-md"
-                title="Exporter en Word (.docx)"
-              >
-                <FileText className="w-4 h-4" />
-                Word
-              </button>
-            )}
-            {!isEditing && onExportPdf && (
-              <button
-                onClick={onExportPdf}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-b from-red-500 to-red-600 text-white text-sm font-medium rounded-md hover:from-red-600 hover:to-red-700 transition-colors shadow-md"
-                title="Exporter en PDF"
-              >
-                <FileText className="w-4 h-4" />
-                PDF
-              </button>
-            )}
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8 bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg p-12 min-h-[800px]">
-            {/* En-tête du document */}
-            <div className="text-center mb-12">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                CAHIER DES CLAUSES ADMINISTRATIVES PARTICULIÈRES
-              </h1>
-              
-              {ccapData.typeCCAP && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Type de marché : {getCCAPTypeLabel(ccapData.typeCCAP)}
-                </p>
-              )}
-              
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-6">
-                {ccapData.dispositionsGenerales.objet || 'Objet du marché'}
-              </h2>
-            </div>
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {/* Mode édition */}
+          {hasImportedSections && onChange && !isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-lg transition"
+              title="Modifier l'ordre et les titres des sections"
+            >
+              <Edit2 className="w-4 h-4" />
+              Modifier
+            </button>
+          )}
+          {isEditing && (
+            <>
+              <button
+                onClick={handleSaveEdits}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-semibold rounded-lg transition"
+              >
+                <Check className="w-4 h-4" />
+                Enregistrer
+              </button>
+              <button
+                onClick={handleCancelEdits}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-lg transition"
+              >
+                <X className="w-4 h-4" />
+                Annuler
+              </button>
+            </>
+          )}
 
-            {/* Section d'en-tête standard (non numérotée) */}
-            <div className="mb-8 pb-6 border-b-2 border-emerald-600">
-              <h3 className="text-base font-bold text-emerald-700 dark:text-emerald-400 mb-4">
-                {CCAP_HEADER_TITLE}
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300 text-justify">
-                {CCAP_HEADER_TEXT}
-              </p>
-            </div>
-
-            {/* Contenu principal */}
-            <div className="space-y-6 text-gray-900 dark:text-gray-100">
-              {hasImportedSections ? (
-                // Affichage des sections importées avec hiérarchie
-                sectionsToDisplay.map((section, index) => {
-                  const isDragging = draggedIndex === index;
-                  const isDropTarget = dragOverIndex === index && draggedIndex !== index;
-                  const sectionNumbers = calculateSectionNumbers(sectionsToDisplay);
-                  const niveau = section.niveau || 1;
-                  const marginLeft = (niveau - 1) * 2; // 2rem par niveau
-                  const fontSize = niveau === 1 ? 'text-xl' : niveau === 2 ? 'text-lg' : 'text-base';
-                  
-                  return (
-                    <div
-                      key={index}
-                      draggable={isEditing}
-                      onDragStart={() => isEditing && handleDragStart(index)}
-                      onDragOver={(e) => isEditing && handleDragOver(e, index)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => isEditing && handleDrop(e, index)}
-                      onDragEnd={handleDragEnd}
-                      style={{ marginLeft: `${marginLeft}rem` }}
-                      className={`space-y-2 relative group transition-all ${
-                        isEditing ? 'cursor-grab' : ''
-                      } ${
-                        isDragging ? 'opacity-50 scale-95 cursor-grabbing' : ''
-                      } ${
-                        isDropTarget ? 'ring-2 ring-emerald-500 ring-offset-2 rounded-lg p-2' : ''
-                      }`}
-                    >
-                      {/* Poignée de glissement en mode édition */}
-                      {isEditing && (
-                        <div className="absolute -left-8 top-2 text-gray-400 hover:text-emerald-600 transition cursor-grab active:cursor-grabbing">
-                          <GripVertical className="w-5 h-5" />
-                        </div>
-                      )}
-                      
-                      {/* Titre de la section avec numérotation */}
-                      {isEditing ? (
-                        <div className="flex items-center gap-2 border-b-2 border-emerald-600 pb-2">
-                          <span className="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400 min-w-[3rem]">
-                            {sectionNumbers[index]}
-                          </span>
-                          <input
-                            type="text"
-                            value={section.titre}
-                            onChange={(e) => handleTitleChange(index, e.target.value)}
-                            className={`flex-1 ${fontSize} font-bold bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded px-2 py-1 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500`}
-                            placeholder="Titre de la section"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                      ) : (
-                        <h3 className={`${fontSize} font-bold text-gray-900 dark:text-white border-b-2 border-emerald-600 pb-2 flex items-baseline gap-2`}>
-                          <span className="font-mono text-emerald-600 dark:text-emerald-400">
-                            {sectionNumbers[index]}
-                          </span>
-                          <span>{section.titre}</span>
-                        </h3>
-                      )}
-                      
-                      {/* Contenu de la section */}
-                      <div 
-                        className="text-sm leading-relaxed prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: section.contenu }}
-                      />
-                    </div>
-                  );
-                })
+          {/* Export Word */}
+          {!isEditing && onExportWord && (
+            <button
+              onClick={onExportWord}
+              disabled={isExporting}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#2B579A] hover:bg-[#1e3f73] disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition"
+              title="Exporter en Word (.docx)"
+            >
+              {isExportingWord ? (
+                <><Loader2 className="w-4 h-4 animate-spin" />Génération…</>
               ) : (
-                // Affichage du CCAP par défaut (structure formulaire)
-                <div className="space-y-6">
-                  <Section title="1. DISPOSITIONS GÉNÉRALES">
-                    <Field label="Objet du marché" value={ccapData.dispositionsGenerales.objet} />
-                    <Field label="Durée du marché" value={ccapData.dispositionsGenerales.duree} />
-                    <Field label="CCAG applicable" value={ccapData.dispositionsGenerales.ccagApplicable} />
-                  </Section>
+                <><FileStack className="w-4 h-4" />Exporter DOCX</>
+              )}
+            </button>
+          )}
 
-                  <Section title="2. PRIX ET RÈGLEMENT">
-                    <Field label="Type de prix" value={ccapData.prixPaiement.typePrix} />
-                    <Field label="Modalités de paiement" value={ccapData.prixPaiement.modalitesPaiement} />
-                    <Field label="Délai de paiement" value={ccapData.prixPaiement.delaiPaiement} />
-                    <Field label="Retenue de garantie" value={ccapData.prixPaiement.retenuGarantie ? 'Oui' : 'Non'} />
-                  </Section>
+          {/* Export PDF */}
+          {!isEditing && onExportPdf && (
+            <button
+              onClick={onExportPdf}
+              disabled={isExporting}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#CC0000] hover:bg-[#a30000] disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition"
+              title="Exporter en PDF"
+            >
+              {isExportingPdf ? (
+                <><Loader2 className="w-4 h-4 animate-spin" />Génération…</>
+              ) : (
+                <><FileText className="w-4 h-4" />Exporter PDF</>
+              )}
+            </button>
+          )}
 
-                  <Section title="3. CONDITIONS D'EXÉCUTION">
-                    <Field label="Délai d'exécution" value={ccapData.execution.delaiExecution} />
-                    <Field label="Pénalités de retard" value={ccapData.execution.penalitesRetard} />
-                    <Field label="Conditions de réception" value={ccapData.execution.conditionsReception} />
-                  </Section>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 transition"
+            title="Fermer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
 
-                  <Section title="4. CLAUSES SPÉCIFIQUES">
-                    {ccapData.clausesSpecifiques ? (
-                      <div className="space-y-2">
-                        <Field label="Propriété intellectuelle" value={ccapData.clausesSpecifiques.proprietéIntellectuelle} />
-                        <Field label="Confidentialité" value={ccapData.clausesSpecifiques.confidentialite} />
-                        <Field label="Sécurité" value={ccapData.clausesSpecifiques.securite} />
-                        <Field label="Garantie décennale" value={ccapData.clausesSpecifiques.garantieDecennale} />
-                        <Field label="Garantie biennale" value={ccapData.clausesSpecifiques.garantieBiennale} />
-                        <Field label="SLA" value={ccapData.clausesSpecifiques.sla} />
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 italic">Aucune clause spécifique définie</p>
-                    )}
-                  </Section>
+      {/* ── Zone scrollable (bureau gris, feuille A4 blanche) ────────────── */}
+      <div
+        className="flex-1 overflow-y-auto bg-slate-200 py-8 px-4"
+        onClick={e => e.stopPropagation()}
+      >
+        <div
+          className="mx-auto bg-white shadow-2xl rounded-sm"
+          style={{ maxWidth: '820px', minHeight: '1100px', padding: '32px 36px' }}
+        >
+          {/* En-tête */}
+          <div className="flex items-start justify-between mb-5">
+            <img
+              src="/Image1.png"
+              alt="AFPA"
+              className="h-10 object-contain"
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+            <p className="text-gray-400 text-xs text-right">Édité le {today}</p>
+          </div>
+
+          {/* Titre principal */}
+          <div className="rounded-lg px-6 py-5 mb-5 text-center" style={{ backgroundColor: enteteColor }}>
+            <h1 className="text-white font-black text-xl tracking-wide uppercase">
+              Cahier des Clauses Administratives Particulières
+            </h1>
+            {typeLabel && (
+              <p className="text-white/80 text-sm mt-1 font-medium">Type : {typeLabel}</p>
+            )}
+            {objet && (
+              <p className="text-white/70 text-xs mt-1">{objet}</p>
+            )}
+          </div>
+
+          {/* Fiche procédure */}
+          {(numeroProcedure || objet) && (
+            <div className="bg-teal-50 border border-teal-200 rounded-lg px-5 py-3 mb-5 space-y-1">
+              {numeroProcedure && (
+                <div className="flex gap-1 text-[10px]">
+                  <span className="font-semibold text-gray-600 min-w-[160px]">N° de procédure :</span>
+                  <span className="text-gray-900">{numeroProcedure}</span>
+                </div>
+              )}
+              {objet && (
+                <div className="flex gap-1 text-[10px]">
+                  <span className="font-semibold text-gray-600 min-w-[160px]">Objet du marché :</span>
+                  <span className="text-gray-900">{objet}</span>
                 </div>
               )}
             </div>
+          )}
 
-            {/* Pied de page */}
-            <div className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-700 text-center text-xs text-gray-500 dark:text-gray-400">
-              <p>Document généré le {new Date().toLocaleDateString('fr-FR')}</p>
-              <p className="mt-1">AFPA - Application Suivi Dossiers</p>
-            </div>
+          {/* Section d'en-tête standard (non numérotée) */}
+          <SectionHeader number="◆" title={CCAP_HEADER_TITLE} color={enteteColor} />
+          <p className="text-[10px] leading-relaxed text-gray-700 text-justify mb-6">
+            {CCAP_HEADER_TEXT}
+          </p>
+
+          {/* ── Contenu principal ── */}
+          <div className="space-y-2">
+            {hasImportedSections ? (
+              // Sections importées (Word ou template) avec numérotation hiérarchique
+              sectionsToDisplay.map((section, index) => {
+                const isDragging = draggedIndex === index;
+                const isDropTarget = dragOverIndex === index && draggedIndex !== index;
+                const niveau = section.niveau || 1;
+                const marginLeft = (niveau - 1) * 20;
+
+                return (
+                  <div
+                    key={index}
+                    draggable={isEditing}
+                    onDragStart={() => isEditing && handleDragStart(index)}
+                    onDragOver={(e) => isEditing && handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => isEditing && handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    style={{ marginLeft: `${marginLeft}px` }}
+                    className={`relative transition-all ${isEditing ? 'cursor-grab' : ''} ${
+                      isDragging ? 'opacity-50 scale-95 cursor-grabbing' : ''
+                    } ${isDropTarget ? 'ring-2 ring-[#2F5B58] ring-offset-2 rounded-lg' : ''}`}
+                  >
+                    {/* Poignée de glissement */}
+                    {isEditing && (
+                      <div className="absolute -left-5 top-2 text-gray-400 hover:text-[#2F5B58] transition cursor-grab active:cursor-grabbing z-10">
+                        <GripVertical className="w-4 h-4" />
+                      </div>
+                    )}
+
+                    {/* Titre — mode lecture */}
+                    {!isEditing && (
+                      <SectionHeader number={sectionNumbers[index]} title={section.titre} color={section.titreCouleur || enteteColor} />
+                    )}
+
+                    {/* Titre — mode édition (input dans bannière) */}
+                    {isEditing && (
+                      <div className="flex items-center gap-2 rounded-lg px-4 py-2 mb-2 mt-6 first:mt-0" style={{ backgroundColor: section.titreCouleur || enteteColor }}>
+                        <span className="w-5 h-5 rounded-full bg-white/20 text-white text-[10px] font-black flex items-center justify-center flex-shrink-0 leading-none">
+                          {sectionNumbers[index]}
+                        </span>
+                        <input
+                          type="text"
+                          value={section.titre}
+                          onChange={(e) => handleTitleChange(index, e.target.value)}
+                          className="flex-1 text-xs font-bold bg-white/10 text-white border border-white/30 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-white/50 placeholder-white/50 uppercase tracking-wide"
+                          placeholder="Titre de la section"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    )}
+
+                    {/* Contenu */}
+                    <HtmlContent html={section.contenu} />
+                  </div>
+                );
+              })
+            ) : (
+              // Fallback : affichage du CCAP structuré (formulaire sans import Word)
+              <div className="space-y-2">
+                <SectionHeader number="1" title="Dispositions générales" color={enteteColor} />
+                <div className="text-[10px] pl-2 space-y-1 mb-2">
+                  {ccapData.dispositionsGenerales.objet && (
+                    <p><strong>Objet du marché :</strong> {ccapData.dispositionsGenerales.objet}</p>
+                  )}
+                  {ccapData.dispositionsGenerales.duree && (
+                    <p><strong>Durée du marché :</strong> {ccapData.dispositionsGenerales.duree}</p>
+                  )}
+                  {ccapData.dispositionsGenerales.ccagApplicable && (
+                    <p><strong>CCAG applicable :</strong> {ccapData.dispositionsGenerales.ccagApplicable}</p>
+                  )}
+                  {ccapData.dispositionsGenerales.reconduction && (
+                    <p>
+                      <strong>Reconduction :</strong> Oui
+                      {ccapData.dispositionsGenerales.nbReconductions
+                        ? ` (${ccapData.dispositionsGenerales.nbReconductions} fois)`
+                        : ''}
+                    </p>
+                  )}
+                </div>
+
+                <SectionHeader number="2" title="Prix et règlement" color={enteteColor} />
+                <div className="text-[10px] pl-2 space-y-1 mb-2">
+                  {ccapData.prixPaiement.typePrix && (
+                    <p><strong>Type de prix :</strong> {ccapData.prixPaiement.typePrix}</p>
+                  )}
+                  {ccapData.prixPaiement.modalitesPaiement && (
+                    <p><strong>Modalités de paiement :</strong> {ccapData.prixPaiement.modalitesPaiement}</p>
+                  )}
+                  {ccapData.prixPaiement.delaiPaiement && (
+                    <p><strong>Délai de paiement :</strong> {ccapData.prixPaiement.delaiPaiement}</p>
+                  )}
+                  <p><strong>Retenue de garantie :</strong> {ccapData.prixPaiement.retenuGarantie ? 'Oui' : 'Non'}</p>
+                  {ccapData.prixPaiement.revision && ccapData.prixPaiement.formuleRevision && (
+                    <p><strong>Formule de révision :</strong> {ccapData.prixPaiement.formuleRevision}</p>
+                  )}
+                </div>
+
+                <SectionHeader number="3" title="Conditions d'exécution" color={enteteColor} />
+                <div className="text-[10px] pl-2 space-y-1 mb-2">
+                  {ccapData.execution.delaiExecution && (
+                    <p><strong>Délai d'exécution :</strong> {ccapData.execution.delaiExecution}</p>
+                  )}
+                  {ccapData.execution.penalitesRetard && (
+                    <p><strong>Pénalités de retard :</strong> {ccapData.execution.penalitesRetard}</p>
+                  )}
+                  {ccapData.execution.conditionsReception && (
+                    <p><strong>Conditions de réception :</strong> {ccapData.execution.conditionsReception}</p>
+                  )}
+                </div>
+
+                {ccapData.clausesSpecifiques && (
+                  <>
+                    <SectionHeader number="4" title="Clauses spécifiques" color={enteteColor} />
+                    <div className="text-[10px] pl-2 space-y-1 mb-2">
+                      {ccapData.clausesSpecifiques.proprietéIntellectuelle && (
+                        <p><strong>Propriété intellectuelle :</strong> {ccapData.clausesSpecifiques.proprietéIntellectuelle}</p>
+                      )}
+                      {ccapData.clausesSpecifiques.confidentialite && (
+                        <p><strong>Confidentialité :</strong> {ccapData.clausesSpecifiques.confidentialite}</p>
+                      )}
+                      {ccapData.clausesSpecifiques.securite && (
+                        <p><strong>Sécurité :</strong> {ccapData.clausesSpecifiques.securite}</p>
+                      )}
+                      {ccapData.clausesSpecifiques.garantieDecennale && (
+                        <p><strong>Garantie décennale :</strong> {ccapData.clausesSpecifiques.garantieDecennale}</p>
+                      )}
+                      {ccapData.clausesSpecifiques.garantieBiennale && (
+                        <p><strong>Garantie biennale :</strong> {ccapData.clausesSpecifiques.garantieBiennale}</p>
+                      )}
+                      {ccapData.clausesSpecifiques.sla && (
+                        <p><strong>SLA :</strong> {ccapData.clausesSpecifiques.sla}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Pied de page */}
+          <div className="mt-12 pt-5 border-t border-gray-200 text-right text-[10px] text-gray-500 space-y-0.5">
+            <p>Document généré le {today}</p>
+            <p>AFPA - Application Suivi Dossiers HA</p>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-3">
-      <h3 className="text-base font-bold text-gray-900 dark:text-white border-b border-emerald-600 pb-2">
-        {title}
-      </h3>
-      <div className="pl-4 space-y-2">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, value }: { label: string; value?: string }) {
-  if (!value) return null;
-  
-  return (
-    <div className="text-sm">
-      <span className="font-semibold text-gray-700 dark:text-gray-300">{label} : </span>
-      <span className="text-gray-600 dark:text-gray-400">{value}</span>
     </div>
   );
 }

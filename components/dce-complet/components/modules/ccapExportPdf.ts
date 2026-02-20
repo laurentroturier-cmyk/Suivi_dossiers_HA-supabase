@@ -3,6 +3,7 @@
 // ============================================
 
 import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import type { CCAPData } from '../../types';
 import { getCCAPTypeLabel } from './ccapTemplates';
 import { CCAP_HEADER_TEXT, CCAP_HEADER_TITLE } from './ccapConstants';
@@ -59,6 +60,105 @@ async function loadAfpaLogo(): Promise<string | null> {
     console.warn('Logo AFPA non disponible:', error);
     return null;
   }
+}
+
+/**
+ * Bloc de contenu extrait du HTML : paragraphe, image ou tableau
+ */
+type ContentBlock =
+  | { type: 'paragraph'; text: string }
+  | { type: 'image'; src: string }
+  | { type: 'table'; head: string[][]; body: string[][] };
+
+/**
+ * Parse le HTML et retourne une liste de blocs typés (paragraphes, images, tableaux).
+ * Utilisé par le rendu PDF pour distinguer les tableaux du texte brut.
+ */
+function htmlToContentBlocks(html: string): ContentBlock[] {
+  if (!html.includes('<')) {
+    return html.split('\n').filter(p => p.trim()).map(text => ({ type: 'paragraph' as const, text }));
+  }
+
+  const blocks: ContentBlock[] = [];
+  const parser = new DOMParser();
+  const domDoc = parser.parseFromString(html, 'text/html');
+
+  const processNode = (node: Element) => {
+    const tag = node.tagName.toLowerCase();
+
+    if (tag === 'table') {
+      const head: string[][] = [];
+      const body: string[][] = [];
+
+      // En-têtes depuis <thead> ou première ligne avec <th>
+      const theadRows = node.querySelectorAll('thead tr');
+      if (theadRows.length > 0) {
+        theadRows.forEach(row => {
+          const cells = Array.from(row.querySelectorAll('th, td')).map(c => c.textContent?.trim() || '');
+          if (cells.length) head.push(cells);
+        });
+      } else {
+        const firstRow = node.querySelector('tr');
+        if (firstRow && firstRow.querySelector('th')) {
+          const cells = Array.from(firstRow.querySelectorAll('th')).map(c => c.textContent?.trim() || '');
+          if (cells.length) head.push(cells);
+        }
+      }
+
+      // Lignes de données depuis <tbody> ou toutes les <tr>
+      const tbodyRows = node.querySelectorAll('tbody tr');
+      const dataRows = tbodyRows.length > 0 ? tbodyRows : node.querySelectorAll('tr');
+      dataRows.forEach((row, i) => {
+        // Ignorer la première ligne si elle a servi d'en-tête
+        if (i === 0 && head.length > 0 && theadRows.length === 0) return;
+        const cells = Array.from(row.querySelectorAll('td, th')).map(c => c.textContent?.trim() || '');
+        if (cells.length) body.push(cells);
+      });
+
+      blocks.push({ type: 'table', head, body });
+    } else if (tag === 'img') {
+      const src = (node as HTMLImageElement).src;
+      if (src) blocks.push({ type: 'image', src });
+    } else if (tag === 'p') {
+      const imgs = node.querySelectorAll('img');
+      if (imgs.length > 0) {
+        const text = Array.from(node.childNodes)
+          .filter(n => n.nodeType === Node.TEXT_NODE)
+          .map(n => n.textContent?.trim())
+          .filter(Boolean)
+          .join(' ');
+        if (text) blocks.push({ type: 'paragraph', text });
+        imgs.forEach(img => {
+          const src = (img as HTMLImageElement).src;
+          if (src) blocks.push({ type: 'image', src });
+        });
+      } else {
+        const text = node.textContent?.trim();
+        if (text) blocks.push({ type: 'paragraph', text });
+      }
+    } else if (tag === 'ul' || tag === 'ol') {
+      let counter = 1;
+      node.querySelectorAll('li').forEach(li => {
+        const text = li.textContent?.trim();
+        if (text) {
+          const bullet = tag === 'ul' ? '• ' : `${counter}. `;
+          blocks.push({ type: 'paragraph', text: bullet + text });
+          counter++;
+        }
+      });
+    } else if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
+      const text = node.textContent?.trim();
+      if (text) blocks.push({ type: 'paragraph', text });
+    } else if (tag === 'blockquote') {
+      const text = node.textContent?.trim();
+      if (text) blocks.push({ type: 'paragraph', text: '» ' + text });
+    } else {
+      Array.from(node.children).forEach(child => processNode(child as Element));
+    }
+  };
+
+  Array.from(domDoc.body.children).forEach(child => processNode(child as Element));
+  return blocks;
 }
 
 /**
@@ -273,7 +373,11 @@ export async function exportCCAPToPdf(ccapData: CCAPData, numeroProcedure?: stri
 
   /**
    * Ajoute un titre de section avec numérotation.
-   * Si titreCouleur ou titreTaille sont fournis, ils remplacent les valeurs par défaut (niveau).
+   * Tous les niveaux → bannière rectangulaire colorée (fidèle à l'aperçu).
+   * Niveau 1 : pleine largeur, hauteur 9mm, texte 11pt.
+   * Niveau 2 : indentée 5mm, hauteur 7.5mm, texte 10pt, opacité réduite.
+   * Niveaux 3-4 : indentée davantage, hauteur 6.5mm, texte 9pt.
+   * La couleur est issue de titreCouleur si fourni, sinon enteteRgb.
    */
   const addHeading = (
     number: string,
@@ -283,47 +387,53 @@ export async function exportCCAPToPdf(ccapData: CCAPData, numeroProcedure?: stri
     titreCouleur?: string,
     titreTaille?: number
   ) => {
-    const defaultSize = level === 1 ? 16 : level === 2 ? 14 : level === 3 ? 12 : 11;
+    const defaultSize = level === 1 ? 11 : level === 2 ? 10 : 9;
     const size = titreTaille ?? defaultSize;
-    const leftMargin = (level - 1) * 5;
-    const fullTitle = `${number} ${text}`;
+    // Indentation croissante selon le niveau
+    const indent = (level - 1) * 5;
+    // Hauteur de bannière décroissante selon le niveau
+    const bh = level === 1 ? 9 : level === 2 ? 7.5 : 6.5;
+    // Opacité de la bannière : niveau 1 = plein, niveaux inférieurs = légèrement plus clair
+    const opacity = level === 1 ? 1 : level === 2 ? 0.82 : 0.68;
 
-    checkPageBreak(15);
+    checkPageBreak(bh + 6);
 
     if (recordInToc) {
-      tocEntries.push({
-        number,
-        title: text,
-        page: currentPage,
-        level
-      });
+      tocEntries.push({ number, title: text, page: currentPage, level });
     }
 
-    const defaultColors: Record<number, [number, number, number]> = {
-      1: [0, 102, 204],
-      2: [16, 185, 129],
-      3: [147, 51, 234],
-      4: [249, 115, 22]
-    };
-    const rgb = titreCouleur ? hexToRgb(titreCouleur) : null;
-    const color = rgb ?? (defaultColors[level] || [0, 0, 0]);
+    const baseRgb = titreCouleur ? (hexToRgb(titreCouleur) ?? enteteRgb) : enteteRgb;
+    // Mélange avec le blanc pour simuler l'opacité sur fond blanc
+    const rgb: [number, number, number] = [
+      Math.round(baseRgb[0] * opacity + 255 * (1 - opacity)),
+      Math.round(baseRgb[1] * opacity + 255 * (1 - opacity)),
+      Math.round(baseRgb[2] * opacity + 255 * (1 - opacity)),
+    ];
 
+    const bannerX = margin + indent;
+    const bannerW = pageWidth - margin * 2 - indent;
+
+    doc.setFillColor(...rgb);
+    doc.roundedRect(bannerX, y, bannerW, bh, 1.5, 1.5, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(size);
-    doc.setTextColor(...color);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${number}  ${text.toUpperCase()}`, bannerX + 4, y + bh * 0.67);
+    y += bh + 4;
 
-    const actualMargin = margin + leftMargin;
-    doc.text(fullTitle, actualMargin, y);
-
-    y += size * 0.5 + 3;
     doc.setTextColor(0, 0, 0);
   };
   
   // ============================================
+  // COULEUR D'EN-TÊTE (depuis les données ou teal par défaut)
+  // ============================================
+  const enteteRgb: [number, number, number] = hexToRgb(ccapData.couleurEntete || '#2F5B58') ?? [47, 91, 88];
+
+  // ============================================
   // PAGE DE GARDE
   // ============================================
-  
-  // Logo AFPA
+
+  // Logo AFPA + date
   if (logoData) {
     try {
       doc.addImage(logoData, 'PNG', margin, margin, 50, 15);
@@ -331,105 +441,100 @@ export async function exportCCAPToPdf(ccapData: CCAPData, numeroProcedure?: stri
       console.warn('Erreur lors de l\'ajout du logo:', error);
     }
   }
-  
-  y = 60;
-  
-  // Titre principal
+  const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  doc.setFontSize(9);
+  doc.setTextColor(150, 150, 150);
+  doc.text(dateStr, pageWidth - margin, margin + 5, { align: 'right' });
+
+  y = 50;
+
+  // Bannière titre (rectangle coloré — fidèle à l'aperçu)
+  const bannerH = 28;
+  doc.setFillColor(...enteteRgb);
+  doc.roundedRect(margin, y, pageWidth - margin * 2, bannerH, 3, 3, 'F');
+
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(24);
-  doc.setTextColor(0, 102, 204);
-  const titleLines = doc.splitTextToSize('CAHIER DES CLAUSES ADMINISTRATIVES PARTICULIÈRES', pageWidth - margin * 2);
-  titleLines.forEach((line: string) => {
-    doc.text(line, pageWidth / 2, y, { align: 'center' });
-    y += 12;
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  const titleText = 'CAHIER DES CLAUSES ADMINISTRATIVES PARTICULIÈRES';
+  const titleLines = doc.splitTextToSize(titleText, pageWidth - margin * 2 - 10);
+  const titleStartY = y + (bannerH / 2) - ((titleLines.length - 1) * 5);
+  titleLines.forEach((line: string, i: number) => {
+    doc.text(line, pageWidth / 2, titleStartY + i * 7, { align: 'center' });
   });
-  
-  y += 10;
-  
+
+  y += bannerH + 8;
+
   // Type de CCAP
   if (ccapData.typeCCAP) {
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+    doc.setTextColor(...enteteRgb);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Type de marché : ${getCCAPTypeLabel(ccapData.typeCCAP)}`, pageWidth / 2, y, { align: 'center' });
-    y += 10;
+    doc.text(`Type : ${getCCAPTypeLabel(ccapData.typeCCAP)}`, pageWidth / 2, y, { align: 'center' });
+    y += 8;
   }
-  
+
   // Objet du marché
   if (ccapData.dispositionsGenerales?.objet) {
-    y += 10;
-    doc.setFontSize(16);
+    y += 4;
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(50, 50, 50);
     const objetLines = doc.splitTextToSize(ccapData.dispositionsGenerales.objet, pageWidth - margin * 4);
     objetLines.forEach((line: string) => {
       doc.text(line, pageWidth / 2, y, { align: 'center' });
-      y += 8;
+      y += 7;
     });
   }
-  
+
   // Numéro de procédure
   if (numeroProcedure) {
-    y += 20;
-    doc.setFontSize(12);
+    y += 12;
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
     doc.text(`Procédure n° ${numeroProcedure}`, pageWidth / 2, y, { align: 'center' });
   }
-  
-  // Date
-  y += 10;
-  doc.setFontSize(11);
-  const dateStr = new Date().toLocaleDateString('fr-FR', { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
-  });
-  doc.text(dateStr, pageWidth / 2, y, { align: 'center' });
-  
-  // Ligne de séparation décorative
-  y += 20;
-  doc.setDrawColor(0, 102, 204);
+
+  // Ligne décorative
+  y += 16;
+  doc.setDrawColor(...enteteRgb);
   doc.setLineWidth(0.5);
   doc.line(margin + 30, y, pageWidth - margin - 30, y);
-  
+
   doc.setTextColor(0, 0, 0);
-  
+
   // ============================================
   // SECTION D'EN-TÊTE STANDARD (non numérotée)
   // ============================================
-  
+
   doc.addPage();
   currentPage++;
   y = margin;
-  
-  // Titre de la section d'en-tête
+
+  // Bannière "Dispositions générales" (fidèle à l'aperçu)
+  const headerBannerH = 10;
+  doc.setFillColor(...enteteRgb);
+  doc.roundedRect(margin, y, pageWidth - margin * 2, headerBannerH, 2, 2, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(0, 102, 204);
-  doc.text(CCAP_HEADER_TITLE, margin, y);
-  y += 10;
-  
-  // Ligne de séparation
-  doc.setDrawColor(0, 102, 204);
-  doc.setLineWidth(0.5);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 8;
-  
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`◆  ${CCAP_HEADER_TITLE.toUpperCase()}`, margin + 6, y + 7);
+  y += headerBannerH + 6;
+
   // Texte standard
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  
+
   const headerLines = doc.splitTextToSize(CCAP_HEADER_TEXT, pageWidth - margin * 2);
   headerLines.forEach((line: string) => {
     checkPageBreak();
     doc.text(line, margin, y);
     y += 5;
   });
-  
-  y += 10;
 
+  y += 10;
   doc.setTextColor(0, 0, 0);
   
   // ============================================
@@ -465,61 +570,47 @@ export async function exportCCAPToPdf(ccapData: CCAPData, numeroProcedure?: stri
       
       y += 2;
       
-      // Ajouter le contenu (convertir HTML en texte)
+      // Ajouter le contenu (paragraphes, tableaux, images)
       if (section.contenu) {
-        const paragraphs = htmlToPlainText(section.contenu);
-        paragraphs.forEach(para => {
-          // Détecter les images
-          if (para.startsWith('[IMAGE:') && para.endsWith(']')) {
-            const src = para.substring(7, para.length - 1);
-            console.log('🖼️ Image détectée pour export PDF:', src.substring(0, 50) + '...');
-            
-            try {
-              checkPageBreak(110); // Espace nécessaire pour l'image
-              
-              // Dimensions optimales pour A4 : largeur max ~160mm, hauteur adaptée
-              const maxWidth = pageWidth - (2 * margin) - leftMargin - 4;
-              const imgWidth = Math.min(maxWidth, 150); // Max 150mm de large
-              const imgHeight = imgWidth * 0.75; // Ratio 4:3
-              const imgX = margin + leftMargin + 2;
-              
-              // Détecter le format de l'image depuis le data URI
-              // jsPDF supporte: JPEG, PNG, GIF, BMP, WEBP
-              let format = 'JPEG';
-              if (src.includes('data:image/png') || src.includes('.png')) {
-                format = 'PNG';
-              } else if (src.includes('data:image/gif') || src.includes('.gif')) {
-                format = 'GIF';
-              } else if (src.includes('data:image/webp') || src.includes('.webp')) {
-                format = 'WEBP';
-              } else if (src.includes('data:image/bmp') || src.includes('.bmp')) {
-                format = 'BMP';
-              } else if (src.includes('data:image/jpeg') || src.includes('data:image/jpg') || src.includes('.jpg') || src.includes('.jpeg')) {
-                format = 'JPEG';
-              }
-              
-              console.log('📄 Format détecté:', format);
-              console.log('📐 Dimensions:', imgWidth + 'mm x ' + imgHeight + 'mm');
-              
-              doc.addImage(src, format, imgX, y, imgWidth, imgHeight);
-              y += imgHeight + 8;
-              console.log('✅ Image ajoutée avec succès au PDF');
-            } catch (error) {
-              console.error('❌ Erreur lors de l\'ajout de l\'image PDF:', error);
-              // En cas d'erreur, afficher un texte de remplacement
-              addTextBlock('[Image non disponible]', { 
-                size: 9, 
-                spacing: 5,
-                leftMargin: leftMargin + 2,
-                color: [150, 150, 150]
-              });
-            }
-          } else {
-            addTextBlock(para, { 
-              size: 10, 
-              spacing: 5,
-              leftMargin: leftMargin + 2
+        const blocks = htmlToContentBlocks(section.contenu);
+        const contentMargin = margin + leftMargin + 2;
+        const contentWidth = pageWidth - contentMargin - margin;
+
+        blocks.forEach(block => {
+          if (block.type === 'paragraph') {
+            addTextBlock(block.text, { size: 10, spacing: 5, leftMargin: leftMargin + 2 });
+
+          } else if (block.type === 'table') {
+            checkPageBreak(20);
+            autoTable(doc, {
+              head: block.head.length > 0 ? block.head : undefined,
+              body: block.body,
+              startY: y,
+              margin: { left: contentMargin, right: margin },
+              tableWidth: contentWidth,
+              styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+              headStyles: { fillColor: enteteRgb, textColor: [255, 255, 255], fontStyle: 'bold' },
+              alternateRowStyles: { fillColor: [249, 250, 251] },
+              theme: 'grid',
             });
+            y = (doc as any).lastAutoTable.finalY + 5;
+            currentPage = doc.getNumberOfPages();
+
+          } else if (block.type === 'image') {
+            try {
+              checkPageBreak(60);
+              const maxWidth = contentWidth;
+              const imgWidth = Math.min(maxWidth, 150);
+              const imgHeight = imgWidth * 0.75;
+              let format = 'JPEG';
+              if (block.src.includes('data:image/png') || block.src.includes('.png')) format = 'PNG';
+              else if (block.src.includes('data:image/gif') || block.src.includes('.gif')) format = 'GIF';
+              else if (block.src.includes('data:image/webp') || block.src.includes('.webp')) format = 'WEBP';
+              doc.addImage(block.src, format, contentMargin, y, imgWidth, imgHeight);
+              y += imgHeight + 8;
+            } catch {
+              addTextBlock('[Image non disponible]', { size: 9, spacing: 5, leftMargin: leftMargin + 2, color: [150, 150, 150] });
+            }
           }
         });
         y += 4;
