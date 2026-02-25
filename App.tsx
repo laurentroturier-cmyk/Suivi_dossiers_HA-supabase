@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
+import { Pin, PinOff } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { 
   PROJECT_FIELDS, 
@@ -409,6 +410,8 @@ const App: React.FC = () => {
   const [refLeviersHA, setRefLeviersHA] = useState<string[]>([]);
   
   const [selectedAcheteurs, setSelectedAcheteurs] = useState<string[]>([]);
+  // Acheteur par défaut : pré-filtre automatique à la connexion pour les rôles non-admin
+  const [acheteurParDefaut, setAcheteurParDefaut] = useState<string | null>(null);
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([]);
   const [selectedProcTypes, setSelectedProcTypes] = useState<string[]>([]);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
@@ -1294,6 +1297,21 @@ const App: React.FC = () => {
       .sort((a, b) => (parseFloat(String(a.IDProjet)) || 0) < (parseFloat(String(b.IDProjet)) || 0) ? 1 : -1);
   }, [dossiers, selectedAcheteurs, selectedPriorities, selectedStatuses, projectSearch]);
 
+  // Applique automatiquement le filtre acheteur par défaut au chargement (non-admin uniquement)
+  // DOIT être avant tout return conditionnel (règles des hooks React)
+  useEffect(() => {
+    if (!authState.profile || authState.profile.role === 'admin') return;
+    if (refAcheteurs.length === 0) return;
+    const stored = localStorage.getItem(`acheteur_default_${authState.profile.id}`);
+    if (!stored) return;
+    const names = refAcheteurs.map((a: any) => getProp(a, 'Personne') || getProp(a, 'Nom')).filter(Boolean);
+    if (names.includes(stored)) {
+      setAcheteurParDefaut(stored);
+      setSelectedAcheteurs(prev => prev.length === 0 ? [stored] : prev);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authState.profile?.id, refAcheteurs.length]);
+
   // ============================================
   // AUTH HANDLERS & RENDERING
   // ============================================
@@ -1650,7 +1668,7 @@ const App: React.FC = () => {
   };
 
   const resetFilters = () => {
-    setSelectedAcheteurs([]);
+    setSelectedAcheteurs(acheteurParDefaut ? [acheteurParDefaut] : []);
     setSelectedFamilies([]);
     setSelectedProcTypes([]);
     setSelectedPriorities([]);
@@ -1673,7 +1691,7 @@ const App: React.FC = () => {
   // Fonction de reset spécifique aux filtres PROJETS
   const resetProjectFilters = () => {
     setProjectSearch('');
-    setSelectedAcheteurs([]);
+    setSelectedAcheteurs(acheteurParDefaut ? [acheteurParDefaut] : []);
     setSelectedFamilies([]);
     setSelectedPriorities([]);
     setSelectedDeployYears([]);
@@ -1685,7 +1703,7 @@ const App: React.FC = () => {
   const resetProcedureFilters = () => {
     setProjectSearch('');
     setProcedureSearch('');
-    setSelectedAcheteurs([]); // Reset acheteur car maintenant partagé avec procédures
+    setSelectedAcheteurs(acheteurParDefaut ? [acheteurParDefaut] : []); // Restaure le défaut
     setSelectedProcTypes([]);
     setSelectedYears([]);
     setSelectedProcedureStatuses([]);
@@ -1819,9 +1837,21 @@ const App: React.FC = () => {
   };
 
   const toggleAcheteur = (name: string) => {
-    setSelectedAcheteurs(prev => 
+    setSelectedAcheteurs(prev =>
       prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
     );
+  };
+
+  const saveAcheteurParDefaut = (nom: string) => {
+    if (!authState.profile) return;
+    localStorage.setItem(`acheteur_default_${authState.profile.id}`, nom);
+    setAcheteurParDefaut(nom);
+  };
+
+  const clearAcheteurParDefaut = () => {
+    if (!authState.profile) return;
+    localStorage.removeItem(`acheteur_default_${authState.profile.id}`);
+    setAcheteurParDefaut(null);
   };
 
   const toggleFamily = (name: string) => {
@@ -2798,7 +2828,8 @@ const App: React.FC = () => {
     onToggle: (value: string) => void;
     allLabel?: string;
     formatDisplay?: (opt: string) => string;
-  }> = ({ id, label, options, selected, onToggle, allLabel = 'Tout', formatDisplay }) => {
+    footer?: React.ReactNode;
+  }> = ({ id, label, options, selected, onToggle, allLabel = 'Tout', formatDisplay, footer }) => {
     const isOpen = openDropdown === id;
     const totalCount = options.length;
     const displayText = selected.length === 0 
@@ -2826,9 +2857,9 @@ const App: React.FC = () => {
                 const isSelected = selected.includes(opt);
                 const displayOpt = formatDisplay ? formatDisplay(opt) : opt;
                 return (
-                  <button 
-                    key={i} 
-                    onClick={() => onToggle(opt)} 
+                  <button
+                    key={i}
+                    onClick={() => onToggle(opt)}
                     className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between hover:bg-gray-50 ${
                       isSelected ? 'text-gray-900 bg-gray-50' : 'text-gray-600'
                     }`}
@@ -2845,6 +2876,7 @@ const App: React.FC = () => {
             </div>
           </div>
         )}
+        {footer && <div className="mt-1.5">{footer}</div>}
       </div>
     );
   };
@@ -3367,7 +3399,7 @@ const App: React.FC = () => {
                       />
                     );
                   })()}
-                  <FilterDropdown 
+                  <FilterDropdown
                     id="gantt-acheteur"
                     label="Acheteur"
                     options={[...refAcheteurs].sort((a, b) => {
@@ -3377,6 +3409,30 @@ const App: React.FC = () => {
                     }).map(a => getProp(a, 'Personne') || getProp(a, 'Nom'))}
                     selected={selectedAcheteurs}
                     onToggle={toggleAcheteur}
+                    footer={authState.profile?.role !== 'admin' ? (
+                      <div className="flex items-center gap-2 px-1 flex-wrap">
+                        {acheteurParDefaut ? (
+                          <>
+                            <span className="flex items-center gap-1 text-[10px] text-green-600 font-medium">
+                              <Pin className="w-2.5 h-2.5 flex-shrink-0" />
+                              <span className="truncate max-w-[130px]">{acheteurParDefaut}</span>
+                              <button onClick={clearAcheteurParDefaut} title="Supprimer le filtre par défaut" className="text-red-400 hover:text-red-600">
+                                <PinOff className="w-2.5 h-2.5" />
+                              </button>
+                            </span>
+                            {selectedAcheteurs.length === 1 && selectedAcheteurs[0] !== acheteurParDefaut && (
+                              <button onClick={() => saveAcheteurParDefaut(selectedAcheteurs[0])} className="flex items-center gap-0.5 text-[10px] text-blue-500 hover:text-blue-700 font-medium" title="Changer le filtre par défaut">
+                                <Pin className="w-2.5 h-2.5" />Changer
+                              </button>
+                            )}
+                          </>
+                        ) : selectedAcheteurs.length === 1 ? (
+                          <button onClick={() => saveAcheteurParDefaut(selectedAcheteurs[0])} className="flex items-center gap-1 text-[10px] text-blue-500 hover:text-blue-700 font-medium" title="Épingler comme filtre par défaut">
+                            <Pin className="w-2.5 h-2.5" />Épingler comme défaut
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : undefined}
                   />
                   <FilterDropdown 
                     id="gantt-priority"
@@ -4669,7 +4725,7 @@ const App: React.FC = () => {
                       </>
                     )}
                   </div>
-                  <FilterDropdown 
+                  <FilterDropdown
                     id="list-acheteur"
                     label="Acheteur"
                     options={[...refAcheteurs].sort((a, b) => {
@@ -4679,6 +4735,30 @@ const App: React.FC = () => {
                     }).map(a => getProp(a, 'Personne') || getProp(a, 'Nom'))}
                     selected={selectedAcheteurs}
                     onToggle={toggleAcheteur}
+                    footer={authState.profile?.role !== 'admin' ? (
+                      <div className="flex items-center gap-2 px-1 flex-wrap">
+                        {acheteurParDefaut ? (
+                          <>
+                            <span className="flex items-center gap-1 text-[10px] text-green-600 font-medium">
+                              <Pin className="w-2.5 h-2.5 flex-shrink-0" />
+                              <span className="truncate max-w-[130px]">{acheteurParDefaut}</span>
+                              <button onClick={clearAcheteurParDefaut} title="Supprimer le filtre par défaut" className="text-red-400 hover:text-red-600">
+                                <PinOff className="w-2.5 h-2.5" />
+                              </button>
+                            </span>
+                            {selectedAcheteurs.length === 1 && selectedAcheteurs[0] !== acheteurParDefaut && (
+                              <button onClick={() => saveAcheteurParDefaut(selectedAcheteurs[0])} className="flex items-center gap-0.5 text-[10px] text-blue-500 hover:text-blue-700 font-medium" title="Changer le filtre par défaut">
+                                <Pin className="w-2.5 h-2.5" />Changer
+                              </button>
+                            )}
+                          </>
+                        ) : selectedAcheteurs.length === 1 ? (
+                          <button onClick={() => saveAcheteurParDefaut(selectedAcheteurs[0])} className="flex items-center gap-1 text-[10px] text-blue-500 hover:text-blue-700 font-medium" title="Épingler comme filtre par défaut">
+                            <Pin className="w-2.5 h-2.5" />Épingler comme défaut
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : undefined}
                   />
                   {activeTab === 'dossiers' && (
                     <>
