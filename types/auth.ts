@@ -4,6 +4,7 @@ export interface UserProfile {
   role: 'admin' | 'user' | 'gral';
   acheteur_nom?: string | null;     // Correspond au champ Acheteur dans projets/procédures
   acheteur_prenom?: string | null;  // Prénom affiché dans le message de bienvenue
+  emoji?: string | null;            // Emoji personnalisé affiché après le prénom
   created_at?: string;
   updated_at?: string;
 }

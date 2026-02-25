@@ -553,14 +553,14 @@ const App: React.FC = () => {
             // Timeout pour le fetch du profil (2 secondes max)
             const profilePromise = supabase
               .from('profiles')
-              .select('id, email, role')
+              .select('*')
               .eq('id', session.user.id)
               .maybeSingle();
-            
-            const timeoutPromise = new Promise((_, reject) => 
+
+            const timeoutPromise = new Promise((_, reject) =>
               setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
             );
-            
+
             const { data: profileData, error: profileError } = await Promise.race([
               profilePromise,
               timeoutPromise
@@ -597,9 +597,14 @@ const App: React.FC = () => {
               });
             } else {
               console.log('[AUTH] Profile loaded successfully:', profileData);
+              // Normalise le nom de colonne Supabase "Acheteur_prénom" → acheteur_prenom
+              const normalizedProfile = {
+                ...profileData,
+                acheteur_prenom: profileData.acheteur_prenom ?? (profileData as any)['Acheteur_prénom'] ?? null,
+              };
               setAuthState({
                 user: session.user,
-                profile: profileData as UserProfile,
+                profile: normalizedProfile as UserProfile,
                 loading: false,
                 error: null
               });
@@ -665,14 +670,14 @@ const App: React.FC = () => {
             // Timeout pour le fetch du profil (2 secondes max)
             const profilePromise = supabase
               .from('profiles')
-              .select('id, email, role')
+              .select('*')
               .eq('id', session.user.id)
               .maybeSingle();
-            
-            const timeoutPromise = new Promise((_, reject) => 
+
+            const timeoutPromise = new Promise((_, reject) =>
               setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
             );
-            
+
             const { data: profileData, error: profileError } = await Promise.race([
               profilePromise,
               timeoutPromise
@@ -739,9 +744,14 @@ const App: React.FC = () => {
               });
             } else {
               console.log('[AUTH] Profile loaded successfully:', profileData);
+              // Normalise le nom de colonne Supabase "Acheteur_prénom" → acheteur_prenom
+              const normalizedProfile = {
+                ...profileData,
+                acheteur_prenom: profileData.acheteur_prenom ?? (profileData as any)['Acheteur_prénom'] ?? null,
+              };
               setAuthState({
                 user: session.user,
-                profile: profileData as UserProfile,
+                profile: normalizedProfile as UserProfile,
                 loading: false,
                 error: null
               });
@@ -1301,7 +1311,7 @@ const App: React.FC = () => {
   // DOIT être avant tout return conditionnel (règles des hooks React)
   useEffect(() => {
     if (!authState.profile) return;
-    if (authState.profile.role === 'admin' || authState.profile.role === 'gral') return;
+    if (authState.profile.role === 'admin') return;
     const nomFromProfile = authState.profile.acheteur_nom;
     if (!nomFromProfile) return;
     setAcheteurParDefaut(nomFromProfile);
@@ -3127,6 +3137,7 @@ const App: React.FC = () => {
                 isAdmin={authState.profile?.role === 'admin' || authState.profile?.role === 'gral'}
                 acheteurNom={authState.profile?.acheteur_nom}
                 acheteurPrenom={authState.profile?.acheteur_prenom}
+                userEmoji={authState.profile?.emoji}
                 userEmail={authState.profile?.email}
               />
             )}

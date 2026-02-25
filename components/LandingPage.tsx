@@ -9,10 +9,11 @@ interface LandingPageProps {
   isAdmin?: boolean;
   acheteurNom?: string | null;
   acheteurPrenom?: string | null;
+  userEmoji?: string | null;
   userEmail?: string | null;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount, isAdmin = false, acheteurNom, acheteurPrenom, userEmail }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount, isAdmin = false, acheteurNom, acheteurPrenom, userEmoji, userEmail }) => {
   // Résolution du prénom (par ordre de priorité) :
   // 1. acheteur_prenom (colonne dédiée dans profiles)
   // 2. Dernier mot de acheteur_nom ("Auvray Laurine" → "Laurine")
@@ -227,7 +228,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
           {prenom && (
             <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-200">
               <span>Bonjour {prenom}</span>
-              {prenom === 'Laurine' && <span title="🐴">🐴</span>}
+              {userEmoji && <span>{userEmoji}</span>}
             </div>
           )}
 
