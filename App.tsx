@@ -1300,17 +1300,13 @@ const App: React.FC = () => {
   // Applique automatiquement le filtre acheteur depuis profile.acheteur_nom (non-admin uniquement)
   // DOIT être avant tout return conditionnel (règles des hooks React)
   useEffect(() => {
-    if (!authState.profile || authState.profile.role === 'admin') return;
-    if (refAcheteurs.length === 0) return;
+    if (!authState.profile) return;
+    if (authState.profile.role === 'admin' || authState.profile.role === 'gral') return;
     const nomFromProfile = authState.profile.acheteur_nom;
     if (!nomFromProfile) return;
-    const names = refAcheteurs.map((a: any) => getProp(a, 'Personne') || getProp(a, 'Nom')).filter(Boolean);
-    if (names.includes(nomFromProfile)) {
-      setAcheteurParDefaut(nomFromProfile);
-      setSelectedAcheteurs(prev => prev.length === 0 ? [nomFromProfile] : prev);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authState.profile?.id, refAcheteurs.length]);
+    setAcheteurParDefaut(nomFromProfile);
+    setSelectedAcheteurs([nomFromProfile]);
+  }, [authState.profile?.id, authState.profile?.acheteur_nom]);
 
   // ============================================
   // AUTH HANDLERS & RENDERING
@@ -3130,6 +3126,7 @@ const App: React.FC = () => {
                 proceduresCount={procedures.length}
                 isAdmin={authState.profile?.role === 'admin' || authState.profile?.role === 'gral'}
                 acheteurNom={authState.profile?.acheteur_nom}
+                acheteurPrenom={authState.profile?.acheteur_prenom}
                 userEmail={authState.profile?.email}
               />
             )}

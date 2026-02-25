@@ -8,21 +8,24 @@ interface LandingPageProps {
   proceduresCount: number;
   isAdmin?: boolean;
   acheteurNom?: string | null;
+  acheteurPrenom?: string | null;
   userEmail?: string | null;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount, isAdmin = false, acheteurNom, userEmail }) => {
-  // Extraire le prénom :
-  // 1. Depuis acheteur_nom "NOM Prénom" → dernier mot
-  // 2. Fallback : depuis l'email "prenom.nom@..." → première partie avant le point
+const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount, isAdmin = false, acheteurNom, acheteurPrenom, userEmail }) => {
+  // Résolution du prénom (par ordre de priorité) :
+  // 1. acheteur_prenom (colonne dédiée dans profiles)
+  // 2. Dernier mot de acheteur_nom ("Auvray Laurine" → "Laurine")
+  // 3. Première partie de l'email avant le point ("laurine.auvray@…" → "Laurine")
   const prenom = (() => {
+    if (acheteurPrenom) return acheteurPrenom.trim();
     if (acheteurNom) {
       const last = acheteurNom.trim().split(/\s+/).pop();
       if (last) return last;
     }
     if (userEmail) {
-      const local = userEmail.split('@')[0];          // "laurine.auvray" ou "admin"
-      const first = local.split('.')[0];               // "laurine" ou "admin"
+      const local = userEmail.split('@')[0];
+      const first = local.split('.')[0];
       return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
     }
     return null;
