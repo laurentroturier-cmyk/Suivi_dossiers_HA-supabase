@@ -2,6 +2,7 @@ export interface UserProfile {
   id: string;
   email: string;
   role: 'admin' | 'user' | 'gral';
+  acheteur_nom?: string | null;   // Correspond au champ Acheteur dans projets/procédures
   created_at?: string;
   updated_at?: string;
 }

@@ -7,9 +7,26 @@ interface LandingPageProps {
   projectsCount: number;
   proceduresCount: number;
   isAdmin?: boolean;
+  acheteurNom?: string | null;
+  userEmail?: string | null;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount, isAdmin = false }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, projectsCount, proceduresCount, isAdmin = false, acheteurNom, userEmail }) => {
+  // Extraire le prénom :
+  // 1. Depuis acheteur_nom "NOM Prénom" → dernier mot
+  // 2. Fallback : depuis l'email "prenom.nom@..." → première partie avant le point
+  const prenom = (() => {
+    if (acheteurNom) {
+      const last = acheteurNom.trim().split(/\s+/).pop();
+      if (last) return last;
+    }
+    if (userEmail) {
+      const local = userEmail.split('@')[0];          // "laurine.auvray" ou "admin"
+      const first = local.split('.')[0];               // "laurine" ou "admin"
+      return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+    }
+    return null;
+  })();
   // État pour gérer l'expansion de la section NOTI dans Rédaction
   const [notiExpanded, setNotiExpanded] = useState(false);
   
@@ -203,6 +220,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
               <p className="text-[11px] text-gray-600 dark:text-slate-400">Projets achats DNA</p>
             </div>
           </div>
+          {/* Message de bienvenue */}
+          {prenom && (
+            <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-200">
+              <span>Bonjour {prenom}</span>
+              {prenom === 'Laurine' && <span title="🐴">🐴</span>}
+            </div>
+          )}
+
           {/* Stats en petit en haut à droite */}
           <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
