@@ -122,6 +122,7 @@ export type TableType =
   | 'noti1'
   | 'dce'
   | 'contrats'
+  | 'avenants'
   | 'immobilier'
   | 'ouverture-plis'
   | 'rapport-presentation'

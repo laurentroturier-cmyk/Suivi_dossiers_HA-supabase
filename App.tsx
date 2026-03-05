@@ -46,6 +46,7 @@ import RegistreRetraits from './components/RegistreRetraits';
 import RegistreDepots from './components/RegistreDepots';
 import ModuleOuvertureCentral from './components/ModuleOuvertureCentral';
 import Contrats from './components/Contrats';
+import { AvenantsModule } from './components/avenants';
 import { OuverturePlis } from './components/analyse';
 import LandingPage from './components/LandingPage';
 import ImmobilierPage from './pages/ImmobilierPage';
@@ -2981,7 +2982,7 @@ const App: React.FC = () => {
               <button
                 onClick={() => setOpenMenu(openMenu === 'execution' ? null : 'execution')}
                 className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1 whitespace-nowrap ${
-                  activeTab === 'contrats' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
+                  (activeTab === 'contrats' || activeTab === 'avenants') ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 Exécution
@@ -2996,6 +2997,12 @@ const App: React.FC = () => {
                     className="w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   >
                     Contrats
+                  </button>
+                  <button
+                    onClick={() => navigateTo('avenants', 'Avenants')}
+                    className="w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Avenants
                   </button>
                 </div>
               )}
@@ -3125,6 +3132,7 @@ const App: React.FC = () => {
                   'analyse-offres-dqe': 'Analyse des offres DQE',
                   'workflow-analyse-offres': 'Workflow Analyse des offres',
                     'contrats': 'Contrats',
+                    'avenants': 'Avenants',
                     'export': 'Exports & données',
                     'detail': 'Détail',
                     'immobilier': 'Immobilier',
@@ -5393,6 +5401,14 @@ const App: React.FC = () => {
 
         {activeTab === 'contrats' && (
           <Contrats />
+        )}
+
+        {activeTab === 'avenants' && (
+          <div className="animate-in fade-in duration-700">
+            <AvenantsModule
+              onBack={() => navigateTo('home', 'Accueil')}
+            />
+          </div>
         )}
 
         {activeTab === 'dashboard-achats' && (

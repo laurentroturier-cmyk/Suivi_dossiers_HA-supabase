@@ -135,6 +135,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       btnText: 'text-gray-700 dark:text-gray-200',
       actions: [
         { label: 'Contrats', tab: 'contrats', isAdmin: false },
+        { label: 'Avenants', tab: 'avenants', isAdmin: false },
       ]
     },
     {
