@@ -78,7 +78,7 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
   const montantAvenant   = data.montant_avenant_ht ?? 0;
   const montantNouveau   = montantPrecedent + montantAvenant;
   const tauxTVA          = parseFloat((data.taux_tva || '20').replace('%', '').trim()) / 100;
-  const montantTVA       = montantNouveau * tauxTVA;
+  const montantTVA       = montantNouveau * tauxTVA; // eslint-disable-line @typescript-eslint/no-unused-vars
   const today            = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
 
   return (
@@ -154,7 +154,7 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
           <SectionHeader number="A" title="Identification du pouvoir adjudicateur" />
           <InfoBox>
             <InfoRow label="Organisme"          value="AFPA — Association nationale pour la formation professionnelle des adultes" />
-            <InfoRow label="Valideur Direction" value={data.valideur_direction} />
+
             <InfoRow label="Demandeur"          value={data.demandeur} />
             <InfoRow label="Réf. demande"       value={data.demande} />
           </InfoBox>
@@ -194,35 +194,85 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
           {/* SECTION D */}
           <SectionHeader number="D" title="Incidence financière" />
           <div className="bg-[#e8f4f3] border border-[#a7d4d1] border-t-0 rounded-b-lg p-3 mb-5">
-          <p className="text-[10px] font-semibold text-gray-500 mb-1">Tableau des montants</p>
-          <div className="overflow-x-auto rounded-lg border border-gray-200 mb-4">
-            <table className="min-w-full border-collapse text-[10px]">
-              <thead>
-                <tr>
-                  {['Montant précédent HT', 'Montant avenant HT', 'Nouveau montant total HT', 'dont TVA'].map(h => (
-                    <th key={h} className="px-3 py-2 text-left font-bold text-white bg-[#2F5B58] border border-[#234441]">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="bg-[#f7fcfb]">
-                  <td className="px-3 py-2 border border-gray-200">{formatMontant(montantPrecedent)}</td>
-                  <td className={`px-3 py-2 border border-gray-200 font-semibold ${montantAvenant >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                    {montantAvenant >= 0 ? '+' : ''}{formatMontant(montantAvenant)}
-                  </td>
-                  <td className="px-3 py-2 border border-gray-200 font-bold">{formatMontant(montantNouveau)}</td>
-                  <td className="px-3 py-2 border border-gray-200">{formatMontant(montantTVA)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
 
-          {data.nouvelle_date_fin && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3 flex items-center gap-3">
-              <span className="text-[10px] font-bold text-amber-800">Nouvelle date de fin :</span>
-              <span className="text-[11px] font-bold text-amber-700">{formatDate(data.nouvelle_date_fin)}</span>
+            {/* Oui / Non */}
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-[10px] font-semibold text-gray-600">L'avenant a une incidence financière sur le montant du marché public :</span>
+              <span className="text-[10px] text-gray-400 italic">(Cocher la case correspondante.)</span>
             </div>
-          )}
+            <div className="flex gap-6 mb-4 pl-2">
+              {(['Non', 'Oui'] as const).map(opt => {
+                const checked = opt === 'Oui' ? data.incidence_financiere : !data.incidence_financiere;
+                return (
+                  <div key={opt} className="flex items-center gap-1.5">
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${checked ? 'bg-[#2F5B58] border-[#2F5B58]' : 'border-gray-400 bg-white'}`}>
+                      {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                    </div>
+                    <span className="text-[10px] font-medium text-gray-700">{opt}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {data.incidence_financiere && (
+              <>
+                <p className="text-[10px] font-semibold text-gray-600 mb-2">Montant de l'avenant :</p>
+                {/* Tableau avenant */}
+                <div className="overflow-x-auto rounded-lg border border-[#a7d4d1] mb-3">
+                  <table className="min-w-full border-collapse text-[10px]">
+                    <thead>
+                      <tr>
+                        {['Taux de la TVA', 'Montant HT', 'Montant TTC', "% d'écart"].map(h => (
+                          <th key={h} className="px-3 py-2 text-center font-bold text-white bg-[#2F5B58] border border-[#234441]">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="bg-white">
+                        <td className="px-3 py-2 border border-gray-200 text-center">{data.taux_tva || '—'}</td>
+                        <td className={`px-3 py-2 border border-gray-200 text-center font-semibold ${montantAvenant >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                          {montantAvenant >= 0 ? '+' : ''}{formatMontant(montantAvenant)}
+                        </td>
+                        <td className="px-3 py-2 border border-gray-200 text-center">{formatMontant(montantAvenant * (1 + tauxTVA))}</td>
+                        <td className={`px-3 py-2 border border-gray-200 text-center font-bold ${montantAvenant >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                          {montantPrecedent ? `${(montantAvenant / montantPrecedent * 100).toFixed(2)} %` : '—'}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Tableau récap marché */}
+                <div className="overflow-x-auto rounded-lg border border-[#a7d4d1]">
+                  <table className="min-w-full border-collapse text-[10px]">
+                    <thead>
+                      <tr>
+                        {['Montant précédent HT', 'Montant avenant HT', 'Nouveau montant HT', 'Nouveau montant TTC'].map(h => (
+                          <th key={h} className="px-3 py-2 text-center font-bold text-white bg-[#2F5B58] border border-[#234441]">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="bg-white">
+                        <td className="px-3 py-2 border border-gray-200 text-center">{formatMontant(montantPrecedent)}</td>
+                        <td className={`px-3 py-2 border border-gray-200 text-center font-semibold ${montantAvenant >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                          {montantAvenant >= 0 ? '+' : ''}{formatMontant(montantAvenant)}
+                        </td>
+                        <td className="px-3 py-2 border border-gray-200 text-center font-bold text-[#2F5B58]">{formatMontant(montantNouveau)}</td>
+                        <td className="px-3 py-2 border border-gray-200 text-center font-bold text-[#1e3d3b]">{formatMontant(montantNouveau * (1 + tauxTVA))}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+
+            {data.nouvelle_date_fin && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3 flex items-center gap-3">
+                <span className="text-[10px] font-bold text-amber-800">Nouvelle date de fin :</span>
+                <span className="text-[11px] font-bold text-amber-700">{formatDate(data.nouvelle_date_fin)}</span>
+              </div>
+            )}
           </div>{/* end section D */}
 
           {/* SECTION F */}
@@ -231,7 +281,7 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
           <div className="flex gap-3 mb-4">
             <SignatureBox title="Rédigé par"         name={data.redige_par} />
             <SignatureBox title="Demandeur"           name={data.demandeur} />
-            <SignatureBox title="Valideur Direction"  name={data.valideur_direction} />
+
           </div>
 
           <p className="text-[10px] font-semibold text-gray-500 mb-2">Signataire fournisseur</p>

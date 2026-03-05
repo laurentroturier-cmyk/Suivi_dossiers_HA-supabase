@@ -98,11 +98,11 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
   const [form, setForm] = useState<AvenantData>({
     demande: '',
     demandeur: '',
-    valideur_direction: '',
     contrat_reference: '',
     contrat_libelle: '',
     titulaire: '',
     description_avenant: '',
+    incidence_financiere: true,
     montant_avenant_ht: null,
     nouvelle_date_fin: null,
     redige_par: '',
@@ -289,10 +289,7 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
             <Label required>Demandeur</Label>
             <Input value={form.demandeur} onChange={v => set('demandeur', v)} placeholder="Nom du demandeur" />
           </div>
-          <div>
-            <Label>Valideur Direction DIA</Label>
-            <Input value={form.valideur_direction} onChange={v => set('valideur_direction', v)} placeholder="Nom du valideur" />
-          </div>
+
         </Section>
 
         {/* SECTION CONTRAT */}
@@ -384,30 +381,84 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
 
         {/* SECTION MODIFICATION DU MONTANT */}
         <Section icon={TrendingUp} title="Modification du montant du marché">
-          <div>
-            <Label>Montant initial HT (€)</Label>
-            <NumberInput value={form.montant_initial_ht} onChange={v => set('montant_initial_ht', v)} placeholder="0.00" />
-          </div>
-          <div>
-            <Label>Montant précédent HT (€)</Label>
-            <NumberInput value={form.montant_precedent_ht} onChange={v => set('montant_precedent_ht', v)} placeholder="0.00" />
-            <p className="text-[10px] text-gray-400 mt-1">Montant du marché après le dernier avenant</p>
-          </div>
-          <div>
-            <Label required>Montant avenant HT (€)</Label>
-            <NumberInput value={form.montant_avenant_ht} onChange={v => set('montant_avenant_ht', v)} placeholder="0.00" />
-            <p className="text-[10px] text-gray-400 mt-1">Négatif si diminution</p>
-          </div>
-          <div>
-            <Label>Nouveau montant total HT</Label>
-            <div className="px-3 py-2 text-sm font-bold text-[#2F5B58] bg-[#2F5B58]/5 border border-[#2F5B58]/20 rounded-lg">
-              {formatMontant(montantNouveau)}
+          {/* Oui / Non — incidence financière */}
+          <FullWidth>
+            <Label>L'avenant a une incidence financière sur le montant du marché public</Label>
+            <div className="flex gap-4 mt-1">
+              {(['Oui', 'Non'] as const).map(opt => {
+                const checked = opt === 'Oui' ? form.incidence_financiere : !form.incidence_financiere;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => set('incidence_financiere', opt === 'Oui')}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg border transition font-medium ${
+                      checked
+                        ? 'bg-[#2F5B58] text-white border-[#2F5B58]'
+                        : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 hover:border-[#2F5B58]/40'
+                    }`}
+                  >
+                    <span className={`w-3.5 h-3.5 rounded-sm border-2 flex items-center justify-center flex-shrink-0 ${checked ? 'border-white' : 'border-gray-400'}`}>
+                      {checked && <span className="w-2 h-2 bg-white rounded-sm block" />}
+                    </span>
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
-          </div>
-          <div>
-            <Label>Taux de TVA</Label>
-            <Input value={form.taux_tva} onChange={v => set('taux_tva', v)} placeholder="20.0%" />
-          </div>
+          </FullWidth>
+
+          {form.incidence_financiere && (
+            <>
+              <div>
+                <Label>Montant initial HT (€)</Label>
+                <NumberInput value={form.montant_initial_ht} onChange={v => set('montant_initial_ht', v)} placeholder="0.00" />
+              </div>
+              <div>
+                <Label>Montant précédent HT (€)</Label>
+                <NumberInput value={form.montant_precedent_ht} onChange={v => set('montant_precedent_ht', v)} placeholder="0.00" />
+                <p className="text-[10px] text-gray-400 mt-1">Montant du marché après le dernier avenant</p>
+              </div>
+              <div>
+                <Label required>Montant avenant HT (€)</Label>
+                <NumberInput value={form.montant_avenant_ht} onChange={v => set('montant_avenant_ht', v)} placeholder="0.00" />
+                <p className="text-[10px] text-gray-400 mt-1">Négatif si diminution</p>
+              </div>
+              <div>
+                <Label>Taux de TVA</Label>
+                <Input value={form.taux_tva} onChange={v => set('taux_tva', v)} placeholder="20.0%" />
+              </div>
+              <div>
+                <Label>Montant avenant TTC (calculé)</Label>
+                <div className="px-3 py-2 text-sm font-semibold text-gray-700 dark:text-slate-200 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg">
+                  {(() => {
+                    const tva = parseFloat((form.taux_tva || '20').replace('%', '').trim()) / 100;
+                    return formatMontant((form.montant_avenant_ht ?? 0) * (1 + tva));
+                  })()}
+                </div>
+              </div>
+              <div>
+                <Label>Nouveau montant total HT (calculé)</Label>
+                <div className="px-3 py-2 text-sm font-bold text-[#2F5B58] bg-[#2F5B58]/5 border border-[#2F5B58]/20 rounded-lg">
+                  {formatMontant(montantNouveau)}
+                </div>
+              </div>
+              <div>
+                <Label>% d'écart introduit par l'avenant (calculé)</Label>
+                <div className={`px-3 py-2 text-sm font-bold rounded-lg border ${
+                  (form.montant_avenant_ht ?? 0) >= 0
+                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                    : 'text-red-700 bg-red-50 border-red-200'
+                }`}>
+                  {form.montant_precedent_ht
+                    ? `${((form.montant_avenant_ht ?? 0) / form.montant_precedent_ht * 100).toFixed(2)} %`
+                    : '—'
+                  }
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">Par rapport au montant précédent</p>
+              </div>
+            </>
+          )}
         </Section>
 
         {/* SECTION MODIFICATION DU DÉLAI */}

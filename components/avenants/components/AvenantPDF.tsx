@@ -521,7 +521,6 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
             <SectionHeader letter="A" title="Identification du pouvoir adjudicateur" />
             <View style={styles.sectionContent}>
               <Field label="Organisme"           value="AFPA — Association nationale pour la formation professionnelle des adultes" />
-              <Field label="Valideur Direction"  value={data.valideur_direction} />
               <Field label="Demandeur"           value={data.demandeur} />
               <Field label="Référence demande"   value={data.demande} />
             </View>
@@ -565,31 +564,88 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
           <View style={styles.section}>
             <SectionHeader letter="D" title="Incidence financière" />
             <View style={styles.sectionContent}>
-              {/* Tableau montants */}
-              <View style={styles.table}>
-                <View style={styles.tableHead}>
-                  <Text style={styles.tableCellHead}>Montant précédent HT</Text>
-                  <Text style={styles.tableCellHead}>Montant avenant HT</Text>
-                  <Text style={styles.tableCellHead}>Nouveau montant HT</Text>
-                  <Text style={styles.tableCellHeadLast}>dont TVA ({data.taux_tva || '20%'})</Text>
-                </View>
-                <View style={styles.tableRow}>
-                  <Text style={styles.tableCell}>{formatMontant(montantPrecedent)}</Text>
-                  <Text style={styles.tableCell}>{formatMontant(montantAvenant)}</Text>
-                  <Text style={[styles.tableCell, { color: TEAL, fontWeight: 'bold' }]}>{formatMontant(montantNouveau)}</Text>
-                  <Text style={styles.tableCellLast}>{formatMontant(montantNouveau * tauxTVA)}</Text>
+
+              {/* Ligne Oui / Non */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                <Text style={[styles.fieldLabel, { flex: 1 }]}>
+                  L'avenant a une incidence financière sur le montant du marché public :
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 16 }}>
+                  {/* Non */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <View style={{
+                      width: 11, height: 11,
+                      borderWidth: 1, borderColor: TEAL, borderRadius: 2,
+                      backgroundColor: !data.incidence_financiere ? TEAL : 'transparent',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}>
+                      {!data.incidence_financiere && <Text style={{ color: '#fff', fontSize: 7, fontWeight: 'bold' }}>✓</Text>}
+                    </View>
+                    <Text style={{ fontSize: 8, color: TEXT_DARK }}>Non</Text>
+                  </View>
+                  {/* Oui */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <View style={{
+                      width: 11, height: 11,
+                      borderWidth: 1, borderColor: TEAL, borderRadius: 2,
+                      backgroundColor: data.incidence_financiere ? TEAL : 'transparent',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}>
+                      {data.incidence_financiere && <Text style={{ color: '#fff', fontSize: 7, fontWeight: 'bold' }}>✓</Text>}
+                    </View>
+                    <Text style={{ fontSize: 8, color: TEXT_DARK }}>Oui</Text>
+                  </View>
                 </View>
               </View>
 
-              {/* Encadré nouveau total TTC */}
-              <View style={styles.montantBox}>
-                <Text style={styles.montantBoxLabel}>Nouveau montant total du marché TTC</Text>
-                <Text style={styles.montantBoxValue}>{formatMontant(montantTTC)}</Text>
-              </View>
+              {data.incidence_financiere && (
+                <>
+                  <Text style={[styles.fieldLabel, { marginBottom: 5 }]}>Montant de l'avenant :</Text>
+
+                  {/* Tableau montants */}
+                  <View style={styles.table}>
+                    <View style={styles.tableHead}>
+                      <Text style={styles.tableCellHead}>Taux de TVA</Text>
+                      <Text style={styles.tableCellHead}>Montant avenant HT</Text>
+                      <Text style={styles.tableCellHead}>Montant avenant TTC</Text>
+                      <Text style={styles.tableCellHeadLast}>% d'écart</Text>
+                    </View>
+                    <View style={styles.tableRow}>
+                      <Text style={styles.tableCell}>{data.taux_tva || '20%'}</Text>
+                      <Text style={styles.tableCell}>{formatMontant(montantAvenant)}</Text>
+                      <Text style={styles.tableCell}>{formatMontant(montantAvenant * (1 + tauxTVA))}</Text>
+                      <Text style={[styles.tableCellLast, {
+                        color: montantAvenant >= 0 ? '#16a34a' : '#dc2626',
+                        fontWeight: 'bold',
+                      }]}>
+                        {montantPrecedent
+                          ? `${(montantAvenant / montantPrecedent * 100).toFixed(2)} %`
+                          : '—'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Récap montants du marché */}
+                  <View style={[styles.table, { marginTop: 8 }]}>
+                    <View style={styles.tableHead}>
+                      <Text style={styles.tableCellHead}>Montant précédent HT</Text>
+                      <Text style={styles.tableCellHead}>Montant avenant HT</Text>
+                      <Text style={styles.tableCellHead}>Nouveau montant HT</Text>
+                      <Text style={styles.tableCellHeadLast}>Nouveau montant TTC</Text>
+                    </View>
+                    <View style={styles.tableRow}>
+                      <Text style={styles.tableCell}>{formatMontant(montantPrecedent)}</Text>
+                      <Text style={styles.tableCell}>{formatMontant(montantAvenant)}</Text>
+                      <Text style={[styles.tableCell, { color: TEAL, fontWeight: 'bold' }]}>{formatMontant(montantNouveau)}</Text>
+                      <Text style={[styles.tableCellLast, { color: TEAL_DARK, fontWeight: 'bold' }]}>{formatMontant(montantTTC)}</Text>
+                    </View>
+                  </View>
+                </>
+              )}
 
               {/* Modification du délai */}
               {data.nouvelle_date_fin && (
-                <View style={styles.delaiBox}>
+                <View style={[styles.delaiBox, { marginTop: 8 }]}>
                   <Text style={styles.delaiLabel}>Nouvelle date de fin :</Text>
                   <Text style={styles.delaiValue}>{formatDate(data.nouvelle_date_fin)}</Text>
                 </View>
@@ -637,8 +693,8 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
                   <Text style={styles.signatureDate}>Signature</Text>
                 </View>
                 <View style={styles.signatureBox}>
-                  <Text style={styles.signatureTitle}>Valideur Direction</Text>
-                  <Text style={styles.signatureName}>{data.valideur_direction || '—'}</Text>
+                  <Text style={styles.signatureTitle}>Valideur</Text>
+                  <Text style={styles.signatureName}>—</Text>
                   <View style={styles.signatureLine} />
                   <Text style={styles.signatureDate}>Signature</Text>
                 </View>

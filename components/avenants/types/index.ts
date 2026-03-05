@@ -7,14 +7,14 @@ export interface AvenantData {
   // En-tête
   demande: string;
   demandeur: string;
-  valideur_direction: string;
   // Contrat (sélectionné depuis la table 'contrats')
   contrat_reference: string;
   contrat_libelle: string;
   titulaire: string;
   // Modification des prestations
   description_avenant: string;
-  // Modification du montant
+  // Incidence financière
+  incidence_financiere: boolean;      // Oui/Non
   montant_avenant_ht: number | null;
   // Modification du délai
   nouvelle_date_fin: string | null;
@@ -37,11 +37,11 @@ export interface AvenantData {
 export const AVENANT_EMPTY: AvenantData = {
   demande: '',
   demandeur: '',
-  valideur_direction: '',
   contrat_reference: '',
   contrat_libelle: '',
   titulaire: '',
   description_avenant: '',
+  incidence_financiere: true,
   montant_avenant_ht: null,
   nouvelle_date_fin: null,
   redige_par: '',
