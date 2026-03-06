@@ -1582,10 +1582,13 @@ const App: React.FC = () => {
         afpaNum = createNewAfpaNumber(abrege, objetCourt, trigramme);
       }
     } else {
-      // Pas de numéro encore affecté : on ne crée PLUS de numéro ici.
-      // Il sera généré automatiquement lors du premier enregistrement.
-      alert("Le numéro Afpa sera généré automatiquement lors du premier enregistrement de la procédure.");
-      return;
+      // Pas de numéro encore affecté : générer immédiatement et sauvegarder en base
+      // pour éviter les doublons si plusieurs utilisateurs créent simultanément.
+      if (!editingProcedure.NumProc) {
+        alert("Impossible de générer le numéro : la procédure doit d'abord être initialisée (NumProc manquant).");
+        return;
+      }
+      afpaNum = createNewAfpaNumber(abrege, objetCourt, trigramme);
     }
     
     // Extraire le numéro court (5 premiers caractères) si possible
@@ -2718,6 +2721,7 @@ const App: React.FC = () => {
       }
       
       // Génération automatique du numéro Afpa lors du PREMIER enregistrement de la procédure
+      let newAfpaNumGenerated: string | null = null; // Pour déclencher PA après upsert
       if (type === 'procedure' && data && !data["Numéro de procédure (Afpa)"]) {
         const typeProc = data["Type de procédure"] || "";
         const acheteur = data["Acheteur"] || "";
@@ -2729,6 +2733,9 @@ const App: React.FC = () => {
         const afpaNum = createNewAfpaNumber(abrege, objetCourt, trigramme);
         const shortNumMatch = afpaNum.match(/^\d{5}/);
         const shortNum = shortNumMatch ? shortNumMatch[0] : null;
+
+        // Mémoriser pour déclencher Power Automate après l'upsert réussi
+        newAfpaNumGenerated = afpaNum;
 
         // Mettre à jour les données en cours d'enregistrement
         data = {
@@ -2812,6 +2819,31 @@ const App: React.FC = () => {
       const { error } = await supabaseClient.from(type === 'project' ? 'projets' : 'procédures').upsert(data);
       if (error) throw error;
       await fetchData(supabaseClient);
+
+      // ── Appel Power Automate après premier enregistrement avec nouveau numéro ──
+      if (type === 'procedure' && newAfpaNumGenerated) {
+        const procData = type === 'procedure' ? (data as any) : null;
+        try {
+          const powerAutomateUrl = 'https://8ccd8456481eec16bc2b4e120bc1e6.f8.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0df46e7bce6e4c83ba24a0b99e7b6411/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=-JNczVgft1bpeYzZI6ZPPFLZvi1Hq_WCtkigKHsquao';
+          await fetch(powerAutomateUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              Contenu: newAfpaNumGenerated,
+              typeProcedure: procData?.["Type de procédure"] || '',
+              acheteur: procData?.["Acheteur"] || '',
+              objetCourt: procData?.["Objet court"] || '',
+              timestamp: new Date().toISOString()
+            })
+          });
+          console.log('[PA] Dossier SharePoint créé pour', newAfpaNumGenerated);
+          setPowerAutomateMessage('✅ Dossier SharePoint créé — N° ' + newAfpaNumGenerated.split('_')[0]);
+        } catch (paErr) {
+          console.error('[PA] Erreur déclenchement flux:', paErr);
+          setPowerAutomateMessage('⚠️ Numéro enregistré mais erreur création dossier SharePoint');
+        }
+        setTimeout(() => setPowerAutomateMessage(null), 5000);
+      }
     } catch (e: any) { alert(e.message); } finally { setIsSaving(false); }
   };
 

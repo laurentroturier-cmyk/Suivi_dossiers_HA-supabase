@@ -275,8 +275,21 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
             )}
           </div>{/* end section D */}
 
-          {/* SECTION F */}
-          <SectionHeader number="F" title="Signatures" />
+          {/* SECTION E — Titulaire */}
+          {(data.titulaire_nom || data.titulaire_siret) && (
+            <>
+              <SectionHeader number="E" title="Identification du titulaire du marché public" />
+              <InfoBox>
+                <InfoRow label="Nom / Raison sociale" value={data.titulaire_nom || data.titulaire} />
+                <InfoRow label="Numéro SIRET"         value={data.titulaire_siret} />
+                <InfoRow label="Adresse"              value={data.titulaire_adresse} />
+                <InfoRow label="E-mail"               value={data.titulaire_email} />
+              </InfoBox>
+            </>
+          )}
+
+          {/* SECTION G */}
+          <SectionHeader number="G" title="Signatures" />
 
           <div className="flex gap-3 mb-4">
             <SignatureBox title="Rédigé par"         name={data.redige_par} />

@@ -654,24 +654,39 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
           </View>
 
           {/* ══════════════════════════════════════════════════════════════════
-              SECTION E — Identification du signataire fournisseur
+              SECTION E — Identification du titulaire du marché public
           ══════════════════════════════════════════════════════════════════ */}
-          {(data.frn_nom_signataire || data.frn_fonction_signataire) && (
+          {(data.titulaire_nom || data.titulaire_siret) && (
             <View style={styles.section}>
-              <SectionHeader letter="E" title="Identification du signataire fournisseur" />
+              <SectionHeader letter="E" title="Identification du titulaire du marché public" />
               <View style={styles.sectionContent}>
-                <Field label="Nom du signataire"      value={data.frn_nom_signataire} />
-                <Field label="Fonction du signataire" value={data.frn_fonction_signataire} />
-                <Field label="Raison sociale"         value={data.titulaire} />
+                <Field label="Nom / Raison sociale" value={data.titulaire_nom || data.titulaire} />
+                <Field label="Numéro SIRET"         value={data.titulaire_siret} />
+                <Field label="Adresse"              value={data.titulaire_adresse} />
+                <Field label="E-mail"               value={data.titulaire_email} />
               </View>
             </View>
           )}
 
           {/* ══════════════════════════════════════════════════════════════════
-              SECTION F — Signatures
+              SECTION F — Identification du signataire fournisseur
+          ══════════════════════════════════════════════════════════════════ */}
+          {(data.frn_nom_signataire || data.frn_fonction_signataire) && (
+            <View style={styles.section}>
+              <SectionHeader letter="F" title="Identification du signataire fournisseur" />
+              <View style={styles.sectionContent}>
+                <Field label="Nom du signataire"      value={data.frn_nom_signataire} />
+                <Field label="Fonction du signataire" value={data.frn_fonction_signataire} />
+                <Field label="Raison sociale"         value={data.titulaire_nom || data.titulaire} />
+              </View>
+            </View>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════════
+              SECTION G — Signatures
           ══════════════════════════════════════════════════════════════════ */}
           <View style={styles.section}>
-            <SectionHeader letter="F" title="Signatures" />
+            <SectionHeader letter="G" title="Signatures" />
             <View style={styles.sectionContent}>
               <Text style={[styles.paragraph, { marginBottom: 8, fontStyle: 'italic' }]}>
                 Fait le {today()}, en deux exemplaires originaux.

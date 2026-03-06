@@ -11,6 +11,11 @@ export interface AvenantData {
   contrat_reference: string;
   contrat_libelle: string;
   titulaire: string;
+  // Identification du titulaire (depuis Référentiel Fournisseurs)
+  titulaire_nom: string;
+  titulaire_siret: string;
+  titulaire_adresse: string;
+  titulaire_email: string;
   // Modification des prestations
   description_avenant: string;
   // Incidence financière
@@ -40,6 +45,10 @@ export const AVENANT_EMPTY: AvenantData = {
   contrat_reference: '',
   contrat_libelle: '',
   titulaire: '',
+  titulaire_nom: '',
+  titulaire_siret: '',
+  titulaire_adresse: '',
+  titulaire_email: '',
   description_avenant: '',
   incidence_financiere: true,
   montant_avenant_ht: null,
