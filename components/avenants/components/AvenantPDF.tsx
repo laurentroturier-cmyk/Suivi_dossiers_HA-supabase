@@ -1,20 +1,14 @@
 // ============================================
 // AvenantPDF — Composant React PDF (EXE10)
-// Style identique aux documents NOTI
+// Structure officielle du formulaire EXE10
 // ============================================
 
-import React from 'react';
 import {
-  Document,
-  Page,
-  Text,
-  View,
-  Image,
-  StyleSheet,
+  Document, Page, Text, View, Image, StyleSheet,
 } from '@react-pdf/renderer';
 import type { AvenantData } from '../types';
 
-// ─── Couleurs (palette teal de l'application) ─────────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────────
 const TEAL        = '#2F5B58';
 const TEAL_DARK   = '#1e3d3b';
 const TEAL_LIGHT  = '#e8f4f3';
@@ -25,359 +19,131 @@ const TEXT_GRAY   = '#6b7280';
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 90,
-    paddingBottom: 65,
-    paddingHorizontal: 50,
+    paddingTop: 88,
+    paddingBottom: 60,
+    paddingHorizontal: 48,
     fontSize: 10,
     fontFamily: 'Helvetica',
     backgroundColor: '#ffffff',
   },
 
-  // ── Header fixe ──────────────────────────────────────────────────────────────
+  // Header
   headerFixed: {
-    position: 'absolute',
-    top: 18,
-    left: 50,
-    right: 50,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: TEAL,
-    borderBottomStyle: 'solid',
+    position: 'absolute', top: 16, left: 48, right: 48,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: TEAL,
   },
-  logo: {
-    width: 70,
-    height: 45,
-    objectFit: 'contain',
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  headerTitle: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: TEAL_DARK,
-    textAlign: 'center',
-  },
-  headerSubtitle: {
-    fontSize: 7,
-    color: TEAL,
-    textAlign: 'center',
-    marginTop: 2,
-  },
+  logo:           { width: 68, height: 44, objectFit: 'contain' },
+  headerCenter:   { flex: 1, alignItems: 'center', paddingHorizontal: 10 },
+  headerTitle:    { fontSize: 8.5, fontWeight: 'bold', color: TEAL_DARK, textAlign: 'center' },
+  headerSubtitle: { fontSize: 7, color: TEAL, textAlign: 'center', marginTop: 2 },
 
-  // ── Footer fixe ──────────────────────────────────────────────────────────────
+  // Footer
   footerFixed: {
-    position: 'absolute',
-    bottom: 15,
-    left: 50,
-    right: 50,
-    borderTopWidth: 1,
-    borderTopColor: TEAL_BORDER,
-    borderTopStyle: 'solid',
-    paddingTop: 8,
+    position: 'absolute', bottom: 14, left: 48, right: 48,
+    borderTopWidth: 1, borderTopColor: TEAL_BORDER, paddingTop: 7,
   },
-  footerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  footerLeft:   { fontSize: 7, color: TEAL_DARK },
-  footerCenter: { fontSize: 7, color: TEAL, fontWeight: 'bold' },
-  footerRight:  { fontSize: 7, color: TEAL_DARK },
-  footerLine2: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  footerAfpa: {
-    fontSize: 6,
-    color: TEAL,
-    textAlign: 'center',
-  },
+  footerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerLeft:    { fontSize: 7, color: TEAL_DARK, fontStyle: 'italic' },
+  footerCenter:  { fontSize: 7, color: TEAL },
+  footerRight:   { fontSize: 7, color: TEAL_DARK },
 
-  // ── Contenu ───────────────────────────────────────────────────────────────────
   content: { flex: 1 },
 
   // Bandeau titre
   titleBanner: {
-    flexDirection: 'row',
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: TEAL,
-    borderRadius: 4,
-    overflow: 'hidden',
+    marginBottom: 5, borderWidth: 1, borderColor: TEAL, borderRadius: 4, overflow: 'hidden',
   },
+  titleBannerTop: { flexDirection: 'row' },
   titleBannerLeft: {
-    flex: 1,
-    backgroundColor: TEAL_LIGHT,
-    padding: 12,
-    justifyContent: 'center',
+    flex: 1, backgroundColor: TEAL_LIGHT, paddingHorizontal: 12, paddingVertical: 7, justifyContent: 'center',
   },
   titleBannerRight: {
-    width: 70,
-    backgroundColor: TEAL,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 10,
+    width: 68, backgroundColor: TEAL, justifyContent: 'center', alignItems: 'center', padding: 8,
   },
-  titleH1: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: TEAL_DARK,
-    textAlign: 'center',
-    marginBottom: 3,
+  titleH1:  { fontSize: 10, fontWeight: 'bold', color: TEAL_DARK, textAlign: 'center', marginBottom: 2 },
+  titleH2:  { fontSize: 7.5, color: TEAL, textAlign: 'center' },
+  notiCode: { fontSize: 14, fontWeight: 'bold', color: '#ffffff' },
+  notiSub:  { fontSize: 6.5, color: '#d1ede8', marginTop: 2 },
+  titleAvenantNum: {
+    backgroundColor: '#f0faf9', paddingHorizontal: 12, paddingVertical: 5,
+    borderTopWidth: 1, borderTopColor: TEAL_BORDER, alignItems: 'center',
   },
-  titleH2: {
-    fontSize: 9,
-    color: TEAL,
-    textAlign: 'center',
-  },
-  notiCode: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  notiSub: {
-    fontSize: 7,
-    color: '#d1ede8',
-    marginTop: 2,
-  },
+  titleAvenantNumText: { fontSize: 9, fontWeight: 'bold', color: TEAL_DARK, textAlign: 'center' },
 
   // Intro
   intro: {
-    fontSize: 8,
-    fontStyle: 'italic',
-    color: TEAL_DARK,
-    marginBottom: 12,
-    lineHeight: 1.4,
-    textAlign: 'justify',
-    paddingHorizontal: 5,
+    fontSize: 7.5, fontStyle: 'italic', color: TEXT_GRAY,
+    marginBottom: 8, marginTop: 3, lineHeight: 1.4, textAlign: 'justify',
   },
 
   // Sections
-  section: {
-    marginBottom: 10,
-    breakInside: 'avoid',
-  },
+  section:       { marginBottom: 8 },
   sectionHeader: {
-    backgroundColor: TEAL,
-    color: '#ffffff',
-    padding: 8,
-    paddingLeft: 12,
-    fontSize: 9,
-    fontWeight: 'bold',
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-    breakAfter: 'avoid',
+    backgroundColor: TEAL, color: '#ffffff', paddingVertical: 5, paddingHorizontal: 10,
+    fontSize: 8, fontWeight: 'bold',
+    borderTopLeftRadius: 4, borderTopRightRadius: 4,
   },
   sectionContent: {
-    borderWidth: 1,
-    borderTopWidth: 0,
-    borderColor: TEAL_BORDER,
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
-    padding: 10,
-    backgroundColor: TEAL_LIGHT,
-    breakInside: 'avoid',
+    borderWidth: 1, borderTopWidth: 0, borderColor: TEAL_BORDER,
+    borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
+    padding: 8, backgroundColor: TEAL_LIGHT,
   },
 
-  // Lignes de champs
-  fieldRow: {
-    flexDirection: 'row',
-    marginBottom: 5,
-    alignItems: 'flex-start',
+  // Instruction italique
+  instruction: { fontSize: 7, fontStyle: 'italic', color: TEXT_GRAY, marginBottom: 5, lineHeight: 1.4 },
+
+  // Sous-titres
+  subLabel: {
+    fontSize: 8, fontWeight: 'bold', color: TEAL_DARK, marginBottom: 2, marginTop: 5,
+    textDecoration: 'underline',
   },
-  fieldLabel: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: TEAL_DARK,
-    width: 130,
-    flexShrink: 0,
-  },
-  fieldValue: {
-    fontSize: 8,
-    color: TEXT_DARK,
-    flex: 1,
-  },
-  fieldValueFull: {
-    fontSize: 8,
-    color: TEXT_DARK,
-    marginBottom: 4,
-  },
+  subLabelSmall: { fontSize: 7.5, fontWeight: 'bold', color: TEAL_DARK, marginBottom: 2, marginTop: 5 },
+
+  // Champs
+  fieldRow:      { flexDirection: 'row', marginBottom: 3, alignItems: 'flex-start' },
+  fieldLabel:    { fontSize: 7.5, fontWeight: 'bold', color: TEAL_DARK, width: 140, flexShrink: 0 },
+  fieldValue:    { fontSize: 7.5, color: TEXT_DARK, flex: 1 },
+  fieldValueFull: { fontSize: 7.5, color: TEXT_DARK, marginBottom: 3 },
+
+  // Bullets
+  bulletItem:  { flexDirection: 'row', marginBottom: 2, paddingLeft: 8 },
+  bulletDot:   { fontSize: 7.5, color: TEAL_DARK, width: 12 },
+  bulletText:  { fontSize: 7.5, color: TEAL_DARK, flex: 1 },
+  bulletValue: { fontSize: 7.5, fontWeight: 'bold', color: TEXT_DARK, flex: 1.5 },
 
   // Séparateur
-  divider: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: TEAL_BORDER,
-    borderBottomStyle: 'solid',
-    marginVertical: 6,
-  },
+  divider: { borderBottomWidth: 0.5, borderBottomColor: TEAL_BORDER, marginVertical: 5 },
 
-  // Tableau montants
-  table: {
-    borderWidth: 1,
-    borderColor: TEAL_BORDER,
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginTop: 6,
+  // Cases à cocher
+  checkbox: {
+    width: 10, height: 10, borderWidth: 1, borderColor: TEXT_DARK, borderRadius: 1,
+    justifyContent: 'center', alignItems: 'center',
   },
-  tableHead: {
-    flexDirection: 'row',
-    backgroundColor: TEAL,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    borderTopWidth: 0.5,
-    borderTopColor: TEAL_BORDER,
-  },
-  tableRowAlt: {
-    backgroundColor: '#f0faf9',
-  },
-  tableCell: {
-    flex: 1,
-    padding: 5,
-    fontSize: 7.5,
-    color: TEXT_DARK,
-    textAlign: 'center',
-    borderRightWidth: 0.5,
-    borderRightColor: TEAL_BORDER,
-  },
-  tableCellLast: {
-    flex: 1,
-    padding: 5,
-    fontSize: 7.5,
-    color: TEXT_DARK,
-    textAlign: 'center',
-  },
-  tableCellHead: {
-    flex: 1,
-    padding: 5,
-    fontSize: 7.5,
-    color: '#ffffff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    borderRightWidth: 0.5,
-    borderRightColor: '#5a9c98',
-  },
-  tableCellHeadLast: {
-    flex: 1,
-    padding: 5,
-    fontSize: 7.5,
-    color: '#ffffff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  tableCellHighlight: {
-    flex: 1,
-    padding: 5,
-    fontSize: 8,
-    color: TEAL_DARK,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
+  checkboxChecked: { backgroundColor: TEAL, borderColor: TEAL },
 
-  // Encadré montant nouveau total
-  montantBox: {
-    backgroundColor: '#d1f0ed',
-    borderWidth: 1.5,
-    borderColor: TEAL,
-    borderRadius: 4,
-    padding: 8,
-    marginTop: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  montantBoxLabel: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: TEAL_DARK,
-  },
-  montantBoxValue: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: TEAL,
-  },
-
-  // Encadré délai
+  // Délai
   delaiBox: {
-    backgroundColor: '#fffbeb',
-    borderWidth: 1,
-    borderColor: '#f59e0b',
-    borderRadius: 4,
-    padding: 8,
-    marginTop: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: '#fffbeb', borderWidth: 1, borderColor: '#f59e0b',
+    borderRadius: 4, padding: 7, marginTop: 6, flexDirection: 'row', alignItems: 'center',
   },
-  delaiLabel: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#92400e',
-    width: 130,
-  },
-  delaiValue: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#92400e',
-  },
+  delaiLabel: { fontSize: 7.5, fontWeight: 'bold', color: '#92400e', width: 140 },
+  delaiValue: { fontSize: 8, fontWeight: 'bold', color: '#92400e' },
 
-  // Signatures
-  signatureRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  signatureBox: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: TEAL_BORDER,
-    borderRadius: 4,
-    padding: 8,
-    backgroundColor: '#f8fcfc',
-    minHeight: 55,
-  },
-  signatureTitle: {
-    fontSize: 7.5,
-    fontWeight: 'bold',
-    color: TEAL,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  signatureName: {
-    fontSize: 8,
-    color: TEXT_DARK,
-    textAlign: 'center',
-    marginBottom: 3,
-  },
-  signatureLine: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: TEAL_BORDER,
-    marginTop: 12,
-    marginHorizontal: 6,
-  },
-  signatureDate: {
-    fontSize: 7,
-    color: TEXT_GRAY,
-    textAlign: 'center',
-    marginTop: 3,
-  },
+  // Tableau signatures E
+  sigTable:          { borderWidth: 1, borderColor: TEAL_BORDER, borderRadius: 3, overflow: 'hidden', marginTop: 5 },
+  sigTableHead:      { flexDirection: 'row', backgroundColor: TEAL },
+  sigTableRow:       { flexDirection: 'row', borderTopWidth: 0.5, borderTopColor: TEAL_BORDER, minHeight: 28 },
+  sigTableCellHead:  { padding: 5, fontSize: 7.5, color: '#ffffff', fontWeight: 'bold', textAlign: 'center', borderRightWidth: 0.5, borderRightColor: '#5a9c98' },
+  sigTableCellHLast: { padding: 5, fontSize: 7.5, color: '#ffffff', fontWeight: 'bold', textAlign: 'center' },
+  sigTableCell:      { padding: 4, fontSize: 7, color: TEXT_DARK, borderRightWidth: 0.5, borderRightColor: TEAL_BORDER },
+  sigTableCellLast:  { padding: 4, fontSize: 7, color: TEXT_DARK },
+  sigNote:           { fontSize: 6.5, color: TEXT_GRAY, fontStyle: 'italic', marginTop: 4 },
 
-  paragraph: {
-    fontSize: 8,
-    color: TEXT_DARK,
-    marginBottom: 5,
-    lineHeight: 1.5,
-  },
+  paragraph: { fontSize: 7.5, color: TEXT_DARK, marginBottom: 3, lineHeight: 1.5 },
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function formatDate(d: string | null | undefined): string {
   if (!d) return '—';
   try {
@@ -388,53 +154,55 @@ function formatDate(d: string | null | undefined): string {
   return d;
 }
 
-function formatMontant(val: number | null | undefined): string {
+function formatMontant(val: number | null | undefined, suffix = '€ HT'): string {
   if (val === null || val === undefined) return '—';
-  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' € HT';
+  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' ' + suffix;
 }
 
 function htmlToText(html: string): string {
   if (!html) return '';
   return html
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<\/li>/gi, '\n')
-    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n')
+    .replace(/<\/li>/gi, '\n').replace(/<li[^>]*>/gi, '• ')
     .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
-function today(): string {
-  return new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n').trim();
 }
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
-
 function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
     <View style={styles.fieldRow}>
       <Text style={styles.fieldLabel}>{label} :</Text>
-      <Text style={styles.fieldValue}>{value || '—'}</Text>
+      <Text style={styles.fieldValue}>{value != null && value !== '' ? String(value) : '—'}</Text>
     </View>
   );
 }
 
 function SectionHeader({ letter, title }: { letter: string; title: string }) {
+  return <View style={styles.sectionHeader}><Text>{letter} – {title}</Text></View>;
+}
+
+function Bullet({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.sectionHeader}>
-      <Text>{letter} – {title}</Text>
+    <View style={styles.bulletItem}>
+      <Text style={styles.bulletDot}>•</Text>
+      <Text style={styles.bulletText}>{label} : </Text>
+      <Text style={styles.bulletValue}>{value || '—'}</Text>
+    </View>
+  );
+}
+
+function CheckBox({ checked }: { checked: boolean }) {
+  return (
+    <View style={[styles.checkbox, checked ? styles.checkboxChecked : {}]}>
+      {checked && <Text style={{ color: '#fff', fontSize: 6, fontWeight: 'bold' }}>✓</Text>}
     </View>
   );
 }
 
 // ─── Composant principal ──────────────────────────────────────────────────────
-
 interface AvenantPDFProps {
   data: AvenantData;
   logoAfpa?: string;
@@ -442,47 +210,41 @@ interface AvenantPDFProps {
 }
 
 export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) {
-  const montantPrecedent = data.montant_precedent_ht ?? 0;
-  const montantAvenant   = data.montant_avenant_ht ?? 0;
-  const montantNouveau   = montantPrecedent + montantAvenant;
-  const tauxTVA          = parseFloat((data.taux_tva || '20').replace('%', '').trim()) / 100;
-  const montantTTC       = montantNouveau * (1 + tauxTVA);
-  const description      = htmlToText(data.description_avenant);
+  const montantInitial    = data.montant_initial_ht ?? 0;
+  const montantPrecedent  = data.montant_precedent_ht ?? 0;
+  const montantAvenant    = data.montant_avenant_ht ?? 0;
+  const montantNouveau    = montantPrecedent + montantAvenant;
+  const tauxTVA           = parseFloat((data.taux_tva || '20').replace('%', '').trim()) / 100;
+  const montantInitialTTC = montantInitial * (1 + tauxTVA);
+  const montantAvenantTTC = montantAvenant * (1 + tauxTVA);
+  const montantNouveauTTC = montantNouveau * (1 + tauxTVA);
+  const montantCumule     = montantNouveau - montantInitial;
+  const pctEcart          = montantInitial ? (montantAvenant / montantInitial * 100) : null;
+  const pctCumule         = montantInitial ? (montantCumule / montantInitial * 100) : null;
+  const description       = htmlToText(data.description_avenant);
 
-  // Header & footer partagés entre toutes les pages
   const Header = () => (
     <View style={styles.headerFixed} fixed>
-      {logoAfpa ? (
-        <Image style={styles.logo} src={logoAfpa} />
-      ) : (
-        <View style={styles.logo} />
-      )}
+      {logoAfpa ? <Image style={styles.logo} src={logoAfpa} /> : <View style={styles.logo} />}
       <View style={styles.headerCenter}>
         <Text style={styles.headerTitle}>MINISTÈRE DE L'ÉCONOMIE ET DES FINANCES</Text>
-        <Text style={styles.headerSubtitle}>Direction des affaires juridiques — Marchés publics</Text>
+        <Text style={styles.headerSubtitle}>Direction des Affaires Juridiques</Text>
       </View>
-      {logoRepublique ? (
-        <Image style={styles.logo} src={logoRepublique} />
-      ) : (
-        <View style={styles.logo} />
-      )}
+      {logoRepublique ? <Image style={styles.logo} src={logoRepublique} /> : <View style={styles.logo} />}
     </View>
   );
 
   const Footer = () => (
     <View style={styles.footerFixed} fixed>
       <View style={styles.footerContent}>
-        <Text style={styles.footerLeft}>Avenant au marché — {data.demande || data.contrat_reference || 'EXE10'}</Text>
-        <Text style={styles.footerCenter}>{data.contrat_reference || ''}</Text>
+        <Text style={styles.footerLeft}>EXE10 – Avenant</Text>
+        <Text style={styles.footerCenter}>
+          ({data.contrat_reference || "référence du marché public ou de l'accord-cadre"})
+        </Text>
         <Text
           style={styles.footerRight}
-          render={({ pageNumber, totalPages }) => `Page ${pageNumber} / ${totalPages}`}
+          render={({ pageNumber, totalPages }) => `Page : ${pageNumber} / ${totalPages}`}
         />
-      </View>
-      <View style={styles.footerLine2}>
-        <Text style={styles.footerAfpa}>
-          AFPA — Association nationale pour la formation professionnelle des adultes
-        </Text>
       </View>
     </View>
   );
@@ -497,149 +259,159 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
 
           {/* ── Bandeau titre ─────────────────────────────────────────────── */}
           <View style={styles.titleBanner}>
-            <View style={styles.titleBannerLeft}>
-              <Text style={styles.titleH1}>MARCHÉS PUBLICS</Text>
-              <Text style={styles.titleH2}>Avenant au marché public</Text>
+            <View style={styles.titleBannerTop}>
+              <View style={styles.titleBannerLeft}>
+                <Text style={styles.titleH1}>MARCHÉS PUBLICS</Text>
+                <Text style={styles.titleH2}>Avenant au marché public</Text>
+              </View>
+              <View style={styles.titleBannerRight}>
+                <Text style={styles.notiCode}>EXE10</Text>
+                <Text style={styles.notiSub}>Avenant</Text>
+              </View>
             </View>
-            <View style={styles.titleBannerRight}>
-              <Text style={styles.notiCode}>EXE10</Text>
-              <Text style={styles.notiSub}>Avenant</Text>
+            <View style={styles.titleAvenantNum}>
+              <Text style={styles.titleAvenantNumText}>
+                AVENANT N° {data.numero_avenant ?? '…………………'}{' '}
+                au marché {data.contrat_reference || '…………………………………………'}
+              </Text>
             </View>
           </View>
 
           {/* ── Intro ─────────────────────────────────────────────────────── */}
           <Text style={styles.intro}>
-            Formulaire d'avenant à un marché public — Ce document formalise les modifications apportées
-            au marché d'origine conformément aux articles L2194-1 et suivants du Code de la commande publique.
-            Il doit être signé par les deux parties avant toute exécution des prestations modifiées.
+            Le formulaire EXE10 est un modèle d'avenant, qui peut être utilisé par le pouvoir adjudicateur
+            ou l'entité adjudicatrice, dans le cadre de l'exécution d'un marché public.
           </Text>
 
-          {/* ══════════════════════════════════════════════════════════════════
-              SECTION A — Identification du pouvoir adjudicateur
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* ═══════════════════════════════════════════════════════
+              A — Identification du pouvoir adjudicateur
+          ═══════════════════════════════════════════════════════ */}
           <View style={styles.section}>
-            <SectionHeader letter="A" title="Identification du pouvoir adjudicateur" />
+            <SectionHeader letter="A" title="Identification du pouvoir adjudicateur ou de l'entité adjudicatrice" />
             <View style={styles.sectionContent}>
-              <Field label="Organisme"           value="AFPA — Association nationale pour la formation professionnelle des adultes" />
-              <Field label="Demandeur"           value={data.demandeur} />
-              <Field label="Référence demande"   value={data.demande} />
+              <Text style={styles.instruction}>
+                (Reprendre le contenu de la mention figurant dans les documents constitutifs du marché public.)
+              </Text>
+              <Field label="Organisme" value="AFPA — Association nationale pour la formation professionnelle des adultes" />
             </View>
           </View>
 
-          {/* ══════════════════════════════════════════════════════════════════
-              SECTION B — Identification du marché
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* ═══════════════════════════════════════════════════════
+              B — Identification du titulaire du marché public
+          ═══════════════════════════════════════════════════════ */}
           <View style={styles.section}>
-            <SectionHeader letter="B" title="Identification du marché" />
+            <SectionHeader letter="B" title="Identification du titulaire du marché public" />
             <View style={styles.sectionContent}>
-              <Field label="N° Agreement"        value={data.contrat_reference} />
-              <Field label="Intitulé du marché"  value={data.contrat_libelle} />
-              <Field label="Titulaire"           value={data.titulaire} />
-              <Field label="Date de notification" value={formatDate(data.date_notification)} />
-              <Field label="Durée du marché"     value={data.duree_marche} />
+              <Text style={styles.instruction}>
+                [Indiquer le nom commercial et la dénomination sociale du titulaire individuel ou de chaque
+                membre du groupement titulaire, les adresses de son établissement et de son siège social
+                (si elle est différente de celle de l'établissement), son adresse électronique, ses numéros
+                de téléphone et de télécopie et son numéro SIRET. En cas de groupement d'entreprises
+                titulaire, identifier le mandataire du groupement.]
+              </Text>
+              <Field label="Nom / Raison sociale" value={data.titulaire_nom || data.titulaire} />
+              <Field label="Numéro SIRET"         value={data.titulaire_siret} />
+              <Field label="Adresse"              value={data.titulaire_adresse} />
+              <Field label="E-mail"               value={data.titulaire_email} />
+            </View>
+          </View>
+
+          {/* ═══════════════════════════════════════════════════════
+              C — Objet du marché public
+          ═══════════════════════════════════════════════════════ */}
+          <View style={styles.section}>
+            <SectionHeader letter="C" title="Objet du marché public" />
+            <View style={styles.sectionContent}>
+
+              <Text style={[styles.subLabel, { marginTop: 0 }]}>Objet du marché public :</Text>
+              <Text style={styles.fieldValueFull}>{data.contrat_libelle || '—'}</Text>
+              <Text style={styles.instruction}>
+                (Reprendre le contenu de la mention figurant dans les documents constitutifs du marché public.
+                En cas d'allotissement, préciser également l'objet et la dénomination du lot concerné.)
+              </Text>
+
               <View style={styles.divider} />
-              <Field label="Montant initial HT"  value={formatMontant(data.montant_initial_ht)} />
-              <Field label="Taux de TVA"         value={data.taux_tva} />
-            </View>
-          </View>
 
-          {/* ══════════════════════════════════════════════════════════════════
-              SECTION C — Objet de l'avenant
-          ══════════════════════════════════════════════════════════════════ */}
-          <View style={styles.section}>
-            <SectionHeader letter="C" title="Objet de l'avenant" />
-            <View style={styles.sectionContent}>
-              <Field label="Numéro d'avenant"    value={data.numero_avenant != null ? String(data.numero_avenant) : undefined} />
-              <View style={styles.divider} />
-              <Text style={[styles.fieldLabel, { marginBottom: 4 }]}>Description des modifications :</Text>
-              {description.split('\n').filter(Boolean).map((line, i) => (
-                <Text key={i} style={styles.paragraph}>{line}</Text>
-              ))}
-            </View>
-          </View>
+              <Field label="Date de la notification du marché public" value={formatDate(data.date_notification)} />
 
-          {/* ══════════════════════════════════════════════════════════════════
-              SECTION D — Incidence financière
-          ══════════════════════════════════════════════════════════════════ */}
-          <View style={styles.section}>
-            <SectionHeader letter="D" title="Incidence financière" />
-            <View style={styles.sectionContent}>
-
-              {/* Ligne Oui / Non */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                <Text style={[styles.fieldLabel, { flex: 1 }]}>
-                  L'avenant a une incidence financière sur le montant du marché public :
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>Durée d'exécution :</Text>
+                <Text style={styles.fieldValue}>
+                  {data.duree_marche || '……………………'} mois ou …………………… jours
                 </Text>
-                <View style={{ flexDirection: 'row', gap: 16 }}>
-                  {/* Non */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <View style={{
-                      width: 11, height: 11,
-                      borderWidth: 1, borderColor: TEAL, borderRadius: 2,
-                      backgroundColor: !data.incidence_financiere ? TEAL : 'transparent',
-                      justifyContent: 'center', alignItems: 'center',
-                    }}>
-                      {!data.incidence_financiere && <Text style={{ color: '#fff', fontSize: 7, fontWeight: 'bold' }}>✓</Text>}
-                    </View>
-                    <Text style={{ fontSize: 8, color: TEXT_DARK }}>Non</Text>
-                  </View>
-                  {/* Oui */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <View style={{
-                      width: 11, height: 11,
-                      borderWidth: 1, borderColor: TEAL, borderRadius: 2,
-                      backgroundColor: data.incidence_financiere ? TEAL : 'transparent',
-                      justifyContent: 'center', alignItems: 'center',
-                    }}>
-                      {data.incidence_financiere && <Text style={{ color: '#fff', fontSize: 7, fontWeight: 'bold' }}>✓</Text>}
-                    </View>
-                    <Text style={{ fontSize: 8, color: TEXT_DARK }}>Oui</Text>
-                  </View>
+              </View>
+
+              <View style={styles.divider} />
+
+              <Text style={styles.subLabelSmall}>Montant initial du marché public :</Text>
+              <Bullet label="Taux de la TVA" value={data.taux_tva || '—'} />
+              <Bullet label="Montant HT"     value={formatMontant(data.montant_initial_ht)} />
+              <Bullet label="Montant TTC"    value={formatMontant(montantInitialTTC, '€ TTC')} />
+            </View>
+          </View>
+
+          {/* ═══════════════════════════════════════════════════════
+              D — Objet de l'avenant
+          ═══════════════════════════════════════════════════════ */}
+          <View style={styles.section}>
+            <SectionHeader letter="D" title="Objet de l'avenant" />
+            <View style={styles.sectionContent}>
+
+              {/* Modifications introduites */}
+              <Text style={[styles.subLabel, { marginTop: 0 }]}>Modifications introduites par le présent avenant :</Text>
+              <Text style={styles.instruction}>
+                (Détailler toutes les modifications, avec ou sans incidence financière, introduites dans le
+                marché public par le présent avenant. Préciser les articles du CCAP ou du CCTP modifiés ou
+                complétés ainsi que l'incidence financière de chacune des modifications apportées.)
+              </Text>
+              {description
+                ? description.split('\n').filter(Boolean).map((line, i) => (
+                    <Text key={i} style={styles.paragraph}>{line}</Text>
+                  ))
+                : <Text style={[styles.paragraph, { color: TEXT_GRAY, fontStyle: 'italic' }]}>—</Text>
+              }
+
+              <View style={[styles.divider, { marginTop: 8 }]} />
+
+              {/* Incidence financière */}
+              <Text style={styles.subLabel}>Incidence financière de l'avenant :</Text>
+              <Text style={[styles.paragraph, { marginBottom: 2 }]}>
+                L'avenant a une incidence financière sur le montant du marché public :
+              </Text>
+              <Text style={[styles.instruction, { marginBottom: 6 }]}>(Cocher la case correspondante.)</Text>
+
+              <View style={{ flexDirection: 'row', gap: 30, marginBottom: 8, paddingLeft: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <CheckBox checked={!data.incidence_financiere} />
+                  <Text style={{ fontSize: 8, color: TEXT_DARK }}>Non</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <CheckBox checked={!!data.incidence_financiere} />
+                  <Text style={{ fontSize: 8, color: TEXT_DARK }}>Oui</Text>
                 </View>
               </View>
 
               {data.incidence_financiere && (
                 <>
-                  <Text style={[styles.fieldLabel, { marginBottom: 5 }]}>Montant de l'avenant :</Text>
+                  <Text style={styles.subLabelSmall}>Montant de l'avenant :</Text>
+                  <Bullet label="Taux de la TVA"                     value={data.taux_tva || '—'} />
+                  <Bullet label="Montant HT"                         value={formatMontant(data.montant_avenant_ht)} />
+                  <Bullet label="Montant TTC"                        value={formatMontant(montantAvenantTTC, '€ TTC')} />
+                  <Bullet
+                    label="% d'écart introduit par l'avenant"
+                    value={pctEcart !== null ? `${pctEcart >= 0 ? '+' : ''}${pctEcart.toFixed(2)} %` : '—'}
+                  />
+                  {pctCumule !== null && (
+                    <Bullet
+                      label="% d'écart cumulé (tous avenants)"
+                      value={`${pctCumule >= 0 ? '+' : ''}${pctCumule.toFixed(2)} %`}
+                    />
+                  )}
 
-                  {/* Tableau montants */}
-                  <View style={styles.table}>
-                    <View style={styles.tableHead}>
-                      <Text style={styles.tableCellHead}>Taux de TVA</Text>
-                      <Text style={styles.tableCellHead}>Montant avenant HT</Text>
-                      <Text style={styles.tableCellHead}>Montant avenant TTC</Text>
-                      <Text style={styles.tableCellHeadLast}>% d'écart</Text>
-                    </View>
-                    <View style={styles.tableRow}>
-                      <Text style={styles.tableCell}>{data.taux_tva || '20%'}</Text>
-                      <Text style={styles.tableCell}>{formatMontant(montantAvenant)}</Text>
-                      <Text style={styles.tableCell}>{formatMontant(montantAvenant * (1 + tauxTVA))}</Text>
-                      <Text style={[styles.tableCellLast, {
-                        color: montantAvenant >= 0 ? '#16a34a' : '#dc2626',
-                        fontWeight: 'bold',
-                      }]}>
-                        {montantPrecedent
-                          ? `${(montantAvenant / montantPrecedent * 100).toFixed(2)} %`
-                          : '—'}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Récap montants du marché */}
-                  <View style={[styles.table, { marginTop: 8 }]}>
-                    <View style={styles.tableHead}>
-                      <Text style={styles.tableCellHead}>Montant précédent HT</Text>
-                      <Text style={styles.tableCellHead}>Montant avenant HT</Text>
-                      <Text style={styles.tableCellHead}>Nouveau montant HT</Text>
-                      <Text style={styles.tableCellHeadLast}>Nouveau montant TTC</Text>
-                    </View>
-                    <View style={styles.tableRow}>
-                      <Text style={styles.tableCell}>{formatMontant(montantPrecedent)}</Text>
-                      <Text style={styles.tableCell}>{formatMontant(montantAvenant)}</Text>
-                      <Text style={[styles.tableCell, { color: TEAL, fontWeight: 'bold' }]}>{formatMontant(montantNouveau)}</Text>
-                      <Text style={[styles.tableCellLast, { color: TEAL_DARK, fontWeight: 'bold' }]}>{formatMontant(montantTTC)}</Text>
-                    </View>
-                  </View>
+                  <Text style={[styles.subLabelSmall, { marginTop: 6 }]}>Nouveau montant du marché public :</Text>
+                  <Bullet label="Taux de la TVA" value={data.taux_tva || '—'} />
+                  <Bullet label="Montant HT"     value={formatMontant(montantNouveau)} />
+                  <Bullet label="Montant TTC"    value={formatMontant(montantNouveauTTC, '€ TTC')} />
                 </>
               )}
 
@@ -653,81 +425,68 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
             </View>
           </View>
 
-          {/* ══════════════════════════════════════════════════════════════════
-              SECTION E — Identification du titulaire du marché public
-          ══════════════════════════════════════════════════════════════════ */}
-          {(data.titulaire_nom || data.titulaire_siret) && (
-            <View style={styles.section}>
-              <SectionHeader letter="E" title="Identification du titulaire du marché public" />
-              <View style={styles.sectionContent}>
-                <Field label="Nom / Raison sociale" value={data.titulaire_nom || data.titulaire} />
-                <Field label="Numéro SIRET"         value={data.titulaire_siret} />
-                <Field label="Adresse"              value={data.titulaire_adresse} />
-                <Field label="E-mail"               value={data.titulaire_email} />
-              </View>
-            </View>
-          )}
-
-          {/* ══════════════════════════════════════════════════════════════════
-              SECTION F — Identification du signataire fournisseur
-          ══════════════════════════════════════════════════════════════════ */}
-          {(data.frn_nom_signataire || data.frn_fonction_signataire) && (
-            <View style={styles.section}>
-              <SectionHeader letter="F" title="Identification du signataire fournisseur" />
-              <View style={styles.sectionContent}>
-                <Field label="Nom du signataire"      value={data.frn_nom_signataire} />
-                <Field label="Fonction du signataire" value={data.frn_fonction_signataire} />
-                <Field label="Raison sociale"         value={data.titulaire_nom || data.titulaire} />
-              </View>
-            </View>
-          )}
-
-          {/* ══════════════════════════════════════════════════════════════════
-              SECTION G — Signatures
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* ═══════════════════════════════════════════════════════
+              E — Signature du titulaire du marché public
+          ═══════════════════════════════════════════════════════ */}
           <View style={styles.section}>
-            <SectionHeader letter="G" title="Signatures" />
+            <SectionHeader letter="E" title="Signature du titulaire du marché public" />
             <View style={styles.sectionContent}>
-              <Text style={[styles.paragraph, { marginBottom: 8, fontStyle: 'italic' }]}>
-                Fait le {today()}, en deux exemplaires originaux.
+              <View style={styles.sigTable}>
+                <View style={styles.sigTableHead}>
+                  <Text style={[styles.sigTableCellHead, { flex: 2 }]}>
+                    Nom, prénom et qualité{'\n'}du signataire (*)
+                  </Text>
+                  <Text style={[styles.sigTableCellHead, { flex: 1.5 }]}>Lieu et date de signature</Text>
+                  <Text style={[styles.sigTableCellHLast, { flex: 1 }]}>Signature</Text>
+                </View>
+                {/* 1ère ligne : préremplie si signataire connu */}
+                <View style={styles.sigTableRow}>
+                  <Text style={[styles.sigTableCell, { flex: 2 }]}>
+                    {[data.frn_nom_signataire, data.frn_fonction_signataire].filter(Boolean).join('\n') || ' '}
+                  </Text>
+                  <Text style={[styles.sigTableCell, { flex: 1.5 }]}>{' '}</Text>
+                  <Text style={[styles.sigTableCellLast, { flex: 1 }]}>{' '}</Text>
+                </View>
+                {/* 4 lignes vides */}
+                {[...Array(4)].map((_, i) => (
+                  <View key={i} style={styles.sigTableRow}>
+                    <Text style={[styles.sigTableCell, { flex: 2 }]}>{' '}</Text>
+                    <Text style={[styles.sigTableCell, { flex: 1.5 }]}>{' '}</Text>
+                    <Text style={[styles.sigTableCellLast, { flex: 1 }]}>{' '}</Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={styles.sigNote}>
+                (*) Le signataire doit avoir le pouvoir d'engager la personne qu'il représente.
+              </Text>
+            </View>
+          </View>
+
+          {/* ═══════════════════════════════════════════════════════
+              F — Signature du pouvoir adjudicateur
+          ═══════════════════════════════════════════════════════ */}
+          <View style={styles.section}>
+            <SectionHeader letter="F" title="Signature du pouvoir adjudicateur ou de l'entité adjudicatrice" />
+            <View style={styles.sectionContent}>
+              <Text style={[styles.paragraph, { fontWeight: 'bold' }]}>
+                Pour l'Etat et ses établissements :
+              </Text>
+              <Text style={styles.instruction}>
+                (Visa ou avis de l'autorité chargée du contrôle financier.)
               </Text>
 
-              {/* Signatures AFPA */}
-              <Text style={[styles.fieldLabel, { marginBottom: 6 }]}>Pour le pouvoir adjudicateur (AFPA) :</Text>
-              <View style={styles.signatureRow}>
-                <View style={styles.signatureBox}>
-                  <Text style={styles.signatureTitle}>Rédigé par</Text>
-                  <Text style={styles.signatureName}>{data.redige_par || '—'}</Text>
-                  <View style={styles.signatureLine} />
-                  <Text style={styles.signatureDate}>Signature</Text>
-                </View>
-                <View style={styles.signatureBox}>
-                  <Text style={styles.signatureTitle}>Demandeur</Text>
-                  <Text style={styles.signatureName}>{data.demandeur || '—'}</Text>
-                  <View style={styles.signatureLine} />
-                  <Text style={styles.signatureDate}>Signature</Text>
-                </View>
-                <View style={styles.signatureBox}>
-                  <Text style={styles.signatureTitle}>Valideur</Text>
-                  <Text style={styles.signatureName}>—</Text>
-                  <View style={styles.signatureLine} />
-                  <Text style={styles.signatureDate}>Signature</Text>
-                </View>
-              </View>
-
-              <View style={[styles.divider, { marginTop: 14 }]} />
-
-              {/* Signature fournisseur */}
-              <Text style={[styles.fieldLabel, { marginBottom: 6, marginTop: 8 }]}>Pour le titulaire :</Text>
-              <View style={styles.signatureRow}>
-                <View style={[styles.signatureBox, { flex: 0, width: '45%' }]}>
-                  <Text style={styles.signatureTitle}>{data.titulaire || 'Titulaire'}</Text>
-                  <Text style={styles.signatureName}>{data.frn_nom_signataire || '—'}</Text>
-                  {data.frn_fonction_signataire ? (
-                    <Text style={styles.signatureDate}>{data.frn_fonction_signataire}</Text>
-                  ) : null}
-                  <View style={styles.signatureLine} />
-                  <Text style={styles.signatureDate}>Signature et cachet</Text>
+              {/* Bloc signature officiel — aligné à droite */}
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+                <View style={{ width: '55%', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 8, color: TEXT_DARK, textAlign: 'center', marginBottom: 20 }}>
+                    A : …………………………… le ……………………
+                  </Text>
+                  <Text style={{ fontSize: 8, color: TEXT_DARK, textAlign: 'center', marginBottom: 3 }}>
+                    Signature
+                  </Text>
+                  <Text style={{ fontSize: 6.5, fontStyle: 'italic', color: TEXT_GRAY, textAlign: 'center' }}>
+                    (représentant du pouvoir adjudicateur ou de l'entité adjudicatrice)
+                  </Text>
                 </View>
               </View>
             </View>
