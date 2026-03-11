@@ -19,7 +19,8 @@ import {
   Mail,
   Zap,
   Building2,
-  ShoppingCart
+  ShoppingCart,
+  BarChart2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../../lib/supabase';
@@ -28,6 +29,7 @@ import { PROJECT_FIELDS, DOSSIER_FIELDS, PROCEDURE_GROUPS } from '../../../const
 import DataImport from './DataImport';
 import GestionCentres from './GestionCentres';
 import { DashboardAchats } from '../../dashboard-achats';
+import { AnalysePortefeuille } from '../../analyse-portefeuille';
 
 interface AdminDashboardProps {
   profile: UserProfile;
@@ -41,7 +43,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   const [error, setError] = useState<string | null>(null);
   const [rlsError, setRlsError] = useState(false);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
-  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import' | 'centres' | 'commandes-fina'>('data');
+  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import' | 'centres' | 'commandes-fina' | 'analyse-portefeuille'>('data');
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -411,7 +413,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                   Gestion Centres
                 </button>
 
-                <button 
+                <button
                   onClick={() => setActiveTab('commandes-fina')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                     activeTab === 'commandes-fina' ? 'bg-white/20 dark:bg-slate-700 backdrop-blur-sm border border-white/30 dark:border-slate-600 shadow-lg' : 'text-blue-100 dark:text-slate-200 hover:bg-white/10 dark:hover:bg-slate-700/80 border border-transparent'
@@ -419,6 +421,16 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                 >
                   <ShoppingCart className="w-4 h-4" />
                   Commandes Fina par Trimestre
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('analyse-portefeuille')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    activeTab === 'analyse-portefeuille' ? 'bg-white/20 dark:bg-slate-700 backdrop-blur-sm border border-white/30 dark:border-slate-600 shadow-lg' : 'text-blue-100 dark:text-slate-200 hover:bg-white/10 dark:hover:bg-slate-700/80 border border-transparent'
+                  }`}
+                >
+                  <BarChart2 className="w-4 h-4" />
+                  Analyse Portefeuille
                 </button>
 
                 <button 
@@ -998,6 +1010,13 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         {/* Gestion Centres Tab - ADMIN ONLY */}
         {activeTab === 'centres' && profile.role === 'admin' && (
           <GestionCentres profile={profile} />
+        )}
+
+        {/* Analyse Portefeuille Tab - ADMIN ONLY */}
+        {activeTab === 'analyse-portefeuille' && profile.role === 'admin' && (
+          <div className="p-6">
+            <AnalysePortefeuille />
+          </div>
         )}
 
         {/* Commandes Fina Tab - ADMIN ONLY */}
