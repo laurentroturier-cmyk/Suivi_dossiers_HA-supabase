@@ -545,26 +545,18 @@ export function RapportPresentationPreview({
             ) : null}
           </div>
 
-          {/* ══ §10 CALENDRIER ══ */}
-          <SectionHeader number={10} title="Proposition de calendrier de mise en œuvre" />
-          <div className="mb-4 text-[10px] text-gray-800 space-y-1">
-            <p>
-              <strong>Validation de la proposition d'attribution du marché :</strong>{' '}
-              {chapitre10?.validationAttribution || '—'}
-            </p>
-            <p>
-              <strong>Envoi des lettres de rejet :</strong>{' '}
-              {chapitre10?.envoiRejet || '—'}
-            </p>
-            <p>
-              <strong>Attribution du marché :</strong>{' '}
-              {chapitre10?.attributionMarche || '[À compléter]'}
-            </p>
-            {chapitre10?.autresElements && (
-              <div>
-                <strong>Autres éléments du calendrier :</strong>
-                <HtmlContent html={chapitre10.autresElements} />
-              </div>
+          {/* ══ §10 CALENDRIER / DÉCLARATION SANS SUITE ══ */}
+          <SectionHeader
+            number={10}
+            title={absenceOffre
+              ? "Proposition de déclaration sans suite pour infructuosité"
+              : "Proposition de calendrier de mise en œuvre"}
+          />
+          <div className="mb-4 text-[10px] text-gray-800">
+            {chapitre10?.autresElements ? (
+              <HtmlContent html={chapitre10.autresElements} />
+            ) : (
+              <p className="italic text-orange-500">[À compléter]</p>
             )}
           </div>
 

@@ -1327,48 +1327,28 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               ];
             })(),
             
-            // Section 10 : Calendrier de mise en œuvre
+            // Section 10
             new Paragraph({
-              children: [createHeadingText("10. PROPOSITION DE CALENDRIER DE MISE EN ŒUVRE")],
+              children: [createHeadingText(absenceOffre
+                ? "10. PROPOSITION DE DÉCLARATION SANS SUITE POUR INFRUCTUOSITÉ"
+                : "10. PROPOSITION DE CALENDRIER DE MISE EN ŒUVRE")],
               heading: HeadingLevel.HEADING_2,
               spacing: { before: 400, after: 200 },
             }),
-            
-            new Paragraph({
-              children: [
-                createBodyText("Validation de la proposition d'attribution du marché : ", true),
-                createBodyText(chapitre10.validationAttribution),
-              ],
-              spacing: { after: 200 },
-            }),
-            
-            new Paragraph({
-              children: [
-                createBodyText("Envoi des lettres de rejet : ", true),
-                createBodyText(chapitre10.envoiRejet),
-              ],
-              spacing: { after: 200 },
-            }),
-            
-            new Paragraph({
-              children: [
-                createBodyText("Attribution du marché : ", true),
-                createBodyText(chapitre10.attributionMarche || "[À compléter]"),
-              ],
-              spacing: { after: 200 },
-            }),
-            
+
             ...(chapitre10.autresElements
               ? [
                   new Paragraph({
-                    children: [
-                      createBodyText("Autres éléments du calendrier : ", true),
-                      createBodyText(htmlToDocxText(chapitre10.autresElements)),
-                    ],
+                    children: [createBodyText(htmlToDocxText(chapitre10.autresElements))],
                     spacing: { after: 200 },
                   }),
                 ]
-              : []),
+              : [
+                  new Paragraph({
+                    children: [createBodyText("[À compléter]", false)],
+                    spacing: { after: 200 },
+                  }),
+                ]),
             
             // Bloc de signature
             new Paragraph({
@@ -2612,88 +2592,21 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               )}
             </ChapterPreview>
 
-            {/* Chapitre 10 : Calendrier de mise en œuvre */}
-            <ChapterPreview 
-              number={10} 
-              title="PROPOSITION DE CALENDRIER DE MISE EN ŒUVRE" 
-              hasData={!!(chapitre10.attributionMarche || chapitre10.autresElements)}
+            {/* Chapitre 10 */}
+            <ChapterPreview
+              number={10}
+              title={absenceOffre ? "PROPOSITION DE DÉCLARATION SANS SUITE POUR INFRUCTUOSITÉ" : "PROPOSITION DE CALENDRIER DE MISE EN ŒUVRE"}
+              hasData={!!chapitre10.autresElements}
               icon="📆"
             >
-              <div className="space-y-4">
-                <p className="text-sm text-gray-700 font-medium">✏️ Complétez les informations :</p>
-                
-                {/* Validation de la proposition d'attribution du marché */}
-                <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
-                  <label className="text-sm font-semibold text-gray-900">
-                    Validation de la proposition d'attribution du marché :
-                  </label>
-                  <p className="text-sm text-gray-700 mt-1">
-                    {chapitre10.validationAttribution}
-                  </p>
-                </div>
-
-                {/* Envoi des lettres de rejet */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <label className="text-sm font-semibold text-gray-900 mb-2 block">
-                    Envoi des lettres de rejet :
-                  </label>
-                  <select
-                    value={chapitre10.envoiRejet}
-                    onChange={(e) => setCharpitre10({...chapitre10, envoiRejet: e.target.value})}
-                    className="w-full p-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="à l'issue du délai de standstill">à l'issue du délai de standstill</option>
-                    <option value="à l'issue de la validation d'attribution du marché">à l'issue de la validation d'attribution du marché</option>
-                  </select>
-                </div>
-
-                {/* Attribution du marché */}
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <label className="text-sm font-semibold text-gray-900 mb-2 block">
-                    Attribution du marché :
-                  </label>
-                  <input
-                    type="text"
-                    value={chapitre10.attributionMarche}
-                    onChange={(e) => setCharpitre10({...chapitre10, attributionMarche: e.target.value})}
-                    placeholder="Ex: novembre 2025 (mois en cours + 1)"
-                    className="w-full p-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">💡 Suggestion : {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</p>
-                </div>
-
-                {/* Autres éléments du calendrier */}
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                  <label className="text-sm font-semibold text-gray-900 mb-2 block">
-                    Autres éléments du calendrier (optionnel) :
-                  </label>
-                  <RichTextEditor
-                    value={chapitre10.autresElements}
-                    onChange={(value) => setCharpitre10({...chapitre10, autresElements: value})}
-                    placeholder="Ajoutez d'autres jalons ou informations..."
-                  />
-                </div>
-
-                {/* Aperçu */}
-                {(chapitre10.attributionMarche || chapitre10.autresElements) && (
-                  <div className="bg-gray-50 border border-gray-300 rounded-lg p-3">
-                    <p className="text-xs text-teal-700 mb-2">✓ Données saisies</p>
-                    <div className="space-y-1 text-xs text-gray-700 font-mono">
-                      <p><strong>Validation :</strong> {chapitre10.validationAttribution}</p>
-                      <p><strong>Rejet :</strong> {chapitre10.envoiRejet}</p>
-                      <p><strong>Attribution :</strong> {chapitre10.attributionMarche}</p>
-                      {chapitre10.autresElements && (
-                        <div>
-                          <strong>Autres :</strong>
-                          <div
-                            className="prose prose-xs max-w-none inline-block ml-1 rich-content"
-                            dangerouslySetInnerHTML={{ __html: chapitre10.autresElements }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+              <div className="space-y-3">
+                <RichTextEditor
+                  value={chapitre10.autresElements}
+                  onChange={(value) => setCharpitre10({...chapitre10, autresElements: value})}
+                  placeholder={absenceOffre
+                    ? "Décrivez les modalités de la déclaration sans suite (date prévisionnelle, procédure de relance éventuelle...)"
+                    : "Décrivez le calendrier de mise en œuvre (attribution, notification, démarrage...)"}
+                />
               </div>
             </ChapterPreview>
           </div>

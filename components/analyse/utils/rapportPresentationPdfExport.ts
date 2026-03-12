@@ -494,18 +494,15 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
   y += 4;
 
 
-  // §10 CALENDRIER
-  addSection(10, 'Proposition de calendrier de mise en œuvre');
+  // §10 CALENDRIER / DÉCLARATION SANS SUITE
+  addSection(10, data?.absenceOffre
+    ? 'Proposition de déclaration sans suite pour infructuosité'
+    : 'Proposition de calendrier de mise en œuvre');
   const ch10 = data?.chapitre10 || {};
-  if (ch10.validationAttribution)
-    addText(`Validation de la proposition d'attribution du marché : ${ch10.validationAttribution}`, { size: 10, lh: 5 });
-  if (ch10.envoiRejet)
-    addText(`Envoi des lettres de rejet : ${ch10.envoiRejet}`, { size: 10, lh: 5 });
-  if (ch10.attributionMarche)
-    addText(`Attribution du marché : ${ch10.attributionMarche}`, { size: 10, lh: 5 });
   if (ch10.autresElements) {
-    addText('Autres éléments du calendrier :', { size: 10, lh: 5, bold: true });
     addHtml(ch10.autresElements);
+  } else {
+    addText('[À compléter]', { size: 10, lh: 5 });
   }
 
   // SIGNATURE
