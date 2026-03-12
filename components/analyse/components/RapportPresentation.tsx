@@ -59,6 +59,14 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   const [contenuChapitre3, setContenuChapitre3] = useState('');
   const [contenuChapitre4, setContenuChapitre4] = useState('');
 
+  // Mode absence d'offre
+  const [absenceOffre, setAbsenceOffre] = useState(false);
+  const [absenceChap5, setAbsenceChap5] = useState("Non applicable : absence d'offre");
+  const [absenceChap6, setAbsenceChap6] = useState('');
+  const [absenceChap7, setAbsenceChap7] = useState("Non applicable : absence d'offre");
+  const [absenceChap8, setAbsenceChap8] = useState("Non applicable : absence d'offre");
+  const [absenceChap9, setAbsenceChap9] = useState("Non applicable : absence d'offre");
+
   // Modèles prédéfinis pour le chapitre 4
   const CHAPITRE4_MODELES = [
     {
@@ -276,6 +284,12 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         contenuChapitre3,
         contenuChapitre4,
         chapitre10,
+        absenceOffre,
+        absenceChap5,
+        absenceChap6,
+        absenceChap7,
+        absenceChap8,
+        absenceChap9,
       };
 
       // Préparer les métadonnées des fichiers sources
@@ -400,6 +414,14 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
           attributionMarche: '',
           autresElements: ''
         });
+        if (rapport.absenceOffre !== undefined) {
+          setAbsenceOffre(rapport.absenceOffre);
+          setAbsenceChap5(rapport.absenceChap5 || "Non applicable : absence d'offre");
+          setAbsenceChap6(rapport.absenceChap6 || '');
+          setAbsenceChap7(rapport.absenceChap7 || "Non applicable : absence d'offre");
+          setAbsenceChap8(rapport.absenceChap8 || "Non applicable : absence d'offre");
+          setAbsenceChap9(rapport.absenceChap9 || "Non applicable : absence d'offre");
+        }
         setRapportActuelId(rapportId);
         setTitreRapport(data.titre);
         setNotesRapport(data.notes || '');
@@ -485,6 +507,12 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
       attributionMarche: '',
       autresElements: ''
     });
+    setAbsenceOffre(false);
+    setAbsenceChap5("Non applicable : absence d'offre");
+    setAbsenceChap6('');
+    setAbsenceChap7("Non applicable : absence d'offre");
+    setAbsenceChap8("Non applicable : absence d'offre");
+    setAbsenceChap9("Non applicable : absence d'offre");
     setNumeroAfpa('');
   };
 
@@ -582,36 +610,41 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   // Génération du rapport
   const handleGenererRapport = () => {
     setIsGenerating(true);
-    
+
     try {
       let dataToUse;
-      
-      // Déterminer les données à utiliser selon la sélection
-      const isMultiLot = an01GlobalData && an01GlobalData.lots && an01GlobalData.lots.length > 1;
-      
-      if (isMultiLot && selectedLots.length === 0) {
-        // Multi-lots MAIS aucun lot sélectionné : erreur
-        alert('Veuillez sélectionner au moins un lot');
-        setIsGenerating(false);
-        return;
-      } else if (!isMultiLot || selectedLots.length === 1) {
-        // Mono-lot OU un seul lot sélectionné : utiliser an01Data (lot unique)
-        dataToUse = an01Data;
+
+      if (absenceOffre) {
+        // Mode absence d'offre : pas de données AN01
+        dataToUse = null;
       } else {
-        // Plusieurs lots sélectionnés : créer une structure avec les lots sélectionnés
-        if (an01GlobalData) {
-          const selectedLotsData = an01GlobalData.lots.filter((_, index) => 
-            selectedLots.includes(index)
-          );
-          dataToUse = { 
-            allLots: selectedLotsData, 
-            globalMetadata: an01GlobalData.globalMetadata 
-          };
-        } else {
+        // Déterminer les données à utiliser selon la sélection
+        const isMultiLot = an01GlobalData && an01GlobalData.lots && an01GlobalData.lots.length > 1;
+
+        if (isMultiLot && selectedLots.length === 0) {
+          // Multi-lots MAIS aucun lot sélectionné : erreur
+          alert('Veuillez sélectionner au moins un lot');
+          setIsGenerating(false);
+          return;
+        } else if (!isMultiLot || selectedLots.length === 1) {
+          // Mono-lot OU un seul lot sélectionné : utiliser an01Data (lot unique)
           dataToUse = an01Data;
+        } else {
+          // Plusieurs lots sélectionnés : créer une structure avec les lots sélectionnés
+          if (an01GlobalData) {
+            const selectedLotsData = an01GlobalData.lots.filter((_: any, index: number) =>
+              selectedLots.includes(index)
+            );
+            dataToUse = {
+              allLots: selectedLotsData,
+              globalMetadata: an01GlobalData.globalMetadata,
+            };
+          } else {
+            dataToUse = an01Data;
+          }
         }
       }
-      
+
       const rapportContent = generateRapportData({
         procedure: procedureSelectionnee,
         dossier: dossierRattache,
@@ -620,7 +653,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         an01Data: dataToUse,
         questionsReponses: [], // TODO: À implémenter avec table Supabase
       });
-      
+
       setState(prev => ({
         ...prev,
         rapportGenere: rapportContent,
@@ -1121,86 +1154,65 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               heading: HeadingLevel.HEADING_2,
               spacing: { before: 400, after: 200 },
             }),
-            
-            new Paragraph({
-              children: [createBodyText("L'analyse économique et technique dans son détail est jointe au présent document en annexe.")],
-              spacing: { after: 200 },
-            }),
-            
-            new Paragraph({
-              children: [createBodyText("Le classement final des offres est le suivant.")],
-              spacing: { after: 200 },
-            }),
-            
-            // Si multi-lots : afficher un titre + tableau par lot
-            ...(state.rapportGenere.section7_2_syntheseLots ? 
-              state.rapportGenere.section7_2_syntheseLots.lots.flatMap((lot: any, index: number) => [
+
+            ...(() => {
+              if (absenceOffre) {
+                return [new Paragraph({ children: [createBodyText("Sans Objet : Absence d'offre")], spacing: { after: 200 } })];
+              }
+              const items: any[] = [
                 new Paragraph({
-                  children: [createBodyText(lot.nomLot, true)],
-                  heading: HeadingLevel.HEADING_3,
-                  spacing: { before: 300, after: 150 },
-                }),
-                createOffersTable(
-                  lot.tableau, 
-                  lot.poidsTechnique || 30, 
-                  lot.poidsFinancier || 70
-                ),
-                new Paragraph({ text: "", spacing: { after: 200 } }),
-              ]) : [
-              // Sinon : afficher le tableau de classement classique
-              createOffersTable(
-                state.rapportGenere.section7_valeurOffres.tableau,
-                state.rapportGenere.section6_methodologie?.ponderationTechnique || 30,
-                state.rapportGenere.section6_methodologie?.ponderationFinancier || 70
-              ),
-              
-              new Paragraph({
-                children: [
-                  createBodyText(`Le montant de l'offre du prestataire pressenti s'élève à `),
-                  createBodyText(formatCurrency(state.rapportGenere.section7_valeurOffres.montantAttributaire), true),
-                  createBodyText(`.`),
-                ],
-                spacing: { before: 200, after: 100 },
-              }),
-            ]),
-            
-            // Comparaison avec Note d'Opportunité
-            ...(state.rapportGenere.section7_valeurOffres.montantEstime > 0 ? (() => {
-              const ecart = state.rapportGenere.section7_valeurOffres.montantAttributaire - state.rapportGenere.section7_valeurOffres.montantEstime;
-              const ecartPourcent = (ecart / state.rapportGenere.section7_valeurOffres.montantEstime) * 100;
-              const signe = ecart >= 0 ? '+' : '';
-              return [
-                new Paragraph({
-                  children: [
-                    createBodyText(`Montant de l'estimation : `),
-                    createBodyText(`${formatCurrency(state.rapportGenere.section7_valeurOffres.montantEstime)}`, true),
-                  ],
-                  spacing: { after: 100 },
-                }),
-                new Paragraph({
-                  children: [
-                    createBodyText(`Montant de l'offre retenue : `),
-                    createBodyText(`${formatCurrency(state.rapportGenere.section7_valeurOffres.montantAttributaire)}`, true),
-                  ],
-                  spacing: { after: 100 },
-                }),
-                new Paragraph({
-                  children: [
-                    createBodyText(`Écart par rapport à l'estimation : `),
-                    createBodyText(`${signe}${formatCurrency(ecart)} (${signe}${ecartPourcent.toFixed(2)}%)`, true),
-                  ],
+                  children: [createBodyText("L'analyse économique et technique dans son détail est jointe au présent document en annexe.")],
                   spacing: { after: 200 },
-                })
+                }),
+                new Paragraph({
+                  children: [createBodyText("Le classement final des offres est le suivant.")],
+                  spacing: { after: 200 },
+                }),
               ];
-            })() : []),
-            
+              if (state.rapportGenere.section7_2_syntheseLots) {
+                state.rapportGenere.section7_2_syntheseLots.lots.forEach((lot: any) => {
+                  items.push(new Paragraph({ children: [createBodyText(lot.nomLot, true)], heading: HeadingLevel.HEADING_3, spacing: { before: 300, after: 150 } }));
+                  items.push(createOffersTable(lot.tableau, lot.poidsTechnique || 30, lot.poidsFinancier || 70));
+                  items.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+                });
+              } else {
+                items.push(createOffersTable(
+                  state.rapportGenere.section7_valeurOffres.tableau,
+                  state.rapportGenere.section6_methodologie?.ponderationTechnique || 30,
+                  state.rapportGenere.section6_methodologie?.ponderationFinancier || 70
+                ));
+                items.push(new Paragraph({
+                  children: [
+                    createBodyText(`Le montant de l'offre du prestataire pressenti s'élève à `),
+                    createBodyText(formatCurrency(state.rapportGenere.section7_valeurOffres.montantAttributaire), true),
+                    createBodyText(`.`),
+                  ],
+                  spacing: { before: 200, after: 100 },
+                }));
+                if (state.rapportGenere.section7_valeurOffres.montantEstime > 0) {
+                  const ecart = state.rapportGenere.section7_valeurOffres.montantAttributaire - state.rapportGenere.section7_valeurOffres.montantEstime;
+                  const ecartPourcent = (ecart / state.rapportGenere.section7_valeurOffres.montantEstime) * 100;
+                  const signe = ecart >= 0 ? '+' : '';
+                  items.push(new Paragraph({ children: [createBodyText(`Montant de l'estimation : `), createBodyText(`${formatCurrency(state.rapportGenere.section7_valeurOffres.montantEstime)}`, true)], spacing: { after: 100 } }));
+                  items.push(new Paragraph({ children: [createBodyText(`Montant de l'offre retenue : `), createBodyText(`${formatCurrency(state.rapportGenere.section7_valeurOffres.montantAttributaire)}`, true)], spacing: { after: 100 } }));
+                  items.push(new Paragraph({ children: [createBodyText(`Écart par rapport à l'estimation : `), createBodyText(`${signe}${formatCurrency(ecart)} (${signe}${ecartPourcent.toFixed(2)}%)`, true)], spacing: { after: 200 } }));
+                }
+              }
+              return items;
+            })(),
+
             // Section 8 : Performance
             new Paragraph({
               children: [createHeadingText("8. ANALYSE DE LA PERFORMANCE DU DOSSIER")],
               heading: HeadingLevel.HEADING_2,
               spacing: { before: 400, after: 200 },
             }),
-            
+
+            ...(() => {
+              if (absenceOffre) {
+                return [new Paragraph({ children: [createBodyText("Sans Objet : Absence d'offre")], spacing: { after: 200 } })];
+              }
+              return [
             // Si multi-lots ET tableau détaillé disponible : afficher le tableau détaillé
             ...(state.rapportGenere.section8_performance?.tableauDetaille ? [
               new Paragraph({
@@ -1283,7 +1295,8 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                 spacing: { after: 200 },
               }),
             ]),
-            
+          ]; })(),
+
             // Section 9 : Attribution
             new Paragraph({
               children: [createHeadingText("9. PROPOSITION D'ATTRIBUTION")],
@@ -1291,35 +1304,28 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               spacing: { before: 400, after: 200 },
             }),
             
-            // Si multi-lots : afficher le tableau des attributaires
-            ...(state.rapportGenere.section7_2_syntheseLots ? [
-              new Paragraph({
-                children: [
-                  createBodyText(`Au regard de ces éléments, la commission d'ouverture souhaite attribuer les lots comme suit :`),
-                ],
-                spacing: { after: 200 },
-              }),
-              
-              createAttributairesTable(state.rapportGenere.section7_2_syntheseLots.lots),
-              
-              new Paragraph({
-                children: [
-                  createBodyText(`Montant total de l'attribution : `),
-                  createBodyText(formatCurrency(state.rapportGenere.section7_2_syntheseLots.montantTotalTTC), true),
-                ],
-                spacing: { before: 200, after: 200 },
-              }),
-            ] : [
-              // Sinon : afficher l'attributaire unique
-              new Paragraph({
-                children: [
-                  createBodyText(`Au regard de ces éléments, la commission d'ouverture souhaite attribuer le marché à `),
-                  createBodyText(state.rapportGenere.section9_attribution.attributairePressenti, true),
-                  createBodyText(`.`),
-                ],
-                spacing: { after: 200 },
-              }),
-            ]),
+            ...(() => {
+              if (absenceOffre) {
+                return [new Paragraph({ children: [createBodyText("Procédure Infructueuse")], spacing: { after: 200 } })];
+              }
+              if (state.rapportGenere.section7_2_syntheseLots) {
+                return [
+                  new Paragraph({ children: [createBodyText(`Au regard de ces éléments, la commission d'ouverture souhaite attribuer les lots comme suit :`)], spacing: { after: 200 } }),
+                  createAttributairesTable(state.rapportGenere.section7_2_syntheseLots.lots),
+                  new Paragraph({ children: [createBodyText(`Montant total de l'attribution : `), createBodyText(formatCurrency(state.rapportGenere.section7_2_syntheseLots.montantTotalTTC), true)], spacing: { before: 200, after: 200 } }),
+                ];
+              }
+              return [
+                new Paragraph({
+                  children: [
+                    createBodyText(`Au regard de ces éléments, la commission d'ouverture souhaite attribuer le marché à `),
+                    createBodyText(state.rapportGenere.section9_attribution.attributairePressenti, true),
+                    createBodyText(`.`),
+                  ],
+                  spacing: { after: 200 },
+                }),
+              ];
+            })(),
             
             // Section 10 : Calendrier de mise en œuvre
             new Paragraph({
@@ -1423,6 +1429,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         contenuChapitre3,
         contenuChapitre4,
         chapitre10,
+        absenceOffre,
       };
 
       // Générer et télécharger le PDF
@@ -1440,7 +1447,9 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
 
-  const tousLesFileursCharges = state.fichiersCharges.depots && state.fichiersCharges.retraits && state.fichiersCharges.an01;
+  const tousLesFileursCharges =
+    (state.fichiersCharges.depots && state.fichiersCharges.retraits && state.fichiersCharges.an01) ||
+    (absenceOffre && state.fichiersCharges.depots && state.fichiersCharges.retraits);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -1642,10 +1651,49 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               </div>
             </div>
             
+            {/* Sélecteur Absence d'offre */}
+            {(state.fichiersCharges.depots || state.fichiersCharges.retraits) && (
+              <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                  <span className="text-sm font-semibold text-gray-900">Absence d'offre (fichier AN01 vide ou absent) ?</span>
+                </div>
+                <div className="flex items-center gap-6 ml-8">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="absenceOffre"
+                      checked={!absenceOffre}
+                      onChange={() => setAbsenceOffre(false)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-sm text-gray-700">Non — je charge le fichier AN01</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="absenceOffre"
+                      checked={absenceOffre}
+                      onChange={() => setAbsenceOffre(true)}
+                      className="w-4 h-4 text-orange-600"
+                    />
+                    <span className="text-sm font-semibold text-orange-700">Oui — aucune offre reçue</span>
+                  </label>
+                </div>
+                {absenceOffre && (
+                  <p className="mt-2 ml-8 text-xs text-orange-700 italic">
+                    ⚠️ Le fichier AN01 ne sera pas requis. L'article 6 sera à saisir manuellement et les articles 7, 8 et 9 afficheront « Non applicable : absence d'offre » (modifiable).
+                  </p>
+                )}
+              </div>
+            )}
+
             {tousLesFileursCharges && (
               <div className="mt-4 p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-center gap-2">
                 <Check className="w-5 h-5 text-teal-700" />
-                <span className="text-sm text-green-800 font-medium">Tous les fichiers sont chargés !</span>
+                <span className="text-sm text-green-800 font-medium">
+                  {absenceOffre ? 'Registres chargés — mode absence d\'offre activé ✓' : 'Tous les fichiers sont chargés !'}
+                </span>
               </div>
             )}
           </div>
@@ -2061,13 +2109,26 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             </ChapterPreview>
 
             {/* Chapitre 5 : Analyse des candidatures */}
-            <ChapterPreview 
-              number={5} 
-              title="ANALYSE DES CANDIDATURES" 
+            <ChapterPreview
+              number={5}
+              title="ANALYSE DES CANDIDATURES"
               hasData={true}
               icon="👥"
             >
-              {modeEdition && rapportEditable ? (
+              {absenceOffre ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-orange-700 font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Mode absence d'offre — texte modifiable
+                  </p>
+                  <textarea
+                    value={absenceChap5}
+                    onChange={(e) => setAbsenceChap5(e.target.value)}
+                    rows={3}
+                    className="w-full p-3 border border-orange-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 resize-y"
+                  />
+                </div>
+              ) : modeEdition && rapportEditable ? (
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Texte principal</label>
@@ -2107,13 +2168,27 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             </ChapterPreview>
 
             {/* Chapitre 6 : Méthodologie d'analyse */}
-            <ChapterPreview 
-              number={6} 
-              title="MÉTHODOLOGIE D'ANALYSE DES OFFRES" 
-              hasData={!!state.rapportGenere}
+            <ChapterPreview
+              number={6}
+              title="MÉTHODOLOGIE D'ANALYSE DES OFFRES"
+              hasData={absenceOffre ? absenceChap6.trim().length > 0 : !!state.rapportGenere}
               icon="⚖️"
             >
-              {state.rapportGenere ? (
+              {absenceOffre ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-orange-700 font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Mode absence d'offre — saisie manuelle requise
+                  </p>
+                  <textarea
+                    value={absenceChap6}
+                    onChange={(e) => setAbsenceChap6(e.target.value)}
+                    rows={5}
+                    placeholder="Décrivez la méthodologie d'analyse des offres (critères, pondérations...) ou saisissez le texte applicable à cette procédure."
+                    className="w-full p-3 border border-orange-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 resize-y"
+                  />
+                </div>
+              ) : state.rapportGenere ? (
                 modeEdition && rapportEditable ? (
                   <div className="space-y-3">
                     <div>
@@ -2164,13 +2239,26 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             </ChapterPreview>
 
             {/* Chapitre 7 : Analyse de la valeur */}
-            <ChapterPreview 
-              number={7} 
-              title="ANALYSE DE LA VALEUR DES OFFRES" 
-              hasData={!!state.rapportGenere}
+            <ChapterPreview
+              number={7}
+              title="ANALYSE DE LA VALEUR DES OFFRES"
+              hasData={absenceOffre || !!state.rapportGenere}
               icon="💰"
             >
-              {state.rapportGenere ? (
+              {absenceOffre ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-orange-700 font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Mode absence d'offre — texte modifiable
+                  </p>
+                  <textarea
+                    value={absenceChap7}
+                    onChange={(e) => setAbsenceChap7(e.target.value)}
+                    rows={3}
+                    className="w-full p-3 border border-orange-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 resize-y"
+                  />
+                </div>
+              ) : state.rapportGenere ? (
                 <>
                   {state.rapportGenere.section7_2_syntheseLots ? (
                     // Mode multi-lots : afficher UN TABLEAU PAR LOT avec titre
@@ -2268,13 +2356,26 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             </ChapterPreview>
 
             {/* Chapitre 8 : Performance */}
-            <ChapterPreview 
-              number={8} 
-              title="ANALYSE DE LA PERFORMANCE DU DOSSIER" 
-              hasData={!!state.rapportGenere}
+            <ChapterPreview
+              number={8}
+              title="ANALYSE DE LA PERFORMANCE DU DOSSIER"
+              hasData={absenceOffre || !!state.rapportGenere}
               icon="📈"
             >
-              {state.rapportGenere ? (
+              {absenceOffre ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-orange-700 font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Mode absence d'offre — texte modifiable
+                  </p>
+                  <textarea
+                    value={absenceChap8}
+                    onChange={(e) => setAbsenceChap8(e.target.value)}
+                    rows={3}
+                    className="w-full p-3 border border-orange-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 resize-y"
+                  />
+                </div>
+              ) : state.rapportGenere ? (
                 <>
                   {state.rapportGenere.section8_performance?.tableauDetaille ? (
                     // Mode multi-lots avec tableau détaillé
@@ -2429,13 +2530,26 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             </ChapterPreview>
 
             {/* Chapitre 9 : Proposition d'attribution */}
-            <ChapterPreview 
-              number={9} 
-              title="PROPOSITION D'ATTRIBUTION" 
-              hasData={!!state.rapportGenere}
+            <ChapterPreview
+              number={9}
+              title="PROPOSITION D'ATTRIBUTION"
+              hasData={absenceOffre || !!state.rapportGenere}
               icon="🎯"
             >
-              {state.rapportGenere ? (
+              {absenceOffre ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-orange-700 font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Mode absence d'offre — texte modifiable
+                  </p>
+                  <textarea
+                    value={absenceChap9}
+                    onChange={(e) => setAbsenceChap9(e.target.value)}
+                    rows={3}
+                    className="w-full p-3 border border-orange-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 resize-y"
+                  />
+                </div>
+              ) : state.rapportGenere ? (
                 <>
                   {state.rapportGenere.section7_2_syntheseLots ? (
                     // Mode multi-lots : tableau de tous les attributaires
@@ -2803,6 +2917,12 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
             contenuChapitre3,
             contenuChapitre4,
             chapitre10,
+            absenceOffre,
+            absenceChap5,
+            absenceChap6,
+            absenceChap7,
+            absenceChap8,
+            absenceChap9,
           }}
           onClose={() => setShowPreview(false)}
           onExportPDF={handleExportPDF}

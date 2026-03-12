@@ -340,12 +340,16 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
 
   // §5 ANALYSE DES CANDIDATURES
   addSection(5, 'Analyse des candidatures');
-  addText(
-    "L'analyse des capacités juridiques, techniques et financières a été réalisée à partir de la "
-    + "recevabilité des documents administratifs demandés dans chacune de nos procédures.",
-    { size: 10, lh: 5 }
-  );
-  addText("L'analyse des candidatures est disponible en annexe.", { size: 10, lh: 5 });
+  if (data?.absenceOffre) {
+    addText("Non applicable : absence d'offre", { size: 10, lh: 5, bold: true });
+  } else {
+    addText(
+      "L'analyse des capacités juridiques, techniques et financières a été réalisée à partir de la "
+      + "recevabilité des documents administratifs demandés dans chacune de nos procédures.",
+      { size: 10, lh: 5 }
+    );
+    addText("L'analyse des candidatures est disponible en annexe.", { size: 10, lh: 5 });
+  }
   y += 4;
 
   // §6 MÉTHODOLOGIE
@@ -365,6 +369,10 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
 
   // §7 VALEUR DES OFFRES
   addSection(7, 'Analyse de la valeur des offres');
+  if (data?.absenceOffre) {
+    addText("Sans Objet : Absence d'offre", { size: 10, lh: 5, bold: true });
+    y += 4;
+  } else {
   addText("L'analyse économique et technique dans son détail est jointe au présent document en annexe.", { size: 10, lh: 5 });
   addText('Le classement final des offres est le suivant.', { size: 10, lh: 5 });
   y += 3;
@@ -414,10 +422,14 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
       addText(`Écart par rapport à l'estimation : ${s}${fmt(e)} (${s}${((e / estim) * 100).toFixed(2)}%)`, { size: 10, lh: 5 });
     }
   }
+  } // fin else absenceOffre §7
   y += 4;
 
   // §8 PERFORMANCE
   addSection(8, 'Analyse de la performance du dossier');
+  if (data?.absenceOffre) {
+    addText("Sans Objet : Absence d'offre", { size: 10, lh: 5, bold: true });
+  } else {
   const s8     = data?.section8_performance;
   const refCal = s8?.referenceCalcul || 'par rapport à la moyenne des offres';
 
@@ -455,11 +467,14 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
     addText(`Performance achat (${refCal}) : ${Number(s8.performanceAchatPourcent).toFixed(1)}%`, { size: 10, lh: 5 });
     addText(`Impact budgétaire estimé : ${fmt(s8.impactBudgetaireTTC)} TTC (soit ${fmt(s8.impactBudgetaireHT)} HT)`, { size: 10, lh: 5 });
   }
+  } // fin else absenceOffre §8
   y += 4;
 
   // §9 ATTRIBUTION
   addSection(9, "Proposition d'attribution");
-  if (data?.section7_2_syntheseLots?.lots) {
+  if (data?.absenceOffre) {
+    addText('Procédure Infructueuse', { size: 10, lh: 5, bold: true });
+  } else if (data?.section7_2_syntheseLots?.lots) {
     addText("Au regard de ces éléments, la commission d'ouverture souhaite attribuer les lots comme suit :", { size: 10, lh: 5 });
     y += 2;
     const head9: string[][] = [['Lot', 'Attributaire pressenti', 'Montant TTC']];
@@ -477,6 +492,7 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
     );
   }
   y += 4;
+
 
   // §10 CALENDRIER
   addSection(10, 'Proposition de calendrier de mise en œuvre');

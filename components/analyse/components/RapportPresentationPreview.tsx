@@ -89,6 +89,12 @@ export interface RapportPreviewData {
     attributionMarche: string;
     autresElements: string;
   };
+  absenceOffre?: boolean;
+  absenceChap5?: string;
+  absenceChap6?: string;
+  absenceChap7?: string;
+  absenceChap8?: string;
+  absenceChap9?: string;
 }
 
 interface RapportPresentationPreviewProps {
@@ -110,7 +116,15 @@ export function RapportPresentationPreview({
   isExportingPdf,
   isExportingDocx,
 }: RapportPresentationPreviewProps) {
-  const { procedure, rapportGenere: r, contenuChapitre3, contenuChapitre4, chapitre10 } = data;
+  const {
+    procedure, rapportGenere: r, contenuChapitre3, contenuChapitre4, chapitre10,
+    absenceOffre = false,
+    absenceChap5 = "Non applicable : absence d'offre",
+    absenceChap6 = '',
+    absenceChap7 = "Non applicable : absence d'offre",
+    absenceChap8 = "Non applicable : absence d'offre",
+    absenceChap9 = "Non applicable : absence d'offre",
+  } = data;
   const today = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
   const numAfpa = String(procedure?.['Numéro de procédure (Afpa)'] || procedure?.['NumProc'] || '—');
   const nomProc = String(procedure?.['Nom de la procédure'] || '—');
@@ -267,29 +281,49 @@ export function RapportPresentationPreview({
           {/* ══ §5 ANALYSE DES CANDIDATURES ══ */}
           <SectionHeader number={5} title="Analyse des candidatures" />
           <div className="mb-2 text-[10px] text-gray-800 space-y-1">
-            <p>L'analyse des capacités juridiques, techniques et financières a été réalisée à partir de la recevabilité des documents administratifs demandés dans chacune de nos procédures.</p>
-            <p>L'analyse des candidatures est disponible en annexe.</p>
+            {absenceOffre ? (
+              <p className="font-semibold">{absenceChap5}</p>
+            ) : (
+              <>
+                <p>L'analyse des capacités juridiques, techniques et financières a été réalisée à partir de la recevabilité des documents administratifs demandés dans chacune de nos procédures.</p>
+                <p>L'analyse des candidatures est disponible en annexe.</p>
+              </>
+            )}
           </div>
 
           {/* ══ §6 MÉTHODOLOGIE ══ */}
           <SectionHeader number={6} title="Méthodologie d'analyse des offres" />
           <div className="mb-2 text-[10px] text-gray-800 space-y-1">
-            <p><strong>Critères d'attribution :</strong></p>
-            <ul className="list-disc pl-5 space-y-0.5">
-              <li>Critère technique : <strong>{poidsTech}%</strong></li>
-              <li>Critère financier : <strong>{poidsFin}%</strong></li>
-            </ul>
-            <p className="mt-1"><strong>Méthode de notation :</strong></p>
-            <ul className="list-disc pl-5 space-y-0.5">
-              <li>Note technique sur {poidsTech} points</li>
-              <li>Note financière sur {poidsFin} points</li>
-              <li>Note finale sur 100 points</li>
-            </ul>
+            {absenceOffre ? (
+              absenceChap6 ? (
+                <p>{absenceChap6}</p>
+              ) : (
+                <p className="italic text-orange-500">[À compléter : Méthodologie d'analyse des offres]</p>
+              )
+            ) : (
+              <>
+                <p><strong>Critères d'attribution :</strong></p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  <li>Critère technique : <strong>{poidsTech}%</strong></li>
+                  <li>Critère financier : <strong>{poidsFin}%</strong></li>
+                </ul>
+                <p className="mt-1"><strong>Méthode de notation :</strong></p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  <li>Note technique sur {poidsTech} points</li>
+                  <li>Note financière sur {poidsFin} points</li>
+                  <li>Note finale sur 100 points</li>
+                </ul>
+              </>
+            )}
           </div>
 
           {/* ══ §7 VALEUR DES OFFRES ══ */}
           <SectionHeader number={7} title="Analyse de la valeur des offres" />
           <div className="mb-2">
+            {absenceOffre ? (
+              <p className="text-[10px] font-semibold text-gray-800">{absenceChap7}</p>
+            ) : (
+            <>
             <p className="text-[10px] text-gray-800 mb-2">
               L'analyse économique et technique dans son détail est jointe au présent document en annexe.
               Le classement final des offres est le suivant :
@@ -373,12 +407,16 @@ export function RapportPresentationPreview({
                 })()}
               </>
             ) : null}
+            </>
+            )}
           </div>
 
           {/* ══ §8 PERFORMANCE ══ */}
           <SectionHeader number={8} title="Analyse de la performance du dossier" />
           <div className="mb-2 text-[10px] text-gray-800">
-            {r?.section8_performance?.tableauDetaille ? (
+            {absenceOffre ? (
+              <p className="font-semibold">{absenceChap8}</p>
+            ) : r?.section8_performance?.tableauDetaille ? (
               <>
                 <p className="mb-2">Le tableau ci-dessous présente la performance achat détaillée pour chaque lot :</p>
                 <TableWrap>
@@ -472,7 +510,9 @@ export function RapportPresentationPreview({
           {/* ══ §9 PROPOSITION D'ATTRIBUTION ══ */}
           <SectionHeader number={9} title="Proposition d'attribution" />
           <div className="mb-2 text-[10px] text-gray-800">
-            {r?.section7_2_syntheseLots ? (
+            {absenceOffre ? (
+              <p className="font-semibold">{absenceChap9}</p>
+            ) : r?.section7_2_syntheseLots ? (
               <>
                 <p className="mb-1">Au regard de ces éléments, la commission d'ouverture souhaite attribuer les lots comme suit :</p>
                 <TableWrap>
