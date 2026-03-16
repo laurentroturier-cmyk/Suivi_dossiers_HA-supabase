@@ -292,7 +292,7 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
               <Text style={styles.instruction}>
                 (Reprendre le contenu de la mention figurant dans les documents constitutifs du marché public.)
               </Text>
-              <Field label="Organisme" value="AFPA — Association nationale pour la formation professionnelle des adultes" />
+              <Field label="Organisme" value={"Afpa - Agence pour la formation professionnelle des adultes\n3 rue Franklin\n93100 MONTREUIL"} />
             </View>
           </View>
 
@@ -357,67 +357,80 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
             <SectionHeader letter="D" title="Objet de l'avenant" />
             <View style={styles.sectionContent}>
 
-              {/* Modifications introduites */}
-              <Text style={[styles.subLabel, { marginTop: 0 }]}>Modifications introduites par le présent avenant :</Text>
-              <Text style={styles.instruction}>
-                (Détailler toutes les modifications, avec ou sans incidence financière, introduites dans le
-                marché public par le présent avenant. Préciser les articles du CCAP ou du CCTP modifiés ou
-                complétés ainsi que l'incidence financière de chacune des modifications apportées.)
-              </Text>
+              {/* Modifications introduites — titre + instruction ne se séparent pas */}
+              <View wrap={false}>
+                <Text style={[styles.subLabel, { marginTop: 0 }]}>Modifications introduites par le présent avenant :</Text>
+                <Text style={styles.instruction}>
+                  (Détailler toutes les modifications, avec ou sans incidence financière, introduites dans le
+                  marché public par le présent avenant. Préciser les articles du CCAP ou du CCTP modifiés ou
+                  complétés ainsi que l'incidence financière de chacune des modifications apportées.)
+                </Text>
+              </View>
+
+              {/* Chaque paragraphe de description reste entier (pas de coupure au milieu) */}
               {description
                 ? description.split('\n').filter(Boolean).map((line, i) => (
-                    <Text key={i} style={styles.paragraph}>{line}</Text>
+                    <View key={i} wrap={false}>
+                      <Text style={styles.paragraph}>{line}</Text>
+                    </View>
                   ))
                 : <Text style={[styles.paragraph, { color: TEXT_GRAY, fontStyle: 'italic' }]}>—</Text>
               }
 
               <View style={[styles.divider, { marginTop: 8 }]} />
 
-              {/* Incidence financière */}
-              <Text style={styles.subLabel}>Incidence financière de l'avenant :</Text>
-              <Text style={[styles.paragraph, { marginBottom: 2 }]}>
-                L'avenant a une incidence financière sur le montant du marché public :
-              </Text>
-              <Text style={[styles.instruction, { marginBottom: 6 }]}>(Cocher la case correspondante.)</Text>
-
-              <View style={{ flexDirection: 'row', gap: 30, marginBottom: 8, paddingLeft: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <CheckBox checked={!data.incidence_financiere} />
-                  <Text style={{ fontSize: 8, color: TEXT_DARK }}>Non</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <CheckBox checked={!!data.incidence_financiere} />
-                  <Text style={{ fontSize: 8, color: TEXT_DARK }}>Oui</Text>
+              {/* Incidence financière — bloc entier non coupable */}
+              <View wrap={false}>
+                <Text style={styles.subLabel}>Incidence financière de l'avenant :</Text>
+                <Text style={[styles.paragraph, { marginBottom: 2 }]}>
+                  L'avenant a une incidence financière sur le montant du marché public :
+                </Text>
+                <Text style={[styles.instruction, { marginBottom: 6 }]}>(Cocher la case correspondante.)</Text>
+                <View style={{ flexDirection: 'row', gap: 30, marginBottom: 8, paddingLeft: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <CheckBox checked={!data.incidence_financiere} />
+                    <Text style={{ fontSize: 8, color: TEXT_DARK }}>Non</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <CheckBox checked={!!data.incidence_financiere} />
+                    <Text style={{ fontSize: 8, color: TEXT_DARK }}>Oui</Text>
+                  </View>
                 </View>
               </View>
 
               {data.incidence_financiere && (
                 <>
-                  <Text style={styles.subLabelSmall}>Montant de l'avenant :</Text>
-                  <Bullet label="Taux de la TVA"                     value={data.taux_tva || '—'} />
-                  <Bullet label="Montant HT"                         value={formatMontant(data.montant_avenant_ht)} />
-                  <Bullet label="Montant TTC"                        value={formatMontant(montantAvenantTTC, '€ TTC')} />
-                  <Bullet
-                    label="% d'écart introduit par l'avenant"
-                    value={pctEcart !== null ? `${pctEcart >= 0 ? '+' : ''}${pctEcart.toFixed(2)} %` : '—'}
-                  />
-                  {pctCumule !== null && (
+                  {/* Montant de l'avenant — bloc entier non coupable */}
+                  <View wrap={false}>
+                    <Text style={styles.subLabelSmall}>Montant de l'avenant :</Text>
+                    <Bullet label="Taux de la TVA"                     value={data.taux_tva || '—'} />
+                    <Bullet label="Montant HT"                         value={formatMontant(data.montant_avenant_ht)} />
+                    <Bullet label="Montant TTC"                        value={formatMontant(montantAvenantTTC, '€ TTC')} />
                     <Bullet
-                      label="% d'écart cumulé (tous avenants)"
-                      value={`${pctCumule >= 0 ? '+' : ''}${pctCumule.toFixed(2)} %`}
+                      label="% d'écart introduit par l'avenant"
+                      value={pctEcart !== null ? `${pctEcart >= 0 ? '+' : ''}${pctEcart.toFixed(2)} %` : '—'}
                     />
-                  )}
+                    {pctCumule !== null && (
+                      <Bullet
+                        label="% d'écart cumulé (tous avenants)"
+                        value={`${pctCumule >= 0 ? '+' : ''}${pctCumule.toFixed(2)} %`}
+                      />
+                    )}
+                  </View>
 
-                  <Text style={[styles.subLabelSmall, { marginTop: 6 }]}>Nouveau montant du marché public :</Text>
-                  <Bullet label="Taux de la TVA" value={data.taux_tva || '—'} />
-                  <Bullet label="Montant HT"     value={formatMontant(montantNouveau)} />
-                  <Bullet label="Montant TTC"    value={formatMontant(montantNouveauTTC, '€ TTC')} />
+                  {/* Nouveau montant — bloc entier non coupable */}
+                  <View wrap={false}>
+                    <Text style={[styles.subLabelSmall, { marginTop: 6 }]}>Nouveau montant du marché public :</Text>
+                    <Bullet label="Taux de la TVA" value={data.taux_tva || '—'} />
+                    <Bullet label="Montant HT"     value={formatMontant(montantNouveau)} />
+                    <Bullet label="Montant TTC"    value={formatMontant(montantNouveauTTC, '€ TTC')} />
+                  </View>
                 </>
               )}
 
-              {/* Modification du délai */}
+              {/* Modification du délai — bloc entier non coupable */}
               {data.nouvelle_date_fin && (
-                <View style={[styles.delaiBox, { marginTop: 8 }]}>
+                <View wrap={false} style={[styles.delaiBox, { marginTop: 8 }]}>
                   <Text style={styles.delaiLabel}>Nouvelle date de fin :</Text>
                   <Text style={styles.delaiValue}>{formatDate(data.nouvelle_date_fin)}</Text>
                 </View>

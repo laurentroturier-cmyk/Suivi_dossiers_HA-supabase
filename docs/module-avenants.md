@@ -355,7 +355,7 @@ Le PDF est structuré selon le formulaire réglementaire EXE10 :
 |---|---|
 | **En-tête fixe** | Logo AFPA + Marianne, titre ministère, bordure teal |
 | **Bandeau** | "Marchés publics" · "Avenant au marché public" · Code `EXE10` · "AVENANT N°X au marché [ref]" |
-| **A. Pouvoir adjudicateur** | AFPA (statique) |
+| **A. Pouvoir adjudicateur** | Afpa - Agence pour la formation professionnelle des adultes, 3 rue Franklin, 93100 MONTREUIL (statique) |
 | **B. Titulaire du marché** | titulaire_nom, SIRET, adresse, email |
 | **C. Objet du marché public** | Description, date notification, durée, montant initial (HT + TTC + TVA) |
 | **D. Objet de l'avenant** | Description HTML → texte, case incidence financière, montants calculés, nouvelle date si applicable |

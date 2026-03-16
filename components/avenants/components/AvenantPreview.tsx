@@ -185,7 +185,13 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
           <SectionHeader letter="A" title="Identification du pouvoir adjudicateur ou de l'entité adjudicatrice" />
           <InfoBox>
             <Instruction>(Reprendre le contenu de la mention figurant dans les documents constitutifs du marché public.)</Instruction>
-            <InfoRow label="Organisme" value="AFPA — Association nationale pour la formation professionnelle des adultes" />
+            <div className="flex gap-2 py-1 border-b border-[#a7d4d1]/40">
+              <span className="text-[10px] font-semibold text-[#1e3d3b] w-44 flex-shrink-0">Organisme</span>
+              <span className="text-[10px] text-gray-800 flex-1">
+                Afpa - Agence pour la formation professionnelle des adultes<br />
+                3 rue Franklin — 93100 MONTREUIL
+              </span>
+            </div>
           </InfoBox>
 
           {/* ─── B — Identification du titulaire ─── */}
