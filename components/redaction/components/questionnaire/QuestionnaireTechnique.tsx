@@ -4,6 +4,7 @@ import { Critere, SousCritere, Question, QuestionnaireState, Procedure } from '.
 import { supabase } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
 import { saveQuestionnaireTechnique, loadQuestionnaireTechnique, loadExistingQT } from '../../utils/questionnaireTechniqueStorage';
+import { exportQuestionnaireTechnique } from '../../utils/qtExcelExport';
 
 interface QuestionnaireTechniqueProps {
   initialNumeroProcedure?: string;
@@ -559,211 +560,15 @@ const QuestionnaireTechnique: React.FC<QuestionnaireTechniqueProps> = ({
   };
 
   // Export Excel du questionnaire
-  const exportQuestionnaireToExcel = () => {
+  const exportQuestionnaireToExcel = async () => {
     try {
-      // Créer le workbook
-      const wb = XLSX.utils.book_new();
-
-      // FEUILLE 1: Vue détaillée avec structure hiérarchique
-      const detailData: any[][] = [];
-      
-      // En-tête du fichier
-      detailData.push(['QUESTIONNAIRE TECHNIQUE - CONFIGURATION DÉTAILLÉE']);
-      detailData.push([]);
-      detailData.push(['Procédure:', state.procedure?.['Numéro de procédure (Afpa)'] || 'Non définie']);
-      detailData.push(['Nom:', state.procedure?.nom_procedure || '']);
-      detailData.push(['Lot:', state.numeroLot || 'N/A']);
-      detailData.push(['Date d\'export:', new Date().toLocaleString('fr-FR')]);
-      detailData.push([]);
-      
-      // Calculer les totaux
-      const totalCriteres = state.criteres.length;
-      const totalSousCriteres = state.criteres.reduce((sum, c) => sum + c.sousCriteres.length, 0);
-      const totalQuestions = state.criteres.reduce((sum, c) => 
-        sum + c.sousCriteres.reduce((s, sc) => s + sc.questions.length, 0), 0
-      );
-      const totalPointsMax = state.criteres.reduce((sum, c) => 
-        sum + c.sousCriteres.reduce((s, sc) => 
-          s + sc.questions.reduce((q, quest) => q + (quest.pointsMax || 0), 0), 0
-        ), 0
-      );
-      
-      detailData.push(['TOTAUX:', `${totalCriteres} critères`, `${totalSousCriteres} sous-critères`, `${totalQuestions} questions`, `${totalPointsMax} points max`]);
-      detailData.push([]);
-      detailData.push([]);
-
-      // Structure détaillée
-      state.criteres.forEach((critere, critereIndex) => {
-        // Ligne CRITERE (niveau 1)
-        detailData.push([
-          `CRITÈRE ${critereIndex + 1}`,
-          critere.nom,
-          `Pondération: ${critere.ponderation}%`,
-          `${critere.sousCriteres.length} sous-critère(s)`,
-          ''
-        ]);
-        detailData.push([]);
-
-        critere.sousCriteres.forEach((sousCritere, sousCritereIndex) => {
-          // Ligne SOUS-CRITERE (niveau 2)
-          detailData.push([
-            '',
-          `  ├─ SOUS-CRITÈRE ${critereIndex + 1}.${sousCritereIndex + 1}`,
-            sousCritere.nom,
-            `Pondération: ${sousCritere.ponderation}%`,
-            `${sousCritere.questions.length} question(s)`
-          ]);
-          
-          // En-tête des questions
-          if (sousCritere.questions.length > 0) {
-            detailData.push([
-              '',
-              '',
-              'N°',
-              'Question',
-              'Points Max',
-              'Type',
-              'Obligatoire',
-              'Description/Attente',
-              'Évaluateurs'
-            ]);
-
-            // Lignes QUESTIONS (niveau 3)
-            sousCritere.questions.forEach((question, questionIndex) => {
-              const numeroQuestion = `${critereIndex + 1}.${sousCritereIndex + 1}.${questionIndex + 1}`;
-              detailData.push([
-                '',
-                '',
-                numeroQuestion,
-                question.intitule || '-',
-                question.pointsMax || 0,
-                question.type || 'Texte libre',
-                question.obligatoire ? 'Oui' : 'Non',
-                question.description || '-',
-                question.evaluateurs || '-'
-              ]);
-            });
-          }
-          
-          detailData.push([]); // Ligne vide entre sous-critères
-        });
-
-        detailData.push([]); // Ligne vide entre critères
-        detailData.push([]); // Ligne vide supplémentaire
+      await exportQuestionnaireTechnique({
+        criteres:         state.criteres,
+        numeroProcedure:  state.procedure?.['Numéro de procédure (Afpa)'] || state.procedure?.NumProc,
+        nomProcedure:     state.procedure?.nom_procedure,
+        numeroLot:        state.numeroLot,
       });
-
-      // Créer la feuille avec les données
-      const wsDetail = XLSX.utils.aoa_to_sheet(detailData);
-      
-      // Définir les largeurs de colonnes
-      wsDetail['!cols'] = [
-        { wch: 18 },  // Niveau critère
-        { wch: 35 },  // Niveau sous-critère
-        { wch: 8 },   // N°
-        { wch: 70 },  // Question (plus large)
-        { wch: 12 },  // Points Max
-        { wch: 18 },  // Type
-        { wch: 12 },  // Obligatoire
-        { wch: 60 },  // Description/Attente
-        { wch: 40 }   // Évaluateurs
-      ];
-
-      XLSX.utils.book_append_sheet(wb, wsDetail, 'Structure détaillée');
-
-      // FEUILLE 2: Vue Synthèse par critère
-      const syntheseData: any[] = [];
-      state.criteres.forEach((critere, idx) => {
-        const nbSousCriteres = critere.sousCriteres.length;
-        const nbQuestions = critere.sousCriteres.reduce((sum, sc) => sum + sc.questions.length, 0);
-        const pointsMax = critere.sousCriteres.reduce((sum, sc) => 
-          sum + sc.questions.reduce((s, q) => s + (q.pointsMax || 0), 0), 0
-        );
-        
-        syntheseData.push({
-          'N°': idx + 1,
-          'Critère': critere.nom,
-          'Pondération (%)': critere.ponderation,
-          'Nb Sous-critères': nbSousCriteres,
-          'Nb Questions': nbQuestions,
-          'Points Max Total': pointsMax,
-          'Points moyens/question': nbQuestions > 0 ? (pointsMax / nbQuestions).toFixed(1) : 0
-        });
-      });
-
-      if (syntheseData.length > 0) {
-        const wsSynthese = XLSX.utils.json_to_sheet(syntheseData);
-        wsSynthese['!cols'] = [
-          { wch: 8 },   // N°
-          { wch: 40 },  // Critère
-          { wch: 18 },  // Pondération
-          { wch: 18 },  // Nb Sous-critères
-          { wch: 15 },  // Nb Questions
-          { wch: 18 },  // Points Max
-          { wch: 22 }   // Moyenne
-        ];
-        XLSX.utils.book_append_sheet(wb, wsSynthese, 'Synthèse critères');
-      }
-
-      // FEUILLE 3: Liste complète des questions (tableau plat pour analyse)
-      const questionsData: any[] = [];
-      let numQuestion = 1;
-      
-      state.criteres.forEach((critere, critereIdx) => {
-        critere.sousCriteres.forEach((sousCritere, scIdx) => {
-          sousCritere.questions.forEach((question, qIdx) => {
-            const numeroComplet = `${critereIdx + 1}.${scIdx + 1}.${qIdx + 1}`;
-            questionsData.push({
-              'N° Global': numQuestion++,
-              'N° Hiérarchique': numeroComplet,
-              'Critère N°': critereIdx + 1,
-              'Critère': critere.nom,
-              'Pond. Critère (%)': critere.ponderation,
-              'Sous-critère N°': `${critereIdx + 1}.${scIdx + 1}`,
-              'Sous-critère': sousCritere.nom,
-              'Pond. S-C (%)': sousCritere.ponderation,
-              'N° Question': qIdx + 1,
-              'Question': question.intitule || '-',
-              'Points Max': question.pointsMax || 0,
-              'Type Réponse': 'Texte libre',
-              'Obligatoire': 'Non',
-              'Description/Attente': question.description || '-',
-              'Évaluateurs': question.evaluateurs || '-'
-            });
-          });
-        });
-      });
-
-      if (questionsData.length > 0) {
-        const wsQuestions = XLSX.utils.json_to_sheet(questionsData);
-        wsQuestions['!cols'] = [
-          { wch: 12 },  // N° Global
-          { wch: 16 },  // N° Hiérarchique (1.1.1)
-          { wch: 12 },  // Critère N°
-          { wch: 30 },  // Critère
-          { wch: 16 },  // Pond. Critère
-          { wch: 16 },  // Sous-critère N°
-          { wch: 30 },  // Sous-critère
-          { wch: 14 },  // Pond. S-C
-          { wch: 12 },  // N° Question
-          { wch: 70 },  // Question (texte complet)
-          { wch: 12 },  // Points Max
-          { wch: 18 },  // Type
-          { wch: 12 },  // Obligatoire
-          { wch: 60 },  // Description/Attente
-          { wch: 40 }   // Évaluateurs
-        ];
-        XLSX.utils.book_append_sheet(wb, wsQuestions, 'Toutes les questions');
-      }
-
-      // Générer le nom du fichier
-      const procedureRef = state.procedure?.['Numéro de procédure (Afpa)'] || 'questionnaire';
-      const lotSuffix = state.numeroLot ? `_lot${state.numeroLot}` : '';
-      const fileName = `QT_${procedureRef}${lotSuffix}_${new Date().toISOString().split('T')[0]}.xlsx`;
-
-      // Télécharger
-      XLSX.writeFile(wb, fileName);
-      
-      console.log('✅ Export Excel réussi:', fileName);
+      console.log('✅ Export Excel réussi');
     } catch (error) {
       console.error('❌ Erreur export Excel:', error);
       setError('Erreur lors de l\'export Excel');
