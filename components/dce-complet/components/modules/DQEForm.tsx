@@ -3,6 +3,11 @@ import { Plus, Trash2, Download, Edit2, ArrowLeft, Save, Upload, ChevronLeft, Ch
 import * as XLSX from 'xlsx';
 import { supabase } from '../../../../lib/supabase';
 import JSZip from 'jszip';
+import {
+  exportDQESingleLot,
+  buildDQELotBuffer,
+  exportDQEConsolidated,
+} from '../../utils/dqeExcelExport';
 
 interface DQEColumn {
   id: string;
@@ -357,106 +362,36 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
     }
   };
 
-  const exportToExcel = () => {
-    // Vérifier s'il y a des données à exporter
-    const hasData = rows.some(row => 
+  const exportToExcel = async () => {
+    const hasData = rows.some(row =>
       columns.some(col => !col.isCalculated && row[col.id] && row[col.id].toString().trim() !== '')
     );
-    
     if (!hasData) {
       setSaveStatus('⚠️ Aucune donnée à exporter. Veuillez saisir des données ou charger depuis le BPU.');
       setTimeout(() => setSaveStatus(null), 4000);
       return;
     }
-    
-    const wb = XLSX.utils.book_new();
-
-    // ========== FEUILLE 1 : Informations de la procédure ==========
-    const infoData: any[][] = [
-      ['DÉCOMPTE QUANTITATIF ESTIMATIF'],
-      [''],
-      ['Informations de la procédure'],
-      [''],
-      ['Numéro de procédure', procedureInfo?.numeroProcedure || 'N/A'],
-      ['Titre du marché', procedureInfo?.titreMarche || 'N/A'],
-      ['Acheteur', procedureInfo?.acheteur || 'N/A'],
-      [''],
-      ['Informations du lot'],
-      [''],
-      ['Numéro de lot', procedureInfo?.numeroLot || 'N/A'],
-      ['Libellé du lot', procedureInfo?.libelleLot || 'N/A'],
-      [''],
-      ['Date d\'export', new Date().toLocaleDateString('fr-FR', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })],
-      [''],
-      ['Statistiques'],
-      [''],
-      ['Nombre de lignes', rows.length],
-      ['Nombre de colonnes', columns.length],
-      [''],
-      ['Totaux calculés'],
-      [''],
-      ['Total HT', `${totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`],
-      ['Total TVA', `${totalTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`],
-      ['Total TTC', `${totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`],
-      [''],
-      [''],
-      ['Attention :'],
-      [''],
-      ['* Si les lignes du Décompte ne sont pas toutes complétées, l\'offre ne sera pas retenue.'],
-      [''],
-      ['* Il est impératif de respecter à minima les caractéristiques techniques indiquées dans la désignation de l\'article, sans quoi l\'offre ne sera pas retenue.'],
-    ];
-
-    const wsInfo = XLSX.utils.aoa_to_sheet(infoData);
-    
-    // Mise en forme de la feuille d'informations
-    wsInfo['!cols'] = [
-      { wch: 30 }, // Colonne A (libellés)
-      { wch: 60 }, // Colonne B (valeurs)
-    ];
-
-    // ========== FEUILLE 2 : Données DQE ==========
-    const wsData: any[][] = [];
-    
-    // En-tête avec les labels personnalisés
-    wsData.push(columns.map(col => headerLabels[col.id] || col.label));
-    
-    // Lignes de données - filtrer les lignes vides
-    const nonEmptyRows = rows.filter(row => {
-      // Ligne considérée non vide si au moins une colonne (hors id et calculées) a une valeur
-      return columns.some(col => !col.isCalculated && row[col.id] && row[col.id].toString().trim() !== '');
-    });
-    
-    // Si aucune ligne non vide, inclure toutes les lignes
-    const rowsToExport = nonEmptyRows.length > 0 ? nonEmptyRows : rows;
-    
-    rowsToExport.forEach(row => {
-      wsData.push(columns.map(col => row[col.id] || ''));
-    });
-    
-    console.log('📊 Export Excel - Lignes exportées:', rowsToExport.length, '/', rows.length);
-
-    const wsDQE = XLSX.utils.aoa_to_sheet(wsData);
-    
-    // Définir les largeurs des colonnes pour la feuille DQE
-    wsDQE['!cols'] = columns.map(col => ({
-      wch: Math.max(15, parseInt(col.width || '150') / 8) // Conversion approximative de px en caractères
-    }));
-
-    // Ajouter les feuilles au classeur
-    XLSX.utils.book_append_sheet(wb, wsInfo, 'Informations');
-    XLSX.utils.book_append_sheet(wb, wsDQE, 'DQE');
-    
-    const fileName = `${procedureInfo?.numeroProcedure || 'export'}_DQE_LOT${procedureInfo?.numeroLot || '1'}_${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-    
-    console.log('✅ Export Excel terminé:', fileName);
+    try {
+      setSaveStatus('⏳ Génération du fichier Excel...');
+      await exportDQESingleLot(
+        columns,
+        headerLabels,
+        rows,
+        {
+          numeroProcedure: procedureInfo?.numeroProcedure,
+          titreMarche:     procedureInfo?.titreMarche,
+          acheteur:        procedureInfo?.acheteur,
+          numeroLot:       procedureInfo?.numeroLot,
+          libelleLot:      procedureInfo?.libelleLot,
+        },
+        { totalHT, totalTVA, totalTTC },
+      );
+      setSaveStatus('✅ Export Excel réussi !');
+    } catch (err: any) {
+      setSaveStatus(`❌ Erreur: ${err.message || 'Erreur inconnue'}`);
+    } finally {
+      setTimeout(() => setSaveStatus(null), 3000);
+    }
   };
 
   const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -847,105 +782,32 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
       for (const lotNum of lotsToExport) {
         const dqeRecord = dqesData?.find(b => b.numero_lot === lotNum);
         const lotData = dqeRecord?.data as DQETableData | undefined;
-        const wb = XLSX.utils.book_new();
-        
         console.log(`📄 Création du fichier pour lot ${lotNum}:`, dqeRecord ? 'Données trouvées' : 'Tableau vide');
 
-        // Calculer les totaux pour ce lot
-        const lotTotals = lotData ? {
-          totalHT: 0,
-          totalTVA: 0,
-          totalTTC: 0
-        } : { totalHT: 0, totalTVA: 0, totalTTC: 0 };
+        const lotCols   = lotData?.columns?.length ? lotData.columns : DEFAULT_COLUMNS;
+        const lotLabels = lotData?.headerLabels && Object.keys(lotData.headerLabels).length
+          ? lotData.headerLabels
+          : DEFAULT_COLUMNS.reduce<Record<string, string>>((a, c) => ({ ...a, [c.id]: c.label }), {});
+        const lotRows   = lotData?.rows?.length
+          ? lotData.rows
+          : Array.from({ length: 10 }, (_, i) => ({
+              id: `empty-${i}`,
+              ...DEFAULT_COLUMNS.reduce<Record<string, string>>((a, c) => ({ ...a, [c.id]: '' }), {}),
+            }));
 
-        if (lotData && lotData.rows) {
-          lotData.rows.forEach((row: any) => {
-            const quantite = parseNumericValue(row.quantite);
-            const prixUniteVenteHT = parseNumericValue(row.prixUniteVenteHT);
-            const ecoContribution = parseNumericValue(row.ecoContribution);
-            const tauxTVA = parseNumericValue(row.tauxTVA) || 20;
-
-            const montantHT = quantite * (prixUniteVenteHT + ecoContribution);
-            const montantTVA = montantHT * (tauxTVA / 100);
-            const montantTTC = montantHT + montantTVA;
-
-            lotTotals.totalHT += montantHT;
-            lotTotals.totalTVA += montantTVA;
-            lotTotals.totalTTC += montantTTC;
-          });
-        }
-
-        // Page d'informations
-        const infoData: any[][] = [
-          ['DÉCOMPTE QUANTITATIF ESTIMATIF'],
-          [''],
-          ['Procédure', procedureInfo.numeroProcedure],
-          ['Marché', procedureInfo.titreMarche || 'N/A'],
-          ['Acheteur', procedureInfo.acheteur || 'N/A'],
-          [''],
-          ['Lot N°', lotNum],
-          ['Nom du lot', getLotName(lotNum)],
-          [''],
-          ['Date d\'export', new Date().toLocaleDateString('fr-FR')],
-          [''],
-          ['Totaux calculés'],
-          ['Total HT', `${lotTotals.totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`],
-          ['Total TVA', `${lotTotals.totalTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`],
-          ['Total TTC', `${lotTotals.totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`],
-        ];
-
-        const wsInfo = XLSX.utils.aoa_to_sheet(infoData);
-        wsInfo['!cols'] = [{ wch: 30 }, { wch: 60 }];
-
-        // Données DQE
-        let wsData: any[][] = [];
-        
-        if (lotData && lotData.columns && lotData.rows) {
-          // Lot avec données DQE existantes
-          console.log(`📊 Lot ${lotNum} - Export de ${lotData.rows.length} lignes avec ${lotData.columns.length} colonnes`);
-          
-          wsData.push(lotData.columns.map(col => lotData.headerLabels?.[col.id] || col.label));
-          
-          // Filtrer les lignes vides et exporter
-          const nonEmptyRows = lotData.rows.filter((row: any) => {
-            return lotData.columns.some((col: any) => !col.isCalculated && row[col.id] && row[col.id].toString().trim() !== '');
-          });
-          
-          const rowsToExport = nonEmptyRows.length > 0 ? nonEmptyRows : lotData.rows;
-          
-          rowsToExport.forEach((row: any) => {
-            wsData.push(lotData.columns.map((col: any) => row[col.id] || ''));
-          });
-          
-          console.log(`✅ Lot ${lotNum} - ${rowsToExport.length} lignes exportées`);
-        } else {
-          // Lot sans données DQE : utiliser la structure par défaut
-          console.log(`⚠️ Lot ${lotNum} - Aucune donnée, utilisation du tableau par défaut`);
-          wsData.push(DEFAULT_COLUMNS.map(col => col.label));
-          // Ajouter 10 lignes vides
-          for (let i = 0; i < 10; i++) {
-            wsData.push(DEFAULT_COLUMNS.map(() => ''));
-          }
-        }
-
-        const wsDQE = XLSX.utils.aoa_to_sheet(wsData);
-        
-        // Définir les largeurs
-        if (lotData?.columns) {
-          wsDQE['!cols'] = lotData.columns.map(col => ({
-            wch: Math.max(15, parseInt(col.width || '150') / 8)
-          }));
-        } else {
-          wsDQE['!cols'] = DEFAULT_COLUMNS.map(col => ({
-            wch: Math.max(15, parseInt(col.width || '150') / 8)
-          }));
-        }
-
-        XLSX.utils.book_append_sheet(wb, wsInfo, 'Informations');
-        XLSX.utils.book_append_sheet(wb, wsDQE, 'DQE');
-
-        // Convertir en buffer et ajouter au ZIP
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const wbout = await buildDQELotBuffer(
+          lotCols,
+          lotLabels,
+          lotRows,
+          {
+            numeroProcedure: procedureInfo.numeroProcedure,
+            titreMarche:     procedureInfo.titreMarche,
+            acheteur:        procedureInfo.acheteur,
+          },
+          lotNum,
+          getLotName(lotNum),
+          DEFAULT_COLUMNS,
+        );
         
         // Nom de fichier sécurisé
         const safeLotName = getLotName(lotNum).replace(/[<>:"/\\|?*]/g, '_').substring(0, 100);
@@ -993,71 +855,30 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
     setSaveStatus(`⏳ Création du fichier consolidé...`);
 
     try {
-      const wb = XLSX.utils.book_new();
-
-      console.log('📋 Export Consolidé - Lots Configuration depuis props:', lotsConfig.length, 'lots');
+      console.log('📋 Export Consolidé DQE - Lots Configuration depuis props:', lotsConfig.length, 'lots');
 
       // Fonction pour obtenir le nom d'un lot - VERSION ROBUSTE
       const getLotName = (numeroLot: number): string => {
-        // Essayer plusieurs méthodes de correspondance
         let lot = lotsConfig.find((l: any) => {
           if (typeof l.numero === 'number' && l.numero === numeroLot) return true;
           if (typeof l.numero === 'string' && parseInt(l.numero) === numeroLot) return true;
           if (typeof l.numero === 'string' && l.numero === numeroLot.toString()) return true;
           return false;
         });
-        
         return lot ? (lot.intitule || `Lot ${numeroLot}`) : `Lot ${numeroLot}`;
       };
 
-      // Fonction pour obtenir le montant estimé d'un lot
-      const getLotAmount = (numeroLot: number): string => {
-        let lot = lotsConfig.find((l: any) => {
+      // Fonction pour obtenir le montant estimé numérique d'un lot
+      const getLotAmountNumeric = (numeroLot: number): number => {
+        const lot = lotsConfig.find((l: any) => {
           if (typeof l.numero === 'number' && l.numero === numeroLot) return true;
           if (typeof l.numero === 'string' && parseInt(l.numero) === numeroLot) return true;
           if (typeof l.numero === 'string' && l.numero === numeroLot.toString()) return true;
           return false;
         });
-        
-        return lot && lot.montant ? lot.montant : '';
-      };
-
-      // Fonction pour obtenir le montant estimé HT numérique
-      const getLotAmountNumeric = (numeroLot: number): number => {
-        const amountStr = getLotAmount(numeroLot);
-        if (!amountStr) return 0;
-        
-        // Extraire le nombre (enlever espaces, € HT, etc.)
-        const cleaned = amountStr.replace(/[^\d,.-]/g, '').replace(/,/g, '.');
+        if (!lot?.montant) return 0;
+        const cleaned = String(lot.montant).replace(/[^\d,.-]/g, '').replace(/,/g, '.');
         return parseFloat(cleaned) || 0;
-      };
-
-      // Fonction pour calculer les totaux d'un lot DQE
-      const calculateLotTotals = (lotData: DQETableData | undefined): { totalHT: number; totalTVA: number; totalTTC: number } => {
-        if (!lotData || !lotData.rows || lotData.rows.length === 0) {
-          return { totalHT: 0, totalTVA: 0, totalTTC: 0 };
-        }
-
-        let sumHT = 0;
-        let sumTVA = 0;
-        let sumTTC = 0;
-
-        lotData.rows.forEach((row: any) => {
-          const quantite = parseNumericValue(row.quantite);
-          const prixUniteVenteHT = parseNumericValue(row.prixUniteVenteHT);
-          const ecoContribution = parseNumericValue(row.ecoContribution);
-          const tauxTVA = parseNumericValue(row.tauxTVA) || 20;
-
-          const montantHT = quantite * (prixUniteVenteHT + ecoContribution);
-          const montantTVA = montantHT * (tauxTVA / 100);
-          const montantTTC = montantHT + montantTVA;
-
-          sumHT += montantHT;
-          sumTVA += montantTVA;
-          sumTTC += montantTTC;
-        });
-
-        return { totalHT: sumHT, totalTVA: sumTVA, totalTTC: sumTTC };
       };
 
       // Récupérer les données DQE de chaque lot depuis Supabase
@@ -1074,126 +895,29 @@ export function DQEForm({ data, onSave, isSaving = false, procedureInfo, totalLo
 
       console.log(`📊 ${dqesData?.length || 0} DQE trouvés sur ${lotsToExport.length} lots demandés`);
 
-      // ===== PAGE DE GARDE =====
-      const coverData: any[][] = [
-        ['DÉCOMPTE QUANTITATIF ESTIMATIF'],
-        [''],
-        ['INFORMATIONS DE LA PROCÉDURE'],
-        [''],
-        ['Numéro de procédure', procedureInfo.numeroProcedure],
-        ['Titre du marché', procedureInfo.titreMarche || 'N/A'],
-        ['Acheteur', procedureInfo.acheteur || 'N/A'],
-        [''],
-        ['Date d\'export', new Date().toLocaleDateString('fr-FR', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })],
-        [''],
-        [''],
-        ['LOTS INCLUS DANS CE DOCUMENT'],
-        [''],
-        ['N° Lot', 'Nom du lot', 'Montant estimé', 'Nb lignes DQE', 'Total HT', 'Total TVA', 'Total TTC', 'Écart HT'],
-      ];
-
-      // Ajouter la liste de TOUS les lots demandés (même sans DQE)
-      lotsToExport.forEach(lotNum => {
-        const dqeForLot = dqesData?.find(b => b.numero_lot === lotNum);
-        const lotData = dqeForLot?.data as DQETableData | undefined;
-        const totals = calculateLotTotals(lotData);
-        const montantEstime = getLotAmountNumeric(lotNum);
-        const ecartHT = totals.totalHT - montantEstime;
-        
-        coverData.push([
-          `Lot ${lotNum}`,
-          getLotName(lotNum),
-          montantEstime > 0 ? `${montantEstime.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '',
-          lotData?.rows?.length || 0,
-          totals.totalHT > 0 ? `${totals.totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '0,00 €',
-          totals.totalTVA > 0 ? `${totals.totalTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '0,00 €',
-          totals.totalTTC > 0 ? `${totals.totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '0,00 €',
-          montantEstime > 0 ? `${ecartHT.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : ''
-        ]);
+      // Construire la liste des lots avec leurs données
+      const lotExportData = lotsToExport.map(lotNum => {
+        const amtNum = getLotAmountNumeric(lotNum);
+        return {
+          lotNum,
+          lotName:          getLotName(lotNum),
+          lotAmount:        amtNum > 0 ? `${amtNum.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '',
+          lotAmountNumeric: amtNum,
+          data:             dqesData?.find(b => b.numero_lot === lotNum)?.data as DQETableData | undefined,
+        };
       });
 
-      coverData.push(['']);
-      coverData.push(['']);
-      coverData.push(['NAVIGATION']);
-      coverData.push(['']);
-      coverData.push(['Chaque lot dispose de son propre onglet dans ce classeur.']);
-      coverData.push(['Utilisez les onglets en bas pour naviguer entre les lots.']);
-      coverData.push(['']);
-      coverData.push(['Note : Les lots sans données DQE affichent un tableau vide à compléter.']);
-
-      const wsCover = XLSX.utils.aoa_to_sheet(coverData);
-      wsCover['!cols'] = [
-        { wch: 15 },  // N° Lot
-        { wch: 50 },  // Nom du lot
-        { wch: 18 },  // Montant estimé
-        { wch: 15 },  // Nb lignes DQE
-        { wch: 18 },  // Total HT
-        { wch: 18 },  // Total TVA
-        { wch: 18 },  // Total TTC
-        { wch: 18 }   // Écart HT
-      ];
-      XLSX.utils.book_append_sheet(wb, wsCover, 'Page de garde');
-
-      // ===== ONGLETS PAR LOT =====
-      console.log(`📦 Export Consolidé - ${dqesData?.length || 0} DQE trouvés dans Supabase`);
-      
-      // Créer un onglet pour CHAQUE lot demandé
-      for (const lotNum of lotsToExport) {
-        const dqeRecord = dqesData?.find(b => b.numero_lot === lotNum);
-        const lotData = dqeRecord?.data as DQETableData | undefined;
-        
-        console.log(`📄 Lot ${lotNum}:`, dqeRecord ? `${lotData?.rows?.length || 0} lignes` : 'Tableau vide');
-        
-        let wsData: any[][] = [];
-        
-        if (lotData && lotData.columns && lotData.rows) {
-          // Lot avec données DQE existantes
-          wsData.push(lotData.columns.map(col => lotData.headerLabels?.[col.id] || col.label));
-          
-          // Filtrer les lignes vides et exporter
-          const nonEmptyRows = lotData.rows.filter((row: any) => {
-            return lotData.columns.some((col: any) => !col.isCalculated && row[col.id] && row[col.id].toString().trim() !== '');
-          });
-          
-          const rowsToExport = nonEmptyRows.length > 0 ? nonEmptyRows : lotData.rows;
-          
-          rowsToExport.forEach((row: any) => {
-            wsData.push(lotData.columns.map((col: any) => row[col.id] || ''));
-          });
-        } else {
-          // Lot sans données DQE : utiliser la structure par défaut
-          wsData.push(DEFAULT_COLUMNS.map(col => col.label));
-          // Ajouter 10 lignes vides
-          for (let i = 0; i < 10; i++) {
-            wsData.push(DEFAULT_COLUMNS.map(() => ''));
-          }
-        }
-
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        
-        // Définir les largeurs
-        if (lotData?.columns) {
-          ws['!cols'] = lotData.columns.map(col => ({
-            wch: Math.max(15, parseInt(col.width || '150') / 8)
-          }));
-        } else {
-          ws['!cols'] = DEFAULT_COLUMNS.map(col => ({
-            wch: Math.max(15, parseInt(col.width || '150') / 8)
-          }));
-        }
-
-        // Nom d'onglet limité à 31 caractères
-        const sheetName = `Lot ${lotNum}`.substring(0, 31);
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      }
-
-      // Télécharger le fichier
       const fileName = `${procedureInfo.numeroProcedure}_DQE_Consolidé_${lotsToExport.length}_lots.xlsx`;
-      XLSX.writeFile(wb, fileName);
+      await exportDQEConsolidated(
+        lotExportData,
+        {
+          numeroProcedure: procedureInfo.numeroProcedure,
+          titreMarche:     procedureInfo.titreMarche,
+          acheteur:        procedureInfo.acheteur,
+        },
+        DEFAULT_COLUMNS,
+        fileName,
+      );
 
       setSaveStatus(`✅ Fichier consolidé créé avec ${lotsToExport.length} lot(s) !`);
       setShowExportModal(false);

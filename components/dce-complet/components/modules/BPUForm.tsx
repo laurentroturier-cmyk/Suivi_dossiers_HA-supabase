@@ -3,6 +3,11 @@ import { Plus, Trash2, Download, Edit2, ArrowLeft, Save, Upload, ChevronLeft, Ch
 import * as XLSX from 'xlsx';
 import { supabase } from '../../../../lib/supabase';
 import JSZip from 'jszip';
+import {
+  exportBPUSingleLot,
+  buildBPULotBuffer,
+  exportBPUConsolidated,
+} from '../../utils/bpuExcelExport';
 
 interface BPUColumn {
   id: string;
@@ -272,77 +277,22 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
     }
   };
 
-  const exportToExcel = () => {
-    const wb = XLSX.utils.book_new();
-
-    // ========== FEUILLE 1 : Informations de la procédure ==========
-    const infoData: any[][] = [
-      ['BORDEREAU DE PRIX UNITAIRES'],
-      [''],
-      ['Informations de la procédure'],
-      [''],
-      ['Numéro de procédure', procedureInfo?.numeroProcedure || 'N/A'],
-      ['Titre du marché', procedureInfo?.titreMarche || 'N/A'],
-      ['Acheteur', procedureInfo?.acheteur || 'N/A'],
-      [''],
-      ['Informations du lot'],
-      [''],
-      ['Numéro de lot', procedureInfo?.numeroLot || 'N/A'],
-      ['Libellé du lot', procedureInfo?.libelleLot || 'N/A'],
-      [''],
-      ['Date d\'export', new Date().toLocaleDateString('fr-FR', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })],
-      [''],
-      ['Statistiques'],
-      [''],
-      ['Nombre de lignes', rows.length],
-      ['Nombre de colonnes', columns.length],
-      [''],
-      [''],
-      ['Attention :'],
-      [''],
-      ['* Si les lignes du Bordereau de prix ne sont pas toutes complétées, l\'offre ne sera pas retenue.'],
-      [''],
-      ['* Il est impératif de respecter à minima les caractéristiques techniques indiquées dans la désignation de l\'article, sans quoi l\'offre ne sera pas retenue.'],
-    ];
-
-    const wsInfo = XLSX.utils.aoa_to_sheet(infoData);
-    
-    // Mise en forme de la feuille d'informations
-    wsInfo['!cols'] = [
-      { wch: 30 }, // Colonne A (libellés)
-      { wch: 60 }, // Colonne B (valeurs)
-    ];
-
-    // ========== FEUILLE 2 : Données BPU ==========
-    const wsData: any[][] = [];
-    
-    // En-tête avec les labels personnalisés
-    wsData.push(columns.map(col => headerLabels[col.id] || col.label));
-    
-    // Lignes de données
-    rows.forEach(row => {
-      wsData.push(columns.map(col => row[col.id] || ''));
-    });
-
-    const wsBPU = XLSX.utils.aoa_to_sheet(wsData);
-    
-    // Définir les largeurs des colonnes pour la feuille BPU
-    wsBPU['!cols'] = columns.map(col => ({
-      wch: Math.max(15, parseInt(col.width || '150') / 8) // Conversion approximative de px en caractères
-    }));
-
-    // Ajouter les feuilles au classeur
-    XLSX.utils.book_append_sheet(wb, wsInfo, 'Informations');
-    XLSX.utils.book_append_sheet(wb, wsBPU, 'BPU');
-    
-    const fileName = `BPU_${procedureInfo?.numeroProcedure || 'export'}_${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+  const exportToExcel = async () => {
+    try {
+      setSaveStatus('⏳ Génération du fichier Excel...');
+      await exportBPUSingleLot(columns, headerLabels, rows, {
+        numeroProcedure: procedureInfo?.numeroProcedure,
+        titreMarche:     procedureInfo?.titreMarche,
+        acheteur:        procedureInfo?.acheteur,
+        numeroLot:       procedureInfo?.numeroLot,
+        libelleLot:      procedureInfo?.libelleLot,
+      });
+      setSaveStatus('✅ Export Excel réussi !');
+    } catch (err: any) {
+      setSaveStatus(`❌ Erreur: ${err.message || 'Erreur inconnue'}`);
+    } finally {
+      setTimeout(() => setSaveStatus(null), 3000);
+    }
   };
 
   const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -654,61 +604,30 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
       for (const lotNum of lotsToExport) {
         const bpuRecord = bpusData?.find(b => b.numero_lot === lotNum);
         const lotData = bpuRecord?.data as BPUTableData | undefined;
-        const wb = XLSX.utils.book_new();
+        const lotCols   = lotData?.columns?.length ? lotData.columns : DEFAULT_COLUMNS;
+        const lotLabels = lotData?.headerLabels && Object.keys(lotData.headerLabels).length
+          ? lotData.headerLabels
+          : DEFAULT_COLUMNS.reduce<Record<string, string>>((a, c) => ({ ...a, [c.id]: c.label }), {});
+        const lotRows   = lotData?.rows?.length
+          ? lotData.rows
+          : Array.from({ length: 10 }, (_, i) => ({
+              id: `empty-${i}`,
+              ...DEFAULT_COLUMNS.reduce<Record<string, string>>((a, c) => ({ ...a, [c.id]: '' }), {}),
+            }));
 
-        // Page d'informations
-        const infoData: any[][] = [
-          ['BORDEREAU DE PRIX UNITAIRES'],
-          [''],
-          ['Procédure', procedureInfo.numeroProcedure],
-          ['Marché', procedureInfo.titreMarche || 'N/A'],
-          ['Acheteur', procedureInfo.acheteur || 'N/A'],
-          [''],
-          ['Lot N°', lotNum],
-          ['Nom du lot', getLotName(lotNum)],
-          [''],
-          ['Date d\'export', new Date().toLocaleDateString('fr-FR')],
-        ];
-
-        const wsInfo = XLSX.utils.aoa_to_sheet(infoData);
-        wsInfo['!cols'] = [{ wch: 30 }, { wch: 60 }];
-
-        // Données BPU
-        let wsData: any[][] = [];
-        
-        if (lotData && lotData.columns && lotData.rows) {
-          // Lot avec données BPU existantes
-          wsData.push(lotData.columns.map(col => lotData.headerLabels[col.id] || col.label));
-          lotData.rows.forEach(row => {
-            wsData.push(lotData.columns.map(col => row[col.id] || ''));
-          });
-        } else {
-          // Lot sans données BPU : utiliser la structure par défaut
-          wsData.push(DEFAULT_COLUMNS.map(col => col.label));
-          // Ajouter 10 lignes vides
-          for (let i = 0; i < 10; i++) {
-            wsData.push(DEFAULT_COLUMNS.map(() => ''));
-          }
-        }
-
-        const wsBPU = XLSX.utils.aoa_to_sheet(wsData);
-        
-        // Définir les largeurs
-        if (lotData?.columns) {
-          wsBPU['!cols'] = lotData.columns.map(col => ({
-            wch: Math.max(15, parseInt(col.width || '150') / 8)
-          }));
-        } else {
-          wsBPU['!cols'] = DEFAULT_COLUMNS.map(col => ({
-            wch: Math.max(15, parseInt(col.width || '150') / 8)
-          }));
-        }
-
-        XLSX.utils.book_append_sheet(wb, wsInfo, 'Informations');
-        XLSX.utils.book_append_sheet(wb, wsBPU, 'BPU');
-
-        // Convertir en buffer et ajouter au ZIP
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const wbout = await buildBPULotBuffer(
+          lotCols,
+          lotLabels,
+          lotRows,
+          {
+            numeroProcedure: procedureInfo.numeroProcedure,
+            titreMarche:     procedureInfo.titreMarche,
+            acheteur:        procedureInfo.acheteur,
+          },
+          lotNum,
+          getLotName(lotNum),
+          DEFAULT_COLUMNS,
+        );
         
         // Nom de fichier sécurisé
         const safeLotName = getLotName(lotNum).replace(/[<>:"/\\|?*]/g, '_').substring(0, 100);
@@ -756,20 +675,16 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
     setSaveStatus(`⏳ Création du fichier consolidé...`);
 
     try {
-      const wb = XLSX.utils.book_new();
-
       console.log('📋 Export Consolidé - Lots Configuration depuis props:', lotsConfig.length, 'lots');
 
       // Fonction pour obtenir le nom d'un lot - VERSION ROBUSTE
       const getLotName = (numeroLot: number): string => {
-        // Essayer plusieurs méthodes de correspondance
         let lot = lotsConfig.find((l: any) => {
           if (typeof l.numero === 'number' && l.numero === numeroLot) return true;
           if (typeof l.numero === 'string' && parseInt(l.numero) === numeroLot) return true;
           if (typeof l.numero === 'string' && l.numero === numeroLot.toString()) return true;
           return false;
         });
-        
         return lot ? (lot.intitule || `Lot ${numeroLot}`) : `Lot ${numeroLot}`;
       };
 
@@ -781,7 +696,6 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
           if (typeof l.numero === 'string' && l.numero === numeroLot.toString()) return true;
           return false;
         });
-        
         return lot && lot.montant ? `${lot.montant} € HT` : '';
       };
 
@@ -799,98 +713,25 @@ export function BPUForm({ data, onSave, isSaving = false, procedureInfo, totalLo
 
       console.log(`📊 ${bpusData?.length || 0} BPU trouvés sur ${lotsToExport.length} lots demandés`);
 
-      // ===== PAGE DE GARDE =====
-      const coverData: any[][] = [
-        ['BORDEREAU DE PRIX UNITAIRES'],
-        [''],
-        ['INFORMATIONS DE LA PROCÉDURE'],
-        [''],
-        ['Numéro de procédure', procedureInfo.numeroProcedure],
-        ['Titre du marché', procedureInfo.titreMarche || 'N/A'],
-        ['Acheteur', procedureInfo.acheteur || 'N/A'],
-        [''],
-        ['Date d\'export', new Date().toLocaleDateString('fr-FR', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })],
-        [''],
-        [''],
-        ['LOTS INCLUS DANS CE DOCUMENT'],
-        [''],
-        ['N° Lot', 'Nom du lot', 'Montant estimé', 'Nb lignes BPU'],
-      ];
+      // Construire la liste des lots avec leurs données
+      const lotExportData = lotsToExport.map(lotNum => ({
+        lotNum,
+        lotName:   getLotName(lotNum),
+        lotAmount: getLotAmount(lotNum),
+        data:      bpusData?.find(b => b.numero_lot === lotNum)?.data as BPUTableData | undefined,
+      }));
 
-      // Ajouter la liste de TOUS les lots demandés (même sans BPU)
-      lotsToExport.forEach(lotNum => {
-        const bpuForLot = bpusData?.find(b => b.numero_lot === lotNum);
-        const lotData = bpuForLot?.data as BPUTableData | undefined;
-        
-        coverData.push([
-          `Lot ${lotNum}`,
-          getLotName(lotNum),
-          getLotAmount(lotNum),
-          lotData?.rows?.length || 0
-        ]);
-      });
-
-      coverData.push(['']);
-      coverData.push(['']);
-      coverData.push(['NAVIGATION']);
-      coverData.push(['']);
-      coverData.push(['Chaque lot dispose de son propre onglet dans ce classeur.']);
-      coverData.push(['Utilisez les onglets en bas pour naviguer entre les lots.']);
-      coverData.push(['']);
-      coverData.push(['Note : Les lots sans données BPU affichent un tableau vide à compléter.']);
-
-      const wsCover = XLSX.utils.aoa_to_sheet(coverData);
-      wsCover['!cols'] = [{ wch: 15 }, { wch: 50 }, { wch: 20 }, { wch: 15 }];
-      XLSX.utils.book_append_sheet(wb, wsCover, 'Page de garde');
-
-      // ===== ONGLETS PAR LOT =====
-      // Créer un onglet pour CHAQUE lot demandé
-      for (const lotNum of lotsToExport) {
-        const bpuRecord = bpusData?.find(b => b.numero_lot === lotNum);
-        const lotData = bpuRecord?.data as BPUTableData | undefined;
-        
-        let wsData: any[][] = [];
-        
-        if (lotData && lotData.columns && lotData.rows) {
-          // Lot avec données BPU existantes
-          wsData.push(lotData.columns.map(col => lotData.headerLabels[col.id] || col.label));
-          lotData.rows.forEach(row => {
-            wsData.push(lotData.columns.map(col => row[col.id] || ''));
-          });
-        } else {
-          // Lot sans données BPU : utiliser la structure par défaut
-          wsData.push(DEFAULT_COLUMNS.map(col => col.label));
-          // Ajouter 10 lignes vides
-          for (let i = 0; i < 10; i++) {
-            wsData.push(DEFAULT_COLUMNS.map(() => ''));
-          }
-        }
-
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        
-        // Définir les largeurs
-        if (lotData?.columns) {
-          ws['!cols'] = lotData.columns.map(col => ({
-            wch: Math.max(15, parseInt(col.width || '150') / 8)
-          }));
-        } else {
-          ws['!cols'] = DEFAULT_COLUMNS.map(col => ({
-            wch: Math.max(15, parseInt(col.width || '150') / 8)
-          }));
-        }
-
-        // Nom d'onglet limité à 31 caractères
-        const sheetName = `Lot ${lotNum}`.substring(0, 31);
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      }
-
-      // Télécharger le fichier
       const fileName = `${procedureInfo.numeroProcedure}_BPU_Consolidé_${lotsToExport.length}_lots.xlsx`;
-      XLSX.writeFile(wb, fileName);
+      await exportBPUConsolidated(
+        lotExportData,
+        {
+          numeroProcedure: procedureInfo.numeroProcedure,
+          titreMarche:     procedureInfo.titreMarche,
+          acheteur:        procedureInfo.acheteur,
+        },
+        DEFAULT_COLUMNS,
+        fileName,
+      );
 
       setSaveStatus(`✅ Fichier consolidé créé avec ${lotsToExport.length} lot(s) !`);
       setShowExportModal(false);
