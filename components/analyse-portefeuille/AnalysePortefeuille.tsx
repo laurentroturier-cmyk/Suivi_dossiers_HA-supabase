@@ -43,45 +43,83 @@ interface DonneesElement {
 
 const CIT_ITEMS = [
   "Difficultés d'homologation venant des clients",
-  "Diversité des outillages requis",
-  "Dossier technique incomplet",
-  "Qualité demandée inhabituelle sur le marché",
-  "Services techniques peu ouverts aux produits de substitution",
+  "Diversité / complexité des outillages requis",
+  "Dossier technique incomplet ou instable",
+  "Niveau d'exigence technique inhabituel (surqualité)",
+  "Faible ouverture aux solutions de substitution",
+  "Difficulté d'intégration au SI / existant technique",
+  "Absence de standardisation des besoins",
+  "Multiplicité des parties prenantes techniques",
 ];
 const CIC_ITEMS = [
-  "Connaissance tardive des besoins",
-  "Fournisseur imposé",
+  "Connaissance tardive ou imprécise des besoins",
+  "Fournisseur imposé / historique fort",
   "Limites géographiques imposées en interne",
-  "Lourdeurs administratives créant un frein à l'achat",
+  "Lourdeurs administratives freinant l'achat",
   "Manque de communication interne",
+  "Fragmentation des besoins (non-massification)",
+  "Urgences récurrentes / achats non planifiés",
+  "Gouvernance lourde / arbitrages longs",
 ];
 const CET_ITEMS = [
-  "Dépendance technique vis-à-vis du fournisseur",
-  "Coût de transfert d'outillage",
-  "Maîtrise de la technologie par très peu de fournisseurs",
-  "Normes strictes sur l'écologie et le recyclage",
+  "Dépendance technique vis-à-vis des fournisseurs",
+  "Coût de transfert (outillage, compétences, réversibilité)",
+  "Maîtrise de la technologie par peu d'acteurs",
+  "Contraintes normatives (écologie, sécurité, certifications)",
   "Manque de flexibilité des fournisseurs",
+  "Complexité technique des solutions du marché",
+  "Interopérabilité limitée / standards propriétaires",
+  "Risques liés à la cybersécurité / robustesse technique",
 ];
 const CEC_ITEMS = [
-  "Entente sur le marché des fournisseurs",
-  "Instabilité sur le marché",
+  "Entente ou faible concurrence sur le marché",
+  "Instabilité du marché (prix, acteurs, conditions)",
   "Réglementation contraignante",
-  "Situation relationnelle tendue",
-  "Usages de la profession contraignants",
+  "Situation relationnelle tendue avec les fournisseurs",
+  "Usages / pratiques du secteur contraignants",
+  "Inflation ou tension économique sectorielle",
+  "Pénurie de ressources (capacités fournisseurs)",
+  "Concentration du marché (dépendance géographique ou acteurs dominants)",
 ];
 
-const RISQUES_TECH = [
-  "Arrêt de production pour panne fournisseur", "Non-respect des délais d'intervention",
-  "Obsolescence technologique du fournisseur", "Défaut qualité récurrent", "Perte de savoir-faire fournisseur",
-];
-const RISQUES_COM = [
-  "Dépendance vis-à-vis d'un fournisseur unique", "Risque juridique contractuel",
-  "Défaillance financière du fournisseur", "Entente ou monopole sur le marché", "Fournisseur imposé par le client",
-];
-const RISQUES_LOG = [
-  "Délais de livraison non respectés", "Rupture de stock critique",
-  "Problèmes de transport / douane", "Emballage inadapté / dommages", "Variabilité des délais",
-];
+const RISQUES_ECO     = ['Volatilité des prix (matières premières, énergie)', 'Dépendance à un fournisseur (mono-source)', 'Santé financière des fournisseurs', 'Risque de dérive budgétaire'];
+const RISQUES_MARCHE  = ['Faible concurrence / marché oligopolistique', "Rareté de l'offre", "Barrières à l'entrée élevées", 'Tension sur les capacités de production'];
+const RISQUES_CONTRAT = ['Complexité du montage contractuel', 'Risque de contentieux', 'Clauses mal définies ou incomplètes', 'Non-conformité au cadre réglementaire (commande publique)'];
+const RISQUES_OPE     = ['Défaillance fournisseur (retard, non-livraison)', 'Problèmes de qualité', 'Dépendance à des compétences clés', "Difficulté de mise en œuvre (technique ou organisationnelle)"];
+const RISQUES_STRAT   = ["Désalignement avec la stratégie de l'organisation", 'Effet de verrouillage (lock-in fournisseur)', 'Perte de maîtrise interne', 'Sensibilité du projet (politique, médiatique)'];
+const RISQUES_TECH    = ['Obsolescence rapide', "Dépendance à une technologie propriétaire", "Difficulté d'intégration au SI existant", 'Cybersécurité / vulnérabilités'];
+const RISQUES_RSE     = ['Non-respect des normes environnementales', 'Risques sociaux (conditions de travail, sous-traitance)', "Atteinte à l'image / réputation", 'Non-conformité réglementaire (RGPD, devoir de vigilance…)'];
+const RISQUES_LOG     = ["Rupture d'approvisionnement", 'Allongement des délais de livraison', 'Dépendance géographique (zones à risque)', 'Transport et contraintes douanières'];
+const RISQUES_INTERNE = ['Manque de ressources internes (temps, compétences)', 'Résistance au changement', 'Mauvaise définition du besoin', 'Faible pilotage du marché (suivi, KPI)'];
+
+type RisqueData = { eco: {prob:number;delai:number}[]; marche: {prob:number;delai:number}[]; contrat: {prob:number;delai:number}[]; ope: {prob:number;delai:number}[]; strat: {prob:number;delai:number}[]; tech: {prob:number;delai:number}[]; rse: {prob:number;delai:number}[]; log: {prob:number;delai:number}[]; interne: {prob:number;delai:number}[] };
+const EMPTY_RISQUE = (): RisqueData => ({
+  eco: RISQUES_ECO.map(() => ({ prob: 0, delai: 0 })),
+  marche: RISQUES_MARCHE.map(() => ({ prob: 0, delai: 0 })),
+  contrat: RISQUES_CONTRAT.map(() => ({ prob: 0, delai: 0 })),
+  ope: RISQUES_OPE.map(() => ({ prob: 0, delai: 0 })),
+  strat: RISQUES_STRAT.map(() => ({ prob: 0, delai: 0 })),
+  tech: RISQUES_TECH.map(() => ({ prob: 0, delai: 0 })),
+  rse: RISQUES_RSE.map(() => ({ prob: 0, delai: 0 })),
+  log: RISQUES_LOG.map(() => ({ prob: 0, delai: 0 })),
+  interne: RISQUES_INTERNE.map(() => ({ prob: 0, delai: 0 })),
+});
+
+const OPPORT_ECO    = ['Gains financiers (réduction des coûts, TCO)', 'Effet volume / massification des achats', 'Opportunité de renégociation tarifaire', 'Standardisation des besoins'];
+const OPPORT_MARCHE = ['Intensité concurrentielle', 'Arrivée de nouveaux entrants', 'Innovation fournisseurs', 'Maturité du marché (croissance vs saturé)'];
+const OPPORT_PERF   = ['Possibilité de mise en concurrence efficace', 'Capacité à structurer un marché (allotissement, sourcing)', 'Optimisation contractuelle (durée, clauses, pénalités)', 'Digitalisation / automatisation du processus'];
+const OPPORT_INNOV  = ["Apport d'innovation (technique, organisationnelle)", 'Amélioration de la qualité du service ou produit', 'Gains de productivité internes', 'Accès à de nouvelles technologies'];
+const OPPORT_STRAT  = ["Contribution aux objectifs de l'organisation", 'Alignement avec la stratégie (ex : transformation digitale)', 'Visibilité interne / projet structurant', "Effet levier sur d'autres projets"];
+const OPPORT_RSE    = ["Réduction de l'empreinte carbone", 'Intégration de critères sociaux (insertion, emploi local)', 'Achats responsables / durables', 'Image et conformité réglementaire'];
+const OPPORT_ORGA   = ['Simplification des processus internes', 'Réduction du nombre de fournisseurs', 'Amélioration du pilotage (KPI, reporting)', 'Mutualisation inter-services'];
+const OPPORT_SECU   = ['Pérennisation des approvisionnements', 'Développement de partenariats stratégiques', 'Meilleure maîtrise des dépendances fournisseurs', 'Anticipation des évolutions réglementaires'];
+
+type OpportunData = { eco: number[]; marche: number[]; perf: number[]; innov: number[]; strat: number[]; rse: number[]; orga: number[]; secu: number[] };
+const EMPTY_OPPORTUN = (): OpportunData => ({
+  eco: OPPORT_ECO.map(() => 0), marche: OPPORT_MARCHE.map(() => 0), perf: OPPORT_PERF.map(() => 0),
+  innov: OPPORT_INNOV.map(() => 0), strat: OPPORT_STRAT.map(() => 0), rse: OPPORT_RSE.map(() => 0),
+  orga: OPPORT_ORGA.map(() => 0), secu: OPPORT_SECU.map(() => 0),
+});
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -169,6 +207,8 @@ export default function AnalysePortefeuille() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState<string | null>(null);
   const [lastSaved, setLastSaved]   = useState('');
+  const [supabaseSaving, setSupabaseSaving] = useState(false);
+  const [supabaseStatus, setSupabaseStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // ── Segmentation ──────────────────────────────────────────────────────────
   const [hierarchy, setHierarchy]           = useState<Hierarchy>({});
@@ -184,15 +224,11 @@ export default function AnalysePortefeuille() {
   const [contraintesStore, setContraintesStore] = useState<Record<string, {
     cit: ContrainteNote[]; cic: ContrainteNote[]; cet: ContrainteNote[]; cec: ContrainteNote[];
   }>>({});
-  const [risquesStore, setRisquesStore] = useState<Record<string, {
-    tech: { prob: number; delai: number }[];
-    com:  { prob: number; delai: number }[];
-    log:  { prob: number; delai: number }[];
-  }>>({});
+  const [risquesStore, setRisquesStore] = useState<Record<string, RisqueData>>({});
   const [swotStore, setSwotStore] = useState<Record<string, {
     s: string[]; w: string[]; o: string[]; t: string[];
   }>>({});
-  const [profitStore, setProfitStore]     = useState<Record<string, number>>({});
+  const [opportunStore, setOpportunStore] = useState<Record<string, OpportunData>>({});
   const [donneesStore, setDonneesStore]   = useState<Record<string, DonneesElement>>({});
 
   // ─── Chargement segmentation ─────────────────────────────────────────────
@@ -271,6 +307,97 @@ export default function AnalysePortefeuille() {
   const nbSousFamilles = Object.values(hierarchy).reduce((s, f) =>
     s + Object.values(f).reduce((ss, sf) => ss + sf.length, 0), 0);
 
+  // ─── Fonctions Supabase ───────────────────────────────────────────────────
+  const loadFromSupabase = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('analyse_portefeuille_data')
+        .select('element_nom, donnees, contraintes, risques, opportunites, swot, porter')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      if (!data || data.length === 0) return;
+
+      const newDonnees: Record<string, DonneesElement> = {};
+      const newContraintes: Record<string, any> = {};
+      const newRisques: Record<string, RisqueData> = {};
+      const newOpportun: Record<string, OpportunData> = {};
+      const newSwot: Record<string, any> = {};
+
+      data.forEach((row: any) => {
+        const nom = row.element_nom;
+        if (row.donnees && Object.keys(row.donnees).length > 0)     newDonnees[nom]     = row.donnees;
+        if (row.contraintes && Object.keys(row.contraintes).length > 0) newContraintes[nom] = row.contraintes;
+        if (row.risques && Object.keys(row.risques).length > 0)     newRisques[nom]     = row.risques;
+        if (row.opportunites && Object.keys(row.opportunites).length > 0) newOpportun[nom] = row.opportunites;
+        if (row.swot && Object.keys(row.swot).length > 0)           newSwot[nom]        = row.swot;
+      });
+
+      if (Object.keys(newDonnees).length > 0)     setDonneesStore(newDonnees);
+      if (Object.keys(newContraintes).length > 0) setContraintesStore(newContraintes);
+      if (Object.keys(newRisques).length > 0)     setRisquesStore(newRisques);
+      if (Object.keys(newOpportun).length > 0)    setOpportunStore(newOpportun);
+      if (Object.keys(newSwot).length > 0)        setSwotStore(newSwot);
+    } catch (err) {
+      console.error('Erreur chargement Supabase:', err);
+    }
+  }, []);
+
+  const saveToSupabase = useCallback(async () => {
+    setSupabaseSaving(true);
+    setSupabaseStatus('saving');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Non authentifié');
+
+      // Collecter tous les éléments ayant au moins une donnée
+      const allKeys = [...new Set([
+        ...Object.keys(donneesStore),
+        ...Object.keys(contraintesStore),
+        ...Object.keys(risquesStore),
+        ...Object.keys(opportunStore),
+        ...Object.keys(swotStore),
+      ])];
+
+      if (allKeys.length === 0) {
+        setSupabaseStatus('saved');
+        return;
+      }
+
+      const rows = allKeys.map(nom => ({
+        user_id:      user.id,
+        element_nom:  nom,
+        donnees:      donneesStore[nom]     || {},
+        contraintes:  contraintesStore[nom] || {},
+        risques:      risquesStore[nom]     || {},
+        opportunites: opportunStore[nom]    || {},
+        swot:         swotStore[nom]        || {},
+        porter:       {},
+      }));
+
+      // Upsert par batch de 50
+      for (let i = 0; i < rows.length; i += 50) {
+        const batch = rows.slice(i, i + 50);
+        const { error } = await supabase
+          .from('analyse_portefeuille_data')
+          .upsert(batch, { onConflict: 'user_id,element_nom' });
+        if (error) throw error;
+      }
+
+      setSupabaseStatus('saved');
+      const now = new Date();
+      setLastSaved(`${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`);
+      setTimeout(() => setSupabaseStatus('idle'), 3000);
+    } catch (err: any) {
+      console.error('Erreur sauvegarde Supabase:', err);
+      setSupabaseStatus('error');
+      setTimeout(() => setSupabaseStatus('idle'), 4000);
+    } finally {
+      setSupabaseSaving(false);
+    }
+  }, [donneesStore, contraintesStore, risquesStore, opportunStore, swotStore]);
+
   // ─── Persistence localStorage ─────────────────────────────────────────────
   useEffect(() => {
     try {
@@ -280,7 +407,7 @@ export default function AnalysePortefeuille() {
         if (d.contraintesStore) setContraintesStore(d.contraintesStore);
         if (d.risquesStore)     setRisquesStore(d.risquesStore);
         if (d.swotStore)        setSwotStore(d.swotStore);
-        if (d.profitStore)      setProfitStore(d.profitStore);
+        if (d.opportunStore)    setOpportunStore(d.opportunStore);
         if (d.donneesStore)     setDonneesStore(d.donneesStore);
         // Rétrocompat : ancienne clé chiffreAffairesStore
         else if (d.chiffreAffairesStore) {
@@ -298,18 +425,32 @@ export default function AnalysePortefeuille() {
         }
       }
     } catch {}
+    // Charger depuis Supabase (priorité sur localStorage)
+    loadFromSupabase();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     try {
       localStorage.setItem('analyse-portefeuille', JSON.stringify({
-        contraintesStore, risquesStore, swotStore, profitStore, donneesStore, selectedElement,
+        contraintesStore, risquesStore, swotStore, opportunStore, donneesStore, selectedElement,
       }));
       const now = new Date();
       setLastSaved(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
     } catch {}
-  }, [contraintesStore, risquesStore, swotStore, profitStore, donneesStore, selectedElement]);
+  }, [contraintesStore, risquesStore, swotStore, opportunStore, donneesStore, selectedElement]);
+
+  // Auto-save Supabase (debounce 10s)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const hasData = Object.keys(donneesStore).length > 0 ||
+                      Object.keys(contraintesStore).length > 0 ||
+                      Object.keys(risquesStore).length > 0;
+      if (hasData) saveToSupabase();
+    }, 10000);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [donneesStore, contraintesStore, risquesStore, opportunStore, swotStore, saveToSupabase]);
 
   // ─── Helpers données ─────────────────────────────────────────────────────
   const getDonnees = (nom: string): DonneesElement => donneesStore[nom] ?? { ...EMPTY_DONNEES };
@@ -349,13 +490,9 @@ export default function AnalysePortefeuille() {
   }, [contraintesStore]);
 
   // ─── Helpers risques ─────────────────────────────────────────────────────
-  const getRisques = (famille: string) => risquesStore[famille] || {
-    tech: RISQUES_TECH.map(() => ({ prob: 0, delai: 0 })),
-    com:  RISQUES_COM.map(()  => ({ prob: 0, delai: 0 })),
-    log:  RISQUES_LOG.map(()  => ({ prob: 0, delai: 0 })),
-  };
+  const getRisques = (famille: string): RisqueData => risquesStore[famille] || EMPTY_RISQUE();
 
-  const updateRisque = (famille: string, cat: 'tech' | 'com' | 'log', idx: number, field: 'prob' | 'delai', val: number) => {
+  const updateRisque = (famille: string, cat: keyof RisqueData, idx: number, field: 'prob' | 'delai', val: number) => {
     setRisquesStore(prev => {
       const current = getRisques(famille);
       const updated = { ...current, [cat]: current[cat].map((r, i) => i === idx ? { ...r, [field]: val } : r) };
@@ -366,17 +503,36 @@ export default function AnalysePortefeuille() {
   const getRisqueScore = useCallback((famille: string) => {
     const r = getRisques(famille);
     const score = (arr: { prob: number; delai: number }[]) =>
-      arr.reduce((s, x) => s + x.prob * (6 - x.delai), 0);
-    return Math.min(30, Math.round((score(r.tech) + score(r.com) + score(r.log)) / 3));
+      arr.reduce((s, x) => s + x.prob * x.delai, 0);
+    const allCats = [r.eco, r.marche, r.contrat, r.ope, r.strat, r.tech, r.rse, r.log, r.interne];
+    const total = allCats.reduce((s, arr) => s + score(arr), 0);
+    return Math.min(30, Math.round((total / (9 * 4 * 25)) * 30));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [risquesStore]);
 
   const getRisqueLevel = (prob: number, delai: number) => {
-    const s = prob * (6 - delai);
+    const s = prob * delai;
     if (s >= 15) return { label: 'Fort', cls: 'bg-red-100 text-red-700' };
     if (s >= 8)  return { label: 'Moyen', cls: 'bg-amber-100 text-amber-700' };
     return { label: 'Faible', cls: 'bg-green-100 text-green-700' };
   };
+
+  // ─── Opportunités helpers ────────────────────────────────────────────────
+  const getOpportun = (famille: string): OpportunData => opportunStore[famille] || EMPTY_OPPORTUN();
+  const updateOpportun = (famille: string, cat: keyof OpportunData, idx: number, val: number) => {
+    setOpportunStore(prev => {
+      const current = prev[famille] || EMPTY_OPPORTUN();
+      return { ...prev, [famille]: { ...current, [cat]: current[cat].map((v, i) => i === idx ? val : v) } };
+    });
+  };
+  const getOpportunScore = useCallback((famille: string) => {
+    const o = opportunStore[famille];
+    if (!o) return 0;
+    const allItems = [...o.eco, ...o.marche, ...o.perf, ...o.innov, ...o.strat, ...o.rse, ...o.orga, ...o.secu];
+    const total = allItems.reduce((s, v) => s + v, 0);
+    return Math.min(30, Math.round((total / (8 * 4 * 5)) * 30));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opportunStore]);
 
   // ─── SWOT helpers ────────────────────────────────────────────────────────
   const getSwot = (famille: string) => swotStore[famille] || { s: [], w: [], o: [], t: [] };
@@ -401,7 +557,7 @@ export default function AnalysePortefeuille() {
     const checks = [
       getCIScore(nom) > 0 || getCEScore(nom) > 0,
       getRisqueScore(nom) > 0,
-      (profitStore[nom] || 0) > 0,
+      getOpportunScore(nom) > 0,
       swot.s.length + swot.w.length + swot.o.length + swot.t.length > 0,
       !!(d && (d.ca > 0 || d.nbCommandes > 0 || d.nbFournisseurs > 0)),
     ];
@@ -410,12 +566,18 @@ export default function AnalysePortefeuille() {
     if (score >= 1) return 'partial';
     return 'empty';
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contraintesStore, risquesStore, profitStore, swotStore, donneesStore]);
+  }, [contraintesStore, risquesStore, opportunStore, swotStore, donneesStore]);
 
   // ─── Refs ────────────────────────────────────────────────────────────────
-  const fileInputRef  = useRef<HTMLInputElement>(null);
-  const canvasRef     = useRef<HTMLCanvasElement>(null);
-  const rpCanvasRef   = useRef<HTMLCanvasElement>(null);
+  const fileInputRef    = useRef<HTMLInputElement>(null);
+  const importExcelRef  = useRef<HTMLInputElement>(null);
+  const canvasRef       = useRef<HTMLCanvasElement>(null);
+  const rpCanvasRef     = useRef<HTMLCanvasElement>(null);
+  const radarCanvasRef  = useRef<HTMLCanvasElement>(null);
+  const barCanvasRef    = useRef<HTMLCanvasElement>(null);
+
+  // ─── État onglet Graphiques ───────────────────────────────────────────────
+  const [radarElement, setRadarElement] = useState<string>('');
 
   // ─── Export JSON ─────────────────────────────────────────────────────────
   const exportJSON = useCallback(() => {
@@ -423,7 +585,7 @@ export default function AnalysePortefeuille() {
       version: 2,
       exportedAt: new Date().toISOString(),
       selectedElement,
-      contraintesStore, risquesStore, swotStore, profitStore, donneesStore,
+      contraintesStore, risquesStore, swotStore, opportunStore, donneesStore,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -432,7 +594,7 @@ export default function AnalysePortefeuille() {
     a.download = `analyse-portefeuille-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [selectedElement, contraintesStore, risquesStore, swotStore, profitStore, donneesStore]);
+  }, [selectedElement, contraintesStore, risquesStore, swotStore, opportunStore, donneesStore]);
 
   // ─── Import JSON ─────────────────────────────────────────────────────────
   const importJSON = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -445,7 +607,7 @@ export default function AnalysePortefeuille() {
         if (data.contraintesStore) setContraintesStore(data.contraintesStore);
         if (data.risquesStore)     setRisquesStore(data.risquesStore);
         if (data.swotStore)        setSwotStore(data.swotStore);
-        if (data.profitStore)      setProfitStore(data.profitStore);
+        if (data.opportunStore)    setOpportunStore(data.opportunStore);
         if (data.donneesStore)     setDonneesStore(data.donneesStore);
         if (data.selectedElement)  setSelectedElement(data.selectedElement);
         alert('Analyse importée avec succès.');
@@ -454,6 +616,197 @@ export default function AnalysePortefeuille() {
       }
     };
     reader.readAsText(file);
+    e.target.value = '';
+  }, []);
+
+  // ─── Import Excel ─────────────────────────────────────────────────────────
+  const importExcel = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const wb = XLSX.read(ev.target?.result, { type: 'array' });
+
+        const newDonnees: Record<string, DonneesElement> = {};
+        const newContraintes: Record<string, { cit: ContrainteNote[]; cic: ContrainteNote[]; cet: ContrainteNote[]; cec: ContrainteNote[] }> = {};
+        const newRisques: Record<string, RisqueData> = {};
+        const newOpportun: Record<string, OpportunData> = {};
+        const newSwot: Record<string, { s: string[]; w: string[]; o: string[]; t: string[] }> = {};
+
+        // ── Sheet "Données" ──────────────────────────────────────────────
+        const wsDon = wb.Sheets['Données'];
+        if (wsDon) {
+          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wsDon, { defval: '' });
+          rows.forEach(row => {
+            const elem = String(row['Élément'] ?? '').trim();
+            if (!elem) return;
+            newDonnees[elem] = {
+              ca:             parseFloat(String(row['CA (k€)'] ?? '0')) || 0,
+              budgetPrev:     parseFloat(String(row['Budget prev. (k€)'] ?? '0')) || 0,
+              nbCommandes:    parseInt(String(row['Nb commandes/an'] ?? '0'), 10) || 0,
+              nbFournisseurs: parseInt(String(row['Nb fournisseurs'] ?? '0'), 10) || 0,
+              notes:          String(row['Notes'] ?? ''),
+            };
+          });
+        }
+
+        // ── Sheet "Contraintes" ───────────────────────────────────────────
+        const wsCI = wb.Sheets['Contraintes'];
+        if (wsCI) {
+          // Mapping label → index pour chaque catégorie
+          const citMap: Record<string, number> = {};
+          CIT_ITEMS.forEach((lbl, i) => { citMap[lbl] = i; });
+          const cicMap: Record<string, number> = {};
+          CIC_ITEMS.forEach((lbl, i) => { cicMap[lbl] = i; });
+          const cetMap: Record<string, number> = {};
+          CET_ITEMS.forEach((lbl, i) => { cetMap[lbl] = i; });
+          const cecMap: Record<string, number> = {};
+          CEC_ITEMS.forEach((lbl, i) => { cecMap[lbl] = i; });
+
+          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wsCI, { defval: '' });
+          rows.forEach(row => {
+            const elem = String(row['Élément'] ?? '').trim();
+            const cat  = String(row['Catégorie'] ?? '').trim().toUpperCase();
+            const item = String(row['Item'] ?? '').trim();
+            const note = parseInt(String(row['Note (0-5)'] ?? '0'), 10) || 0;
+            if (!elem || !cat || !item) return;
+
+            if (!newContraintes[elem]) {
+              newContraintes[elem] = {
+                cit: CIT_ITEMS.map(() => ({ note: 0, evo: 0 })),
+                cic: CIC_ITEMS.map(() => ({ note: 0, evo: 0 })),
+                cet: CET_ITEMS.map(() => ({ note: 0, evo: 0 })),
+                cec: CEC_ITEMS.map(() => ({ note: 0, evo: 0 })),
+              };
+            }
+
+            if (cat === 'CIT' && citMap[item] !== undefined) {
+              newContraintes[elem].cit[citMap[item]] = { note, evo: 0 };
+            } else if (cat === 'CIC' && cicMap[item] !== undefined) {
+              newContraintes[elem].cic[cicMap[item]] = { note, evo: 0 };
+            } else if (cat === 'CET' && cetMap[item] !== undefined) {
+              newContraintes[elem].cet[cetMap[item]] = { note, evo: 0 };
+            } else if (cat === 'CEC' && cecMap[item] !== undefined) {
+              newContraintes[elem].cec[cecMap[item]] = { note, evo: 0 };
+            }
+          });
+        }
+
+        // ── Sheet "Risques" ───────────────────────────────────────────────
+        const wsRisk = wb.Sheets['Risques'];
+        if (wsRisk) {
+          // Mapping label → { cat, idx }
+          type RisqueCatKey = keyof RisqueData;
+          const risqueMap: Record<string, { cat: RisqueCatKey; idx: number }> = {};
+          ([
+            { key: 'eco'     as RisqueCatKey, items: RISQUES_ECO },
+            { key: 'marche'  as RisqueCatKey, items: RISQUES_MARCHE },
+            { key: 'contrat' as RisqueCatKey, items: RISQUES_CONTRAT },
+            { key: 'ope'     as RisqueCatKey, items: RISQUES_OPE },
+            { key: 'strat'   as RisqueCatKey, items: RISQUES_STRAT },
+            { key: 'tech'    as RisqueCatKey, items: RISQUES_TECH },
+            { key: 'rse'     as RisqueCatKey, items: RISQUES_RSE },
+            { key: 'log'     as RisqueCatKey, items: RISQUES_LOG },
+            { key: 'interne' as RisqueCatKey, items: RISQUES_INTERNE },
+          ]).forEach(({ key, items }) => {
+            items.forEach((lbl, idx) => { risqueMap[lbl] = { cat: key, idx }; });
+          });
+
+          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wsRisk, { defval: '' });
+          rows.forEach(row => {
+            const elem  = String(row['Élément'] ?? '').trim();
+            const risqu = String(row['Risque'] ?? '').trim();
+            const prob  = parseInt(String(row['Probabilité'] ?? '0'), 10) || 0;
+            const delai = parseInt(String(row['Urgence / Criticité'] ?? '0'), 10) || 0;
+            if (!elem || !risqu) return;
+
+            if (!newRisques[elem]) newRisques[elem] = EMPTY_RISQUE();
+            const mapping = risqueMap[risqu];
+            if (mapping) {
+              newRisques[elem][mapping.cat][mapping.idx] = { prob, delai };
+            }
+          });
+        }
+
+        // ── Sheet "Opportunités" ──────────────────────────────────────────
+        const wsOpp = wb.Sheets['Opportunités'];
+        if (wsOpp) {
+          type OpportunCatKey = keyof OpportunData;
+          const opportunMap: Record<string, { cat: OpportunCatKey; idx: number }> = {};
+          ([
+            { key: 'eco'    as OpportunCatKey, items: OPPORT_ECO },
+            { key: 'marche' as OpportunCatKey, items: OPPORT_MARCHE },
+            { key: 'perf'   as OpportunCatKey, items: OPPORT_PERF },
+            { key: 'innov'  as OpportunCatKey, items: OPPORT_INNOV },
+            { key: 'strat'  as OpportunCatKey, items: OPPORT_STRAT },
+            { key: 'rse'    as OpportunCatKey, items: OPPORT_RSE },
+            { key: 'orga'   as OpportunCatKey, items: OPPORT_ORGA },
+            { key: 'secu'   as OpportunCatKey, items: OPPORT_SECU },
+          ]).forEach(({ key, items }) => {
+            items.forEach((lbl, idx) => { opportunMap[lbl] = { cat: key, idx }; });
+          });
+
+          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wsOpp, { defval: '' });
+          rows.forEach(row => {
+            const elem   = String(row['Élément'] ?? '').trim();
+            const critere = String(row['Critère'] ?? '').trim();
+            const score  = parseInt(String(row['Score (0-5)'] ?? '0'), 10) || 0;
+            if (!elem || !critere) return;
+
+            if (!newOpportun[elem]) newOpportun[elem] = EMPTY_OPPORTUN();
+            const mapping = opportunMap[critere];
+            if (mapping) {
+              newOpportun[elem][mapping.cat][mapping.idx] = score;
+            }
+          });
+        }
+
+        // ── Sheet "SWOT" ──────────────────────────────────────────────────
+        const wsSwot = wb.Sheets['SWOT'];
+        if (wsSwot) {
+          const quadrantMap: Record<string, 's' | 'w' | 'o' | 't'> = {
+            'Forces':       's',
+            'Faiblesses':   'w',
+            'Opportunités': 'o',
+            'Menaces':      't',
+          };
+          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wsSwot, { defval: '' });
+          rows.forEach(row => {
+            const elem     = String(row['Élément'] ?? '').trim();
+            const quadrant = String(row['Quadrant'] ?? '').trim();
+            const item     = String(row['Item'] ?? '').trim();
+            if (!elem || !item) return;
+
+            const q = quadrantMap[quadrant];
+            if (!q) return;
+
+            if (!newSwot[elem]) newSwot[elem] = { s: [], w: [], o: [], t: [] };
+            newSwot[elem][q].push(item);
+          });
+        }
+
+        // ── Application des stores ─────────────────────────────────────────
+        if (Object.keys(newDonnees).length > 0)     setDonneesStore(newDonnees);
+        if (Object.keys(newContraintes).length > 0)  setContraintesStore(newContraintes);
+        if (Object.keys(newRisques).length > 0)      setRisquesStore(newRisques);
+        if (Object.keys(newOpportun).length > 0)     setOpportunStore(newOpportun);
+        if (Object.keys(newSwot).length > 0)         setSwotStore(newSwot);
+
+        const total = new Set([
+          ...Object.keys(newDonnees),
+          ...Object.keys(newContraintes),
+          ...Object.keys(newRisques),
+          ...Object.keys(newOpportun),
+          ...Object.keys(newSwot),
+        ]).size;
+        alert(`Import Excel réussi — ${total} élément${total > 1 ? 's' : ''} importé${total > 1 ? 's' : ''}.`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        alert(`Erreur lors de l'import Excel : ${msg}`);
+      }
+    };
+    reader.readAsArrayBuffer(file);
     e.target.value = '';
   }, []);
 
@@ -466,7 +819,7 @@ export default function AnalysePortefeuille() {
       ...Object.keys(contraintesStore),
       ...Object.keys(risquesStore),
       ...Object.keys(swotStore),
-      ...Object.keys(profitStore),
+      ...Object.keys(opportunStore),
       ...Object.keys(donneesStore),
     ])].sort();
 
@@ -476,7 +829,7 @@ export default function AnalysePortefeuille() {
       const ci = getCIScore(nom);
       const ce = getCEScore(nom);
       const risk = getRisqueScore(nom);
-      const profit = profitStore[nom] || 0;
+      const profit = getOpportunScore(nom);
       const d = donneesStore[nom] ?? EMPTY_DONNEES;
       const quad = quadrant(ci, ce);
       const levier = getLevier(ci, ce, risk, profit);
@@ -508,18 +861,43 @@ export default function AnalysePortefeuille() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([ciHeaders, ...ciRows]), 'Contraintes');
 
     // Feuille Risques
-    const riskHeaders = ['Élément', 'Catégorie', 'Risque', 'Probabilité', 'Délai réaction'];
+    const riskHeaders = ['Élément', 'Catégorie', 'Risque', 'Probabilité', 'Urgence / Criticité'];
     const riskRows: (string | number)[][] = [];
     Object.entries(risquesStore).forEach(([key, val]) => {
-      [
-        { cat: 'Technique', items: RISQUES_TECH, data: val.tech },
-        { cat: 'Commercial', items: RISQUES_COM, data: val.com },
-        { cat: 'Logistique', items: RISQUES_LOG, data: val.log },
-      ].forEach(({ cat, items, data }) => {
+      ([
+        { cat: '1. Économique & financier', items: RISQUES_ECO,     data: val.eco },
+        { cat: '2. Marché fournisseurs',    items: RISQUES_MARCHE,  data: val.marche },
+        { cat: '3. Contractuel & juridique',items: RISQUES_CONTRAT, data: val.contrat },
+        { cat: '4. Opérationnel',           items: RISQUES_OPE,     data: val.ope },
+        { cat: '5. Stratégique',            items: RISQUES_STRAT,   data: val.strat },
+        { cat: '6. Technologique',          items: RISQUES_TECH,    data: val.tech },
+        { cat: '7. RSE & conformité',       items: RISQUES_RSE,     data: val.rse },
+        { cat: '8. Logistique & SC',        items: RISQUES_LOG,     data: val.log },
+        { cat: '9. Interne',                items: RISQUES_INTERNE, data: val.interne },
+      ] as { cat: string; items: string[]; data: {prob:number;delai:number}[] }[]).forEach(({ cat, items, data }) => {
         items.forEach((label, i) => riskRows.push([key, cat, label, data[i]?.prob ?? 0, data[i]?.delai ?? 0]));
       });
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([riskHeaders, ...riskRows]), 'Risques');
+
+    // Feuille Opportunités
+    const opportHeaders = ['Élément', 'Catégorie', 'Critère', 'Score (0-5)'];
+    const opportRows: (string | number)[][] = [];
+    Object.entries(opportunStore).forEach(([key, val]) => {
+      ([
+        { cat: '1. Potentiel économique',           items: OPPORT_ECO,    data: val.eco },
+        { cat: '2. Dynamique marché',               items: OPPORT_MARCHE, data: val.marche },
+        { cat: '3. Leviers performance achats',     items: OPPORT_PERF,   data: val.perf },
+        { cat: '4. Innovation et valeur ajoutée',   items: OPPORT_INNOV,  data: val.innov },
+        { cat: '5. Impact stratégique',             items: OPPORT_STRAT,  data: val.strat },
+        { cat: '6. RSE',                            items: OPPORT_RSE,    data: val.rse },
+        { cat: '7. Optimisation organisationnelle', items: OPPORT_ORGA,   data: val.orga },
+        { cat: '8. Sécurisation',                   items: OPPORT_SECU,   data: val.secu },
+      ] as { cat: string; items: string[]; data: number[] }[]).forEach(({ cat, items, data }) => {
+        items.forEach((label, i) => opportRows.push([key, cat, label, data[i] ?? 0]));
+      });
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([opportHeaders, ...opportRows]), 'Opportunités');
 
     // Feuille SWOT
     const swotHeaders = ['Élément', 'Quadrant', 'Item'];
@@ -533,7 +911,7 @@ export default function AnalysePortefeuille() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([swotHeaders, ...swotRows]), 'SWOT');
 
     XLSX.writeFile(wb, `analyse-portefeuille-${new Date().toISOString().slice(0, 10)}.xlsx`);
-  }, [contraintesStore, risquesStore, swotStore, profitStore, donneesStore, getCIScore, getCEScore, getRisqueScore]);
+  }, [contraintesStore, risquesStore, swotStore, opportunStore, donneesStore, getCIScore, getCEScore, getRisqueScore, getOpportunScore]);
 
   // ─── Canvas matrice portefeuille (onglet 1) ───────────────────────────────
   useEffect(() => {
@@ -637,7 +1015,7 @@ export default function AnalysePortefeuille() {
     ctx.globalAlpha = 1;
 
     const riskAnalyzed    = Object.keys(risquesStore).filter(k => getRisqueScore(k) > 0);
-    const opportunAnalyzed = Object.keys(profitStore).filter(k => (profitStore[k] || 0) > 0);
+    const opportunAnalyzed = Object.keys(opportunStore).filter(k => getOpportunScore(k) > 0);
     const rpKeys  = [...new Set([...riskAnalyzed, ...opportunAnalyzed])];
     const rpItems = rpKeys.length > 0 ? rpKeys : familles.map(f => f.nom);
 
@@ -649,12 +1027,12 @@ export default function AnalysePortefeuille() {
 
     rpItems.forEach((nom, idx) => {
       const risk   = getRisqueScore(nom);
-      const opport = (profitStore[nom] || 0);
+      const opport = getOpportunScore(nom);
       const x = (risk / 30) * (W - 60) + 30;
-      const y = H - (opport / 5) * (H - 60) - 30;
+      const y = H - (opport / 30) * (H - 60) - 30;
 
       const isHighRisk   = risk   >= 15;
-      const isHighOpport = opport >= 2.5;
+      const isHighOpport = opport >= 15;
 
       const quadColor = !isHighRisk && !isHighOpport ? '#16a34a' :
                          isHighRisk && !isHighOpport ? '#2563eb' :
@@ -677,7 +1055,154 @@ export default function AnalysePortefeuille() {
       ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2);
       ctx.fillStyle = quadColor; ctx.fill();
     });
-  }, [activeTab, familles, risquesStore, profitStore, donneesStore, getRisqueScore]);
+  }, [activeTab, familles, risquesStore, opportunStore, donneesStore, getRisqueScore, getOpportunScore]);
+
+  // ─── Init radarElement quand les données changent ─────────────────────────
+  useEffect(() => {
+    const allKeys = [...new Set([
+      ...Object.keys(contraintesStore),
+      ...Object.keys(risquesStore),
+      ...Object.keys(opportunStore),
+    ])].sort();
+    if (!radarElement && allKeys.length > 0) setRadarElement(allKeys[0]);
+  }, [contraintesStore, risquesStore, opportunStore]);
+
+  // ─── Canvas radar (onglet 4) ───────────────────────────────────────────────
+  useEffect(() => {
+    if (activeTab !== 4) return;
+    const canvas = radarCanvasRef.current;
+    if (!canvas || !radarElement) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const W = canvas.width = canvas.offsetWidth;
+    const H = canvas.height = canvas.offsetHeight;
+    ctx.clearRect(0, 0, W, H);
+
+    const cx = W / 2, cy = H / 2;
+    const R = Math.min(W, H) / 2 - 60;
+    const N = 6;
+    const labels = ['C. Int. Techniques', 'C. Int. Commerciales', 'C. Ext. Techniques', 'C. Ext. Commerciales', 'Risques', 'Opportunités'];
+
+    const c = contraintesStore[radarElement];
+    const citScore = c ? c.cit.reduce((s, x) => s + x.note, 0) / (CIT_ITEMS.length * 5) : 0;
+    const cicScore = c ? c.cic.reduce((s, x) => s + x.note, 0) / (CIC_ITEMS.length * 5) : 0;
+    const cetScore = c ? c.cet.reduce((s, x) => s + x.note, 0) / (CET_ITEMS.length * 5) : 0;
+    const cecScore = c ? c.cec.reduce((s, x) => s + x.note, 0) / (CEC_ITEMS.length * 5) : 0;
+    const riskNorm = getRisqueScore(radarElement) / 30;
+    const opNorm   = getOpportunScore(radarElement) / 30;
+    const values   = [citScore, cicScore, cetScore, cecScore, riskNorm, opNorm];
+
+    // Grilles
+    for (let g = 1; g <= 4; g++) {
+      ctx.beginPath();
+      for (let i = 0; i < N; i++) {
+        const angle = (i * 2 * Math.PI / N) - Math.PI / 2;
+        const r = R * g / 4;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    // Axes
+    for (let i = 0; i < N; i++) {
+      const angle = (i * 2 * Math.PI / N) - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + R * Math.cos(angle), cy + R * Math.sin(angle));
+      ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    // Données
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const angle = (i * 2 * Math.PI / N) - Math.PI / 2;
+      const r = R * values[i];
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#2F5B5833'; ctx.fill();
+    ctx.strokeStyle = '#2F5B58'; ctx.lineWidth = 2; ctx.stroke();
+
+    // Points
+    for (let i = 0; i < N; i++) {
+      const angle = (i * 2 * Math.PI / N) - Math.PI / 2;
+      const r = R * values[i];
+      ctx.beginPath();
+      ctx.arc(cx + r * Math.cos(angle), cy + r * Math.sin(angle), 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#2F5B58'; ctx.fill();
+    }
+
+    // Labels
+    ctx.font = '10px sans-serif'; ctx.fillStyle = '#374151'; ctx.textAlign = 'center';
+    for (let i = 0; i < N; i++) {
+      const angle = (i * 2 * Math.PI / N) - Math.PI / 2;
+      const lx = cx + (R + 24) * Math.cos(angle);
+      const ly = cy + (R + 24) * Math.sin(angle);
+      const pct = Math.round(values[i] * 100);
+      ctx.fillStyle = '#374151'; ctx.font = '10px sans-serif';
+      ctx.fillText(labels[i], lx, ly);
+      ctx.fillStyle = '#6b7280'; ctx.font = 'bold 9px sans-serif';
+      ctx.fillText(`${pct}%`, lx, ly + 12);
+    }
+  }, [activeTab, radarElement, contraintesStore, risquesStore, opportunStore, getRisqueScore, getOpportunScore]);
+
+  // ─── Canvas histogramme comparatif (onglet 4) ─────────────────────────────
+  useEffect(() => {
+    if (activeTab !== 4) return;
+    const canvas = barCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const allKeys = [...new Set([
+      ...Object.keys(contraintesStore),
+      ...Object.keys(risquesStore),
+      ...Object.keys(opportunStore),
+    ])].sort();
+
+    if (allKeys.length === 0) return;
+
+    const W = canvas.width = canvas.offsetWidth;
+    const rowH = 40;
+    const H = canvas.height = Math.max(200, allKeys.length * rowH + 30);
+    ctx.clearRect(0, 0, W, H);
+
+    const leftMargin = 130;
+    const rightMargin = 20;
+    const barAreaW = W - leftMargin - rightMargin;
+    const barH = 7;
+    const barGap = 3;
+    const colors = ['#6366f1', '#f59e0b', '#ef4444', '#10b981'];
+
+    allKeys.forEach((nom, rowIdx) => {
+      const y0 = rowIdx * rowH + 15;
+      const ci     = getCIScore(nom) / 100;
+      const ce     = getCEScore(nom) / 100;
+      const risk   = getRisqueScore(nom) / 30;
+      const opport = getOpportunScore(nom) / 30;
+      const vals   = [ci, ce, risk, opport];
+
+      ctx.font = '10px sans-serif'; ctx.fillStyle = '#374151'; ctx.textAlign = 'right';
+      const short = nom.length > 18 ? nom.substring(0, 17) + '…' : nom;
+      ctx.fillText(short, leftMargin - 6, y0 + (barH + barGap) * 2);
+
+      vals.forEach((v, bi) => {
+        const barW = Math.max(2, v * barAreaW);
+        const by = y0 + bi * (barH + barGap);
+        ctx.fillStyle = colors[bi] + 'cc';
+        ctx.fillRect(leftMargin, by, barW, barH);
+        if (v > 0) {
+          ctx.font = '8px sans-serif'; ctx.fillStyle = '#6b7280'; ctx.textAlign = 'left';
+          ctx.fillText(Math.round(v * 100) + '%', leftMargin + barW + 3, by + barH - 1);
+        }
+      });
+    });
+  }, [activeTab, contraintesStore, risquesStore, opportunStore, getCIScore, getCEScore, getRisqueScore, getOpportunScore]);
 
   // ─── Rendu ───────────────────────────────────────────────────────────────
 
@@ -706,12 +1231,39 @@ export default function AnalysePortefeuille() {
           <p className="text-xs text-gray-500 mt-0.5">{nbSegments} segments · {nbFamilles} familles · {nbSousFamilles} sous-familles</p>
         </div>
         <div className="flex items-center gap-2">
-          {lastSaved && (
-            <span className="text-[10px] text-gray-400 italic border border-gray-100 rounded px-2 py-1">
-              ✓ Sauvegardé à {lastSaved}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {supabaseStatus === 'saved' && (
+              <span className="text-[10px] text-green-600 italic border border-green-200 rounded px-2 py-1 bg-green-50">
+                ☁ Sauvegardé Supabase {lastSaved}
+              </span>
+            )}
+            {supabaseStatus === 'error' && (
+              <span className="text-[10px] text-red-600 italic border border-red-200 rounded px-2 py-1 bg-red-50">
+                ✗ Erreur sauvegarde
+              </span>
+            )}
+            {supabaseStatus === 'saving' && (
+              <span className="text-[10px] text-blue-500 italic border border-blue-200 rounded px-2 py-1 bg-blue-50">
+                ↑ Sauvegarde...
+              </span>
+            )}
+            {supabaseStatus === 'idle' && lastSaved && (
+              <span className="text-[10px] text-gray-400 italic border border-gray-100 rounded px-2 py-1">
+                ☁ {lastSaved}
+              </span>
+            )}
+            <button
+              onClick={saveToSupabase}
+              disabled={supabaseSaving}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              title="Sauvegarder dans Supabase (cloud)"
+            >
+              {supabaseSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              Sauvegarder
+            </button>
+          </div>
           <input ref={fileInputRef} type="file" accept=".json" onChange={importJSON} className="hidden" />
+          <input ref={importExcelRef} type="file" accept=".xlsx" style={{ display: 'none' }} onChange={importExcel} />
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
@@ -725,6 +1277,13 @@ export default function AnalysePortefeuille() {
             title="Exporter toute l'analyse en JSON (sauvegarde complète)"
           >
             <Download className="w-3.5 h-3.5" /> JSON
+          </button>
+          <button
+            onClick={() => importExcelRef.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
+            title="Importer depuis un fichier Excel (.xlsx)"
+          >
+            <Upload className="w-3.5 h-3.5" /> Importer Excel
           </button>
           <button
             onClick={exportExcel}
@@ -746,6 +1305,7 @@ export default function AnalysePortefeuille() {
           { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Matrice Portefeuille',   count: analyzedCount > 0 ? analyzedCount : undefined },
           { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Matrice O/R',            count: undefined },
           { icon: <FileText className="w-3.5 h-3.5" />,   label: 'Synthèse',               count: analyzedCount > 0 ? analyzedCount : undefined },
+          { icon: <BarChart2 className="w-3.5 h-3.5" />,  label: 'Graphiques',             count: undefined },
         ].map((tab, i) => (
           <TabBtn key={i} active={activeTab === i} onClick={() => setActiveTab(i)}
             icon={tab.icon} label={tab.label} count={tab.count} />
@@ -904,7 +1464,7 @@ export default function AnalysePortefeuille() {
                             { label: 'Fiche', done: !!(donneesStore[selectedElement]?.ca || donneesStore[selectedElement]?.nbCommandes || donneesStore[selectedElement]?.nbFournisseurs) },
                             { label: 'Contraintes', done: getCIScore(selectedElement) > 0 || getCEScore(selectedElement) > 0 },
                             { label: 'Risques', done: getRisqueScore(selectedElement) > 0 },
-                            { label: 'Opportunités', done: (profitStore[selectedElement] || 0) > 0 },
+                            { label: 'Opportunités', done: getOpportunScore(selectedElement) > 0 },
                             { label: 'SWOT', done: (() => { const s = getSwot(selectedElement); return s.s.length + s.w.length + s.o.length + s.t.length > 0; })() },
                           ];
                           return (
@@ -929,7 +1489,7 @@ export default function AnalysePortefeuille() {
                           { label: 'CI', value: getCIScore(selectedElement), max: 100, cls: 'text-indigo-600' },
                           { label: 'CE', value: getCEScore(selectedElement), max: 100, cls: 'text-amber-600' },
                           { label: 'Risque', value: getRisqueScore(selectedElement), max: 30, cls: getRisqueScore(selectedElement) >= 20 ? 'text-red-600' : getRisqueScore(selectedElement) > 0 ? 'text-amber-600' : 'text-gray-300' },
-                          { label: 'Opport.', value: profitStore[selectedElement] || 0, max: 6, cls: 'text-[#2F5B58]' },
+                          { label: 'Opport.', value: getOpportunScore(selectedElement), max: 30, cls: 'text-[#2F5B58]' },
                         ].map(s => (
                           <div key={s.label} className="text-center">
                             <div className={`text-xl font-bold leading-none ${s.cls}`}>{s.value || '—'}</div>
@@ -1035,19 +1595,41 @@ export default function AnalysePortefeuille() {
                   {/* ── Sous-onglet 2 : Risques ── */}
                   {detailTab === 2 && (() => {
                     const r = getRisques(analysisKey);
-                    const cats = [
-                      { key: 'tech' as const, title: 'Risques techniques',    items: RISQUES_TECH },
-                      { key: 'com'  as const, title: 'Risques commerciaux',   items: RISQUES_COM },
-                      { key: 'log'  as const, title: 'Risques logistiques',   items: RISQUES_LOG },
+                    const cats: { key: keyof RisqueData; title: string; items: string[] }[] = [
+                      { key: 'eco',     title: '1. Risques économiques et financiers',        items: RISQUES_ECO },
+                      { key: 'marche',  title: '2. Risques liés au marché fournisseurs',      items: RISQUES_MARCHE },
+                      { key: 'contrat', title: '3. Risques contractuels et juridiques',       items: RISQUES_CONTRAT },
+                      { key: 'ope',     title: '4. Risques opérationnels',                    items: RISQUES_OPE },
+                      { key: 'strat',   title: '5. Risques stratégiques',                     items: RISQUES_STRAT },
+                      { key: 'tech',    title: '6. Risques technologiques',                   items: RISQUES_TECH },
+                      { key: 'rse',     title: '7. Risques RSE et conformité',                items: RISQUES_RSE },
+                      { key: 'log',     title: '8. Risques logistiques et supply chain',      items: RISQUES_LOG },
+                      { key: 'interne', title: '9. Risques internes (organisation)',          items: RISQUES_INTERNE },
                     ];
                     return (
                       <div className="space-y-4">
+                        {/* Bloc d'aide */}
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 space-y-2">
+                          <p><strong>Comment remplir cet onglet ?</strong></p>
+                          <p>Pour chaque risque listé, évaluez deux dimensions :</p>
+                          <ul className="list-disc list-inside space-y-1 pl-1">
+                            <li><strong>Probabilité (0 → 5)</strong> — Quelle est la chance que ce risque survienne ? <span className="italic">0 = impossible · 5 = quasi-certain</span></li>
+                            <li><strong>Urgence / Criticité (0 → 5)</strong> — Si le risque survient, quel est l'impact et l'urgence ? <span className="italic">0 = peu critique · 5 = impact majeur / urgent</span></li>
+                          </ul>
+                          <p className="pt-1"><strong>Niveau calculé automatiquement :</strong> Score = Probabilité × Urgence — les deux curseurs qui montent = risque plus élevé.</p>
+                          <div className="flex gap-3 pt-0.5">
+                            <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Fort ≥ 15</span>
+                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Moyen ≥ 8</span>
+                            <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Faible &lt; 8</span>
+                          </div>
+                          <p className="pt-1">Le <strong>score global (/30)</strong> positionne cet élément sur l'axe X de la Matrice Opportunités/Risques. Plus il est élevé, plus l'achat est classé "Critique" ou "Stratégique".</p>
+                        </div>
                         {cats.map(cat => (
                           <Card key={cat.key}>
                             <CardHeader title={cat.title} />
                             <div className="p-4 space-y-3">
                               {cat.items.map((label, idx) => {
-                                const risk = r[cat.key][idx] || { prob: 0, delai: 0 };
+                                const risk = r[cat.key][idx] ?? { prob: 0, delai: 0 };
                                 const level = getRisqueLevel(risk.prob, risk.delai);
                                 return (
                                   <div key={idx} className="pb-3 border-b border-gray-50 last:border-0">
@@ -1058,7 +1640,7 @@ export default function AnalysePortefeuille() {
                                     <div className="grid grid-cols-2 gap-3">
                                       <SliderRow label="Probabilité" value={risk.prob}
                                         onChange={v => updateRisque(analysisKey, cat.key, idx, 'prob', v)} />
-                                      <SliderRow label="Délai réaction" value={risk.delai}
+                                      <SliderRow label="Urgence / Criticité" value={risk.delai}
                                         onChange={v => updateRisque(analysisKey, cat.key, idx, 'delai', v)} />
                                     </div>
                                   </div>
@@ -1080,82 +1662,123 @@ export default function AnalysePortefeuille() {
                   })()}
 
                   {/* ── Sous-onglet 3 : Opportunités ── */}
-                  {detailTab === 3 && (
-                    <Card>
-                      <CardHeader title={`Opportunités — ${selectedElement}`} icon={<BarChart2 className="w-4 h-4" />} />
-                      <div className="p-6">
-                        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                          <strong>Score d'opportunité (0–6) :</strong> 0=Aucune · 1=Très faible · 2=Faible · 3=Modérée · 4=Forte · 5=Très forte · 6=Maximale
+                  {detailTab === 3 && (() => {
+                    const o = getOpportun(analysisKey);
+                    const cats: { key: keyof OpportunData; title: string; items: string[] }[] = [
+                      { key: 'eco',    title: '1. Potentiel économique',                         items: OPPORT_ECO },
+                      { key: 'marche', title: '2. Dynamique du marché fournisseurs',              items: OPPORT_MARCHE },
+                      { key: 'perf',   title: '3. Leviers de performance achats',                 items: OPPORT_PERF },
+                      { key: 'innov',  title: '4. Innovation et valeur ajoutée',                  items: OPPORT_INNOV },
+                      { key: 'strat',  title: '5. Impact stratégique',                            items: OPPORT_STRAT },
+                      { key: 'rse',    title: '6. Responsabilité sociétale et environnementale',  items: OPPORT_RSE },
+                      { key: 'orga',   title: '7. Optimisation organisationnelle',                items: OPPORT_ORGA },
+                      { key: 'secu',   title: '8. Sécurisation à moyen/long terme',               items: OPPORT_SECU },
+                    ];
+                    return (
+                      <div className="space-y-4">
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 space-y-1">
+                          <p><strong>Comment remplir cet onglet ?</strong> Pour chaque critère, évaluez le potentiel d'opportunité de 0 à 5.</p>
+                          <p><span className="font-medium">0</span> = aucune opportunité &nbsp;·&nbsp; <span className="font-medium">3</span> = opportunité modérée &nbsp;·&nbsp; <span className="font-medium">5</span> = opportunité maximale</p>
+                          <p>Le <strong>score global (/30)</strong> positionne cet élément sur l'axe Y de la Matrice Opportunités/Risques.</p>
                         </div>
-                        <div className="flex items-center gap-6">
-                          <input
-                            type="range" min={0} max={6} value={profitStore[analysisKey] || 0}
-                            onChange={e => setProfitStore(prev => ({ ...prev, [analysisKey]: parseInt(e.target.value) }))}
-                            className="flex-1 h-2 accent-[#2F5B58]"
-                          />
-                          <span className="text-3xl font-bold text-[#2F5B58] w-12 text-center">{profitStore[analysisKey] || 0}</span>
-                          <span className="text-sm text-gray-400">/ 6</span>
-                        </div>
-                        <div className="mt-4 flex gap-2 flex-wrap">
-                          {[0,1,2,3,4,5,6].map(v => (
-                            <button
-                              key={v}
-                              onClick={() => setProfitStore(prev => ({ ...prev, [analysisKey]: v }))}
-                              className={`w-9 h-9 rounded-full text-xs font-bold border transition-all ${
-                                (profitStore[analysisKey] || 0) === v
-                                  ? 'bg-[#2F5B58] text-white border-[#2F5B58]'
-                                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                              }`}
-                            >{v}</button>
-                          ))}
-                        </div>
-                        <div className="mt-6 p-3 bg-[#e8f4f3] border border-[#a7d4d1] rounded-lg text-xs text-[#1e3d3b]">
-                          Ce score, combiné au score de risque ({getRisqueScore(analysisKey)}/30),
-                          positionne cet élément dans la <strong>Matrice Opportunités/Risques</strong>.
-                          {getLevier(getCIScore(analysisKey), getCEScore(analysisKey), getRisqueScore(analysisKey), profitStore[analysisKey] || 0) !== '— À évaluer' && (
-                            <> Levier recommandé : <strong>{getLevier(getCIScore(analysisKey), getCEScore(analysisKey), getRisqueScore(analysisKey), profitStore[analysisKey] || 0)}</strong></>
-                          )}
-                        </div>
+                        {cats.map(cat => (
+                          <Card key={cat.key}>
+                            <CardHeader title={cat.title} />
+                            <div className="p-4 space-y-2">
+                              {cat.items.map((label, idx) => {
+                                const val = o[cat.key][idx] || 0;
+                                return (
+                                  <div key={idx} className="flex items-center gap-3 py-1 border-b border-gray-50 last:border-0">
+                                    <span className="text-xs text-gray-700 flex-1">{label}</span>
+                                    <div className="flex items-center gap-2 w-40">
+                                      <input type="range" min={0} max={5} value={val}
+                                        onChange={e => updateOpportun(analysisKey, cat.key, idx, parseInt(e.target.value))}
+                                        className="flex-1 h-1.5 accent-amber-500 cursor-pointer" />
+                                      <span className="text-xs font-bold text-amber-600 w-4 text-center">{val}</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </Card>
+                        ))}
+                        <Card className="p-4">
+                          <div className="flex items-center gap-4">
+                            <span className="text-xs text-gray-500">Score opportunité global</span>
+                            <span className={`text-2xl font-bold ${getOpportunScore(analysisKey) >= 20 ? 'text-amber-600' : getOpportunScore(analysisKey) >= 10 ? 'text-yellow-600' : 'text-green-600'}`}>
+                              {getOpportunScore(analysisKey)} <span className="text-sm text-gray-400">/ 30</span>
+                            </span>
+                          </div>
+                          <div className="mt-3 p-3 bg-[#e8f4f3] border border-[#a7d4d1] rounded-lg text-xs text-[#1e3d3b]">
+                            Ce score, combiné au score de risque ({getRisqueScore(analysisKey)}/30),
+                            positionne cet élément dans la <strong>Matrice Opportunités/Risques</strong>.
+                            {getLevier(getCIScore(analysisKey), getCEScore(analysisKey), getRisqueScore(analysisKey), getOpportunScore(analysisKey)) !== '— À évaluer' && (
+                              <> Levier recommandé : <strong>{getLevier(getCIScore(analysisKey), getCEScore(analysisKey), getRisqueScore(analysisKey), getOpportunScore(analysisKey))}</strong></>
+                            )}
+                          </div>
+                        </Card>
                       </div>
-                    </Card>
-                  )}
+                    );
+                  })()}
 
                   {/* ── Sous-onglet 4 : Porter ── */}
                   {detailTab === 4 && (
                     <div className="space-y-3">
+                      {/* Bloc d'aide */}
+                      <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg text-xs text-indigo-800 space-y-1.5">
+                        <p><strong>Analyse des 5 forces de Porter — adaptée aux achats</strong></p>
+                        <p>Cet outil analyse le marché fournisseur de la famille <strong>{analysisKey}</strong> selon 5 angles :</p>
+                        <ul className="list-disc list-inside space-y-0.5 pl-1">
+                          <li><span className="font-medium text-indigo-700">Nouveaux entrants</span> — De nouveaux fournisseurs peuvent-ils entrer sur ce marché ? Combien, de quel type ?</li>
+                          <li><span className="font-medium text-teal-700">Pouvoir fournisseurs</span> — Combien de fournisseurs existent ? Qui domine le marché ? Ont-ils un fort pouvoir de négociation ?</li>
+                          <li><span className="font-medium text-amber-700">Pouvoir clients internes</span> — Combien de services internes consomment ce besoin ? Sont-ils dispersés ou concentrés ?</li>
+                          <li><span className="font-medium text-red-700">Produits substituts</span> — Existe-t-il des alternatives technologiques ou organisationnelles à ce besoin ?</li>
+                          <li><span className="font-medium text-purple-700">Rivalité concurrentielle</span> — Les fournisseurs se font-ils concurrence entre eux ? Le marché est-il mature ou tendu ?</li>
+                        </ul>
+                        <p className="pt-1 text-indigo-600 italic">Remplissez les champs librement — il n'y a pas de bonne ou mauvaise réponse, l'objectif est de poser un diagnostic qualitatif.</p>
+                      </div>
                       <div className="grid grid-cols-3 grid-rows-3 gap-3" style={{ minHeight: 460 }}>
                         <div />
                         <Card className="p-4">
-                          <div className="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-3">🆕 Nouveaux entrants</div>
-                          <PorterField label="Entrants potentiels" placeholder="ex. 2-3 acteurs asiatiques" famille={analysisKey} fieldKey="ne_nb" />
-                          <PorterField label="Typologies" placeholder="ex. Distributeurs" famille={analysisKey} fieldKey="ne_type" />
+                          <div className="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">🆕 Nouveaux entrants</div>
+                          <div className="text-[10px] text-gray-400 mb-3 italic">Fournisseurs susceptibles d'entrer sur ce marché</div>
+                          <PorterField label="Qui peut entrer ?" placeholder="ex. 2-3 acteurs asiatiques, startups" famille={analysisKey} fieldKey="ne_nb" />
+                          <PorterField label="Barrières à l'entrée" placeholder="ex. Fortes (certifications), Faibles" famille={analysisKey} fieldKey="ne_type" />
                         </Card>
                         <div />
                         <Card className="p-4">
-                          <div className="text-xs font-bold text-teal-600 uppercase tracking-wide mb-3">🏭 Fournisseurs</div>
-                          <PorterField label="Nb fournisseurs" placeholder="ex. 12" famille={analysisKey} fieldKey="f_nb" />
-                          <PorterField label="Leaders" placeholder="ex. Fournisseur A, B" famille={analysisKey} fieldKey="f_leaders" />
+                          <div className="text-xs font-bold text-teal-600 uppercase tracking-wide mb-1">🏭 Pouvoir fournisseurs</div>
+                          <div className="text-[10px] text-gray-400 mb-3 italic">Capacité des fournisseurs à imposer leurs conditions</div>
+                          <PorterField label="Nb fournisseurs actifs" placeholder="ex. 12 (dont 3 leaders)" famille={analysisKey} fieldKey="f_nb" />
+                          <PorterField label="Leaders du marché" placeholder="ex. Fournisseur A, B — part ~60 %" famille={analysisKey} fieldKey="f_leaders" />
                         </Card>
                         <Card className="flex items-center justify-center text-center p-4 bg-[#e8f4f3]">
                           <div>
-                            <div className="font-bold text-[#2F5B58] text-sm mb-1">Marché existant</div>
-                            <div className="text-xs text-gray-500">{analysisKey}</div>
+                            <div className="font-bold text-[#2F5B58] text-sm mb-1">Marché analysé</div>
+                            <div className="text-xs text-gray-500 mt-1">{analysisKey}</div>
                           </div>
                         </Card>
                         <Card className="p-4">
-                          <div className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-3">🛒 Clients internes</div>
-                          <PorterField label="Nb clients internes" placeholder="ex. 4 sites" famille={analysisKey} fieldKey="c_nb" />
-                          <PorterField label="Typologies" placeholder="ex. Production, R&D" famille={analysisKey} fieldKey="c_type" />
+                          <div className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-1">🛒 Pouvoir clients internes</div>
+                          <div className="text-[10px] text-gray-400 mb-3 italic">Services internes consommateurs de ce besoin</div>
+                          <PorterField label="Nb de services / sites" placeholder="ex. 4 sites, 6 directions" famille={analysisKey} fieldKey="c_nb" />
+                          <PorterField label="Type de consommateurs" placeholder="ex. Production, RH, Informatique" famille={analysisKey} fieldKey="c_type" />
                         </Card>
                         <div />
                         <Card className="p-4">
-                          <div className="text-xs font-bold text-red-600 uppercase tracking-wide mb-3">💡 Substituts</div>
-                          <PorterField label="Technologies" placeholder="ex. Impression 3D" famille={analysisKey} fieldKey="ts_tech" />
-                          <PorterField label="Horizon" placeholder="ex. 2-3 ans" famille={analysisKey} fieldKey="ts_date" />
+                          <div className="text-xs font-bold text-red-600 uppercase tracking-wide mb-1">💡 Produits substituts</div>
+                          <div className="text-[10px] text-gray-400 mb-3 italic">Alternatives pouvant remplacer ce besoin</div>
+                          <PorterField label="Alternatives identifiées" placeholder="ex. Impression 3D, internalisation" famille={analysisKey} fieldKey="ts_tech" />
+                          <PorterField label="Horizon temporel" placeholder="ex. Disponible dans 2-3 ans" famille={analysisKey} fieldKey="ts_date" />
                         </Card>
                         <div />
                       </div>
-                      <div className="text-[10px] text-gray-400 italic text-center">Note : les données Porter sont locales à cette session (non persistées entre sessions)</div>
+                      <Card className="p-4">
+                        <div className="text-xs font-bold text-purple-600 uppercase tracking-wide mb-1">⚔️ Rivalité concurrentielle entre fournisseurs</div>
+                        <div className="text-[10px] text-gray-400 mb-3 italic">Intensité de la concurrence entre les fournisseurs en place</div>
+                        <PorterField label="Intensité" placeholder="ex. Forte — marché mature avec 10+ acteurs actifs" famille={analysisKey} fieldKey="rc_intensite" />
+                        <PorterField label="Tendance du marché" placeholder="ex. En croissance / Saturé / En consolidation" famille={analysisKey} fieldKey="rc_tendance" />
+                      </Card>
                     </div>
                   )}
 
@@ -1279,7 +1902,7 @@ export default function AnalysePortefeuille() {
             ...Object.keys(contraintesStore),
             ...Object.keys(risquesStore),
             ...Object.keys(swotStore),
-            ...Object.keys(profitStore),
+            ...Object.keys(opportunStore),
             ...Object.keys(donneesStore),
           ])].sort();
           return (
@@ -1316,10 +1939,10 @@ export default function AnalysePortefeuille() {
                         const ci = getCIScore(nom);
                         const ce = getCEScore(nom);
                         const risk = getRisqueScore(nom);
-                        const profit = profitStore[nom] || 0;
+                        const opport = getOpportunScore(nom);
                         const d = donneesStore[nom] ?? EMPTY_DONNEES;
                         const quad = quadrant(ci, ce);
-                        const levier = getLevier(ci, ce, risk, profit);
+                        const levier = getLevier(ci, ce, risk, opport);
                         const status = getElementStatus(nom);
                         return (
                           <tr
@@ -1337,7 +1960,7 @@ export default function AnalysePortefeuille() {
                                 risk > 0   ? 'bg-green-100 text-green-700' : 'text-gray-300'
                               }`}>{risk || '—'}</span>
                             </td>
-                            <td className="px-3 py-2.5 text-center text-[#2F5B58] font-semibold">{profit || '—'}</td>
+                            <td className="px-3 py-2.5 text-center text-[#2F5B58] font-semibold">{opport || '—'}</td>
                             <td className="px-3 py-2.5 text-center">
                               {ci > 0 || ce > 0
                                 ? <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${quad.color}`}>{quad.label}</span>
@@ -1369,6 +1992,90 @@ export default function AnalysePortefeuille() {
                   Utilisez <strong>JSON</strong> pour sauvegarder/restaurer toute l'analyse, et <strong>Excel</strong> pour exporter les données dans un tableur.
                 </div>
               </div>
+            </div>
+          );
+        })()}
+
+        {/* ═══════════════════════════════════════════════════
+            ONGLET 4 — Graphiques
+        ═══════════════════════════════════════════════════ */}
+        {activeTab === 4 && (() => {
+          const allKeys = [...new Set([
+            ...Object.keys(contraintesStore),
+            ...Object.keys(risquesStore),
+            ...Object.keys(opportunStore),
+          ])].sort();
+
+          return (
+            <div className="space-y-6">
+              {/* Radar */}
+              <Card>
+                <CardHeader title="Radar multi-axes — Profil d'un élément" icon={<TrendingUp className="w-4 h-4" />} />
+                <div className="p-4">
+                  <div className="mb-3 flex items-center gap-3">
+                    <label className="text-xs text-gray-600 font-medium">Élément :</label>
+                    <select
+                      value={radarElement}
+                      onChange={e => setRadarElement(e.target.value)}
+                      className="text-xs border border-gray-200 rounded px-2 py-1 text-gray-700"
+                    >
+                      {allKeys.length === 0 && <option value="">Aucun élément analysé</option>}
+                      {allKeys.map(k => <option key={k} value={k}>{k}</option>)}
+                    </select>
+                  </div>
+                  {allKeys.length === 0 ? (
+                    <div className="text-center py-10 text-gray-400 text-xs">Évaluez au moins un élément dans l&apos;onglet Familles.</div>
+                  ) : (
+                    <>
+                      <canvas ref={radarCanvasRef} className="w-full" style={{ height: 360 }} />
+                      <div className="flex flex-wrap gap-3 mt-3 justify-center text-[10px] text-gray-500">
+                        {[
+                          { label: 'C. Int. Techniques',    color: '#2F5B58' },
+                          { label: 'C. Int. Commerciales',  color: '#2F5B58' },
+                          { label: 'C. Ext. Techniques',    color: '#2F5B58' },
+                          { label: 'C. Ext. Commerciales',  color: '#2F5B58' },
+                          { label: 'Risques',               color: '#ef4444' },
+                          { label: 'Opportunités',          color: '#f59e0b' },
+                        ].map((l, i) => (
+                          <div key={i} className="flex items-center gap-1">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
+                            {l.label}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </Card>
+
+              {/* Histogramme comparatif */}
+              <Card>
+                <CardHeader title="Comparaison des scores — Tous les éléments" icon={<BarChart2 className="w-4 h-4" />} />
+                <div className="p-4">
+                  {allKeys.length === 0 ? (
+                    <div className="text-center py-10 text-gray-400 text-xs">Aucun élément à comparer.</div>
+                  ) : (
+                    <>
+                      <div className="flex gap-4 mb-3 flex-wrap text-[10px]">
+                        {[
+                          { label: 'CI (Contraintes internes)',  color: '#6366f1' },
+                          { label: 'CE (Contraintes externes)',  color: '#f59e0b' },
+                          { label: 'Risques',                    color: '#ef4444' },
+                          { label: 'Opportunités',               color: '#10b981' },
+                        ].map(l => (
+                          <div key={l.label} className="flex items-center gap-1.5 text-gray-600">
+                            <div className="w-3 h-3 rounded-sm" style={{ background: l.color }} />
+                            {l.label}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="overflow-y-auto" style={{ maxHeight: 500 }}>
+                        <canvas ref={barCanvasRef} className="w-full" style={{ height: Math.max(200, allKeys.length * 44 + 20) }} />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </Card>
             </div>
           );
         })()}
@@ -1523,7 +2230,7 @@ function getLevier(ci: number, ce: number, risk: number, profit: number): string
     return '🤝 Partenariat fournisseur';
   }
   if (ci >= 50 && ce < 50) {
-    if (profit >= 4) return '💰 Mise en concurrence';
+    if (profit >= 15) return '💰 Mise en concurrence';
     return '⚙️ Optimisation interne';
   }
   return '🚨 Gestion de crise + plan de continuité';

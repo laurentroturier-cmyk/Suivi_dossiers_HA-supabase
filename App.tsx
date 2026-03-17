@@ -58,6 +58,7 @@ import { AnalyseOffresDQE } from './components/analyse-offres-dqe';
 import { DpgfReader } from './components/analyse-dpgf';
 import DashboardPage from './pages/DashboardPage';
 import { DashboardAchats } from './components/dashboard-achats';
+import { AnalysePortefeuille } from './components/analyse-portefeuille';
 
 import { 
   RedactionPlaceholder,
@@ -3379,6 +3380,11 @@ const App: React.FC = () => {
 
             {activeTab === 'redaction' && redactionSection !== null && redactionSection !== 'DCE' && redactionSection !== 'RapportCommission' && redactionSection !== 'NOTIMulti' && redactionSection !== 'DCEComplet' && redactionSection !== 'NOTI' && (
               <RedactionPlaceholder selectedSection={redactionSection} />
+            )}
+            {activeTab === 'analyse-portefeuille' && (
+              <div className="animate-in fade-in duration-500">
+                <AnalysePortefeuille />
+              </div>
             )}
             {activeTab === 'export' && (
               <div className="max-w-2xl mx-auto py-12 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">

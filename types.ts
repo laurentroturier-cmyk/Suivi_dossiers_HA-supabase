@@ -128,5 +128,6 @@ export type TableType =
   | 'rapport-presentation'
   | 'workflow-analyse-offres'
   | 'analyse-offres-dqe'
-  | 'analyse-dpgf';
+  | 'analyse-dpgf'
+  | 'analyse-portefeuille';
 

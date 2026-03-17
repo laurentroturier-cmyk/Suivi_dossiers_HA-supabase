@@ -50,6 +50,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       actions: [
         { label: 'Tableau de bord', tab: 'dashboard', isAdmin: false },
         { label: 'Planning Gantt', tab: 'gantt', isAdmin: false },
+        { label: 'Analyse de portefeuille', tab: 'analyse-portefeuille', isAdmin: false },
       ]
     },
     {
