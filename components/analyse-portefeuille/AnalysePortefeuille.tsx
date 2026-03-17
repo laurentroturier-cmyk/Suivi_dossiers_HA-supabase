@@ -137,6 +137,47 @@ function quadrant(ci: number, ce: number): { label: string; color: string } {
 
 const EMPTY_DONNEES: DonneesElement = { ca: 0, budgetPrev: 0, nbCommandes: 0, nbFournisseurs: 0, notes: '' };
 
+// ─── Couverture contractuelle ─────────────────────────────────────────────────
+
+interface CouvertureContractuelle {
+  noteGlobale: number;        // 0-5
+  axes: {
+    formalisation: number;    // 0-5 — Existence de contrats formels
+    clauses: number;          // 0-5 — Qualité des clauses (prix, délais, pénalités)
+    sortie: number;           // 0-5 — Clauses de sortie / résiliation
+    revision: number;         // 0-5 — Révision de prix / indexation
+    sla: number;              // 0-5 — SLA définis et mesurables
+    conformite: number;       // 0-5 — Conformité réglementaire
+  };
+  observations: string;
+  actions: string[];
+}
+
+const EMPTY_COUVERTURE = (): CouvertureContractuelle => ({
+  noteGlobale: -1,
+  axes: { formalisation: -1, clauses: -1, sortie: -1, revision: -1, sla: -1, conformite: -1 },
+  observations: '',
+  actions: [],
+});
+
+const COUVERTURE_LEVELS = [
+  { note: 0, label: 'Sécurisé',       color: 'bg-green-100 text-green-800 border-green-200',  desc: 'Couverture contractuelle optimale. Tous les contrats sont à jour, robustes et couvrent tous les risques possibles.' },
+  { note: 1, label: 'Très bon niveau', color: 'bg-emerald-100 text-emerald-800 border-emerald-200', desc: 'Contrats bien structurés avec quelques ajustements possibles (ex. : renforcement des clauses de sortie ou des pénalités).' },
+  { note: 2, label: 'Acceptable',      color: 'bg-yellow-100 text-yellow-800 border-yellow-200', desc: 'Certains contrats manquent de précisions ou ne couvrent pas tous les risques. Risques modérés mais restent gérables.' },
+  { note: 3, label: 'Moyen',           color: 'bg-orange-100 text-orange-800 border-orange-200', desc: 'Zones d\'ombre contractuelles importantes. Pas de SLA définis, clauses de résiliation imprécises. Actions correctives nécessaires.' },
+  { note: 4, label: 'Faible',          color: 'bg-red-100 text-red-800 border-red-200',     desc: 'Peu ou pas de contrats formels, ou contrats très déséquilibrés. Forte exposition aux risques. Mesures d\'urgence requises.' },
+  { note: 5, label: 'Critique',        color: 'bg-red-200 text-red-900 border-red-300',     desc: 'Absence totale de cadre contractuel ou contrats caducs. Aucun levier juridique. Situation à traiter en priorité absolue.' },
+];
+
+const AXES_LABELS: Record<keyof CouvertureContractuelle['axes'], string> = {
+  formalisation: 'Existence de contrats formels',
+  clauses:       'Qualité des clauses (prix, délais, pénalités)',
+  sortie:        'Clauses de sortie / résiliation',
+  revision:      'Révision de prix / indexation',
+  sla:           'SLA définis et mesurables',
+  conformite:    'Conformité réglementaire',
+};
+
 // ─── Composants de base ───────────────────────────────────────────────────────
 
 function TabBtn({ active, onClick, icon, label, count }: {
@@ -230,6 +271,8 @@ export default function AnalysePortefeuille() {
   }>>({});
   const [opportunStore, setOpportunStore] = useState<Record<string, OpportunData>>({});
   const [donneesStore, setDonneesStore]   = useState<Record<string, DonneesElement>>({});
+  const [couvertureStore, setCouvertureStore] = useState<Record<string, CouvertureContractuelle>>({});
+  const [newCouvertureAction, setNewCouvertureAction] = useState('');
 
   // ─── Chargement segmentation ─────────────────────────────────────────────
   const fetchFamilles = useCallback(async () => {
@@ -314,7 +357,7 @@ export default function AnalysePortefeuille() {
       if (!user) return;
       const { data, error } = await supabase
         .from('analyse_portefeuille_data')
-        .select('element_nom, donnees, contraintes, risques, opportunites, swot, porter')
+        .select('element_nom, donnees, contraintes, risques, opportunites, swot, porter, couverture_contractuelle')
         .eq('user_id', user.id);
       if (error) throw error;
       if (!data || data.length === 0) return;
@@ -324,6 +367,7 @@ export default function AnalysePortefeuille() {
       const newRisques: Record<string, RisqueData> = {};
       const newOpportun: Record<string, OpportunData> = {};
       const newSwot: Record<string, any> = {};
+      const newCouverture: Record<string, CouvertureContractuelle> = {};
 
       data.forEach((row: any) => {
         const nom = row.element_nom;
@@ -332,6 +376,7 @@ export default function AnalysePortefeuille() {
         if (row.risques && Object.keys(row.risques).length > 0)     newRisques[nom]     = row.risques;
         if (row.opportunites && Object.keys(row.opportunites).length > 0) newOpportun[nom] = row.opportunites;
         if (row.swot && Object.keys(row.swot).length > 0)           newSwot[nom]        = row.swot;
+        if (row.couverture_contractuelle && Object.keys(row.couverture_contractuelle).length > 0) newCouverture[nom] = row.couverture_contractuelle;
       });
 
       if (Object.keys(newDonnees).length > 0)     setDonneesStore(newDonnees);
@@ -339,6 +384,7 @@ export default function AnalysePortefeuille() {
       if (Object.keys(newRisques).length > 0)     setRisquesStore(newRisques);
       if (Object.keys(newOpportun).length > 0)    setOpportunStore(newOpportun);
       if (Object.keys(newSwot).length > 0)        setSwotStore(newSwot);
+      if (Object.keys(newCouverture).length > 0)  setCouvertureStore(newCouverture);
     } catch (err) {
       console.error('Erreur chargement Supabase:', err);
     }
@@ -358,6 +404,7 @@ export default function AnalysePortefeuille() {
         ...Object.keys(risquesStore),
         ...Object.keys(opportunStore),
         ...Object.keys(swotStore),
+        ...Object.keys(couvertureStore),
       ])];
 
       if (allKeys.length === 0) {
@@ -366,14 +413,15 @@ export default function AnalysePortefeuille() {
       }
 
       const rows = allKeys.map(nom => ({
-        user_id:      user.id,
-        element_nom:  nom,
-        donnees:      donneesStore[nom]     || {},
-        contraintes:  contraintesStore[nom] || {},
-        risques:      risquesStore[nom]     || {},
-        opportunites: opportunStore[nom]    || {},
-        swot:         swotStore[nom]        || {},
-        porter:       {},
+        user_id:                  user.id,
+        element_nom:              nom,
+        donnees:                  donneesStore[nom]     || {},
+        contraintes:              contraintesStore[nom] || {},
+        risques:                  risquesStore[nom]     || {},
+        opportunites:             opportunStore[nom]    || {},
+        swot:                     swotStore[nom]        || {},
+        porter:                   {},
+        couverture_contractuelle: couvertureStore[nom]  || {},
       }));
 
       // Upsert par batch de 50
@@ -396,7 +444,7 @@ export default function AnalysePortefeuille() {
     } finally {
       setSupabaseSaving(false);
     }
-  }, [donneesStore, contraintesStore, risquesStore, opportunStore, swotStore]);
+  }, [donneesStore, contraintesStore, risquesStore, opportunStore, swotStore, couvertureStore]);
 
   // ─── Persistence localStorage ─────────────────────────────────────────────
   useEffect(() => {
@@ -404,11 +452,12 @@ export default function AnalysePortefeuille() {
       const saved = localStorage.getItem('analyse-portefeuille');
       if (saved) {
         const d = JSON.parse(saved);
-        if (d.contraintesStore) setContraintesStore(d.contraintesStore);
-        if (d.risquesStore)     setRisquesStore(d.risquesStore);
-        if (d.swotStore)        setSwotStore(d.swotStore);
-        if (d.opportunStore)    setOpportunStore(d.opportunStore);
-        if (d.donneesStore)     setDonneesStore(d.donneesStore);
+        if (d.contraintesStore)  setContraintesStore(d.contraintesStore);
+        if (d.risquesStore)      setRisquesStore(d.risquesStore);
+        if (d.swotStore)         setSwotStore(d.swotStore);
+        if (d.opportunStore)     setOpportunStore(d.opportunStore);
+        if (d.donneesStore)      setDonneesStore(d.donneesStore);
+        if (d.couvertureStore)   setCouvertureStore(d.couvertureStore);
         // Rétrocompat : ancienne clé chiffreAffairesStore
         else if (d.chiffreAffairesStore) {
           const migrated: Record<string, DonneesElement> = {};
@@ -433,12 +482,12 @@ export default function AnalysePortefeuille() {
   useEffect(() => {
     try {
       localStorage.setItem('analyse-portefeuille', JSON.stringify({
-        contraintesStore, risquesStore, swotStore, opportunStore, donneesStore, selectedElement,
+        contraintesStore, risquesStore, swotStore, opportunStore, donneesStore, selectedElement, couvertureStore,
       }));
       const now = new Date();
       setLastSaved(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
     } catch {}
-  }, [contraintesStore, risquesStore, swotStore, opportunStore, donneesStore, selectedElement]);
+  }, [contraintesStore, risquesStore, swotStore, opportunStore, donneesStore, selectedElement, couvertureStore]);
 
   // Auto-save Supabase (debounce 10s)
   useEffect(() => {
@@ -450,7 +499,7 @@ export default function AnalysePortefeuille() {
     }, 10000);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [donneesStore, contraintesStore, risquesStore, opportunStore, swotStore, saveToSupabase]);
+  }, [donneesStore, contraintesStore, risquesStore, opportunStore, swotStore, couvertureStore, saveToSupabase]);
 
   // ─── Helpers données ─────────────────────────────────────────────────────
   const getDonnees = (nom: string): DonneesElement => donneesStore[nom] ?? { ...EMPTY_DONNEES };
@@ -459,6 +508,40 @@ export default function AnalysePortefeuille() {
       ...prev,
       [nom]: { ...(prev[nom] ?? { ...EMPTY_DONNEES }), [field]: val },
     }));
+  }, []);
+
+  // ─── Helpers couverture contractuelle ─────────────────────────────────────
+  const getCouverture = (famille: string): CouvertureContractuelle =>
+    couvertureStore[famille] || EMPTY_COUVERTURE();
+
+  const updateCouverture = useCallback((famille: string, patch: Partial<CouvertureContractuelle>) => {
+    setCouvertureStore(prev => ({
+      ...prev,
+      [famille]: { ...( prev[famille] || EMPTY_COUVERTURE()), ...patch },
+    }));
+  }, [couvertureStore]);
+
+  const updateCouvertureAxe = useCallback((famille: string, axe: keyof CouvertureContractuelle['axes'], val: number) => {
+    setCouvertureStore(prev => {
+      const current = prev[famille] || EMPTY_COUVERTURE();
+      return { ...prev, [famille]: { ...current, axes: { ...current.axes, [axe]: val } } };
+    });
+  }, []);
+
+  const addCouvertureAction = useCallback((famille: string, action: string) => {
+    if (!action.trim()) return;
+    setCouvertureStore(prev => {
+      const current = prev[famille] || EMPTY_COUVERTURE();
+      return { ...prev, [famille]: { ...current, actions: [...current.actions, action.trim()] } };
+    });
+  }, []);
+
+  const removeCouvertureAction = useCallback((famille: string, idx: number) => {
+    setCouvertureStore(prev => {
+      const current = prev[famille] || EMPTY_COUVERTURE();
+      const actions = current.actions.filter((_, i) => i !== idx);
+      return { ...prev, [famille]: { ...current, actions } };
+    });
   }, []);
 
   // ─── Helpers contraintes ─────────────────────────────────────────────────
@@ -1524,6 +1607,7 @@ export default function AnalysePortefeuille() {
                       { label: 'Opportunités', icon: <BarChart2 className="w-3.5 h-3.5" /> },
                       { label: 'Porter',       icon: <Shield className="w-3.5 h-3.5" /> },
                       { label: 'SWOT',         icon: <Zap className="w-3.5 h-3.5" /> },
+                      { label: 'Couverture',   icon: <Shield className="w-3.5 h-3.5" /> },
                     ].map((t, i) => (
                       <TabBtn key={i} active={detailTab === i} onClick={() => setDetailTab(i)} icon={t.icon} label={t.label} />
                     ))}
@@ -1800,6 +1884,163 @@ export default function AnalysePortefeuille() {
                             onRemove={idx => removeSwotItem(analysisKey, q.key, idx)}
                           />
                         ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── Sous-onglet 6 : Couverture Contractuelle ── */}
+                  {detailTab === 6 && (() => {
+                    const cov = getCouverture(analysisKey);
+                    const axeKeys = Object.keys(AXES_LABELS) as Array<keyof CouvertureContractuelle['axes']>;
+                    const avgAxes = axeKeys.filter(k => cov.axes[k] >= 0).map(k => cov.axes[k]);
+                    const avgNote = avgAxes.length > 0 ? Math.round(avgAxes.reduce((s, v) => s + v, 0) / avgAxes.length) : -1;
+                    const displayNote = cov.noteGlobale >= 0 ? cov.noteGlobale : avgNote;
+                    const levelInfo = displayNote >= 0 ? COUVERTURE_LEVELS[displayNote] : null;
+
+                    return (
+                      <div className="space-y-4">
+                        {/* Note globale */}
+                        <Card>
+                          <CardHeader title="Note globale de couverture contractuelle (0 = Sécurisé · 5 = Critique)" icon={<Shield className="w-4 h-4" />} />
+                          <div className="p-4 space-y-3">
+                            <div className="flex items-center gap-4">
+                              <div className="flex gap-2 flex-wrap">
+                                {COUVERTURE_LEVELS.map(l => (
+                                  <button
+                                    key={l.note}
+                                    onClick={() => updateCouverture(analysisKey, { noteGlobale: cov.noteGlobale === l.note ? -1 : l.note })}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                                      displayNote === l.note ? l.color + ' ring-2 ring-offset-1 ring-current' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                                    }`}
+                                  >
+                                    <span className="text-base font-bold">{l.note}</span>
+                                    <span>{l.label}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            {levelInfo && (
+                              <div className={`p-3 rounded-lg border text-xs ${levelInfo.color}`}>
+                                <span className="font-semibold">{levelInfo.label} :</span> {levelInfo.desc}
+                              </div>
+                            )}
+                            {cov.noteGlobale < 0 && avgNote >= 0 && (
+                              <p className="text-[11px] text-gray-400 italic">Note calculée automatiquement depuis les axes : {avgNote} — {COUVERTURE_LEVELS[avgNote]?.label}</p>
+                            )}
+                          </div>
+                        </Card>
+
+                        {/* Axes d'évaluation */}
+                        <Card>
+                          <CardHeader title="Axes d'évaluation détaillés" />
+                          <div className="p-4 space-y-1">
+                            <div className="grid grid-cols-3 gap-x-4 text-[10px] text-gray-400 font-medium mb-2 px-1">
+                              <span>Axe</span>
+                              <span className="col-span-2 text-right pr-4">Note (0 = OK · 5 = Critique)</span>
+                            </div>
+                            {axeKeys.map(axe => (
+                              <div key={axe} className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0">
+                                <span className="text-[11px] text-gray-600 flex-1 leading-tight">{AXES_LABELS[axe]}</span>
+                                <div className="flex items-center gap-1.5">
+                                  {[-1, 0, 1, 2, 3, 4, 5].map(v => (
+                                    <button
+                                      key={v}
+                                      onClick={() => updateCouvertureAxe(analysisKey, axe, v)}
+                                      className={`w-6 h-6 rounded text-[10px] font-bold transition-all border ${
+                                        cov.axes[axe] === v
+                                          ? v < 0 ? 'bg-gray-200 text-gray-500 border-gray-300'
+                                            : v <= 1 ? 'bg-green-500 text-white border-green-600'
+                                            : v <= 2 ? 'bg-yellow-400 text-white border-yellow-500'
+                                            : v <= 3 ? 'bg-orange-400 text-white border-orange-500'
+                                            : 'bg-red-500 text-white border-red-600'
+                                          : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
+                                      }`}
+                                      title={v < 0 ? 'Non évalué' : `Note ${v}`}
+                                    >
+                                      {v < 0 ? '—' : v}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </Card>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Observations */}
+                          <Card>
+                            <CardHeader title="Observations" />
+                            <div className="p-4">
+                              <textarea
+                                value={cov.observations}
+                                onChange={e => updateCouverture(analysisKey, { observations: e.target.value })}
+                                placeholder="Contexte contractuel, points d'attention, historique des litiges..."
+                                className="w-full h-32 text-xs border border-gray-200 rounded-lg p-2.5 resize-none focus:outline-none focus:ring-1 focus:ring-[#2F5B58]"
+                              />
+                            </div>
+                          </Card>
+
+                          {/* Actions correctives */}
+                          <Card>
+                            <CardHeader title="Actions correctives" />
+                            <div className="p-4 space-y-2">
+                              <div className="flex gap-2">
+                                <input
+                                  value={newCouvertureAction}
+                                  onChange={e => setNewCouvertureAction(e.target.value)}
+                                  onKeyDown={e => { if (e.key === 'Enter') { addCouvertureAction(analysisKey, newCouvertureAction); setNewCouvertureAction(''); } }}
+                                  placeholder="Ajouter une action corrective..."
+                                  className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#2F5B58]"
+                                />
+                                <button
+                                  onClick={() => { addCouvertureAction(analysisKey, newCouvertureAction); setNewCouvertureAction(''); }}
+                                  className="px-3 py-1.5 text-xs font-medium text-white bg-[#2F5B58] rounded-lg hover:bg-[#254845]"
+                                >+</button>
+                              </div>
+                              <div className="space-y-1 max-h-24 overflow-y-auto">
+                                {cov.actions.length === 0 && (
+                                  <p className="text-[11px] text-gray-400 italic">Aucune action définie</p>
+                                )}
+                                {cov.actions.map((a, i) => (
+                                  <div key={i} className="flex items-start gap-2 text-[11px] text-gray-700 bg-gray-50 rounded px-2 py-1">
+                                    <span className="text-[#2F5B58] font-bold mt-0.5">→</span>
+                                    <span className="flex-1">{a}</span>
+                                    <button onClick={() => removeCouvertureAction(analysisKey, i)} className="text-gray-300 hover:text-red-400 ml-1">×</button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </Card>
+                        </div>
+
+                        {/* Tableau de référence */}
+                        <Card>
+                          <CardHeader title="Référentiel — Modèle de cotation (0 à 5)" />
+                          <div className="p-4">
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-[11px] border-collapse">
+                                <thead>
+                                  <tr className="border-b border-gray-200">
+                                    <th className="text-left font-semibold text-gray-600 py-1.5 pr-3 w-8">Note</th>
+                                    <th className="text-left font-semibold text-gray-600 py-1.5 pr-3 w-40">Niveau</th>
+                                    <th className="text-left font-semibold text-gray-600 py-1.5">Description</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {COUVERTURE_LEVELS.map(l => (
+                                    <tr key={l.note} className={`border-b border-gray-100 ${displayNote === l.note ? 'font-semibold' : ''}`}>
+                                      <td className="py-1.5 pr-3 align-top">
+                                        <span className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold border ${l.color}`}>{l.note}</span>
+                                      </td>
+                                      <td className="py-1.5 pr-3 align-top font-medium text-gray-700">{l.label}</td>
+                                      <td className="py-1.5 text-gray-500 leading-relaxed">{l.desc}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </Card>
                       </div>
                     );
                   })()}
