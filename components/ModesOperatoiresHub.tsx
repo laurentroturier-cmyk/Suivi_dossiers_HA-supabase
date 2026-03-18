@@ -146,7 +146,7 @@ const ModesOperatoiresHub: React.FC<ModesOperatoiresHubProps> = ({ onNavigate })
         
         {/* Footer décoratif */}
         <div className="pt-12 border-t border-gray-200/50 dark:border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-gray-400 md:px-4">
-          <p>© 2024 GestProjet — Plateforme DNA Achats</p>
+          <p>© {new Date().getFullYear()} GestProjet — Plateforme DNA Achats</p>
           <div className="flex items-center gap-6 font-medium">
             <a href="#" className="hover:text-blue-500 transition-colors">Support</a>
             <a href="#" className="hover:text-blue-500 transition-colors">Mises à jour</a>

@@ -138,7 +138,7 @@ export function ProcedureSelector({
           onChange={handleInputChange}
           onFocus={() => setShowSuggestions(inputValue.length >= 2)}
           disabled={disabled || isLoadingAll}
-          placeholder="Ex: 20241"
+          placeholder="Ex: 20261"
           maxLength={5}
           className={`
             w-full px-4 py-3 pr-12 

@@ -115,7 +115,7 @@ const ModeOpLayout: React.FC<ModeOpLayoutProps> = ({
           
           {/* Footer du document */}
           <div className="px-8 py-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-800/10 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] text-gray-400 dark:text-slate-500 font-medium lowercase tracking-wide">
-            <span>© 2024 GestProjet — Documentation Utilisateur</span>
+            <span>© {new Date().getFullYear()} GestProjet — Documentation Utilisateur</span>
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-blue-400" /> dna achats</span>
               <span className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-blue-400" /> support technique</span>

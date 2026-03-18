@@ -143,7 +143,7 @@ export function ReglementConsultationForm({ data, onSave, isSaving = false }: Pr
             value={form.enTete.numeroProcedure}
             onChange={e => updateForm(p => ({ ...p, enTete: { ...p.enTete, numeroProcedure: e.target.value } }))}
             className="w-full border rounded-lg px-2 py-1.5 text-sm"
-            placeholder="20241"
+            placeholder="20261"
           />
         </div>
         <div>

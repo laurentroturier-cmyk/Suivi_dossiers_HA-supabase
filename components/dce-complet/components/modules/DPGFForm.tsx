@@ -70,7 +70,7 @@ export function DPGFForm({ data, onSave, isSaving = false }: Props) {
           value={lotsText}
           onChange={e => setLotsText(e.target.value)}
           className="w-full border rounded-lg px-2 py-1.5 text-sm min-h-[160px] font-mono text-sm"
-          placeholder="1 | Lot principal | 100000 | 105000 | 1,Avenant,5000,2024-04-01"
+          placeholder="1 | Lot principal | 100000 | 105000 | 1,Avenant,5000,2026-04-01"
         />
       </section>
     </div>
