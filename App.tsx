@@ -59,6 +59,14 @@ import { DpgfReader } from './components/analyse-dpgf';
 import DashboardPage from './pages/DashboardPage';
 import { DashboardAchats } from './components/dashboard-achats';
 import { AnalysePortefeuille } from './components/analyse-portefeuille';
+import ModesOperatoires from './components/ModesOperatoires';
+import ModeOpTdb from './components/ModeOpTdb';
+import ModeOpGantt from './components/ModeOpGantt';
+import ModeOpPortefeuille from './components/ModeOpPortefeuille';
+import ModesOperatoiresHub from './components/ModesOperatoiresHub';
+import ModeOpExecution from './components/ModeOpExecution';
+import ModeOpAvenant from './components/ModeOpAvenant';
+import ModeOpImmo from './components/ModeOpImmo';
 
 import { 
   RedactionPlaceholder,
@@ -3384,6 +3392,46 @@ const App: React.FC = () => {
             {activeTab === 'analyse-portefeuille' && (
               <div className="animate-in fade-in duration-500">
                 <AnalysePortefeuille />
+              </div>
+            )}
+            {activeTab === 'mode-op-hub' && (
+              <div className="animate-in fade-in duration-500">
+                <ModesOperatoiresHub onNavigate={(t) => setActiveTab(t as TableType)} />
+              </div>
+            )}
+            {activeTab === 'modes-operatoires' && (
+              <div className="animate-in fade-in duration-500">
+                <ModesOperatoires onNavigate={(t) => setActiveTab(t as TableType)} />
+              </div>
+            )}
+            {activeTab === 'mode-op-tdb' && (
+              <div className="animate-in fade-in duration-500">
+                <ModeOpTdb onNavigate={(t) => setActiveTab(t as TableType)} />
+              </div>
+            )}
+            {activeTab === 'mode-op-gantt' && (
+              <div className="animate-in fade-in duration-500">
+                <ModeOpGantt onNavigate={(t) => setActiveTab(t as TableType)} />
+              </div>
+            )}
+            {activeTab === 'mode-op-portefeuille' && (
+              <div className="animate-in fade-in duration-500">
+                <ModeOpPortefeuille onNavigate={(t) => setActiveTab(t as TableType)} />
+              </div>
+            )}
+            {activeTab === 'mode-op-execution' && (
+              <div className="animate-in fade-in duration-500">
+                <ModeOpExecution onNavigate={(t) => setActiveTab(t as TableType)} />
+              </div>
+            )}
+            {activeTab === 'mode-op-avenant' && (
+              <div className="animate-in fade-in duration-500">
+                <ModeOpAvenant onNavigate={(t) => setActiveTab(t as TableType)} />
+              </div>
+            )}
+            {activeTab === 'mode-op-immo' && (
+              <div className="animate-in fade-in duration-500">
+                <ModeOpImmo onNavigate={(t) => setActiveTab(t as TableType)} />
               </div>
             )}
             {activeTab === 'export' && (

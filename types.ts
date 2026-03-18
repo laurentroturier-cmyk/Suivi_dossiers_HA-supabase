@@ -129,5 +129,13 @@ export type TableType =
   | 'workflow-analyse-offres'
   | 'analyse-offres-dqe'
   | 'analyse-dpgf'
-  | 'analyse-portefeuille';
+  | 'analyse-portefeuille'
+  | 'modes-operatoires'
+  | 'mode-op-tdb'
+  | 'mode-op-gantt'
+  | 'mode-op-portefeuille'
+  | 'mode-op-hub'
+  | 'mode-op-execution'
+  | 'mode-op-avenant'
+  | 'mode-op-immo';
 

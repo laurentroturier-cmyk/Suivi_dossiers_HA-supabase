@@ -202,6 +202,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
         { label: 'Paramètres', tab: 'admin', isAdmin: true },
       ]
     },
+    {
+      id: 'modes-operatoires',
+      titre: 'Modes opératoires',
+      description: 'Consulter les procédures et manuels d\'utilisation',
+      icon: BookOpen,
+      iconColor: 'text-sky-600 dark:text-sky-400',
+      iconBg: 'bg-sky-100 dark:bg-sky-500/20',
+      borderColor: 'border-sky-200 dark:border-sky-500/40',
+      borderHover: 'hover:border-sky-400 dark:hover:border-sky-400',
+      btnBg: 'bg-gray-100 hover:bg-gray-200 dark:bg-[#252525] dark:hover:bg-[#2a2a2a]',
+      btnText: 'text-gray-700 dark:text-gray-200',
+      actions: [
+        { label: 'Ouvrir le Centre de Ressources', tab: 'mode-op-hub', isAdmin: false },
+      ]
+    },
   ];
 
   const [openTileId, setOpenTileId] = useState<string | null>(null);

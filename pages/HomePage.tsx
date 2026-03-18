@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjects, useDossiers, useAuth } from '@/hooks';
-import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart, Building2, Edit3, PlayCircle, Lock } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, Download, Upload, TrendingUp, Calendar, Shield, LineChart, Building2, Edit3, PlayCircle, Lock, BookOpen } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -154,6 +154,16 @@ const HomePage: React.FC = () => {
           setShowDevModal(true);
         }
       },
+    },
+    {
+      id: 'modes-operatoires',
+      titre: 'Modes opératoires',
+      description: 'Consulter les guides et manuels d\'utilisation',
+      icon: BookOpen,
+      iconColor: 'text-sky-600 dark:text-sky-400',
+      iconBg: 'bg-sky-100 dark:bg-sky-500/20',
+      borderColor: 'border-sky-200 dark:border-sky-500/40',
+      action: () => navigate('/modes-operatoires'),
     },
   ];
 
