@@ -18,7 +18,7 @@ import { supabase } from '../../../lib/supabase';
 
 function formatMontant(val: number | null): string {
   if (val === null) return '—';
-  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' €HT';
+  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' €';
 }
 
 // ─── Composants UI ────────────────────────────────────────────────────────────
@@ -52,6 +52,25 @@ function NumberInput({ value, onChange, placeholder }: { value: number | null; o
       value={value ?? ''}
       onChange={e => onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
       placeholder={placeholder}
+      step="0.01"
+      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2F5B58]/40 focus:border-[#2F5B58] transition"
+    />
+  );
+}
+
+function MoneyInput({ value, onChange, placeholder }: { value: number | null; onChange: (v: number | null) => void; placeholder?: string }) {
+  const [focused, setFocused] = useState(false);
+  const formatted = value !== null && value !== undefined
+    ? new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value) + ' €'
+    : '';
+  return (
+    <input
+      type={focused ? 'number' : 'text'}
+      value={focused ? (value ?? '') : formatted}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onChange={e => onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
+      placeholder={placeholder ?? '0,00 €'}
       step="0.01"
       className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2F5B58]/40 focus:border-[#2F5B58] transition"
     />
@@ -246,6 +265,8 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
       contrat_reference:    c['Agreement Number']               || '',
       contrat_libelle:      c['Description']                    || '',
       titulaire:            c['Supplier']                       || '',
+      numero_procedure:     c['numero_procedure']               || null,
+      numero_lot:           c['numero_lot']                     || null,
       montant_initial_ht:   montantInitial,
       montant_precedent_ht: montantInitial,   // sera recalculé par fetchAvenantsPrecedents
       date_notification:    c['Date notification']              || null,
@@ -498,7 +519,7 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
                       <p className="text-xs text-gray-700 dark:text-slate-200 truncate mt-0.5">{c['Description'] || '—'}</p>
                       <div className="flex items-center gap-3 mt-0.5">
                         <p className="text-[10px] text-gray-400">{c['Supplier']}</p>
-                        {c['Montant du marché'] && <p className="text-[10px] text-gray-400">{c['Montant du marché']} €HT</p>}
+                        {c['Montant du marché'] && <p className="text-[10px] text-gray-400">{c['Montant du marché']} €</p>}
                         {c['Date notification'] && <p className="text-[10px] text-gray-400">Notif. {c['Date notification']}</p>}
                       </div>
                     </button>
@@ -729,16 +750,16 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
             <>
               <div>
                 <Label>Montant initial HT (€)</Label>
-                <NumberInput value={form.montant_initial_ht} onChange={v => set('montant_initial_ht', v)} placeholder="0.00" />
+                <MoneyInput value={form.montant_initial_ht} onChange={v => set('montant_initial_ht', v)} />
               </div>
               <div>
                 <Label>Montant précédent HT (€)</Label>
-                <NumberInput value={form.montant_precedent_ht} onChange={v => set('montant_precedent_ht', v)} placeholder="0.00" />
+                <MoneyInput value={form.montant_precedent_ht} onChange={v => set('montant_precedent_ht', v)} />
                 <p className="text-[10px] text-gray-400 mt-1">Montant du marché après le dernier avenant</p>
               </div>
               <div>
                 <Label required>Montant avenant HT (€)</Label>
-                <NumberInput value={form.montant_avenant_ht} onChange={v => set('montant_avenant_ht', v)} placeholder="0.00" />
+                <MoneyInput value={form.montant_avenant_ht} onChange={v => set('montant_avenant_ht', v)} />
                 <p className="text-[10px] text-gray-400 mt-1">Négatif si diminution</p>
               </div>
               <div>

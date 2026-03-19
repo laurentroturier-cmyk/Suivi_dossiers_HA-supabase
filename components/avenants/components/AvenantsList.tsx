@@ -27,7 +27,7 @@ type AvenantRow       = AvenantStandard | AvenantTransfert;
 
 function formatMontant(val: number | null | undefined): string {
   if (val === null || val === undefined) return '—';
-  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' €HT';
+  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' €';
 }
 
 function formatDate(d: string | null | undefined): string {

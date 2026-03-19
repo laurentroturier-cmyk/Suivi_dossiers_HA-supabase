@@ -18,7 +18,7 @@ function formatDate(d: string | null | undefined): string {
   return d;
 }
 
-function formatMontant(val: number | null | undefined, suffix = '€ HT'): string {
+function formatMontant(val: number | null | undefined, suffix = '€'): string {
   if (val === null || val === undefined) return '—';
   return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' ' + suffix;
 }

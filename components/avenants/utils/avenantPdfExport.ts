@@ -53,8 +53,13 @@ export async function generateAvenantPdfBlob(data: AvenantData): Promise<Blob> {
 
 export async function exportAvenantPdf(data: AvenantData): Promise<void> {
   const blob = await generateAvenantPdfBlob(data);
-  const num  = data.numero_avenant ?? 'X';
-  const ref  = (data.contrat_reference || 'avenant').replace(/[^a-zA-Z0-9-_]/g, '_');
-  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  saveAs(blob, `Avenant_${num}_${ref}_${date}.pdf`);
+
+  const sanitize = (s: string) => s.replace(/[<>:"/\\|?*]/g, '').trim();
+
+  const proc     = sanitize((data.numero_procedure || data.contrat_reference || 'XXXXX').slice(0, 5));
+  const lot      = sanitize(data.numero_lot || '?');
+  const titulaire = sanitize(data.titulaire_nom || data.titulaire || 'titulaire');
+  const num      = data.numero_avenant ?? 'X';
+
+  saveAs(blob, `${proc}_Lot ${lot}_${titulaire}_Avenant ${num}.pdf`);
 }

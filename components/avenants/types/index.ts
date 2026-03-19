@@ -11,6 +11,8 @@ export interface AvenantData {
   contrat_reference: string;
   contrat_libelle: string;
   titulaire: string;
+  numero_procedure: string | null;
+  numero_lot: string | null;
   // Identification du titulaire (depuis Référentiel Fournisseurs)
   titulaire_nom: string;
   titulaire_siret: string;
@@ -45,6 +47,8 @@ export const AVENANT_EMPTY: AvenantData = {
   contrat_reference: '',
   contrat_libelle: '',
   titulaire: '',
+  numero_procedure: null,
+  numero_lot: null,
   titulaire_nom: '',
   titulaire_siret: '',
   titulaire_adresse: '',
