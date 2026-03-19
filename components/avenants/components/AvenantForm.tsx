@@ -367,8 +367,10 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
         if (!val) return null;
         return val.includes('T') ? val.split('T')[0] : val;
       };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { _type, created_at, created_by, ...formFields } = form as any;
       const payload = {
-        ...form,
+        ...formFields,
         date_notification: sanitizeDate(form.date_notification),
         nouvelle_date_fin: sanitizeDate(form.nouvelle_date_fin),
         updated_at: new Date().toISOString(),
