@@ -28,6 +28,7 @@ import { ClausesContractuellesHub } from './modules/ClausesContractuellesHub';
 import { ModuleComingSoon } from './modules/ModuleComingSoon';
 import { ReponseTechniqueHub } from './modules/ReponseTechniqueHub';
 import QuestionnaireTechnique from "../../redaction/components/questionnaire/QuestionnaireTechnique";
+import { QTGeneriqueForm } from './modules/QTGeneriqueForm';
 import {
   ensureActeEngagement,
   ensureBPU,
@@ -376,7 +377,16 @@ export function DCEComplet({ onClose }: DCECompletProps) {
       case 'reponseTechnique':
         return (
           <ReponseTechniqueHub
+            selectedType={dceState.configurationGlobale?.typeDocumentReponseTechnique ?? null}
             onSelectSection={(section) => setActiveSection(section)}
+            onSaveChoice={async (type) => {
+              const current = dceState.configurationGlobale;
+              if (!current) throw new Error('Configuration globale manquante');
+              await handleSectionSave('configurationGlobale', {
+                ...current,
+                typeDocumentReponseTechnique: type,
+              });
+            }}
           />
         );
       case 'crt':
@@ -411,6 +421,27 @@ export function DCEComplet({ onClose }: DCECompletProps) {
             <QuestionnaireTechnique
               initialNumeroProcedure={numeroProcedure}
               onSave={data => handleSectionSave('qt', data)}
+            />
+          </div>
+        );
+      case 'qtGenerique':
+        return (
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => setActiveSection('reponseTechnique')}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-900"
+            >
+              <span className="text-base leading-none">←</span>
+              Retour à la réponse technique
+            </button>
+            <QTGeneriqueForm
+              data={dceState.qtGenerique ?? null}
+              onSave={data => handleSectionSave('qtGenerique', data)}
+              isSaving={savingSection === 'qtGenerique' || isLoadingDCE}
+              configurationGlobale={dceState.configurationGlobale}
+              numeroProcedure={numeroProcedure}
+              titreMarche={dceState.titreMarche || selectedProcedure?.['Intitulé'] || ''}
             />
           </div>
         );

@@ -336,7 +336,8 @@ export interface DCEState {
   // Nouvelles sections
   crt: CRTData | null;
   qt: QTData | null;
-  
+  qtGenerique: QTGeneriqueData | null;
+
   // Timestamps
   createdAt?: string;
   updatedAt?: string;
@@ -368,6 +369,7 @@ export interface DCERecord {
 
   crt: CRTData | null;
   qt: QTData | null;
+  qt_generique: QTGeneriqueData | null;
   created_at: string;
   updated_at: string;
 }
@@ -424,7 +426,8 @@ export type DCESectionType =
   | 'dpgf'
   | 'documentsAnnexes'
   | 'crt'
-  | 'qt';
+  | 'qt'
+  | 'qtGenerique';
 
 // ============================================
 // COMPLÉTUDE DU DCE
@@ -469,10 +472,10 @@ export interface ConfigurationGlobale {
     dureeMarche: string;
     dateRemiseOffres: string;
   };
-  
+
   // Configuration des lots
   lots: LotConfiguration[];
-  
+
   // Autres variables communes
   variablesCommunes: {
     ccagApplicable: string;
@@ -482,13 +485,17 @@ export interface ConfigurationGlobale {
     avance: boolean;
     montantAvance?: string;
   };
-  
+
   // Contacts
   contacts: {
     responsableProcedure: string;
     emailContact: string;
     telephoneContact: string;
   };
+
+  // Choix du document de réponse technique pour cette procédure
+  // Valeurs : 'crt' | 'qt' | 'qtGenerique' | identifiant futur
+  typeDocumentReponseTechnique?: string;
 }
 
 // ============================================
@@ -507,6 +514,40 @@ export interface CRTData {
 export interface QTData {
   questions: Array<{ question: string; reponse: string }>;
   notes: string;
+}
+
+// ============================================
+// QT GÉNÉRIQUE (Questionnaire Technique Générique commun)
+// Fidèle au template Excel DNA
+// ============================================
+
+export interface QTGeneriqueQuestion {
+  ref: string;                   // ex: "1.1", "1.2"
+  intitule: string;              // libellé de la question
+  reponseAttendue: string;       // "Oui / Non" | "Décrire" | "Numérique" | custom
+  reponseSoumissionnaire: string; // réponse saisie
+  points: number;                // pondération max de la question
+}
+
+export interface QTGeneriqueCritere {
+  ref: string;                   // ex: "Critère 1"
+  intitule: string;              // nom du critère
+  questions: QTGeneriqueQuestion[];
+}
+
+export interface QTGeneriqueData {
+  // En-tête (auto-rempli depuis variables DCE)
+  reference: string;             // ex: "AA_XXX_XXX_XXX-XXX_XXX"
+  objetProcedure: string;        // objet du marché
+  lot: string;                   // ex: "Lot 1 : …"
+  nomSoumissionnaire: string;    // nom du candidat (à remplir)
+
+  // Corps du questionnaire
+  criteres: QTGeneriqueCritere[];
+
+  // Métadonnées
+  notes: string;
+  savedAt?: string;
 }
 
 // ============================================

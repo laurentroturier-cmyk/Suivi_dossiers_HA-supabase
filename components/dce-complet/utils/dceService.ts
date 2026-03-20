@@ -411,6 +411,7 @@ export class DCEService {
       documentsAnnexes: record.documents_annexes,
       crt: record.crt,
       qt: record.qt,
+      qtGenerique: record.qt_generique ?? null,
       createdAt: record.created_at,
       updatedAt: record.updated_at,
     };
@@ -441,6 +442,7 @@ export class DCEService {
       documents_annexes: state.documentsAnnexes,
       crt: state.crt,
       qt: state.qt,
+      qt_generique: state.qtGenerique,
     };
   }
 
@@ -454,6 +456,9 @@ export class DCEService {
       acteEngagement: 'acte_engagement',
       ccap: 'ccap',
       cctp: 'cctp',
+      clausesContractuelles: '',   // hub — pas de colonne directe
+      annexesFinancieres: '',      // hub — pas de colonne directe
+      reponseTechnique: '',        // hub — pas de colonne directe
       bpu: 'bpu',
       bpuTMA: 'bpu_tma',
       dqe: 'dqe',
@@ -461,6 +466,7 @@ export class DCEService {
       documentsAnnexes: 'documents_annexes',
       crt: 'crt',
       qt: 'qt',
+      qtGenerique: 'qt_generique',
     };
     return mapping[section];
   }

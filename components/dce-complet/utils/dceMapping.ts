@@ -133,6 +133,7 @@ export function mapProcedureToDCE(procedure: ProjectData): Omit<DCEState, 'id' |
     documentsAnnexes: annexes,
     crt,
     qt,
+    qtGenerique: null,
   };
 }
 
