@@ -24,9 +24,20 @@ import {
   ShadingType,
   VerticalAlign,
   PageBreak,
+  ImageRun,
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type { ActeEngagementATTRI1Data } from '../types/acteEngagement';
+
+async function loadImageBuffer(url: string): Promise<ArrayBuffer | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
 
 // ============================================
 // STYLES ET CONSTANTES
@@ -105,8 +116,58 @@ export const generateActeEngagementWord = async (
   const lotNum = data.objet.typeActe.numeroLot || String(numeroLot);
   const lotIntitule = data.objet.typeActe.intituleLot || '';
 
-  // DEBUG : Vérifier les pièces constitutives ET le numéro de référence
   console.log(`📄 Lot ${numeroLot} | numeroRef: "${numeroReference}" | CCAP: "${data.piecesConstitutives.ccapNumero}" | CCATP: "${data.piecesConstitutives.ccatpNumero}"`);
+
+  // Chargement des logos
+  const [afpaBuffer, republiqueBuffer] = await Promise.all([
+    loadImageBuffer('/Image1.png'),
+    loadImageBuffer('/logo-republique.png'),
+  ]);
+
+  // Tableau logos première page : Afpa gauche | République droite
+  const logosTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: {
+      top:    { style: BorderStyle.NONE, size: 0 },
+      bottom: { style: BorderStyle.NONE, size: 0 },
+      left:   { style: BorderStyle.NONE, size: 0 },
+      right:  { style: BorderStyle.NONE, size: 0 },
+      insideH:{ style: BorderStyle.NONE, size: 0 },
+      insideV:{ style: BorderStyle.NONE, size: 0 },
+    },
+    rows: [
+      new TableRow({
+        children: [
+          // Colonne gauche — logo Afpa
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            borders: { top: { style: BorderStyle.NONE, size: 0 }, bottom: { style: BorderStyle.NONE, size: 0 }, left: { style: BorderStyle.NONE, size: 0 }, right: { style: BorderStyle.NONE, size: 0 } },
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                children: afpaBuffer
+                  ? [new ImageRun({ data: afpaBuffer, transformation: { width: 100, height: 40 }, type: 'png' })]
+                  : [new TextRun({ text: 'Afpa', bold: true, font: FONT_PRINCIPAL, size: 24 })],
+              }),
+            ],
+          }),
+          // Colonne droite — logo République
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            borders: { top: { style: BorderStyle.NONE, size: 0 }, bottom: { style: BorderStyle.NONE, size: 0 }, left: { style: BorderStyle.NONE, size: 0 }, right: { style: BorderStyle.NONE, size: 0 } },
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: republiqueBuffer
+                  ? [new ImageRun({ data: republiqueBuffer, transformation: { width: 90, height: 68 }, type: 'png' })]
+                  : [new TextRun({ text: 'RÉPUBLIQUE FRANÇAISE', bold: true, font: FONT_PRINCIPAL, size: 18 })],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
 
   const doc = new Document({
     styles: {
@@ -175,6 +236,9 @@ export const generateActeEngagementWord = async (
           }),
         },
         children: [
+          // Logos : Afpa gauche | République Française droite (première page)
+          logosTable,
+          emptyParagraph(),
           // ============================================
           // EN-TÊTE DU DOCUMENT
           // ============================================

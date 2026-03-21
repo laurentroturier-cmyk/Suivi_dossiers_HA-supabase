@@ -267,8 +267,9 @@ export function DCEComplet({ onClose }: DCECompletProps) {
         );
       case 'reglementConsultation':
         return (
-          <ReglementConsultationLegacyWrapper 
+          <ReglementConsultationLegacyWrapper
             numeroProcedure={numeroProcedure}
+            procedureRefComplete={String(selectedProcedure?.['Numéro de procédure (Afpa)'] || selectedProcedure?.['NumProc'] || numeroProcedure || '')}
             onSave={data => handleSectionSave('reglementConsultation', data)}
             initialData={dceState.reglementConsultation}
             lotsFromConfigurationGlobale={dceState.configurationGlobale?.lots || []}

@@ -1,8 +1,8 @@
-import { 
-  Document, 
-  Packer, 
-  Paragraph, 
-  TextRun, 
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
   HeadingLevel,
   AlignmentType,
   UnderlineType,
@@ -14,15 +14,68 @@ import {
   TableCell,
   VerticalAlign,
   BorderStyle,
-  WidthType
+  WidthType,
+  Header,
+  Footer,
+  ImageRun,
+  PageNumber,
+  PageNumberType,
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type { RapportCommissionData } from '../types';
 
-export async function generateReglementConsultationWord(data: RapportCommissionData) {
+async function loadLogoBuffer(): Promise<ArrayBuffer | null> {
+  try {
+    const res = await fetch('/Image1.png');
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
+export async function generateReglementConsultationWord(data: RapportCommissionData, procedureRefComplete?: string) {
+  const logoBuffer = await loadLogoBuffer();
+
+  // En-tête Word : logo Afpa aligné à droite, présent sur toutes les pages
+  const wordHeader = new Header({
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        children: logoBuffer
+          ? [new ImageRun({ data: logoBuffer, transformation: { width: 90, height: 36 }, type: 'png' })]
+          : [new TextRun({ text: 'Afpa', bold: true, font: 'Aptos', size: 20 })],
+      }),
+    ],
+  });
+
+  // Pied de page : gauche = Afpa + Règlement de consultation + référence | droite = page / total
+  const refLabel = procedureRefComplete || data.enTete.numeroProcedure || '';
+  const wordFooter = new Footer({
+    children: [
+      new Paragraph({
+        tabStops: [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }],
+        children: [
+          // Gauche
+          new TextRun({ text: 'Afpa', bold: true, font: 'Aptos', size: 16 }),
+          new TextRun({ text: '  –  Règlement de consultation', font: 'Aptos', size: 16 }),
+          ...(refLabel ? [new TextRun({ text: `  –  ${refLabel}`, font: 'Aptos', size: 16 })] : []),
+          // Tabulation pour aller à droite
+          new TextRun({ text: '\t', font: 'Aptos', size: 16 }),
+          // Droite : page / total
+          new TextRun({ children: [PageNumber.CURRENT], font: 'Aptos', size: 16 }),
+          new TextRun({ text: ' / ', font: 'Aptos', size: 16 }),
+          new TextRun({ children: [PageNumber.TOTAL_PAGES], font: 'Aptos', size: 16 }),
+        ],
+      }),
+    ],
+  });
+
   const doc = new Document({
     sections: [{
       properties: {},
+      headers: { default: wordHeader },
+      footers: { default: wordFooter },
       children: [
         // En-tête du document
         ...createHeader(data),

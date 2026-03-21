@@ -4,28 +4,27 @@ import type { LotConfiguration } from '../../types';
 
 interface ReglementConsultationLegacyWrapperProps {
   numeroProcedure?: string;
+  procedureRefComplete?: string;
   onSave?: (data: RapportCommissionData) => void;
   initialData?: RapportCommissionData;
   lotsFromConfigurationGlobale?: LotConfiguration[];
-  /** Index de la section RC à afficher (0–6) quand le sous-menu DCE est utilisé */
   initialRCSection?: number;
-  /** Masquer la sidebar "Sections" du RC (navigation gérée par le sous-menu DCE) */
   hideRCSectionsSidebar?: boolean;
 }
 
-// Wrapper pour intégrer le module RC dans le DCE avec sauvegarde automatique.
-// Transmet les changements de données au parent via onSave.
-export function ReglementConsultationLegacyWrapper({ 
-  numeroProcedure, 
-  onSave, 
+export function ReglementConsultationLegacyWrapper({
+  numeroProcedure,
+  procedureRefComplete,
+  onSave,
   initialData,
   lotsFromConfigurationGlobale,
   initialRCSection,
   hideRCSectionsSidebar,
 }: ReglementConsultationLegacyWrapperProps) {
   return (
-    <ReglementConsultation 
+    <ReglementConsultation
       initialNumeroProcedure={numeroProcedure}
+      procedureRefComplete={procedureRefComplete}
       onDataChange={onSave}
       initialData={initialData}
       lotsFromConfigurationGlobale={lotsFromConfigurationGlobale}

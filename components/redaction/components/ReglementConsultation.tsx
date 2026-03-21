@@ -32,18 +32,19 @@ interface LotConfiguration {
 
 interface ReglementConsultationProps {
   initialNumeroProcedure?: string;
+  /** Référence longue ex: 25006_AOO_TMA-EPM_LAY */
+  procedureRefComplete?: string;
   onDataChange?: (data: RapportCommissionData) => void;
   initialData?: RapportCommissionData;
   lotsFromConfigurationGlobale?: LotConfiguration[];
-  /** Index de la section à afficher (0–6) quand la navigation est gérée par le parent (ex. sous-menu DCE) */
   initialSection?: number;
-  /** Masquer la sidebar "Sections" (navigation gérée par le parent) */
   hideSectionsSidebar?: boolean;
 }
 
-export default function ReglementConsultation({ 
-  initialNumeroProcedure, 
-  onDataChange, 
+export default function ReglementConsultation({
+  initialNumeroProcedure,
+  procedureRefComplete,
+  onDataChange,
   initialData,
   lotsFromConfigurationGlobale,
   initialSection,
@@ -315,7 +316,7 @@ export default function ReglementConsultation({
   const handleGenerateWord = async () => {
     setIsSaving(true);
     try {
-      await generateReglementConsultationWord(formData);
+      await generateReglementConsultationWord(formData, procedureRefComplete);
     } catch (error) {
       console.error('Erreur génération Word:', error);
       alert('Erreur lors de la génération du document Word');
