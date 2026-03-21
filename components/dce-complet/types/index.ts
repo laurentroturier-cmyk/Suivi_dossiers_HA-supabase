@@ -502,9 +502,37 @@ export interface ConfigurationGlobale {
 // CRT (Cadre de réponse technique)
 // ============================================
 
+export interface CRTSousSection {
+  id: string;
+  ref: string;       // "1.1", "1.2", etc.
+  titre: string;     // Consigne / intitulé de la sous-section
+  reponse: string;   // Réponse du soumissionnaire
+}
+
+export interface CRTSection {
+  id: string;
+  ref: string;       // "1", "2", etc.
+  titre: string;     // Titre de la section
+  points: number;    // Points max
+  sousSections: CRTSousSection[];
+}
+
 export interface CRTData {
-  contenu: string;
+  // En-tête
+  reference: string;
+  objetMarche: string;
+  nomSoumissionnaire: string;
+  // Introduction contractuelle (modifiable)
+  introduction: string;
+  // Répartition des critères
+  partFinanciere: number;  // ex : 40
+  partTechnique: number;   // ex : 60
+  // Sections principales
+  sections: CRTSection[];
+  // Contrainte
+  nbPagesMax: number;
   notes: string;
+  savedAt?: string;
 }
 
 // ============================================

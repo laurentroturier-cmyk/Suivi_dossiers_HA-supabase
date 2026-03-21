@@ -13,6 +13,8 @@ import type {
   DQEData,
   DocumentsAnnexesData,
   CRTData,
+  CRTSection,
+  CRTSousSection,
   QTData,
 } from '../../types';
 import type { RapportCommissionData } from '../../../redaction/types/rapportCommission';
@@ -233,8 +235,30 @@ export const createDefaultDocumentsAnnexes = (): DocumentsAnnexesData => ({
 });
 
 export const createDefaultCRT = (): CRTData => ({
-  contenu: '',
+  reference: 'AAXXX_XX_XX-XX_XXX',
+  objetMarche: 'Marché de Prestation d\'assistance à maîtrise d\'ouvrage pour la réalisation de xxxx et de xxxxx',
+  nomSoumissionnaire: '',
+  introduction: `L'objet de ce document est de présenter la structure de réponse que le candidat doit impérativement respecter pour exposer l'offre qu'il propose en réponse à la présente consultation.\n\nLe candidat peut, s'il le souhaite, ajouter des chapitres ou sous-chapitres. Cependant, le document ne devra pas dépasser les 30 pages hors annexe.\n\nLe candidat peut annexer tout document de son choix à son offre cependant, les renvois ne seront pris en compte seulement s'ils indiquent précisément l'objet, les numéros de page et de paragraphe. Chaque point fait l'objet d'une réponse distincte en évitant tout renvoi à une autre réponse. Le candidat doit veiller à faire des réponses concises et précises.\n\nLes éléments du CCATP ou du CCAP et du CCTP et de ses annexes sont à prendre en compte dans leur intégralité.`,
+  partFinanciere: 0,
+  partTechnique: 0,
+  nbPagesMax: 30,
   notes: '',
+  sections: [
+    { id: '1', ref: '1', titre: 'XXXX', points: 0, sousSections: [
+      { id: '1.1', ref: '1.1', titre: 'XXXX', reponse: '' },
+      { id: '1.2', ref: '1.2', titre: 'XXXX', reponse: '' },
+    ]},
+    { id: '2', ref: '2', titre: 'XXXX', points: 0, sousSections: [
+      { id: '2.1', ref: '2.1', titre: 'XXXX', reponse: '' },
+      { id: '2.2', ref: '2.2', titre: 'XXXX', reponse: '' },
+    ]},
+    { id: '3', ref: '3', titre: 'XXXX', points: 0, sousSections: [
+      { id: '3.1', ref: '3.1', titre: 'XXXX', reponse: '' },
+    ]},
+    { id: '4', ref: '4', titre: 'XXXX', points: 0, sousSections: [
+      { id: '4.1', ref: '4.1', titre: 'XXXX', reponse: '' },
+    ]},
+  ],
 });
 
 export const createDefaultQT = (): QTData => ({

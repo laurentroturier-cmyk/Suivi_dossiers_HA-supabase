@@ -176,7 +176,7 @@ export function QTGeneriqueForm({
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      await exportQTGeneriqueExcel(form);
+      await exportQTGeneriqueExcel(form, numeroProcedure);
     } finally {
       setIsExporting(false);
     }

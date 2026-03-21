@@ -404,6 +404,10 @@ export function DCEComplet({ onClose }: DCECompletProps) {
               data={ensureCRT(dceState.crt)}
               onSave={data => handleSectionSave('crt', data)}
               isSaving={savingSection === 'crt' || isLoadingDCE}
+              configurationGlobale={dceState.configurationGlobale}
+              numeroProcedure={dceState.numeroProcedure}
+              procedureRefComplete={String(selectedProcedure?.['Numéro de procédure (Afpa)'] || selectedProcedure?.['NumProc'] || dceState.numeroProcedure || '')}
+              titreMarche={dceState.titreMarche}
             />
           </div>
         );

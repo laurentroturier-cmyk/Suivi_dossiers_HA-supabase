@@ -137,7 +137,7 @@ function styleRange(
 
 // ─── Export Excel enrichi (ExcelJS, 1 seul onglet) ───────────────────────────
 
-export async function exportQTGeneriqueExcel(data: QTGeneriqueData): Promise<void> {
+export async function exportQTGeneriqueExcel(data: QTGeneriqueData, numeroProcedure?: string): Promise<void> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'DNA – Application DCE';
   wb.created = new Date();
@@ -511,7 +511,10 @@ export async function exportQTGeneriqueExcel(data: QTGeneriqueData): Promise<voi
   // ── Sauvegarde ────────────────────────────────────────────────────────────
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const filename = `QT_${data.reference || 'export'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const numCourt = numeroProcedure
+    ? numeroProcedure.substring(0, 5)
+    : (data.reference ? data.reference.substring(0, 5) : 'AAXXX');
+  const filename = `${numCourt}_05_QT.xlsx`;
   saveAs(blob, filename);
 }
 
