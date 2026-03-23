@@ -40,6 +40,8 @@ import { AnalyseOffresDQEService } from './services/analyseOffresDQEService';
 import type { ProjectData } from '../../types';
 import type { LotConfiguration } from '../dce-complet/types';
 import type { DepotsData } from '../../types/depots';
+import { AnalyseOffresDQETechnique } from './components/AnalyseOffresDQETechnique';
+import { AnalyseOffresDQESynthese } from './components/AnalyseOffresDQESynthese';
 
 interface CandidatDQE {
   id: string;
@@ -77,6 +79,10 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
 
   // États pour la persistence Supabase
   const [analyseId, setAnalyseId] = useState<string | null>(null);
+  /** Map lotNum -> analyse_id Supabase — utilisé par les Parties 2 et 3 */
+  const [analyseIdByLot, setAnalyseIdByLot] = useState<Record<string, string>>({});
+  /** Section active : Partie 1 financière, Partie 2 technique, Partie 3 synthèse */
+  const [activeSection, setActiveSection] = useState<'financier' | 'technique' | 'synthese'>('financier');
   const [hasSavedData, setHasSavedData] = useState(false);
   const [loadingFromSupabase, setLoadingFromSupabase] = useState(false);
   const [savingToSupabase, setSavingToSupabase] = useState(false);
@@ -421,7 +427,23 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
       setError(null);
       const totalCharges = candidats.length;
       console.log(`✅ ${totalCharges} candidat(s) chargé(s) depuis Supabase`);
-      
+
+      // Peupler analyseIdByLot pour les Parties 2 et 3
+      const idsParLot: Record<string, string> = {};
+      for (const lotKey of Object.keys(candidatsComplets)) {
+        const lotNum = Number(lotKey);
+        if (!Number.isFinite(lotNum)) continue;
+        const lotConfig = lotsConfig.find(
+          l => parseInt(l.numero, 10) === lotNum || l.numero === String(lotNum)
+        );
+        const nomLot = lotConfig?.intitule ?? null;
+        try {
+          const analyse = await AnalyseOffresDQEService.getOrCreateAnalyse(numeroProcedure, lotNum, nomLot);
+          if (analyse) idsParLot[String(lotNum)] = analyse.id;
+        } catch { /* on continue */ }
+      }
+      setAnalyseIdByLot(prev => ({ ...prev, ...idsParLot }));
+
       // Message informatif
       const lotsCharges = Object.keys(candidatsComplets).length;
       alert(`✅ Chargement réussi!\n\n${totalCharges} candidat(s) chargé(s) sur ${lotsCharges} lot(s).\n\nVous pouvez maintenant charger d'autres DQE pour les comparer.`);
@@ -456,7 +478,8 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
       }
       
       setAnalyseId(analyse.id);
-      
+      setAnalyseIdByLot(prev => ({ ...prev, [String(lotNum)]: analyse.id }));
+
       // Préparer les lignes au bon format attendu par le service local (noms simples)
       const lignes = (candidat.rows || []).map((row) => ({
         numero: row.numero || '',
@@ -973,7 +996,24 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
       }
 
       setHasSavedData(true);
-      console.log('✅ Sauvegarde manuelle de l’analyse DQE effectuée');
+      // Mettre à jour analyseIdByLot pour les Parties 2 et 3 (depuis handleManualSave)
+      // Les IDs ont déjà été mis à jour lot par lot via saveCandidatDQE → getOrCreateAnalyse
+      // Une passe complémentaire pour s’assurer que tous les lots sont couverts
+      {
+        const idsParLot: Record<string, string> = {};
+        for (const [lotKey] of Object.entries(candidatsByLot)) {
+          const lotNum = Number(lotKey);
+          if (!Number.isFinite(lotNum)) continue;
+          const lotConfig = lotsConfig.find(l => parseInt(l.numero, 10) === lotNum || l.numero === String(lotNum));
+          const nomLot = lotConfig?.intitule ?? null;
+          try {
+            const a = await AnalyseOffresDQEService.getOrCreateAnalyse(numeroProcedure, lotNum, nomLot);
+            if (a) idsParLot[String(lotNum)] = a.id;
+          } catch { /* on continue */ }
+        }
+        setAnalyseIdByLot(prev => ({ ...prev, ...idsParLot }));
+      }
+      console.log("✅ Sauvegarde manuelle de l’analyse DQE effectuée");
       setLastManualSaveAt(
         new Date().toLocaleString('fr-FR', {
           day: '2-digit',
@@ -1480,6 +1520,90 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                 </div>
               </div>
             </div>
+
+            {/* Navigation 3 parties */}
+            {(() => {
+              const currentAnalyseId = analyseIdByLot[String(selectedLotNum)] ?? analyseId;
+              return (
+                <div className="mb-4 flex gap-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-1 shadow-sm">
+                  <button
+                    onClick={() => setActiveSection('financier')}
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-all ${
+                      activeSection === 'financier'
+                        ? 'bg-emerald-600 text-white shadow'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    💰 Partie 1 — Analyse financière
+                  </button>
+                  <button
+                    onClick={() => setActiveSection('technique')}
+                    disabled={!currentAnalyseId}
+                    title={!currentAnalyseId ? 'Chargez d\'abord les offres DQE (Partie 1)' : undefined}
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                      activeSection === 'technique'
+                        ? 'bg-indigo-600 text-white shadow'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    📋 Partie 2 — Analyse technique
+                  </button>
+                  <button
+                    onClick={() => setActiveSection('synthese')}
+                    disabled={!currentAnalyseId}
+                    title={!currentAnalyseId ? 'Chargez d\'abord les offres DQE (Partie 1)' : undefined}
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                      activeSection === 'synthese'
+                        ? 'bg-teal-600 text-white shadow'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    🏆 Partie 3 — Synthèse
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Parties 2 et 3 — rendues en dehors du bloc financier */}
+            {activeSection === 'technique' && (() => {
+              const currentAnalyseId = analyseIdByLot[String(selectedLotNum)] ?? analyseId;
+              const currentCandidatsForSection = (candidatsByLot[String(selectedLotNum)] || []).map(c => ({
+                id: c.id,
+                name: c.name,
+                totalHT: c.totalHT,
+              }));
+              return (
+                <AnalyseOffresDQETechnique
+                  numeroProcedure={numeroProcedure}
+                  selectedLotNum={selectedLotNum}
+                  candidats={currentCandidatsForSection}
+                  analyseId={currentAnalyseId}
+                  lotsConfig={lotsConfig}
+                />
+              );
+            })()}
+
+            {activeSection === 'synthese' && (() => {
+              const currentAnalyseId = analyseIdByLot[String(selectedLotNum)] ?? analyseId;
+              const currentCandidatsForSection = (candidatsByLot[String(selectedLotNum)] || []).map(c => ({
+                id: c.id,
+                name: c.name,
+                totalHT: c.totalHT,
+              }));
+              return (
+                <AnalyseOffresDQESynthese
+                  numeroProcedure={numeroProcedure}
+                  selectedLotNum={selectedLotNum}
+                  candidats={currentCandidatsForSection}
+                  analyseId={currentAnalyseId}
+                  lotsConfig={lotsConfig}
+                  procedureInfo={procedureInfo}
+                />
+              );
+            })()}
+
+            {/* Partie 1 — Analyse financière DQE (code existant inchangé) */}
+            {activeSection === 'financier' && <>
 
             {/* Sélection du lot + accès sauvegardes */}
             <div className="mb-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 sm:px-6 sm:py-5">
@@ -2464,6 +2588,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                 Aucun candidat chargé pour ce lot. Ajoutez un fichier DQE Excel ci-dessus.
               </div>
             )}
+            </>}
           </>
         )}
       </div>
