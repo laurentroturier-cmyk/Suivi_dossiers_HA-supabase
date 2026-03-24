@@ -635,13 +635,29 @@ export default function AnalysePortefeuille() {
   };
 
   // ─── Statut d'un élément ─────────────────────────────────────────────────
+  // Vérifie si des valeurs ont été saisies dans le store risques (indépendamment du score normalisé)
+  const hasRisqueData = useCallback((nom: string): boolean => {
+    const r = risquesStore[nom];
+    if (!r) return false;
+    const cats = [r.eco, r.marche, r.contrat, r.ope, r.strat, r.tech, r.rse, r.log, r.interne];
+    return cats.some(arr => arr && arr.some((x: { prob: number; delai: number }) => x.prob > 0 || x.delai > 0));
+  }, [risquesStore]);
+
+  // Vérifie si des opportunités ont été saisies
+  const hasOpportunData = useCallback((nom: string): boolean => {
+    const o = opportunStore[nom];
+    if (!o) return false;
+    const allItems = [...o.eco, ...o.marche, ...o.perf, ...o.innov, ...o.strat, ...o.rse, ...o.orga, ...o.secu];
+    return allItems.some(v => v > 0);
+  }, [opportunStore]);
+
   const getElementStatus = useCallback((nom: string): 'complete' | 'partial' | 'empty' => {
     const d = donneesStore[nom];
     const swot = getSwot(nom);
     const checks = [
       getCIScore(nom) > 0 || getCEScore(nom) > 0,
-      getRisqueScore(nom) > 0,
-      getOpportunScore(nom) > 0,
+      hasRisqueData(nom),
+      hasOpportunData(nom),
       swot.s.length + swot.w.length + swot.o.length + swot.t.length > 0,
       !!(d && (d.ca > 0 || d.nbCommandes > 0 || d.nbFournisseurs > 0)),
     ];
@@ -650,7 +666,7 @@ export default function AnalysePortefeuille() {
     if (score >= 1) return 'partial';
     return 'empty';
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contraintesStore, risquesStore, opportunStore, swotStore, donneesStore]);
+  }, [contraintesStore, risquesStore, opportunStore, swotStore, donneesStore, hasRisqueData, hasOpportunData]);
 
   // ─── Refs ────────────────────────────────────────────────────────────────
   const fileInputRef    = useRef<HTMLInputElement>(null);
@@ -1102,8 +1118,8 @@ export default function AnalysePortefeuille() {
     ctx.fillText('← Opportunités', 0, 0); ctx.restore();
     ctx.globalAlpha = 1;
 
-    const riskAnalyzed    = Object.keys(risquesStore).filter(k => getRisqueScore(k) > 0);
-    const opportunAnalyzed = Object.keys(opportunStore).filter(k => getOpportunScore(k) > 0);
+    const riskAnalyzed    = Object.keys(risquesStore).filter(k => hasRisqueData(k));
+    const opportunAnalyzed = Object.keys(opportunStore).filter(k => hasOpportunData(k));
     const rpKeys  = [...new Set([...riskAnalyzed, ...opportunAnalyzed])];
     const rpItems = rpKeys.length > 0 ? rpKeys : familles.map(f => f.nom);
 
@@ -1554,7 +1570,7 @@ export default function AnalysePortefeuille() {
                           const checks = [
                             { label: 'Fiche', done: !!(donneesStore[selectedElement]?.ca || donneesStore[selectedElement]?.nbCommandes || donneesStore[selectedElement]?.nbFournisseurs) },
                             { label: 'Contraintes', done: getCIScore(selectedElement) > 0 || getCEScore(selectedElement) > 0 },
-                            { label: 'Risques', done: getRisqueScore(selectedElement) > 0 },
+                            { label: 'Risques', done: hasRisqueData(selectedElement) },
                             { label: 'Opportunités', done: getOpportunScore(selectedElement) > 0 },
                             { label: 'SWOT', done: (() => { const s = getSwot(selectedElement); return s.s.length + s.w.length + s.o.length + s.t.length > 0; })() },
                           ];
