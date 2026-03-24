@@ -1011,11 +1011,11 @@ export default function AnalysePortefeuille() {
     ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
 
-    // bas-gauche: Simples, bas-droite: Internes (CI↑), haut-gauche: Externes (CE↑), haut-droite: Difficiles
-    const labels = ['Achats\nSimples', 'Achats\nInternes', 'Achats\nExternes', 'Achats\nDifficiles'];
+    // X=CE, Y=CI — bas-gauche: Simples, bas-droite: Externes (CE↑), haut-gauche: Internes (CI↑), haut-droite: Difficiles
+    const labels = ['Achats\nSimples', 'Achats\nExternes', 'Achats\nInternes', 'Achats\nDifficiles'];
     const qx = [W*0.25, W*0.75, W*0.25, W*0.75];
     const qy = [H*0.75, H*0.75, H*0.25, H*0.25];
-    const qc = ['#16a34a', '#2563eb', '#d97706', '#dc2626'];
+    const qc = ['#16a34a', '#d97706', '#2563eb', '#dc2626'];
     labels.forEach((lbl, i) => {
       ctx.font = '11px sans-serif'; ctx.fillStyle = qc[i]; ctx.globalAlpha = 0.25;
       ctx.textAlign = 'center';
@@ -1033,8 +1033,8 @@ export default function AnalysePortefeuille() {
     items.forEach((nom) => {
       const ci = getCIScore(nom);
       const ce = getCEScore(nom);
-      const x = (ci / 100) * (W - 40) + 20;
-      const y = H - (ce / 100) * (H - 40) - 20;
+      const x = (ce / 100) * (W - 40) + 20;   // X = CE (Contraintes Externes)
+      const y = H - (ci / 100) * (H - 40) - 20; // Y = CI (Contraintes Internes)
       const ca = donneesStore[nom]?.ca || 0;
       const r = ca > 0 ? MIN_R + ((ca / maxCA) * (MAX_R - MIN_R)) : DEFAULT_R;
       const cx = Math.max(r + 2, Math.min(W - r - 2, x));
@@ -1082,10 +1082,11 @@ export default function AnalysePortefeuille() {
     ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
 
-    const qLabels = ['Achats\nSimples', 'Achats\nCritiques', 'Achats\nLeviers', 'Achats\nStratégiques'];
+    // X=Risques, Y=Opportunités — bas-gauche: Simples, bas-droite: Leviers, haut-gauche: Critiques, haut-droite: Stratégiques
+    const qLabels = ['Achats\nSimples', 'Achats\nLeviers', 'Achats\nCritiques', 'Achats\nStratégiques'];
     const qx = [W*0.25, W*0.75, W*0.25, W*0.75];
     const qy = [H*0.75, H*0.75, H*0.25, H*0.25];
-    const qc2 = ['#16a34a', '#d97706', '#2563eb', '#6c63ff'];
+    const qc2 = ['#16a34a', '#2563eb', '#d97706', '#6c63ff'];
     qLabels.forEach((lbl, i) => {
       ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = qc2[i]; ctx.globalAlpha = 0.25;
       ctx.textAlign = 'center';
@@ -1120,9 +1121,10 @@ export default function AnalysePortefeuille() {
       const isHighRisk   = risk   >= 15;
       const isHighOpport = opport >= 15;
 
-      const quadColor = !isHighRisk && !isHighOpport ? '#16a34a' :
-                         isHighRisk && !isHighOpport ? '#2563eb' :
-                        !isHighRisk &&  isHighOpport ? '#d97706' : '#6c63ff';
+      const quadColor = !isHighRisk && !isHighOpport ? '#16a34a' :   // Simples
+                         isHighRisk && !isHighOpport ? '#2563eb' :   // Leviers (bas-droite)
+                        !isHighRisk &&  isHighOpport ? '#d97706' :   // Critiques (haut-gauche)
+                                                       '#6c63ff';    // Stratégiques
 
       const bubbleColor = PALETTE[idx % PALETTE.length];
       const ca = donneesStore[nom]?.ca || 0;
@@ -2095,12 +2097,12 @@ export default function AnalysePortefeuille() {
                 <CardHeader title="Matrice Portefeuille — Contraintes Internes vs Externes" />
                 <div className="p-4">
                   <div className="flex gap-2 mb-2">
-                    <span className="text-[10px] text-gray-500 flex items-center justify-center" style={{ writingMode: 'vertical-rl', minWidth: 20 }}>CE ↑</span>
+                    <span className="text-[10px] text-gray-500 flex items-center justify-center" style={{ writingMode: 'vertical-rl', minWidth: 20 }}>CI ↑</span>
                     <div className="flex-1">
                       <canvas ref={canvasRef} className="w-full rounded-lg border border-gray-100" style={{ height: 440 }} />
                     </div>
                   </div>
-                  <div className="text-center text-[10px] text-gray-500 mt-1">CI →</div>
+                  <div className="text-center text-[10px] text-gray-500 mt-1">CE →</div>
                   <div className="flex flex-wrap gap-4 mt-4 justify-center">
                     {[
                       { label: 'Achats simples', color: 'bg-green-500' },
@@ -2365,10 +2367,10 @@ function FicheElement({ nom, donnees, onUpdate }: {
                 Chiffre d'affaires <span className="text-gray-400 font-normal">(k€)</span>
               </label>
               <input
-                type="number" min={0} step={1}
+                type="number" min={0} step="any"
                 value={donnees.ca || ''}
                 onChange={e => onUpdate('ca', parseFloat(e.target.value) || 0)}
-                placeholder="Ex : 1 200"
+                placeholder="Ex : 0.017"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#2F5B58] focus:outline-none"
               />
               <p className="text-[10px] text-gray-400 mt-1">Dimensionne les bulles dans les matrices</p>
@@ -2378,7 +2380,7 @@ function FicheElement({ nom, donnees, onUpdate }: {
                 Budget prévisionnel <span className="text-gray-400 font-normal">(k€)</span>
               </label>
               <input
-                type="number" min={0} step={1}
+                type="number" min={0} step="any"
                 value={donnees.budgetPrev || ''}
                 onChange={e => onUpdate('budgetPrev', parseFloat(e.target.value) || 0)}
                 placeholder="Ex : 1 500"
