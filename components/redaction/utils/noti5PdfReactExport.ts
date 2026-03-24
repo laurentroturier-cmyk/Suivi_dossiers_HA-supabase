@@ -63,7 +63,11 @@ export async function generateNoti5PdfBlobReact(data: Noti5Data): Promise<Blob> 
  */
 export async function exportNoti5PdfReact(data: Noti5Data): Promise<void> {
   const blob = await generateNoti5PdfBlobReact(data);
-  const fileName = `NOTI5_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.attributaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const prefix = data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_');
+  const lots = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
+  const titulaireStr = (data.attributaire.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
+  const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI5.pdf`;
   saveAs(blob, fileName);
 }
 

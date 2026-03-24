@@ -598,7 +598,11 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
 export async function exportNoti5Html(data: Noti5Data): Promise<void> {
   const html = await generateNoti5Html(data);
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const fileName = `NOTI5_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.attributaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.html`;
+  const _prefix5 = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
+  const _lots5 = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const _lotStr5 = _lots5.length > 0 ? `Lot${_lots5.join('-')}` : 'Lot';
+  const _tit5 = (data.attributaire.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
+  const fileName = `${_prefix5}_${_lotStr5}_${_tit5}_NOTI5.html`;
   saveAs(blob, fileName);
 }
 
@@ -607,7 +611,11 @@ export async function exportNoti5Html(data: Noti5Data): Promise<void> {
  */
 export async function exportNoti5Pdf(data: Noti5Data): Promise<void> {
   const html = await generateNoti5Html(data);
-  const fileName = `NOTI5_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.attributaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const _p5a = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
+  const _l5a = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const _ls5a = _l5a.length > 0 ? `Lot${_l5a.join('-')}` : 'Lot';
+  const _t5a = (data.attributaire.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
+  const fileName = `${_p5a}_${_ls5a}_${_t5a}_NOTI5.pdf`;
   await exportHtmlToPdf(html, fileName);
 }
 
@@ -624,7 +632,11 @@ export async function generateNoti5HtmlAsBlob(data: Noti5Data): Promise<Blob> {
  */
 export async function generateNoti5PdfAsBlob(data: Noti5Data): Promise<Blob> {
   const html = await generateNoti5Html(data);
-  const fileName = `NOTI5_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.attributaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const _p5b = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
+  const _l5b = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const _ls5b = _l5b.length > 0 ? `Lot${_l5b.join('-')}` : 'Lot';
+  const _t5b = (data.attributaire.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
+  const fileName = `${_p5b}_${_ls5b}_${_t5b}_NOTI5.pdf`;
   return htmlToPdfBlob(html, fileName);
 }
 

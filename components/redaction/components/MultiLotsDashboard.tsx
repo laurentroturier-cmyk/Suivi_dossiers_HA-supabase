@@ -109,7 +109,11 @@ export default function MultiLotsDashboard({
       for (const candidat of candidatsAvecLots) {
         const noti1Data = buildNoti1Data(candidat);
         const blob = await generateNoti1HtmlAsBlob(noti1Data);
-        const fileName = `NOTI1_${sanitizeFileName(candidat.nom)}.html`;
+        const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
+        const lots = candidat.lotsGagnes.filter(l => l.numero).map(l => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+        const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
+        const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
+        const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI1.html`;
         zip.file(fileName, blob);
       }
 
@@ -134,7 +138,11 @@ export default function MultiLotsDashboard({
       for (const candidat of candidatsAvecLots) {
         const noti1Data = buildNoti1Data(candidat);
         const blob = await generateNoti1PdfBlobReact(noti1Data);
-        const fileName = `NOTI1_${sanitizeFileName(candidat.nom)}.pdf`;
+        const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
+        const lots = candidat.lotsGagnes.filter(l => l.numero).map(l => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+        const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
+        const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
+        const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI1.pdf`;
         zip.file(fileName, blob);
       }
 
@@ -159,7 +167,11 @@ export default function MultiLotsDashboard({
       for (const candidat of candidatsAvecLots) {
         const noti5Data = buildNoti5Data(candidat);
         const blob = await generateNoti5HtmlAsBlob(noti5Data);
-        const fileName = `NOTI5_${sanitizeFileName(candidat.nom)}.html`;
+        const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
+        const lots = candidat.lotsGagnes.filter(l => l.numero).map(l => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+        const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
+        const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
+        const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI5.html`;
         zip.file(fileName, blob);
       }
 
@@ -184,7 +196,11 @@ export default function MultiLotsDashboard({
       for (const candidat of candidatsAvecLots) {
         const noti5Data = buildNoti5Data(candidat);
         const blob = await generateNoti5PdfBlobReact(noti5Data);
-        const fileName = `NOTI5_${sanitizeFileName(candidat.nom)}.pdf`;
+        const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
+        const lots = candidat.lotsGagnes.filter(l => l.numero).map(l => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+        const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
+        const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
+        const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI5.pdf`;
         zip.file(fileName, blob);
       }
 
@@ -211,7 +227,10 @@ export default function MultiLotsDashboard({
         for (const lotPerdu of candidat.lotsPerdus) {
           const noti3Data = buildNoti3DataForLot(candidat, lotPerdu);
           const blob = await generateNoti3HtmlAsBlob(noti3Data);
-          const fileName = `NOTI3_Lot${lotPerdu.numero}_${sanitizeFileName(candidat.nom)}.html`;
+          const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
+          const lotStr = `Lot${lotPerdu.numero.replace(/[^a-zA-Z0-9]/g, '')}`;
+          const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
+          const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI3.html`;
           zip.file(fileName, blob);
         }
       }
@@ -240,7 +259,10 @@ export default function MultiLotsDashboard({
         for (const lotPerdu of candidat.lotsPerdus) {
           const noti3Data = buildNoti3DataForLot(candidat, lotPerdu);
           const blob = await generateNoti3PdfBlobReact(noti3Data);
-          const fileName = `NOTI3_Lot${lotPerdu.numero}_${sanitizeFileName(candidat.nom)}.pdf`;
+          const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
+          const lotStr = `Lot${lotPerdu.numero.replace(/[^a-zA-Z0-9]/g, '')}`;
+          const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
+          const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI3.pdf`;
           zip.file(fileName, blob);
         }
       }

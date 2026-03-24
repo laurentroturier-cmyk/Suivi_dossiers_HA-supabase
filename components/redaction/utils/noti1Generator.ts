@@ -4,7 +4,11 @@ import type { Noti1Data } from '../types';
 
 export async function generateNoti1Word(data: Noti1Data): Promise<void> {
   const blob = await generateNoti1WordAsBlob(data);
-  saveAs(blob, `NOTI1_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.titulaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.docx`);
+  const prefix = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
+  const lots = (data.attribution?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
+  const titulaireStr = (data.titulaire.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
+  saveAs(blob, `${prefix}_${lotStr}_${titulaireStr}_NOTI1.docx`);
 }
 
 export async function generateNoti1WordAsBlob(data: Noti1Data): Promise<Blob> {

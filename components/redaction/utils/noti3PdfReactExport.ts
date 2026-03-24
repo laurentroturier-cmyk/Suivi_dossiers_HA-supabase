@@ -53,7 +53,11 @@ export async function generateNoti3PdfBlobReact(data: Noti3Data): Promise<Blob> 
  */
 export async function exportNoti3PdfReact(data: Noti3Data): Promise<void> {
   const blob = await generateNoti3PdfBlobReact(data);
-  const fileName = `NOTI3_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.candidat.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const _p3r = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
+  const _l3r = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const _ls3r = _l3r.length > 0 ? `Lot${_l3r.join('-')}` : 'Lot';
+  const _t3r = (data.candidat.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
+  const fileName = `${_p3r}_${_ls3r}_${_t3r}_NOTI3.pdf`;
   saveAs(blob, fileName);
 }
 

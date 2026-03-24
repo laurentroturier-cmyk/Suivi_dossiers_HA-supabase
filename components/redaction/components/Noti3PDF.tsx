@@ -605,30 +605,23 @@ export const Noti3PDF = ({
         <View style={styles.section} wrap={false}>
           <Text style={styles.sectionHeader}>F – Délais et voies de recours</Text>
           <View style={styles.sectionContent}>
-            <Checkbox 
-              checked={true} 
-              label={`Le délai de suspension de la signature du marché public ou de l'accord-cadre est de ${data.delaiStandstill || '11'} jours, à compter de la date d'envoi de la présente notification.`} 
-            />
-            
-            <View style={{ marginTop: 12, breakInside: 'avoid' }}>
-              <Checkbox 
-                checked={true} 
-                label="Référé précontractuel :" 
-              />
-              <Text style={[styles.paragraph, { marginLeft: 20, marginTop: 4, fontSize: 7 }]}>
-                Le candidat peut, s'il le souhaite, exercer un référé précontractuel contre la présente procédure de passation, 
+            <Text style={[styles.paragraph, { marginBottom: 6 }]}>
+              {`Le délai de suspension de la signature du marché public ou de l'accord-cadre est de ${data.delaiStandstill || '11'} jours, à compter de la date d'envoi de la présente notification.`}
+            </Text>
+
+            <View style={{ marginTop: 10, breakInside: 'avoid' }}>
+              <Text style={[styles.paragraph, { fontWeight: 'bold', marginBottom: 3 }]}>Référé précontractuel :</Text>
+              <Text style={[styles.paragraph, { fontSize: 7 }]}>
+                Le candidat peut, s'il le souhaite, exercer un référé précontractuel contre la présente procédure de passation,
                 devant le président du tribunal administratif, avant la signature du marché public ou de l'accord-cadre.
               </Text>
             </View>
-            
-            <View style={{ marginTop: 12, breakInside: 'avoid' }}>
-              <Checkbox 
-                checked={true} 
-                label="Recours pour excès de pouvoir en cas de déclaration d'infructuosité de la procédure :" 
-              />
-              <Text style={[styles.paragraph, { marginLeft: 20, marginTop: 4, fontSize: 7 }]}>
-                Dans l'hypothèse d'une déclaration d'infructuosité de la procédure, le candidat peut, s'il le souhaite, 
-                exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif. 
+
+            <View style={{ marginTop: 10, breakInside: 'avoid' }}>
+              <Text style={[styles.paragraph, { fontWeight: 'bold', marginBottom: 3 }]}>Recours pour excès de pouvoir en cas de déclaration d'infructuosité de la procédure :</Text>
+              <Text style={[styles.paragraph, { fontSize: 7 }]}>
+                Dans l'hypothèse d'une déclaration d'infructuosité de la procédure, le candidat peut, s'il le souhaite,
+                exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif.
                 Le juge doit être saisi dans un délai de deux mois à compter de la notification du présent courrier.
               </Text>
             </View>

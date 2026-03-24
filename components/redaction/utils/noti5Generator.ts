@@ -4,7 +4,11 @@ import type { Noti5Data } from '../types';
 
 export async function generateNoti5Word(data: Noti5Data): Promise<void> {
   const blob = await generateNoti5WordAsBlob(data);
-  saveAs(blob, `NOTI5_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.attributaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.docx`);
+  const _p5 = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
+  const _l5 = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const _ls5 = _l5.length > 0 ? `Lot${_l5.join('-')}` : 'Lot';
+  const _t5 = (data.attributaire.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
+  saveAs(blob, `${_p5}_${_ls5}_${_t5}_NOTI5.docx`);
 }
 
 export async function generateNoti5WordAsBlob(data: Noti5Data): Promise<Blob> {

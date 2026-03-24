@@ -500,23 +500,23 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
     <div class="section-header">F - Délais et voies de recours</div>
     <div class="section-content">
       <p style="margin-bottom: 12px; page-break-inside: avoid;">
-        ☐ Le délai de suspension de la signature du marché public ou de l'accord-cadre est de <strong>${escapeHtml(data.delaiStandstill)} jours</strong>, 
+        Le délai de suspension de la signature du marché public ou de l'accord-cadre est de <strong>${escapeHtml(data.delaiStandstill)} jours</strong>,
         à compter de la date d'envoi de la présente notification.
       </p>
-      
+
       <div style="margin-top: 16px; page-break-inside: avoid;">
-        <p><strong>☐ Référé précontractuel :</strong></p>
+        <p><strong>Référé précontractuel :</strong></p>
         <p style="margin-left: 16px; margin-top: 4px;">
-          Le candidat peut, s'il le souhaite, exercer un référé précontractuel contre la présente procédure de passation, 
+          Le candidat peut, s'il le souhaite, exercer un référé précontractuel contre la présente procédure de passation,
           devant le président du tribunal administratif, avant la signature du marché public ou de l'accord-cadre.
         </p>
       </div>
-      
+
       <div style="margin-top: 16px; page-break-inside: avoid;">
-        <p><strong>☐ Recours pour excès de pouvoir en cas de déclaration d'infructuosité de la procédure :</strong></p>
+        <p><strong>Recours pour excès de pouvoir en cas de déclaration d'infructuosité de la procédure :</strong></p>
         <p style="margin-left: 16px; margin-top: 4px;">
-          Dans l'hypothèse d'une déclaration d'infructuosité de la procédure, le candidat peut, s'il le souhaite, 
-          exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif. 
+          Dans l'hypothèse d'une déclaration d'infructuosité de la procédure, le candidat peut, s'il le souhaite,
+          exercer un recours pour excès de pouvoir contre cette décision, devant le tribunal administratif.
           Le juge doit être saisi dans un délai de deux mois à compter de la notification du présent courrier.
         </p>
       </div>
@@ -554,7 +554,11 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
 export async function exportNoti3Html(data: Noti3Data): Promise<void> {
   const html = await generateNoti3Html(data);
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const fileName = `NOTI3_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.candidat.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.html`;
+  const _p3h = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
+  const _l3h = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const _ls3h = _l3h.length > 0 ? `Lot${_l3h.join('-')}` : 'Lot';
+  const _t3h = (data.candidat.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
+  const fileName = `${_p3h}_${_ls3h}_${_t3h}_NOTI3.html`;
   saveAs(blob, fileName);
 }
 
@@ -563,7 +567,11 @@ export async function exportNoti3Html(data: Noti3Data): Promise<void> {
  */
 export async function exportNoti3Pdf(data: Noti3Data): Promise<void> {
   const html = await generateNoti3Html(data);
-  const fileName = `NOTI3_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.candidat.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const _p3p = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
+  const _l3p = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const _ls3p = _l3p.length > 0 ? `Lot${_l3p.join('-')}` : 'Lot';
+  const _t3p = (data.candidat.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
+  const fileName = `${_p3p}_${_ls3p}_${_t3p}_NOTI3.pdf`;
   await exportHtmlToPdf(html, fileName);
 }
 
@@ -580,7 +588,11 @@ export async function generateNoti3HtmlAsBlob(data: Noti3Data): Promise<Blob> {
  */
 export async function generateNoti3PdfAsBlob(data: Noti3Data): Promise<Blob> {
   const html = await generateNoti3Html(data);
-  const fileName = `NOTI3_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.candidat.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const _p3b = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
+  const _l3b = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const _ls3b = _l3b.length > 0 ? `Lot${_l3b.join('-')}` : 'Lot';
+  const _t3b = (data.candidat.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
+  const fileName = `${_p3b}_${_ls3b}_${_t3b}_NOTI3.pdf`;
   return htmlToPdfBlob(html, fileName);
 }
 

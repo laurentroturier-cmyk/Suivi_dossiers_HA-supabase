@@ -69,10 +69,7 @@ const NOTI1Section: React.FC<NOTI1SectionProps> = ({ initialData }) => {
         ...prev,
         ...initialData,
         // Pré-remplir automatiquement le numéro de procédure avec les 5 premiers chiffres si disponible
-        numeroProcedure:
-          initialData.numeroProcedure && initialData.numeroProcedure.length > 5
-            ? String(initialData.numeroProcedure).slice(0, 5)
-            : initialData.numeroProcedure || prev.numeroProcedure,
+        numeroProcedure: initialData.numeroProcedure || prev.numeroProcedure,
         pouvoirAdjudicateur: {
           ...prev.pouvoirAdjudicateur,
           ...(initialData.pouvoirAdjudicateur || {}),
