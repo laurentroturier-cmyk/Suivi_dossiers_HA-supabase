@@ -2356,6 +2356,41 @@ function FicheElement({ nom, donnees, onUpdate }: {
   donnees: DonneesElement;
   onUpdate: (field: keyof DonneesElement, val: number | string) => void;
 }) {
+  // State local brut pour permettre la saisie décimale libre (ex: "0.0017", "-5", "1,2")
+  const [raw, setRaw] = React.useState({
+    ca:             donnees.ca           !== 0 ? String(donnees.ca)           : '',
+    budgetPrev:     donnees.budgetPrev   !== 0 ? String(donnees.budgetPrev)   : '',
+    nbCommandes:    donnees.nbCommandes  !== 0 ? String(donnees.nbCommandes)  : '',
+    nbFournisseurs: donnees.nbFournisseurs !== 0 ? String(donnees.nbFournisseurs) : '',
+  });
+
+  // Sync quand on change d'élément sélectionné
+  React.useEffect(() => {
+    setRaw({
+      ca:             donnees.ca           !== 0 ? String(donnees.ca)           : '',
+      budgetPrev:     donnees.budgetPrev   !== 0 ? String(donnees.budgetPrev)   : '',
+      nbCommandes:    donnees.nbCommandes  !== 0 ? String(donnees.nbCommandes)  : '',
+      nbFournisseurs: donnees.nbFournisseurs !== 0 ? String(donnees.nbFournisseurs) : '',
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nom]);
+
+  const handleFloat = (field: 'ca' | 'budgetPrev', val: string) => {
+    setRaw(r => ({ ...r, [field]: val }));
+    const n = parseFloat(val.replace(',', '.'));
+    if (!isNaN(n)) onUpdate(field, n);
+    else if (val === '' || val === '-') onUpdate(field, 0);
+  };
+
+  const handleInt = (field: 'nbCommandes' | 'nbFournisseurs', val: string) => {
+    setRaw(r => ({ ...r, [field]: val }));
+    const n = parseInt(val, 10);
+    if (!isNaN(n)) onUpdate(field, n);
+    else if (val === '') onUpdate(field, 0);
+  };
+
+  const inputCls = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#2F5B58] focus:outline-none";
+
   return (
     <div className="space-y-4">
       <Card>
@@ -2367,11 +2402,11 @@ function FicheElement({ nom, donnees, onUpdate }: {
                 Chiffre d'affaires <span className="text-gray-400 font-normal">(k€)</span>
               </label>
               <input
-                type="number" min={0} step="any"
-                value={donnees.ca || ''}
-                onChange={e => onUpdate('ca', parseFloat(e.target.value) || 0)}
-                placeholder="Ex : 0.017"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#2F5B58] focus:outline-none"
+                type="text" inputMode="decimal"
+                value={raw.ca}
+                onChange={e => handleFloat('ca', e.target.value)}
+                placeholder="Ex : 0.0017"
+                className={inputCls}
               />
               <p className="text-[10px] text-gray-400 mt-1">Dimensionne les bulles dans les matrices</p>
             </div>
@@ -2380,11 +2415,11 @@ function FicheElement({ nom, donnees, onUpdate }: {
                 Budget prévisionnel <span className="text-gray-400 font-normal">(k€)</span>
               </label>
               <input
-                type="number" min={0} step="any"
-                value={donnees.budgetPrev || ''}
-                onChange={e => onUpdate('budgetPrev', parseFloat(e.target.value) || 0)}
-                placeholder="Ex : 1 500"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#2F5B58] focus:outline-none"
+                type="text" inputMode="decimal"
+                value={raw.budgetPrev}
+                onChange={e => handleFloat('budgetPrev', e.target.value)}
+                placeholder="Ex : 1500"
+                className={inputCls}
               />
             </div>
             <div>
@@ -2392,11 +2427,11 @@ function FicheElement({ nom, donnees, onUpdate }: {
                 Nombre de commandes <span className="text-gray-400 font-normal">/ an</span>
               </label>
               <input
-                type="number" min={0} step={1}
-                value={donnees.nbCommandes || ''}
-                onChange={e => onUpdate('nbCommandes', parseInt(e.target.value) || 0)}
+                type="text" inputMode="numeric"
+                value={raw.nbCommandes}
+                onChange={e => handleInt('nbCommandes', e.target.value)}
                 placeholder="Ex : 48"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#2F5B58] focus:outline-none"
+                className={inputCls}
               />
             </div>
             <div>
@@ -2404,11 +2439,11 @@ function FicheElement({ nom, donnees, onUpdate }: {
                 Fournisseurs actifs
               </label>
               <input
-                type="number" min={0} step={1}
-                value={donnees.nbFournisseurs || ''}
-                onChange={e => onUpdate('nbFournisseurs', parseInt(e.target.value) || 0)}
+                type="text" inputMode="numeric"
+                value={raw.nbFournisseurs}
+                onChange={e => handleInt('nbFournisseurs', e.target.value)}
                 placeholder="Ex : 3"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#2F5B58] focus:outline-none"
+                className={inputCls}
               />
             </div>
           </div>
