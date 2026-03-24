@@ -32,8 +32,9 @@ export const DashboardAchats: React.FC<{ onBack: () => void }> = ({ onBack }) =>
   const [files, setFiles] = useState<FileItem[]>([]);
   const [filteredData, setFilteredData] = useState<AchatRow[]>([]);
   const [filters, setFilters] = useState<Filters>({
-    trimestre: '',
+    annee: [],
     famille: '',
+    sousFamille: '',
     fournisseur: '',
     region: '',
     statut: '',
@@ -104,27 +105,39 @@ export const DashboardAchats: React.FC<{ onBack: () => void }> = ({ onBack }) =>
     };
   }, [showDashboard]);
 
+  // Chargement des colonnes distinctes — une seule fois quand DuckDB est prêt
   useEffect(() => {
     if (!duckReady) return;
     let cancelled = false;
     (async () => {
       try {
-        const [distinct, kpi, data] = await Promise.all([
-          getDistinctColumns(),
+        const distinct = await getDistinctColumns();
+        if (!cancelled) setDistinctColumns(distinct);
+      } catch (e) {
+        console.error('getDistinctColumns:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [duckReady, dataVersion]);
+
+  // Requêtes filtrées — relancées à chaque changement de filtre
+  useEffect(() => {
+    if (!duckReady) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [kpi, data] = await Promise.all([
           queryKPI(filters),
           queryFilteredData(filters)
         ]);
         if (cancelled) return;
-        setDistinctColumns(distinct);
         setKpiData(kpi);
         setFilteredData(data);
       } catch (e) {
         console.error('Query DuckDB:', e);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [duckReady, filters, dataVersion]);
 
   const handleFilesAdd = (fileList: FileList) => {
@@ -178,7 +191,7 @@ export const DashboardAchats: React.FC<{ onBack: () => void }> = ({ onBack }) =>
     }
   };
 
-  const handleFilterChange = (key: keyof Filters, value: string) => {
+  const handleFilterChange = (key: keyof Filters, value: string | string[]) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 

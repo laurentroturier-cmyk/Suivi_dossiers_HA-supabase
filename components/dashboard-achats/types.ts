@@ -36,8 +36,9 @@ export interface AchatRow {
 }
 
 export interface Filters {
-  trimestre: string;
+  annee: string[];
   famille: string;
+  sousFamille: string;
   fournisseur: string;
   region: string;
   statut: string;

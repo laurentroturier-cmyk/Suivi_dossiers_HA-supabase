@@ -1011,10 +1011,11 @@ export default function AnalysePortefeuille() {
     ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
 
-    const labels = ['Achats\nSimples', 'Achats\nExternes', 'Achats\nInternes', 'Achats\nDifficiles'];
+    // bas-gauche: Simples, bas-droite: Internes (CI↑), haut-gauche: Externes (CE↑), haut-droite: Difficiles
+    const labels = ['Achats\nSimples', 'Achats\nInternes', 'Achats\nExternes', 'Achats\nDifficiles'];
     const qx = [W*0.25, W*0.75, W*0.25, W*0.75];
     const qy = [H*0.75, H*0.75, H*0.25, H*0.25];
-    const qc = ['#16a34a', '#d97706', '#2563eb', '#dc2626'];
+    const qc = ['#16a34a', '#2563eb', '#d97706', '#dc2626'];
     labels.forEach((lbl, i) => {
       ctx.font = '11px sans-serif'; ctx.fillStyle = qc[i]; ctx.globalAlpha = 0.25;
       ctx.textAlign = 'center';
@@ -1036,9 +1037,11 @@ export default function AnalysePortefeuille() {
       const y = H - (ce / 100) * (H - 40) - 20;
       const ca = donneesStore[nom]?.ca || 0;
       const r = ca > 0 ? MIN_R + ((ca / maxCA) * (MAX_R - MIN_R)) : DEFAULT_R;
+      const cx = Math.max(r + 2, Math.min(W - r - 2, x));
+      const cy = Math.max(r + 2, Math.min(H - r - 2, y));
 
       ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fillStyle = ci >= 50 && ce >= 50 ? 'rgba(220,38,38,0.2)' :
                       ci >= 50 ? 'rgba(37,99,235,0.2)' :
                       ce >= 50 ? 'rgba(217,119,6,0.2)' : 'rgba(22,163,74,0.2)';
@@ -1053,14 +1056,14 @@ export default function AnalysePortefeuille() {
         ctx.font = `bold ${Math.max(7, Math.min(9, r - 4))}px sans-serif`;
         ctx.fillStyle = ci >= 50 && ce >= 50 ? '#dc2626' : ci >= 50 ? '#2563eb' : ce >= 50 ? '#d97706' : '#16a34a';
         ctx.textAlign = 'center';
-        ctx.fillText(`${ca >= 1000 ? (ca/1000).toFixed(1)+'M' : ca+'k'}`, x, y + 3);
+        ctx.fillText(`${ca >= 1000 ? (ca/1000).toFixed(1)+'M' : ca+'k'}`, cx, cy + 3);
       }
 
       ctx.font = 'bold 10px sans-serif';
       ctx.fillStyle = '#1f2937';
       ctx.textAlign = 'center';
       const label = nom.length > 12 ? nom.substring(0, 11) + '…' : nom;
-      ctx.fillText(label, x, y + r + 12);
+      ctx.fillText(label, cx, cy + r + 12);
     });
   }, [activeTab, familles, contraintesStore, donneesStore, getCIScore, getCEScore]);
 
@@ -1124,8 +1127,10 @@ export default function AnalysePortefeuille() {
       const bubbleColor = PALETTE[idx % PALETTE.length];
       const ca = donneesStore[nom]?.ca || 0;
       const r = ca > 0 ? RP_MIN_R + ((ca / rpMaxCA) * (RP_MAX_R - RP_MIN_R)) : RP_DEFAULT_R;
+      const cx = Math.max(r + 2, Math.min(W - r - 2, x));
+      const cy = Math.max(r + 2, Math.min(H - r - 2, y));
 
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fillStyle = bubbleColor + '33';
       ctx.strokeStyle = bubbleColor;
       ctx.lineWidth = 2;
@@ -1133,9 +1138,9 @@ export default function AnalysePortefeuille() {
 
       ctx.font = 'bold 9px sans-serif'; ctx.fillStyle = '#1f2937'; ctx.textAlign = 'center';
       const short = nom.length > 14 ? nom.substring(0, 13) + '…' : nom;
-      ctx.fillText(short, x, y + r + 10);
+      ctx.fillText(short, cx, cy + r + 10);
 
-      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2);
       ctx.fillStyle = quadColor; ctx.fill();
     });
   }, [activeTab, familles, risquesStore, opportunStore, donneesStore, getRisqueScore, getOpportunScore]);
@@ -2058,15 +2063,30 @@ export default function AnalysePortefeuille() {
           const difficiles = analyzedItems.filter(k => getCIScore(k) >= 50 && getCEScore(k) >= 50).length;
           return (
             <div className="space-y-4">
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3 mb-2">
                 {[
                   { label: 'Éléments analysés', value: analyzedItems.length, color: 'border-[#2F5B58]' },
-                  { label: 'Achats simples',    value: analyzedItems.filter(k => getCIScore(k) < 50 && getCEScore(k) < 50).length, color: 'border-green-400' },
-                  { label: 'Achats difficiles', value: difficiles, color: 'border-red-400' },
                   { label: 'Avec CA renseigné', value: analyzedItems.filter(k => (donneesStore[k]?.ca || 0) > 0).length, color: 'border-amber-400' },
+                  { label: 'Achats difficiles', value: difficiles, color: 'border-red-400' },
                 ].map(s => (
                   <Card key={s.label} className={`p-4 border-t-4 ${s.color}`}>
                     <div className="text-2xl font-bold text-gray-800">{s.value}</div>
+                    <div className="text-[11px] text-gray-500 uppercase tracking-wider mt-1">{s.label}</div>
+                  </Card>
+                ))}
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { label: 'Achats simples',   value: analyzedItems.filter(k => getCIScore(k) < 50 && getCEScore(k) < 50).length, color: 'border-green-400',  bg: 'bg-green-50',  dot: 'bg-green-400' },
+                  { label: 'Achats internes',  value: analyzedItems.filter(k => getCIScore(k) >= 50 && getCEScore(k) < 50).length, color: 'border-blue-400',   bg: 'bg-blue-50',   dot: 'bg-blue-400' },
+                  { label: 'Achats externes',  value: analyzedItems.filter(k => getCIScore(k) < 50 && getCEScore(k) >= 50).length, color: 'border-amber-400',  bg: 'bg-amber-50',  dot: 'bg-amber-400' },
+                  { label: 'Achats difficiles', value: difficiles,                                                                  color: 'border-red-400',    bg: 'bg-red-50',    dot: 'bg-red-400' },
+                ].map(s => (
+                  <Card key={s.label} className={`p-4 border-t-4 ${s.color} ${s.bg}`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${s.dot}`} />
+                      <div className="text-2xl font-bold text-gray-800">{s.value}</div>
+                    </div>
                     <div className="text-[11px] text-gray-500 uppercase tracking-wider mt-1">{s.label}</div>
                   </Card>
                 ))}

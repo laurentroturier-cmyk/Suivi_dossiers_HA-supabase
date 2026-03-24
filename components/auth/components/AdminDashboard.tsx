@@ -1001,8 +1001,8 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         )}
 
 
-        {/* Commandes Fina Tab - ADMIN ONLY */}
-        {activeTab === 'commandes-fina' && profile.role === 'admin' && (
+        {/* Commandes Fina Tab - ADMIN + GRAL */}
+        {activeTab === 'commandes-fina' && (profile.role === 'admin' || profile.role === 'gral') && (
           <div className="h-full overflow-auto min-h-[60vh] bg-gray-50 dark:bg-[#0f172a] rounded-2xl">
             <DashboardAchats onBack={() => setActiveTab('data')} />
           </div>

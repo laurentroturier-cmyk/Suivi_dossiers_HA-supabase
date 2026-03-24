@@ -126,11 +126,15 @@ function escapeSqlString(s: string): string {
 function buildWhereClause(filters: Filters): string {
   const conditions: string[] = [];
 
-  if (filters.trimestre) {
-    conditions.push(`${sqlId('Trimestre')} = ${escapeSqlString(filters.trimestre)}`);
+  if (filters.annee && filters.annee.length > 0) {
+    const vals = filters.annee.map(a => escapeSqlString(a)).join(', ');
+    conditions.push(`regexp_extract(${sqlId('Date de création')}, '(20\\d\\d)', 1) IN (${vals})`);
   }
   if (filters.famille) {
     conditions.push(`${sqlId("Famille d'achats")} = ${escapeSqlString(filters.famille)}`);
+  }
+  if (filters.sousFamille) {
+    conditions.push(`${sqlId("Sous-famille d'achats")} = ${escapeSqlString(filters.sousFamille)}`);
   }
   if (filters.fournisseur) {
     conditions.push(`${sqlId('Fournisseur')} = ${escapeSqlString(filters.fournisseur)}`);
@@ -211,8 +215,9 @@ export async function queryFilteredData(filters: Filters): Promise<AchatRow[]> {
  * Retourne les valeurs distinctes par colonne pour les filtres.
  */
 export async function getDistinctColumns(): Promise<{
-  Trimestre: string[];
+  Annee: string[];
   "Famille d'achats": string[];
+  "Sous-famille d'achats": string[];
   Fournisseur: string[];
   "Description du CRT": string[];
   "Signification du statut du document": string[];
@@ -220,32 +225,41 @@ export async function getDistinctColumns(): Promise<{
 }> {
   if (!duckConn) throw new Error('DuckDB non initialisé');
 
-  const cols = [
-    'Trimestre',
-    "Famille d'achats",
-    'Fournisseur',
-    'Description du CRT',
-    'Signification du statut du document',
-    "Catégorie d'achats"
-  ] as const;
-
   const out = {
-    Trimestre: [] as string[],
+    Annee: [] as string[],
     "Famille d'achats": [] as string[],
+    "Sous-famille d'achats": [] as string[],
     Fournisseur: [] as string[],
     "Description du CRT": [] as string[],
     "Signification du statut du document": [] as string[],
     "Catégorie d'achats": [] as string[]
   };
 
-  await Promise.all(
-    cols.map(async (col) => {
-      const res = await queryToArray(
-        `SELECT DISTINCT ${sqlId(col)} AS v FROM achats WHERE ${sqlId(col)} IS NOT NULL AND ${sqlId(col)} != '' ORDER BY v`
-      );
-      out[col] = res.map((r) => String(r.v ?? '')).filter(Boolean);
-    })
+  // Années extraites depuis "Date de création"
+  const anneesRes = await queryToArray(
+    `SELECT DISTINCT regexp_extract(${sqlId('Date de création')}, '(20\\d\\d)', 1) AS v
+     FROM achats
+     WHERE ${sqlId('Date de création')} IS NOT NULL AND ${sqlId('Date de création')} != ''
+     ORDER BY v`
   );
+  out.Annee = anneesRes.map(r => String(r.v ?? '')).filter(Boolean);
+
+  // Autres colonnes séquentiellement pour éviter les conflits DuckDB
+  const cols = [
+    "Famille d'achats",
+    "Sous-famille d'achats",
+    'Fournisseur',
+    'Description du CRT',
+    'Signification du statut du document',
+    "Catégorie d'achats"
+  ] as const;
+
+  for (const col of cols) {
+    const res = await queryToArray(
+      `SELECT DISTINCT ${sqlId(col)} AS v FROM achats WHERE ${sqlId(col)} IS NOT NULL AND ${sqlId(col)} != '' ORDER BY v`
+    );
+    out[col] = res.map((r) => String(r.v ?? '')).filter(Boolean);
+  }
 
   return out;
 }

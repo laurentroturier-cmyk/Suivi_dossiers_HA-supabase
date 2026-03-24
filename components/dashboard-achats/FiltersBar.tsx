@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Search } from 'lucide-react';
+import { X, Search, ChevronDown } from 'lucide-react';
 import { Filters } from './types';
 import { AchatRow } from './types';
 
 export interface DistinctColumns {
-  Trimestre: string[];
+  Annee: string[];
   "Famille d'achats": string[];
+  "Sous-famille d'achats": string[];
   Fournisseur: string[];
   "Description du CRT": string[];
   "Signification du statut du document": string[];
@@ -14,7 +15,7 @@ export interface DistinctColumns {
 
 interface FiltersBarProps {
   filters: Filters;
-  onFilterChange: (key: keyof Filters, value: string) => void;
+  onFilterChange: (key: keyof Filters, value: string | string[]) => void;
   onReset: () => void;
   data?: AchatRow[];
   distinctColumns?: DistinctColumns;
@@ -27,7 +28,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
   data = [],
   distinctColumns
 }) => {
-  const uniqueValues = (key: 'Trimestre' | "Famille d'achats" | 'Fournisseur' | 'Description du CRT' | 'Signification du statut du document' | "Catégorie d'achats"): string[] => {
+  const uniqueValues = (key: 'Annee' | "Famille d'achats" | "Sous-famille d'achats" | 'Fournisseur' | 'Description du CRT' | 'Signification du statut du document' | "Catégorie d'achats"): string[] => {
     if (distinctColumns) {
       return distinctColumns[key] ?? [];
     }
@@ -39,18 +40,24 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
 
   return (
     <div className="flex gap-3 px-7 py-4 bg-white border-b border-gray-200 dark:bg-[#1E1E1E] dark:border-[#333333] flex-wrap items-center">
-      <FilterSelect
-        label="Trimestre"
-        value={filters.trimestre}
-        onChange={(v) => onFilterChange('trimestre', v)}
-        options={uniqueValues('Trimestre')}
-        placeholder="Tous"
+      <MultiSelectTrimestre
+        label="Année"
+        selected={filters.annee}
+        onChange={(v) => onFilterChange('annee', v)}
+        options={uniqueValues('Annee')}
       />
       <FilterSelect
         label="Famille d'achats"
         value={filters.famille}
         onChange={(v) => onFilterChange('famille', v)}
         options={uniqueValues("Famille d'achats")}
+        placeholder="Toutes"
+      />
+      <FilterSelect
+        label="Sous-famille d'achats"
+        value={filters.sousFamille}
+        onChange={(v) => onFilterChange('sousFamille', v)}
+        options={uniqueValues("Sous-famille d'achats")}
         placeholder="Toutes"
       />
       <FilterSelectWithSearch
@@ -232,6 +239,84 @@ const FilterSelectWithSearch: React.FC<FilterSelectWithSearchProps> = ({
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+interface MultiSelectTrimestreProps {
+  label: string;
+  selected: string[];
+  onChange: (value: string[]) => void;
+  options: string[];
+}
+
+const MultiSelectTrimestre: React.FC<MultiSelectTrimestreProps> = ({ label, selected, onChange, options }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggle = (opt: string) => {
+    if (selected.includes(opt)) onChange(selected.filter(v => v !== opt));
+    else onChange([...selected, opt]);
+  };
+
+  const displayLabel = selected.length === 0
+    ? 'Tous'
+    : selected.length === 1
+    ? selected[0]
+    : `${selected.length} années`;
+
+  return (
+    <div className="flex flex-col gap-1 relative" ref={wrapperRef}>
+      <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        {label}
+      </label>
+      <button
+        onClick={() => setIsOpen(o => !o)}
+        className={`flex items-center justify-between gap-2 bg-gray-50 dark:bg-[#252525] border px-3 py-1.5 rounded-lg text-sm min-w-[150px] max-w-[220px] transition-colors hover:border-cyan-500 dark:hover:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${
+          selected.length > 0 ? 'border-cyan-500 text-cyan-700 dark:text-cyan-300 font-medium' : 'border-gray-300 dark:border-[#444444] text-gray-900 dark:text-gray-100'
+        }`}
+      >
+        <span className="truncate">{displayLabel}</span>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {selected.length > 0 && (
+            <span
+              onClick={(e) => { e.stopPropagation(); onChange([]); }}
+              className="text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </span>
+          )}
+          <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+      {isOpen && options.length > 0 && (
+        <div className="absolute top-full mt-1 z-50 w-full bg-white dark:bg-[#252525] border border-gray-300 dark:border-[#444444] rounded-lg shadow-lg overflow-auto max-h-60">
+          {options.map(opt => (
+            <label
+              key={opt}
+              className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(opt)}
+                onChange={() => toggle(opt)}
+                className="accent-cyan-600 w-4 h-4"
+              />
+              <span className={selected.includes(opt) ? 'font-medium text-cyan-700 dark:text-cyan-300' : 'text-gray-900 dark:text-gray-100'}>
+                {opt}
+              </span>
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
