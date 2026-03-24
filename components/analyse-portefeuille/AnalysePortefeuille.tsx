@@ -160,13 +160,14 @@ const EMPTY_COUVERTURE = (): CouvertureContractuelle => ({
   actions: [],
 });
 
+// 0 = Critique (aucune couverture) → 5 = Sécurisé (couverture optimale)
 const COUVERTURE_LEVELS = [
-  { note: 0, label: 'Sécurisé',       color: 'bg-green-100 text-green-800 border-green-200',  desc: 'Couverture contractuelle optimale. Tous les contrats sont à jour, robustes et couvrent tous les risques possibles.' },
-  { note: 1, label: 'Très bon niveau', color: 'bg-emerald-100 text-emerald-800 border-emerald-200', desc: 'Contrats bien structurés avec quelques ajustements possibles (ex. : renforcement des clauses de sortie ou des pénalités).' },
-  { note: 2, label: 'Acceptable',      color: 'bg-yellow-100 text-yellow-800 border-yellow-200', desc: 'Certains contrats manquent de précisions ou ne couvrent pas tous les risques. Risques modérés mais restent gérables.' },
-  { note: 3, label: 'Moyen',           color: 'bg-orange-100 text-orange-800 border-orange-200', desc: 'Zones d\'ombre contractuelles importantes. Pas de SLA définis, clauses de résiliation imprécises. Actions correctives nécessaires.' },
-  { note: 4, label: 'Faible',          color: 'bg-red-100 text-red-800 border-red-200',     desc: 'Peu ou pas de contrats formels, ou contrats très déséquilibrés. Forte exposition aux risques. Mesures d\'urgence requises.' },
-  { note: 5, label: 'Critique',        color: 'bg-red-200 text-red-900 border-red-300',     desc: 'Absence totale de cadre contractuel ou contrats caducs. Aucun levier juridique. Situation à traiter en priorité absolue.' },
+  { note: 0, label: 'Critique',        color: 'bg-red-200 text-red-900 border-red-300',         desc: 'Absence totale de cadre contractuel ou contrats caducs. Aucun levier juridique. Situation à traiter en priorité absolue.' },
+  { note: 1, label: 'Faible',          color: 'bg-red-100 text-red-800 border-red-200',          desc: 'Peu ou pas de contrats formels, ou contrats très déséquilibrés. Forte exposition aux risques. Mesures d\'urgence requises.' },
+  { note: 2, label: 'Moyen',           color: 'bg-orange-100 text-orange-800 border-orange-200', desc: 'Zones d\'ombre contractuelles importantes. Pas de SLA définis, clauses de résiliation imprécises. Actions correctives nécessaires.' },
+  { note: 3, label: 'Acceptable',      color: 'bg-yellow-100 text-yellow-800 border-yellow-200', desc: 'Certains contrats manquent de précisions ou ne couvrent pas tous les risques. Risques modérés mais restent gérables.' },
+  { note: 4, label: 'Très bon niveau', color: 'bg-emerald-100 text-emerald-800 border-emerald-200', desc: 'Contrats bien structurés avec quelques ajustements possibles (ex. : renforcement des clauses de sortie ou des pénalités).' },
+  { note: 5, label: 'Sécurisé',        color: 'bg-green-100 text-green-800 border-green-200',    desc: 'Couverture contractuelle optimale. Tous les contrats sont à jour, robustes et couvrent tous les risques possibles.' },
 ];
 
 const AXES_LABELS: Record<keyof CouvertureContractuelle['axes'], string> = {
@@ -358,7 +359,7 @@ export default function AnalysePortefeuille() {
       const { data, error } = await supabase
         .from('analyse_portefeuille_data')
         .select('element_nom, donnees, contraintes, risques, opportunites, swot, porter, couverture_contractuelle')
-        .eq('user_id', user.id);
+        .not('element_nom', 'is', null); // données partagées — pas de filtre par user
       if (error) throw error;
       if (!data || data.length === 0) return;
 
@@ -429,7 +430,7 @@ export default function AnalysePortefeuille() {
         const batch = rows.slice(i, i + 50);
         const { error } = await supabase
           .from('analyse_portefeuille_data')
-          .upsert(batch, { onConflict: 'user_id,element_nom' });
+          .upsert(batch, { onConflict: 'element_nom' });
         if (error) throw error;
       }
 
@@ -1908,7 +1909,7 @@ export default function AnalysePortefeuille() {
                       <div className="space-y-4">
                         {/* Note globale */}
                         <Card>
-                          <CardHeader title="Note globale de couverture contractuelle (0 = Sécurisé · 5 = Critique)" icon={<Shield className="w-4 h-4" />} />
+                          <CardHeader title="Note globale de couverture contractuelle (0 = Critique · 5 = Sécurisé)" icon={<Shield className="w-4 h-4" />} />
                           <div className="p-4 space-y-3">
                             <div className="flex items-center gap-4">
                               <div className="flex gap-2 flex-wrap">
@@ -1943,7 +1944,7 @@ export default function AnalysePortefeuille() {
                           <div className="p-4 space-y-1">
                             <div className="grid grid-cols-3 gap-x-4 text-[10px] text-gray-400 font-medium mb-2 px-1">
                               <span>Axe</span>
-                              <span className="col-span-2 text-right pr-4">Note (0 = OK · 5 = Critique)</span>
+                              <span className="col-span-2 text-right pr-4">Note (0 = Critique · 5 = Sécurisé)</span>
                             </div>
                             {axeKeys.map(axe => (
                               <div key={axe} className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0">
@@ -1956,10 +1957,11 @@ export default function AnalysePortefeuille() {
                                       className={`w-6 h-6 rounded text-[10px] font-bold transition-all border ${
                                         cov.axes[axe] === v
                                           ? v < 0 ? 'bg-gray-200 text-gray-500 border-gray-300'
-                                            : v <= 1 ? 'bg-green-500 text-white border-green-600'
-                                            : v <= 2 ? 'bg-yellow-400 text-white border-yellow-500'
-                                            : v <= 3 ? 'bg-orange-400 text-white border-orange-500'
-                                            : 'bg-red-500 text-white border-red-600'
+                                            : v <= 1 ? 'bg-red-500 text-white border-red-600'
+                                            : v <= 2 ? 'bg-orange-400 text-white border-orange-500'
+                                            : v <= 3 ? 'bg-yellow-400 text-white border-yellow-500'
+                                            : v <= 4 ? 'bg-emerald-400 text-white border-emerald-500'
+                                            : 'bg-green-500 text-white border-green-600'
                                           : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
                                       }`}
                                       title={v < 0 ? 'Non évalué' : `Note ${v}`}
