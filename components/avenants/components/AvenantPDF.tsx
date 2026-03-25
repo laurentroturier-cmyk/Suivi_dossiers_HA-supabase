@@ -156,7 +156,12 @@ function formatDate(d: string | null | undefined): string {
 
 function formatMontant(val: number | null | undefined, suffix = '€'): string {
   if (val === null || val === undefined) return '—';
-  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' ' + suffix;
+  // Intl.NumberFormat fr-FR utilise \u202F (espace fine) que react-pdf rend en "/"
+  // → formatage manuel avec espace ordinaire comme séparateur de milliers
+  const [intPart, decPart] = Math.abs(val).toFixed(2).split('.');
+  const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  const sign = val < 0 ? '-' : '';
+  return `${sign}${intFormatted},${decPart} ${suffix}`;
 }
 
 function htmlToText(html: string): string {

@@ -7,6 +7,38 @@
 import { supabase } from '@/lib/supabase';
 import type { AN01Criterion } from '../types/saisie';
 
+/** Structure QT Générique (DCE Complet — table dce.qt_generique) */
+interface QTGeneriqueQuestion {
+  ref: string;
+  intitule: string;
+  points: number;
+}
+interface QTGeneriqueCritere {
+  ref: string;
+  intitule: string;
+  questions: QTGeneriqueQuestion[];
+}
+interface QTGeneriqueData {
+  criteres: QTGeneriqueCritere[];
+}
+
+/** Transforme un QT Générique (DCE Complet) en QTCritere[] compatible avec mapQTCriteresToAN01Criteria */
+function mapQTGeneriqueToLegacy(data: QTGeneriqueData): QTCritere[] {
+  return (data.criteres || []).map(c => ({
+    id: c.ref || c.intitule,
+    nom: c.intitule,
+    sousCriteres: [{
+      id: `${c.ref}.qs`,
+      nom: c.intitule,
+      questions: (c.questions || []).map(q => ({
+        id: q.ref,
+        intitule: q.intitule,
+        pointsMax: q.points,
+      })),
+    }],
+  }));
+}
+
 /** Structure minimale du QT stocké (alignée sur redaction questionnaire) */
 export interface QTCritere {
   id: string;
@@ -111,6 +143,21 @@ export async function loadTechnicalQuestionnaireForLot(
     if (error && error.code !== 'PGRST116') continue;
     const qtData = data?.qt_data as QTDataFromDb | undefined;
     const criteres = qtData?.criteres ?? [];
+    if (criteres.length) return { criteres };
+  }
+
+  // Fallback : chercher dans la table dce.qt_generique (DCE Complet)
+  const shortNum = /^\d{5}/.exec(consultationNumber.trim())?.[0] ?? consultationNumber.trim();
+  const { data: dceRows } = await supabase
+    .from('dce')
+    .select('qt_generique')
+    .ilike('numero_procedure', `%${shortNum}%`)
+    .limit(5);
+
+  for (const row of (dceRows || [])) {
+    const qtGen = row?.qt_generique as QTGeneriqueData | null;
+    if (!qtGen?.criteres?.length) continue;
+    const criteres = mapQTGeneriqueToLegacy(qtGen);
     if (criteres.length) return { criteres };
   }
 

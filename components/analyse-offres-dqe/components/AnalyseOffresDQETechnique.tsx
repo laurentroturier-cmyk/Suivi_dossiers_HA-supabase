@@ -7,7 +7,8 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Loader2, AlertCircle, RefreshCw, Save, CheckCircle, Info, MessageSquare } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw, Save, CheckCircle, Info, MessageSquare, Download, Upload } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import type { AN01Criterion } from '../../an01/types/saisie';
 import { NOTATION_SCALE } from '../../an01/types/saisie';
 import {
@@ -99,6 +100,7 @@ export function AnalyseOffresDQETechnique({
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const xlsxImportRef = useRef<HTMLInputElement>(null);
   const notationsRef = useRef<DQENotationsMap>({});
   notationsRef.current = notations;
 
@@ -110,31 +112,46 @@ export function AnalyseOffresDQETechnique({
   // ── Chargement initial ────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!analyseId) return;
     let cancelled = false;
-    setIsLoadingConfig(true);
-    setError(null);
 
-    Promise.all([
-      AnalyseOffresDQETechniqueService.getOrCreateConfig(analyseId),
-      AnalyseOffresDQETechniqueService.loadNotations(analyseId),
-    ]).then(([config, loadedNotations]) => {
-      if (cancelled) return;
-      if (config) {
-        setCriteria(config.criteria);
-        setPoidsFinancier(config.poids_financier);
-        setPoidsTechnique(config.poids_technique);
-        // Si pas encore de critères : tentative d'import auto depuis le DCE
-        if (config.criteria.length === 0) {
-          autoImportFromDCE(analyseId, config.poids_financier, config.poids_technique);
+    if (analyseId) {
+      // Avec analyseId : charger config + notations depuis Supabase
+      setIsLoadingConfig(true);
+      setError(null);
+      Promise.all([
+        AnalyseOffresDQETechniqueService.getOrCreateConfig(analyseId),
+        AnalyseOffresDQETechniqueService.loadNotations(analyseId),
+      ]).then(([config, loadedNotations]) => {
+        if (cancelled) return;
+        if (config) {
+          setCriteria(config.criteria);
+          setPoidsFinancier(config.poids_financier);
+          setPoidsTechnique(config.poids_technique);
+          if (config.criteria.length === 0) {
+            autoImportFromDCE(analyseId, config.poids_financier, config.poids_technique);
+          }
+        } else {
+          setError('Impossible de charger la configuration technique.');
         }
-      } else {
-        setError('Impossible de charger la configuration technique.');
+        setNotations(loadedNotations);
+      }).finally(() => {
+        if (!cancelled) setIsLoadingConfig(false);
+      });
+    } else {
+      // Sans analyseId : tenter import auto depuis DCE directement
+      setIsLoadingConfig(false);
+      if (numeroProcedure?.trim()) {
+        setIsLoadingQt(true);
+        loadTechnicalQuestionnaireForLot(numeroProcedure.trim(), selectedLotNum).then(result => {
+          if (cancelled) return;
+          if (result?.criteres?.length) {
+            setCriteria(mapQTCriteresToAN01Criteria(result.criteres));
+          }
+        }).finally(() => {
+          if (!cancelled) setIsLoadingQt(false);
+        });
       }
-      setNotations(loadedNotations);
-    }).finally(() => {
-      if (!cancelled) setIsLoadingConfig(false);
-    });
+    }
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,7 +185,7 @@ export function AnalyseOffresDQETechnique({
   }, [numeroProcedure, selectedLotNum]);
 
   const handleManualImportFromDCE = useCallback(async () => {
-    if (!analyseId || !numeroProcedure?.trim()) return;
+    if (!numeroProcedure?.trim()) return;
     setIsLoadingQt(true);
     setQtError(null);
     try {
@@ -176,9 +193,12 @@ export function AnalyseOffresDQETechnique({
       if (result?.criteres?.length) {
         const mapped = mapQTCriteresToAN01Criteria(result.criteres);
         setCriteria(mapped);
-        await AnalyseOffresDQETechniqueService.saveConfig(analyseId, poidsFinancier, poidsTechnique, mapped);
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
+        // Sauvegarde uniquement si analyseId disponible
+        if (analyseId) {
+          await AnalyseOffresDQETechniqueService.saveConfig(analyseId, poidsFinancier, poidsTechnique, mapped);
+          setSaveSuccess(true);
+          setTimeout(() => setSaveSuccess(false), 3000);
+        }
       } else {
         setQtError('Aucun critère trouvé dans le questionnaire technique DCE pour ce lot.');
       }
@@ -272,6 +292,115 @@ export function AnalyseOffresDQETechnique({
     }
   }, [analyseId, poidsFinancier, poidsTechnique, criteria, notations]);
 
+  // ── Grille ────────────────────────────────────────────────────────────────
+
+  const gridRows = useMemo(() => buildRows(criteria), [criteria]);
+
+  const totalBareme = useMemo(
+    () => criteria.reduce((s, c) => s + (c.base_points || 0), 0),
+    [criteria]
+  );
+
+  // ── Export Excel template ─────────────────────────────────────────────────
+
+  const exportExcelTemplate = useCallback(() => {
+    const wb = XLSX.utils.book_new();
+
+    // Construire les headers
+    const headers = ['Réf', 'Intitulé', 'Pts max'];
+    candidats.forEach(c => {
+      headers.push(`${c.name} — Note (0-4)`);
+      headers.push(`${c.name} — Commentaire`);
+    });
+
+    const rows: (string | number)[][] = [headers];
+
+    // Parcourir les critères
+    for (const row of gridRows) {
+      if (row.type === 'criterion') {
+        rows.push([row.code, row.label, '', ...candidats.flatMap(() => ['', ''])]);
+      } else if (row.type === 'sub_criterion') {
+        rows.push(['', row.label, '', ...candidats.flatMap(() => ['', ''])]);
+      } else if (row.type === 'question') {
+        const c = row.crit;
+        const dataRow: (string | number)[] = [
+          c.code || '',
+          c.label,
+          c.base_points || 0,
+        ];
+        candidats.forEach(cand => {
+          dataRow.push(notations[cand.id]?.[c.id]?.score ?? '');
+          dataRow.push(notations[cand.id]?.[c.id]?.commentaire ?? '');
+        });
+        rows.push(dataRow);
+      }
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // Largeurs colonnes
+    ws['!cols'] = [
+      { wch: 10 }, { wch: 50 }, { wch: 10 },
+      ...candidats.flatMap(() => [{ wch: 18 }, { wch: 35 }]),
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Analyse technique');
+    XLSX.writeFile(wb, `AnalyseTech_Lot${selectedLotNum}_${numeroProcedure.slice(0, 5)}.xlsx`);
+  }, [gridRows, candidats, notations, selectedLotNum, numeroProcedure]);
+
+  // ── Import Excel template ─────────────────────────────────────────────────
+
+  const importExcelTemplate = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = new Uint8Array(ev.target!.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json<(string | number)[]>(ws, { header: 1 }) as (string | number)[][];
+
+        if (rows.length < 2) return;
+
+        // Row 0 = headers — extraire les candidats (groupes de 2 colonnes à partir de la col 3)
+        const newNotations: DQENotationsMap = { ...notations };
+
+        // Pour chaque ligne de question (celles avec une référence)
+        for (let ri = 1; ri < rows.length; ri++) {
+          const row = rows[ri];
+          const ref = String(row[0] || '').trim();
+          if (!ref) continue; // ligne critère/sous-critère, pas de ref → skip
+
+          // Trouver le critère correspondant
+          const crit = criteria.find(c => (c.code || '') === ref);
+          if (!crit) continue;
+
+          // Colonnes: 0=ref, 1=intitulé, 2=pts, puis 3=note1, 4=comm1, 5=note2, 6=comm2...
+          candidats.forEach((cand, ci) => {
+            const noteVal = row[3 + ci * 2];
+            const commVal = row[4 + ci * 2];
+            const score = typeof noteVal === 'number' ? Math.max(0, Math.min(4, Math.round(noteVal))) : 0;
+            const commentaire = typeof commVal === 'string' ? commVal : '';
+
+            if (!newNotations[cand.id]) newNotations[cand.id] = {};
+            newNotations[cand.id][crit.id] = { score, commentaire };
+          });
+        }
+
+        setNotations(newNotations);
+        // Auto-save si analyseId disponible
+        if (analyseId) {
+          AnalyseOffresDQETechniqueService.saveAllNotations(analyseId, newNotations);
+        }
+      } catch {
+        setError('Erreur lors de la lecture du fichier Excel.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  }, [criteria, candidats, notations, analyseId]);
+
   // ── Toggle commentaire par cellule (candidatId__critereId) ───────────────
 
   const toggleComment = (candidatId: string, critereId: string) => {
@@ -286,51 +415,65 @@ export function AnalyseOffresDQETechnique({
   const isCellCommentExpanded = (candidatId: string, critereId: string) =>
     expandedComments.has(`${candidatId}__${critereId}`);
 
-  // ── Grille ────────────────────────────────────────────────────────────────
-
-  const gridRows = useMemo(() => buildRows(criteria), [criteria]);
-
-  const totalBareme = useMemo(
-    () => criteria.reduce((s, c) => s + (c.base_points || 0), 0),
-    [criteria]
-  );
-
   // ─── Rendu ────────────────────────────────────────────────────────────────
 
-  if (!analyseId) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Info className="w-10 h-10 text-gray-400 mb-4" />
-        <p className="text-gray-600 dark:text-gray-400 font-medium">
-          Chargez d'abord les offres DQE en <strong>Partie 1</strong> pour accéder à l'analyse technique.
-        </p>
-      </div>
-    );
-  }
-
-  if (candidats.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Info className="w-10 h-10 text-gray-400 mb-4" />
-        <p className="text-gray-600 dark:text-gray-400">
-          Aucun candidat chargé pour ce lot. Importez les offres DQE en Partie 1.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
 
       {/* ── En-tête ── */}
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-700">
-        <h2 className="text-lg font-bold text-indigo-800 dark:text-indigo-300 mb-1">
-          Partie 2 — Analyse technique
-        </h2>
-        <p className="text-sm text-indigo-600 dark:text-indigo-400">
-          Lot {selectedLotNum} — {lotName} · {candidats.length} candidat{candidats.length > 1 ? 's' : ''}
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-indigo-800 dark:text-indigo-300 mb-1">
+              Partie 2 — Analyse technique
+            </h2>
+            <p className="text-sm text-indigo-600 dark:text-indigo-400">
+              Lot {selectedLotNum} — {lotName} · {candidats.length} candidat{candidats.length > 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <input
+              ref={xlsxImportRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={importExcelTemplate}
+            />
+            <button
+              onClick={exportExcelTemplate}
+              disabled={criteria.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-white border border-indigo-300 rounded-lg hover:bg-indigo-50 disabled:opacity-40"
+              title="Exporter le template Excel (notes + commentaires)"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Template Excel
+            </button>
+            <button
+              onClick={() => xlsxImportRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-700"
+              title="Importer un template Excel pré-rempli"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Importer Excel
+            </button>
+          </div>
+        </div>
       </div>
+
+      {!analyseId && (
+        <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg text-amber-700 dark:text-amber-300 text-sm">
+          <Info className="w-4 h-4 flex-shrink-0" />
+          Sans analyse financière (Partie 1), la sauvegarde des notes ne sera pas disponible.
+        </div>
+      )}
+
+      {candidats.length === 0 && (
+        <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-blue-700 dark:text-blue-300 text-sm">
+          <Info className="w-4 h-4 flex-shrink-0" />
+          Aucun candidat chargé — vous pouvez consulter et exporter le template QT, mais la notation nécessite d'importer les offres DQE en Partie 1.
+        </div>
+      )}
 
       {/* ── Erreurs ── */}
       {error && (

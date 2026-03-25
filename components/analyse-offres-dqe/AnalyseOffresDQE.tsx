@@ -1538,9 +1538,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                   </button>
                   <button
                     onClick={() => setActiveSection('technique')}
-                    disabled={!currentAnalyseId}
-                    title={!currentAnalyseId ? 'Chargez d\'abord les offres DQE (Partie 1)' : undefined}
-                    className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-all ${
                       activeSection === 'technique'
                         ? 'bg-indigo-600 text-white shadow'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -1550,9 +1548,7 @@ export function AnalyseOffresDQE({ onClose }: AnalyseOffresDQEProps) {
                   </button>
                   <button
                     onClick={() => setActiveSection('synthese')}
-                    disabled={!currentAnalyseId}
-                    title={!currentAnalyseId ? 'Chargez d\'abord les offres DQE (Partie 1)' : undefined}
-                    className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-all ${
                       activeSection === 'synthese'
                         ? 'bg-teal-600 text-white shadow'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'

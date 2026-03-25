@@ -20,7 +20,10 @@ function formatDate(d: string | null | undefined): string {
 
 function formatMontant(val: number | null | undefined, suffix = '€'): string {
   if (val === null || val === undefined) return '—';
-  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' ' + suffix;
+  const [intPart, decPart] = Math.abs(val).toFixed(2).split('.');
+  const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+  const sign = val < 0 ? '-' : '';
+  return `${sign}${intFormatted},${decPart} ${suffix}`;
 }
 
 // ─── Composants de mise en page ───────────────────────────────────────────────
