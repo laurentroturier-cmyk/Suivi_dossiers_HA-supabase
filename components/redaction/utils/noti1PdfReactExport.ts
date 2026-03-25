@@ -53,11 +53,11 @@ export async function generateNoti1PdfBlobReact(data: Noti1Data): Promise<Blob> 
  */
 export async function exportNoti1PdfReact(data: Noti1Data): Promise<void> {
   const blob = await generateNoti1PdfBlobReact(data);
-  const prefix = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
-  const lots = (data.attribution?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
-  const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
-  const titulaireStr = (data.titulaire.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
-  const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI1.pdf`;
+  const prefix = data.numeroProcedure.slice(0, 5);
+  const lots = (data.attribution?.lots || []).filter((l: any) => l.numero).map((l: any) => `Lot ${l.numero}`);
+  const lotStr = lots.length > 0 ? lots.join('-') : 'Lot 1';
+  const titulaireStr = (data.titulaire.denomination || '').replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 30);
+  const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI 1.pdf`;
   saveAs(blob, fileName);
 }
 

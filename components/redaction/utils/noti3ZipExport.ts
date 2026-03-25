@@ -35,17 +35,18 @@ export async function exportAllNoti3ToZip(
       const pdfBlob = await generateNoti3PdfBlobReact(perdant);
       
       // Créer un nom de fichier unique et propre au format standard : prefix_lot_titulaire_NOTI3
-      const prefix = perdant.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_');
+      const prefix = perdant.numeroProcedure.slice(0, 5);
       const lots = (perdant.notification?.lots || [])
         .filter((l: any) => l.numero)
-        .map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
-      const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
+        .map((l: any) => `Lot ${l.numero}`);
+      const lotStr = lots.length > 0 ? lots.join('-') : 'Lot 1';
       const candidatNom = (perdant.candidat.denomination || '')
-        .replace(/[^a-zA-Z0-9 ]/g, '')
-        .replace(/\s+/g, '_')
-        .substring(0, 50);
+        .replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 30);
 
-      const fileName = `${prefix}_${lotStr}_${candidatNom}_NOTI3.pdf`;
+      const fileName = `${prefix}_${lotStr}_${candidatNom}_NOTI 3.pdf`;
       
       // Ajouter le PDF au ZIP
       zip.file(fileName, pdfBlob);

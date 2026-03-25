@@ -555,10 +555,10 @@ export async function exportNoti3Html(data: Noti3Data): Promise<void> {
   const html = await generateNoti3Html(data);
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const _p3h = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
-  const _l3h = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
-  const _ls3h = _l3h.length > 0 ? `Lot${_l3h.join('-')}` : 'Lot';
+  const _l3h = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => `Lot ${l.numero}`);
+  const _ls3h = _l3h.length > 0 ? _l3h.join('-') : 'Lot 1';
   const _t3h = (data.candidat.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
-  const fileName = `${_p3h}_${_ls3h}_${_t3h}_NOTI3.html`;
+  const fileName = `${_p3h}_${_ls3h}_${_t3h}_NOTI 3.html`;
   saveAs(blob, fileName);
 }
 
@@ -568,10 +568,10 @@ export async function exportNoti3Html(data: Noti3Data): Promise<void> {
 export async function exportNoti3Pdf(data: Noti3Data): Promise<void> {
   const html = await generateNoti3Html(data);
   const _p3p = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
-  const _l3p = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const _l3p = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => `Lot ${l.numero}`);
   const _ls3p = _l3p.length > 0 ? `Lot${_l3p.join('-')}` : 'Lot';
   const _t3p = (data.candidat.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
-  const fileName = `${_p3p}_${_ls3p}_${_t3p}_NOTI3.pdf`;
+  const fileName = `${_p3p}_${_ls3p}_${_t3p}_NOTI 3.pdf`;
   await exportHtmlToPdf(html, fileName);
 }
 
@@ -589,10 +589,10 @@ export async function generateNoti3HtmlAsBlob(data: Noti3Data): Promise<Blob> {
 export async function generateNoti3PdfAsBlob(data: Noti3Data): Promise<Blob> {
   const html = await generateNoti3Html(data);
   const _p3b = data.numeroProcedure.slice(0, 5).replace(/[^a-zA-Z0-9]/g, '');
-  const _l3b = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
+  const _l3b = (data.notification?.lots || []).filter((l: any) => l.numero).map((l: any) => `Lot ${l.numero}`);
   const _ls3b = _l3b.length > 0 ? `Lot${_l3b.join('-')}` : 'Lot';
   const _t3b = (data.candidat.denomination || '').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_').slice(0, 25);
-  const fileName = `${_p3b}_${_ls3b}_${_t3b}_NOTI3.pdf`;
+  const fileName = `${_p3b}_${_ls3b}_${_t3b}_NOTI 3.pdf`;
   return htmlToPdfBlob(html, fileName);
 }
 

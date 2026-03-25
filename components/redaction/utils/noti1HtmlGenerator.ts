@@ -505,7 +505,11 @@ export async function generateNoti1Html(data: Noti1Data): Promise<string> {
 export async function exportNoti1Html(data: Noti1Data): Promise<void> {
   const html = await generateNoti1Html(data);
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const fileName = `NOTI1_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.titulaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.html`;
+  const _p1h = data.numeroProcedure.slice(0, 5);
+  const _l1h = (data.attribution?.lots || []).filter((l: any) => l.numero).map((l: any) => `Lot ${l.numero}`);
+  const _ls1h = _l1h.length > 0 ? _l1h.join('-') : 'Lot 1';
+  const _t1h = (data.titulaire.denomination || '').replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 30);
+  const fileName = `${_p1h}_${_ls1h}_${_t1h}_NOTI 1.html`;
   saveAs(blob, fileName);
 }
 
@@ -514,7 +518,11 @@ export async function exportNoti1Html(data: Noti1Data): Promise<void> {
  */
 export async function exportNoti1Pdf(data: Noti1Data): Promise<void> {
   const html = await generateNoti1Html(data);
-  const fileName = `NOTI1_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.titulaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const _p1p = data.numeroProcedure.slice(0, 5);
+  const _l1p = (data.attribution?.lots || []).filter((l: any) => l.numero).map((l: any) => `Lot ${l.numero}`);
+  const _ls1p = _l1p.length > 0 ? _l1p.join('-') : 'Lot 1';
+  const _t1p = (data.titulaire.denomination || '').replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 30);
+  const fileName = `${_p1p}_${_ls1p}_${_t1p}_NOTI 1.pdf`;
   await exportHtmlToPdf(html, fileName);
 }
 
@@ -531,7 +539,11 @@ export async function generateNoti1HtmlAsBlob(data: Noti1Data): Promise<Blob> {
  */
 export async function generateNoti1PdfAsBlob(data: Noti1Data): Promise<Blob> {
   const html = await generateNoti1Html(data);
-  const fileName = `NOTI1_${data.numeroProcedure.replace(/[^a-zA-Z0-9]/g, '_')}_${data.titulaire.denomination.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const _p1b = data.numeroProcedure.slice(0, 5);
+  const _l1b = (data.attribution?.lots || []).filter((l: any) => l.numero).map((l: any) => `Lot ${l.numero}`);
+  const _ls1b = _l1b.length > 0 ? _l1b.join('-') : 'Lot 1';
+  const _t1b = (data.titulaire.denomination || '').replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 30);
+  const fileName = `${_p1b}_${_ls1b}_${_t1b}_NOTI 1.pdf`;
   return htmlToPdfBlob(html, fileName);
 }
 
