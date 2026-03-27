@@ -28,6 +28,7 @@ import { PROJECT_FIELDS, DOSSIER_FIELDS, PROCEDURE_GROUPS } from '../../../const
 import DataImport from './DataImport';
 import GestionCentres from './GestionCentres';
 import { DashboardAchats } from '../../dashboard-achats';
+import { ExcelMerger } from '../../excel-merger';
 
 interface AdminDashboardProps {
   profile: UserProfile;
@@ -41,7 +42,7 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   const [error, setError] = useState<string | null>(null);
   const [rlsError, setRlsError] = useState(false);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
-  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import' | 'centres' | 'commandes-fina'>('data');
+  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import' | 'centres' | 'commandes-fina' | 'fusion-excel'>('data');
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -419,6 +420,16 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                 >
                   <ShoppingCart className="w-4 h-4" />
                   Commandes Fina par Trimestre
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('fusion-excel')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    activeTab === 'fusion-excel' ? 'bg-white/20 dark:bg-slate-700 backdrop-blur-sm border border-white/30 dark:border-slate-600 shadow-lg' : 'text-blue-100 dark:text-slate-200 hover:bg-white/10 dark:hover:bg-slate-700/80 border border-transparent'
+                  }`}
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  Fusion Excel
                 </button>
 
                 <button 
@@ -1005,6 +1016,13 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         {activeTab === 'commandes-fina' && (profile.role === 'admin' || profile.role === 'gral') && (
           <div className="h-full overflow-auto min-h-[60vh] bg-gray-50 dark:bg-[#0f172a] rounded-2xl">
             <DashboardAchats onBack={() => setActiveTab('data')} />
+          </div>
+        )}
+
+        {/* Fusion Excel Tab - ADMIN ONLY */}
+        {activeTab === 'fusion-excel' && profile.role === 'admin' && (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 shadow-sm">
+            <ExcelMerger />
           </div>
         )}
       </main>

@@ -146,19 +146,37 @@ export async function loadTechnicalQuestionnaireForLot(
     if (criteres.length) return { criteres };
   }
 
-  // Fallback : chercher dans la table dce.qt_generique (DCE Complet)
+  // Fallback : chercher dans la table dce — colonnes qt (redaction) et qt_generique (DCE Complet)
   const shortNum = /^\d{5}/.exec(consultationNumber.trim())?.[0] ?? consultationNumber.trim();
   const { data: dceRows } = await supabase
     .from('dce')
-    .select('qt_generique')
+    .select('qt, qt_generique')
     .ilike('numero_procedure', `%${shortNum}%`)
     .limit(5);
 
   for (const row of (dceRows || [])) {
+    // 1. Colonne qt (sauvegardée depuis le module DCE redaction — questionnaire technique)
+    const qt = row?.qt as QTDataFromDb | null;
+    if (qt?.criteres?.length) return { criteres: qt.criteres };
+
+    // 2. Colonne qt_generique (sauvegardée depuis le module DCE Complet)
     const qtGen = row?.qt_generique as QTGeneriqueData | null;
-    if (!qtGen?.criteres?.length) continue;
-    const criteres = mapQTGeneriqueToLegacy(qtGen);
-    if (criteres.length) return { criteres };
+    if (qtGen?.criteres?.length) {
+      const criteres = mapQTGeneriqueToLegacy(qtGen);
+      if (criteres.length) return { criteres };
+    }
+  }
+
+  // Dernier recours : chercher dans questionnaires_techniques avec ilike (sans résolution NumProc)
+  const { data: qtRows } = await supabase
+    .from('questionnaires_techniques')
+    .select('qt_data')
+    .ilike('num_proc', `%${shortNum}%`)
+    .limit(5);
+
+  for (const row of (qtRows || [])) {
+    const qtData = row?.qt_data as QTDataFromDb | undefined;
+    if (qtData?.criteres?.length) return { criteres: qtData.criteres };
   }
 
   return null;

@@ -363,18 +363,25 @@ export function AnalyseOffresDQETechnique({
 
         if (rows.length < 2) return;
 
-        // Row 0 = headers — extraire les candidats (groupes de 2 colonnes à partir de la col 3)
         const newNotations: DQENotationsMap = { ...notations };
+        const newCriteria: typeof criteria = criteria.length > 0 ? [...criteria] : [];
+        const generateId = () => `crit-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-        // Pour chaque ligne de question (celles avec une référence)
+        // Pour chaque ligne (ref non vide = question, ref vide = entête critère/sous-critère)
         for (let ri = 1; ri < rows.length; ri++) {
           const row = rows[ri];
           const ref = String(row[0] || '').trim();
-          if (!ref) continue; // ligne critère/sous-critère, pas de ref → skip
+          if (!ref) continue;
 
-          // Trouver le critère correspondant
-          const crit = criteria.find(c => (c.code || '') === ref);
-          if (!crit) continue;
+          // Trouver ou créer le critère
+          let crit = newCriteria.find(c => (c.code || '') === ref);
+          if (!crit) {
+            // Reconstruire depuis le fichier Excel si pas encore de critères
+            const label = String(row[1] || ref);
+            const pts = typeof row[2] === 'number' ? row[2] : 0;
+            crit = { id: generateId(), code: ref, label, base_points: pts };
+            newCriteria.push(crit);
+          }
 
           // Colonnes: 0=ref, 1=intitulé, 2=pts, puis 3=note1, 4=comm1, 5=note2, 6=comm2...
           candidats.forEach((cand, ci) => {
@@ -382,12 +389,12 @@ export function AnalyseOffresDQETechnique({
             const commVal = row[4 + ci * 2];
             const score = typeof noteVal === 'number' ? Math.max(0, Math.min(4, Math.round(noteVal))) : 0;
             const commentaire = typeof commVal === 'string' ? commVal : '';
-
             if (!newNotations[cand.id]) newNotations[cand.id] = {};
-            newNotations[cand.id][crit.id] = { score, commentaire };
+            newNotations[cand.id][crit!.id] = { score, commentaire };
           });
         }
 
+        if (newCriteria.length > criteria.length) setCriteria(newCriteria);
         setNotations(newNotations);
         // Auto-save si analyseId disponible
         if (analyseId) {
