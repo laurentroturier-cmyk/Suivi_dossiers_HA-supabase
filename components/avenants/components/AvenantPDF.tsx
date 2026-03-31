@@ -351,7 +351,7 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
               <Text style={styles.subLabelSmall}>Montant initial du marché public :</Text>
               <Bullet label="Taux de la TVA" value={data.taux_tva || '—'} />
               <Bullet label="Montant HT"     value={formatMontant(data.montant_initial_ht)} />
-              <Bullet label="Montant TTC"    value={formatMontant(montantInitialTTC, '€ TTC')} />
+              <Bullet label="Montant TTC"    value={formatMontant(montantInitialTTC, '€')} />
             </View>
           </View>
 
@@ -410,7 +410,7 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
                     <Text style={styles.subLabelSmall}>Montant de l'avenant :</Text>
                     <Bullet label="Taux de la TVA"                     value={data.taux_tva || '—'} />
                     <Bullet label="Montant HT"                         value={formatMontant(data.montant_avenant_ht)} />
-                    <Bullet label="Montant TTC"                        value={formatMontant(montantAvenantTTC, '€ TTC')} />
+                    <Bullet label="Montant TTC"                        value={formatMontant(montantAvenantTTC, '€')} />
                     <Bullet
                       label="% d'écart introduit par l'avenant"
                       value={pctEcart !== null ? `${pctEcart >= 0 ? '+' : ''}${pctEcart.toFixed(2)} %` : '—'}
@@ -428,7 +428,7 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
                     <Text style={[styles.subLabelSmall, { marginTop: 6 }]}>Nouveau montant du marché public :</Text>
                     <Bullet label="Taux de la TVA" value={data.taux_tva || '—'} />
                     <Bullet label="Montant HT"     value={formatMontant(montantNouveau)} />
-                    <Bullet label="Montant TTC"    value={formatMontant(montantNouveauTTC, '€ TTC')} />
+                    <Bullet label="Montant TTC"    value={formatMontant(montantNouveauTTC, '€')} />
                   </View>
                 </>
               )}
@@ -487,7 +487,7 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
             <SectionHeader letter="F" title="Signature du pouvoir adjudicateur ou de l'entité adjudicatrice" />
             <View style={styles.sectionContent}>
               <Text style={[styles.paragraph, { fontWeight: 'bold' }]}>
-                Pour l'Etat et ses établissements :
+                Pour l'AFPA et ses établissements :
               </Text>
               <Text style={styles.instruction}>
                 (Visa ou avis de l'autorité chargée du contrôle financier.)
@@ -497,7 +497,7 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
               <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
                 <View style={{ width: '55%', alignItems: 'center' }}>
                   <Text style={{ fontSize: 8, color: TEXT_DARK, textAlign: 'center', marginBottom: 20 }}>
-                    A : …………………………… le ……………………
+                    A Montreuil, le ……………………
                   </Text>
                   <Text style={{ fontSize: 8, color: TEXT_DARK, textAlign: 'center', marginBottom: 3 }}>
                     Signature

@@ -230,7 +230,7 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
             <SubLabel underline={false}>Montant initial du marché public :</SubLabel>
             <Bullet label="Taux de la TVA" value={data.taux_tva || '—'} />
             <Bullet label="Montant HT"     value={formatMontant(data.montant_initial_ht)} />
-            <Bullet label="Montant TTC"    value={formatMontant(montantInitialTTC, '€ TTC')} />
+            <Bullet label="Montant TTC"    value={formatMontant(montantInitialTTC, '€')} />
           </InfoBox>
 
           {/* ─── D — Objet de l'avenant ─── */}
@@ -264,7 +264,7 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
                 <SubLabel underline={false}>Montant de l'avenant :</SubLabel>
                 <Bullet label="Taux de la TVA"                     value={data.taux_tva || '—'} />
                 <Bullet label="Montant HT"                         value={`${montantAvenant >= 0 ? '+' : ''}${formatMontant(data.montant_avenant_ht)}`} />
-                <Bullet label="Montant TTC"                        value={`${montantAvenant >= 0 ? '+' : ''}${formatMontant(montantAvenantTTC, '€ TTC')}`} />
+                <Bullet label="Montant TTC"                        value={`${montantAvenant >= 0 ? '+' : ''}${formatMontant(montantAvenantTTC, '€')}`} />
                 <Bullet
                   label="% d'écart introduit par l'avenant"
                   value={pctEcart !== null ? `${pctEcart >= 0 ? '+' : ''}${pctEcart.toFixed(2)} %` : '—'}
@@ -279,7 +279,7 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
                 <SubLabel underline={false}>Nouveau montant du marché public :</SubLabel>
                 <Bullet label="Taux de la TVA" value={data.taux_tva || '—'} />
                 <Bullet label="Montant HT"     value={formatMontant(montantNouveau)} />
-                <Bullet label="Montant TTC"    value={formatMontant(montantNouveauTTC, '€ TTC')} />
+                <Bullet label="Montant TTC"    value={formatMontant(montantNouveauTTC, '€')} />
               </>
             )}
 
@@ -331,13 +331,13 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
           {/* ─── F — Signature du pouvoir adjudicateur ─── */}
           <SectionHeader letter="F" title="Signature du pouvoir adjudicateur ou de l'entité adjudicatrice" />
           <div className="bg-[#e8f4f3] border border-[#a7d4d1] border-t-0 rounded-b-lg p-3 mb-1">
-            <p className="text-[10px] font-bold text-[#1e3d3b] mb-1">Pour l'Etat et ses établissements :</p>
+            <p className="text-[10px] font-bold text-[#1e3d3b] mb-1">Pour l'AFPA et ses établissements :</p>
             <Instruction>(Visa ou avis de l'autorité chargée du contrôle financier.)</Instruction>
 
             {/* Bloc signature officiel */}
             <div className="flex justify-end">
               <div className="w-1/2 flex flex-col items-center">
-                <p className="text-[10px] text-gray-700 mb-6">A : ……………………………… le ………………</p>
+                <p className="text-[10px] text-gray-700 mb-6">A Montreuil, le ………………</p>
                 <p className="text-[10px] text-gray-700 mb-1">Signature</p>
                 <p className="text-[9px] italic text-gray-500 text-center">
                   (représentant du pouvoir adjudicateur ou de l'entité adjudicatrice)
