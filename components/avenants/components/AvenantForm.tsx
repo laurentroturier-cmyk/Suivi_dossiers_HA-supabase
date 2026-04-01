@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ArrowLeft, Save, Eye, ChevronDown, ChevronUp,
   FileSignature, Briefcase, PenLine, TrendingUp, CalendarClock, Edit3,
-  Loader2, Search, Building2, CheckCircle2, ChevronRight,
+  Loader2, Search, Building2, CheckCircle2,
 } from 'lucide-react';
 import type { AvenantData } from '../types';
 import { RichTextEditor } from '../../dce-complet/components/modules/RichTextEditor';
@@ -152,16 +152,8 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
   const debounceRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Référentiel fournisseurs ────────────────────────────────────────────────
-  const [frnSearch,        setFrnSearch]        = useState('');
-  const [frnEntetes,       setFrnEntetes]        = useState<any[]>([]);
-  const [frnLoading,       setFrnLoading]        = useState(false);
-  const [showFrnList,      setShowFrnList]       = useState(false);
-  const [selectedEntete,   setSelectedEntete]    = useState<any | null>(null);
-  const [frnSites,         setFrnSites]          = useState<any[]>([]);
-  const [sitesLoading,     setSitesLoading]      = useState(false);
-  const [showSiteList,     setShowSiteList]      = useState(false);
-  const frnBoxRef   = useRef<HTMLDivElement>(null);
-  const frnDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [frnAutoLoading, setFrnAutoLoading] = useState(false);
+  const [frnError,       setFrnError]       = useState<string | null>(null);
 
   // ── Historique des avenants du contrat ────────────────────────────────────
   const [historiqueAvenants, setHistoriqueAvenants] = useState<any[]>([]);
@@ -200,7 +192,7 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
         const { data, error } = await supabase
           .from('TBL_Contrats')
           .select('*')
-          .or(`"Agreement Number".ilike.%${q}%,"Supplier".ilike.%${q}%`)
+          .or(`"Agreement Number".ilike.%${q}%,"Supplier".ilike.%${q}%,"n° Procédure".ilike.%${q}%`)
           .limit(20);
         if (!error) setContratResults(data || []);
       } finally {
@@ -255,18 +247,82 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
     }
   }, []);
 
+  // ── Auto-remplissage titulaire depuis Supplier Number + Site ─────────────
+  const fetchFournisseurFromContrat = useCallback(async (
+    supplierNumber: number | null,
+    site: string | null,
+  ) => {
+    if (!supplierNumber) return;
+    setFrnAutoLoading(true);
+    setFrnError(null);
+    setForm(f => ({ ...f, titulaire_nom: '', titulaire_siret: '', titulaire_adresse: '', titulaire_email: '' }));
+    try {
+      const numStr = String(supplierNumber);
+
+      // Requêtes en parallèle
+      const [{ data: entete }, { data: siteRow }] = await Promise.all([
+        supabase
+          .from('Referentiel_Fournisseurs_Entete')
+          .select('"Nom du fournisseur","Numero du fournisseur"')
+          .eq('Numero du fournisseur', numStr)
+          .maybeSingle(),
+        supabase
+          .from('Referentiel_Fournisseur_Site')
+          .select('"Nom Adresse","SIRET","Ligne adresse 1","Ligne adresse 2","Code postal","Ville","Courriel"')
+          .eq('Numéro de fournisseur', numStr)
+          .eq('Nom Adresse', site ?? '')
+          .maybeSingle(),
+      ]);
+
+      if (!entete) {
+        setFrnError(`Fournisseur n°${numStr} introuvable dans le référentiel. Vérifiez la cohérence du contrat.`);
+        return;
+      }
+      if (!siteRow) {
+        setFrnError(`Site "${site}" introuvable dans le référentiel pour le fournisseur n°${numStr}. La saisie de l'avenant est bloquée — vérifiez le référentiel.`);
+        return;
+      }
+
+      const adresse = [
+        siteRow['Ligne adresse 1'],
+        siteRow['Ligne adresse 2'],
+        siteRow['Code postal'] && siteRow['Ville']
+          ? `${siteRow['Code postal']} ${siteRow['Ville']}`
+          : siteRow['Ville'] || siteRow['Code postal'],
+      ].filter(Boolean).join(', ');
+
+      setForm(f => ({
+        ...f,
+        titulaire_nom:     entete['Nom du fournisseur'] || '',
+        titulaire_siret:   siteRow['SIRET']    || '',
+        titulaire_adresse: adresse,
+        titulaire_email:   siteRow['Courriel'] || '',
+      }));
+    } catch (err) {
+      setFrnError('Erreur lors de la récupération des données fournisseur.');
+      console.error('[Avenants] fetchFournisseurFromContrat error:', err);
+    } finally {
+      setFrnAutoLoading(false);
+    }
+  }, []);
+
   // ── Sélection d'un contrat depuis TBL_Contrats ───────────────────────────
   const handleSelectContrat = (c: any) => {
-    const montantRaw    = c['Montant du marché'];
-    const montant       = montantRaw != null ? parseFloat(String(montantRaw).replace(/[^\d.-]/g, '')) : null;
-    const montantInitial = isNaN(montant as number) ? null : montant;
+    // Priorité : Agreement Limit (numérique) > Montant du marché (texte)
+    const agreementLimit = c['Agreement Limit'] != null ? Number(c['Agreement Limit']) : NaN;
+    const montantTexte   = c['Montant du marché'] != null
+      ? parseFloat(String(c['Montant du marché']).replace(/[^\d.-]/g, ''))
+      : NaN;
+    const montantInitial = !isNaN(agreementLimit) && agreementLimit > 0
+      ? agreementLimit
+      : (!isNaN(montantTexte) ? montantTexte : null);
     setForm(f => ({
       ...f,
       contrat_reference:    c['Agreement Number']               || '',
       contrat_libelle:      c['Description']                    || '',
       titulaire:            c['Supplier']                       || '',
-      numero_procedure:     c['numero_procedure']               || null,
-      numero_lot:           c['numero_lot']                     || null,
+      numero_procedure:     c['n° Procédure']                   || null,
+      numero_lot:           c['N° du lot']                      || null,
       montant_initial_ht:   montantInitial,
       montant_precedent_ht: montantInitial,   // sera recalculé par fetchAvenantsPrecedents
       date_notification:    c['Date notification']              || null,
@@ -276,87 +332,8 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
     setContratSearch(c['Agreement Number'] || '');
     setShowContratList(false);
     fetchAvenantsPrecedents(c['Agreement Number'] || '', montantInitial, form.id);
-  };
-
-  // ── Recherche entête fournisseur (debounce 300ms) ─────────────────────────
-  useEffect(() => {
-    const q = frnSearch.trim();
-    if (!q || q.length < 2) { setFrnEntetes([]); return; }
-    if (frnDebounce.current) clearTimeout(frnDebounce.current);
-    frnDebounce.current = setTimeout(async () => {
-      setFrnLoading(true);
-      try {
-        const { data } = await supabase
-          .from('Referentiel_Fournisseurs_Entete')
-          .select('*')
-          .or(`"Nom du fournisseur".ilike.%${q}%,"Numero du fournisseur".ilike.%${q}%`)
-          .eq('Statut', 'Actif')
-          .limit(20);
-        setFrnEntetes(data || []);
-      } finally {
-        setFrnLoading(false);
-      }
-    }, 300);
-    return () => { if (frnDebounce.current) clearTimeout(frnDebounce.current); };
-  }, [frnSearch]);
-
-  // ── Pré-remplissage depuis form.titulaire (auto) ───────────────────────────
-  useEffect(() => {
-    if (!form.titulaire || form.titulaire_nom) return;
-    setFrnSearch(form.titulaire);
-  }, [form.titulaire]);
-
-  // ── Chargement des sites pour l'entête sélectionnée ──────────────────────
-  useEffect(() => {
-    if (!selectedEntete) { setFrnSites([]); return; }
-    setSitesLoading(true);
-    supabase
-      .from('Referentiel_Fournisseur_Site')
-      .select('*')
-      .eq('Numéro de fournisseur', selectedEntete['Numero du fournisseur'])
-      .then(({ data }) => {
-        setFrnSites(data || []);
-        setSitesLoading(false);
-        if (data && data.length === 1) handleSelectSite(data[0]); // auto-sélection si 1 seul site
-      });
-  }, [selectedEntete]);
-
-  // ── Clic extérieur — fermer dropdowns fournisseur ─────────────────────────
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (frnBoxRef.current && !frnBoxRef.current.contains(e.target as Node)) {
-        setShowFrnList(false);
-        setShowSiteList(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const handleSelectEntete = (entete: any) => {
-    setSelectedEntete(entete);
-    setFrnSearch(entete['Nom du fournisseur'] || '');
-    setShowFrnList(false);
-    setShowSiteList(true);
-  };
-
-  const handleSelectSite = (site: any) => {
-    const adresse = [
-      site['Ligne adresse 1'],
-      site['Ligne adresse 2'],
-      site['Code postal'] && site['Ville']
-        ? `${site['Code postal']} ${site['Ville']}`
-        : site['Ville'] || site['Code postal'],
-    ].filter(Boolean).join(', ');
-
-    setForm(f => ({
-      ...f,
-      titulaire_nom:     selectedEntete?.['Nom du fournisseur'] || f.titulaire,
-      titulaire_siret:   site['SIRET'] || '',
-      titulaire_adresse: adresse,
-      titulaire_email:   site['Courriel'] || '',
-    }));
-    setShowSiteList(false);
+    // Auto-remplissage titulaire depuis les référentiels
+    fetchFournisseurFromContrat(c['Supplier Number'] ?? null, c['Site'] ?? null);
   };
 
   // Sauvegarde Supabase
@@ -491,7 +468,7 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
                   value={contratSearch}
                   onChange={e => { setContratSearch(e.target.value); setShowContratList(true); }}
                   onFocus={() => contratSearch.length >= 2 && setShowContratList(true)}
-                  placeholder="Rechercher par n° contrat ou fournisseur (min. 2 caractères)…"
+                  placeholder="N° contrat, n° procédure (5 chiffres) ou fournisseur…"
                   className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2F5B58]/40 focus:border-[#2F5B58] transition"
                 />
                 {contratsLoading && (
@@ -557,151 +534,62 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
         {/* SECTION TITULAIRE */}
         <Section icon={Building2} title="Identification du titulaire du marché public">
           <FullWidth>
-            <div ref={frnBoxRef} className="space-y-3">
+            <div className="space-y-3">
 
-              {/* ── Étape 1 : Recherche entête ── */}
-              <div>
-                <Label required>Rechercher le fournisseur</Label>
-                <p className="text-[10px] text-gray-400 mb-1">
-                  Recherche automatique depuis « {form.titulaire || '—'} » — vous pouvez affiner
-                </p>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={frnSearch}
-                    onChange={e => { setFrnSearch(e.target.value); setShowFrnList(true); setSelectedEntete(null); }}
-                    onFocus={() => frnSearch.length >= 2 && setShowFrnList(true)}
-                    placeholder="Nom ou n° fournisseur…"
-                    className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2F5B58]/40 focus:border-[#2F5B58] transition"
-                  />
-                  {frnLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#2F5B58] animate-spin" />}
-                </div>
-
-                {/* Dropdown entêtes */}
-                {showFrnList && (frnEntetes.length > 0 || frnLoading) && (
-                  <div className="relative">
-                    <div className="absolute top-1 left-0 right-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-xl z-50 max-h-72 overflow-y-auto">
-                      {frnLoading && frnEntetes.length === 0 && (
-                        <div className="flex items-center justify-center gap-2 px-4 py-3 text-xs text-gray-400">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />Recherche…
-                        </div>
-                      )}
-                      {frnEntetes.map((e, i) => (
-                        <button
-                          key={e['Numero du fournisseur'] || i}
-                          type="button"
-                          onClick={() => handleSelectEntete(e)}
-                          className="w-full text-left px-4 py-3 hover:bg-[#2F5B58]/5 dark:hover:bg-[#2F5B58]/20 transition border-b border-gray-100 dark:border-slate-700 last:border-0"
-                        >
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs font-bold text-[#2F5B58]">{e['Nom du fournisseur']}</p>
-                            {e['Statut'] && (
-                              <span className={`text-[9px] px-1.5 py-0.5 rounded ${e['Statut'] === 'Actif' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
-                                {e['Statut']}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex gap-3 mt-0.5">
-                            <p className="text-[10px] text-gray-400">N° {e['Numero du fournisseur']}</p>
-                            {e['Type de fournisseur'] && <p className="text-[10px] text-gray-400">{e['Type de fournisseur']}</p>}
-                            {e['Code NAF'] && <p className="text-[10px] text-gray-400">NAF {e['Code NAF']}</p>}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {showFrnList && frnSearch.length >= 2 && !frnLoading && frnEntetes.length === 0 && (
-                  <div className="relative">
-                    <div className="absolute top-1 left-0 right-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-xl z-50 px-4 py-3 text-xs text-gray-400">
-                      Aucun fournisseur trouvé pour « {frnSearch} »
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* ── Étape 2 : Sélection du site ── */}
-              {selectedEntete && (
-                <div className="bg-[#2F5B58]/5 border border-[#2F5B58]/20 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#2F5B58]" />
-                    <p className="text-xs font-bold text-[#2F5B58]">{selectedEntete['Nom du fournisseur']}</p>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                    <p className="text-xs text-gray-500">Sélectionner un site</p>
-                  </div>
-
-                  {sitesLoading ? (
-                    <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />Chargement des sites…
-                    </div>
-                  ) : frnSites.length === 0 ? (
-                    <p className="text-xs text-gray-400 italic">Aucun site trouvé pour ce fournisseur</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {frnSites.map((site, i) => {
-                        const isSelected = form.titulaire_siret === (site['SIRET'] || '');
-                        return (
-                          <button
-                            key={site['SIRET'] || i}
-                            type="button"
-                            onClick={() => handleSelectSite(site)}
-                            className={`w-full text-left px-3 py-2.5 rounded-lg border transition text-xs ${
-                              isSelected
-                                ? 'bg-[#2F5B58] text-white border-[#2F5B58]'
-                                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 hover:border-[#2F5B58]/40'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <p className={`font-semibold ${isSelected ? 'text-white' : 'text-gray-800 dark:text-slate-100'}`}>
-                                  {site['Nom Adresse'] || `Site ${i + 1}`}
-                                </p>
-                                <p className={`text-[10px] mt-0.5 ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
-                                  {[site['Ligne adresse 1'], site['Code postal'], site['Ville']].filter(Boolean).join(' · ')}
-                                </p>
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                {site['SIRET'] && (
-                                  <p className={`text-[10px] font-mono ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>
-                                    SIRET {site['SIRET']}
-                                  </p>
-                                )}
-                                {site['Courriel'] && (
-                                  <p className={`text-[10px] ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>
-                                    {site['Courriel']}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+              {/* Chargement en cours */}
+              {frnAutoLoading && (
+                <div className="flex items-center gap-2 px-4 py-3 bg-[#2F5B58]/5 border border-[#2F5B58]/20 rounded-lg text-sm text-[#2F5B58]">
+                  <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+                  Récupération des informations fournisseur depuis le référentiel…
                 </div>
               )}
 
-              {/* ── Champs remplis ── */}
-              {form.titulaire_nom && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-gray-100 dark:border-slate-700">
+              {/* Erreur bloquante */}
+              {frnError && (
+                <div className="flex items-start gap-3 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <span className="text-red-500 text-lg leading-none mt-0.5">⚠</span>
                   <div>
-                    <Label>Nom (auto)</Label>
-                    <Input value={form.titulaire_nom} onChange={v => set('titulaire_nom', v)} />
-                  </div>
-                  <div>
-                    <Label>SIRET (auto)</Label>
-                    <Input value={form.titulaire_siret} onChange={v => set('titulaire_siret', v)} />
-                  </div>
-                  <div>
-                    <Label>Adresse (auto)</Label>
-                    <Input value={form.titulaire_adresse} onChange={v => set('titulaire_adresse', v)} />
-                  </div>
-                  <div>
-                    <Label>E-mail (auto)</Label>
-                    <Input value={form.titulaire_email} onChange={v => set('titulaire_email', v)} />
+                    <p className="text-sm font-semibold text-red-700 dark:text-red-400">Saisie bloquée</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">{frnError}</p>
                   </div>
                 </div>
+              )}
+
+              {/* Champs auto-remplis (éditables si correction nécessaire) */}
+              {!frnAutoLoading && !frnError && form.contrat_reference && (
+                form.titulaire_nom ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Données fournisseur récupérées depuis le référentiel
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {[
+                        { label: 'Raison sociale', value: form.titulaire_nom },
+                        { label: 'SIRET',           value: form.titulaire_siret },
+                        { label: 'Adresse',         value: form.titulaire_adresse },
+                        { label: 'E-mail',          value: form.titulaire_email },
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <Label>{label}</Label>
+                          <div className="px-3 py-2 text-sm bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-800 dark:text-slate-200 min-h-[38px]">
+                            {value || <span className="text-gray-400 italic">—</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">
+                    Sélectionnez un contrat pour charger automatiquement les informations du titulaire.
+                  </p>
+                )
+              )}
+
+              {!form.contrat_reference && !frnAutoLoading && (
+                <p className="text-xs text-gray-400 italic">
+                  Sélectionnez d'abord un contrat — les informations du titulaire seront chargées automatiquement.
+                </p>
               )}
             </div>
           </FullWidth>

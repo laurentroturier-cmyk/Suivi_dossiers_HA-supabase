@@ -56,10 +56,12 @@ export async function exportAvenantPdf(data: AvenantData): Promise<void> {
 
   const sanitize = (s: string) => s.replace(/[<>:"/\\|?*]/g, '').trim();
 
-  const proc     = sanitize((data.numero_procedure || data.contrat_reference || 'XXXXX').slice(0, 5));
-  const lot      = sanitize(data.numero_lot || '?');
+  const proc      = sanitize(data.numero_procedure || data.contrat_reference || 'XXXXX');
+  const lotRaw    = sanitize(data.numero_lot || '?');
+  const lotNum    = parseInt(lotRaw, 10);
+  const lot       = !isNaN(lotNum) ? String(lotNum).padStart(2, '0') : lotRaw;
   const titulaire = sanitize(data.titulaire_nom || data.titulaire || 'titulaire');
-  const num      = data.numero_avenant ?? 'X';
+  const num       = data.numero_avenant ?? 'X';
 
   saveAs(blob, `${proc}_Lot ${lot}_${titulaire}_Avenant ${num}.pdf`);
 }
