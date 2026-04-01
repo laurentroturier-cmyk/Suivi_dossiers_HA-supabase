@@ -840,7 +840,12 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
 
             <div className="flex-1 overflow-y-auto">
               {filtered.map(el => {
-                const name     = el.displayName || el.sousFamille || el.famille;
+                // Bulle : sous-famille en priorité, sinon famille
+                const name = el.displayName || el.sousFamille || el.famille;
+                // Sous-titre : si sous-famille est le nom → montrer la famille parente ; sinon montrer la sous-famille
+                const subtitle = el.sousFamille
+                  ? (name === el.sousFamille ? el.famille : el.sousFamille)
+                  : '';
                 const isActive = el.id === selectedId;
                 return (
                   <button
@@ -854,7 +859,7 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
                       <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: dotColor(el, midOR) }} />
                       <span className="text-xs font-medium text-gray-800 truncate">{name}</span>
                     </div>
-                    {el.sousFamille && <p className="text-[10px] text-teal-600 ml-4 truncate">{el.sousFamille}</p>}
+                    {subtitle && <p className="text-[10px] text-teal-600 ml-4 truncate">{subtitle}</p>}
                     {el.segment && <p className="text-[10px] text-gray-400 ml-4 truncate">{el.segment}</p>}
                   </button>
                 );
@@ -1006,7 +1011,7 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
                           <td className={`px-3 py-2 sticky left-0 font-medium ${isSelected ? 'bg-teal-50' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}>
                             <div className="flex items-center gap-2">
                               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                              {el.displayName || el.sousFamille || el.famille}
+                              {el.displayName || el.famille}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-teal-700 font-medium">{el.sousFamille || '—'}</td>
