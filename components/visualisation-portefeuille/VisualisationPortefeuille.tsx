@@ -113,9 +113,9 @@ function parseExcel(buffer: ArrayBuffer): RawElement[] {
   const iID = 0;
   const iTitre = 1;
 
-  // Termes ordonnés du plus spécifique au plus général pour éviter les faux matchs
-  const iFamille      = findColIndex(header, ["famille d'achat", 'famille']);
-  const iSousFamille  = findColIndex(header, ["sous-famille d'achats", "sous-famille d'achat", "sous famille d'achats", "sous famille d'achat", 'sous-famille', 'sous famille']);
+  // Colonnes fixes : Famille d'achat = D (index 3), Sous-famille = G (index 6)
+  const iFamille     = 3;
+  const iSousFamille = 6;
   const iSegment      = findColIndex(header, ['segment']);
   const iAcheteur   = findColIndex(header, ['acheteur']);
   const iCouverture = findColIndex(header, ['couverture']);
@@ -139,8 +139,8 @@ function parseExcel(buffer: ArrayBuffer): RawElement[] {
     elements.push({
       id,
       titre:      String(row[iTitre] ?? '').trim(),
-      famille:    iFamille     >= 0 ? String(row[iFamille]     ?? '').trim() : '',
-      sousFamille: iSousFamille >= 0 ? String(row[iSousFamille] ?? '').trim() : '',
+      famille:     String(row[iFamille]     ?? '').trim(),
+      sousFamille: String(row[iSousFamille] ?? '').trim(),
       segment:    iSegment     >= 0 ? String(row[iSegment]     ?? '').trim() : '',
       acheteur: iAcheteur  >= 0 ? String(row[iAcheteur] ?? '').trim() : '',
       couvertureContractuelle: iCouverture >= 0 ? String(row[iCouverture] ?? '').trim() : '',
@@ -380,10 +380,23 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
 
   // ── Filtres ──────────────────────────────────────────────────────────────────
 
-  const segments     = Array.from(new Set(elements.map(e => e.segment).filter(Boolean))).sort();
-  const familles     = Array.from(new Set(elements.map(e => e.famille).filter(Boolean))).sort();
-  const sousFamilles = Array.from(new Set(elements.map(e => e.sousFamille).filter(Boolean))).sort();
-  const acheteurs    = Array.from(new Set(elements.map(e => e.acheteur).filter(Boolean))).sort();
+  // Listes en cascade : chaque niveau est restreint aux éléments compatibles avec les filtres parents
+  const segments = Array.from(new Set(elements.map(e => e.segment).filter(Boolean))).sort();
+
+  const familles = Array.from(new Set(
+    elements
+      .filter(e => !filterSegment || e.segment === filterSegment)
+      .map(e => e.famille).filter(Boolean)
+  )).sort();
+
+  const sousFamilles = Array.from(new Set(
+    elements
+      .filter(e => !filterSegment || e.segment === filterSegment)
+      .filter(e => !filterFamille  || e.famille  === filterFamille)
+      .map(e => e.sousFamille).filter(Boolean)
+  )).sort();
+
+  const acheteurs = Array.from(new Set(elements.map(e => e.acheteur).filter(Boolean))).sort();
 
   const filtered = elements.filter(el => {
     if (filterSegment     && el.segment     !== filterSegment)     return false;
@@ -593,7 +606,7 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
       }
 
       // Label avec halo blanc
-      const name = el.displayName || el.famille;
+      const name = el.displayName || el.sousFamille || el.famille;
       ctx.font = '9.5px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -779,21 +792,32 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
               <select
                 className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
                 value={filterSegment}
-                onChange={e => setFilterSegment(e.target.value)}
+                onChange={e => {
+                  setFilterSegment(e.target.value);
+                  setFilterFamille('');
+                  setFilterSousFamille('');
+                }}
               >
                 <option value="">Tous les segments</option>
                 {segments.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
               <select
-                className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                className={`w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 transition-colors ${
+                  !filterSegment ? 'border-gray-200 text-gray-400' : 'border-gray-200 text-gray-700'
+                }`}
                 value={filterFamille}
-                onChange={e => setFilterFamille(e.target.value)}
+                onChange={e => {
+                  setFilterFamille(e.target.value);
+                  setFilterSousFamille('');
+                }}
               >
                 <option value="">Toutes les familles</option>
                 {familles.map(f => <option key={f} value={f}>{f}</option>)}
               </select>
               <select
-                className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                className={`w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 transition-colors ${
+                  !filterFamille ? 'border-gray-200 text-gray-400' : 'border-gray-200 text-gray-700'
+                }`}
                 value={filterSousFamille}
                 onChange={e => setFilterSousFamille(e.target.value)}
               >
@@ -816,7 +840,7 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
 
             <div className="flex-1 overflow-y-auto">
               {filtered.map(el => {
-                const name     = el.displayName || el.famille;
+                const name     = el.displayName || el.sousFamille || el.famille;
                 const isActive = el.id === selectedId;
                 return (
                   <button
@@ -982,7 +1006,7 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
                           <td className={`px-3 py-2 sticky left-0 font-medium ${isSelected ? 'bg-teal-50' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}>
                             <div className="flex items-center gap-2">
                               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                              {el.displayName || el.famille}
+                              {el.displayName || el.sousFamille || el.famille}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-teal-700 font-medium">{el.sousFamille || '—'}</td>
