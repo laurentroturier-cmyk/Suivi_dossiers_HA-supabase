@@ -85,8 +85,8 @@ export interface AvenantTransfertData {
   date_notification: string | null;
 
   // Parties (éditables, pré-remplis)
-  responsable_contrat_titre: string;    // "Madame la Directrice Générale de l'Afpa"
-  responsable_contrat_nom: string;      // "Mme Pascale d'ARTOIS"
+  responsable_contrat_titre: string;    // "Mr le Directeur Général de l'Afpa"
+  responsable_contrat_nom: string;      // "Mr Michael OHIER"
 
   // Nouveau titulaire
   nouveau_titulaire_denomination: string;
@@ -108,7 +108,7 @@ export interface AvenantTransfertData {
   date_prise_effet: string | null;      // Art. 3
 
   // Signatures
-  signataire_afpa_nom: string;          // "Stephan DEMONT"
+  signataire_afpa_nom: string;
   signataire_afpa_titre: string;        // "Direction Nationale des Achats"
   redige_par: string;
 

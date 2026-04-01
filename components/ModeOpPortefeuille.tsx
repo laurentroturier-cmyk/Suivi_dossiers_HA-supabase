@@ -9,7 +9,7 @@ interface Props {
 const ModeOpPortefeuille: React.FC<Props> = ({ onNavigate }) => {
   return (
     <ModeOpLayout
-      title="Analyse de portefeuille"
+      title="Analyse IT"
       subtitle="Module Indicateurs & Pilotage"
       objective="Permettre à l'acheteur d'analyser la maturité et les contraintes d'une famille d'achats, et de consolider un mapping stratégique des achats de l'entité."
       onNavigate={onNavigate}

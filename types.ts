@@ -130,6 +130,7 @@ export type TableType =
   | 'analyse-offres-dqe'
   | 'analyse-dpgf'
   | 'analyse-portefeuille'
+  | 'visu-portefeuille'
   | 'modes-operatoires'
   | 'mode-op-tdb'
   | 'mode-op-gantt'

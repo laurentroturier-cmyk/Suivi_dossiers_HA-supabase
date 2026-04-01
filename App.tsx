@@ -59,6 +59,7 @@ import { DpgfReader } from './components/analyse-dpgf';
 import DashboardPage from './pages/DashboardPage';
 import { DashboardAchats } from './components/dashboard-achats';
 import { AnalysePortefeuille } from './components/analyse-portefeuille';
+import { VisualisationPortefeuille } from './components/visualisation-portefeuille';
 import ModesOperatoires from './components/ModesOperatoires';
 import ModeOpTdb from './components/ModeOpTdb';
 import ModeOpGantt from './components/ModeOpGantt';
@@ -3392,6 +3393,11 @@ const App: React.FC = () => {
             {activeTab === 'analyse-portefeuille' && (
               <div className="animate-in fade-in duration-500">
                 <AnalysePortefeuille />
+              </div>
+            )}
+            {activeTab === 'visu-portefeuille' && (
+              <div className="animate-in fade-in duration-500">
+                <VisualisationPortefeuille />
               </div>
             )}
             {activeTab === 'mode-op-hub' && (

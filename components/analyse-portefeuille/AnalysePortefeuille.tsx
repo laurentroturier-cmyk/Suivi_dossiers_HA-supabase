@@ -1334,7 +1334,7 @@ export default function AnalysePortefeuille() {
       {/* ── En-tête ── */}
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-lg font-bold text-gray-800">Portefeuille Achats — Analyse Stratégique</h2>
+          <h2 className="text-lg font-bold text-gray-800">Analyse IT — Analyse Stratégique</h2>
           <p className="text-xs text-gray-500 mt-0.5">{nbSegments} segments · {nbFamilles} familles · {nbSousFamilles} sous-familles</p>
         </div>
         <div className="flex items-center gap-2">
