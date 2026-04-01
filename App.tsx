@@ -3397,7 +3397,7 @@ const App: React.FC = () => {
             )}
             {activeTab === 'visu-portefeuille' && (
               <div className="animate-in fade-in duration-500">
-                <VisualisationPortefeuille />
+                <VisualisationPortefeuille isAdmin={authState.profile?.role === 'admin'} />
               </div>
             )}
             {activeTab === 'mode-op-hub' && (
