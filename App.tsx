@@ -5499,6 +5499,7 @@ const App: React.FC = () => {
           <div className="animate-in fade-in duration-700">
             <AvenantsModule
               onBack={() => navigateTo('home', 'Accueil')}
+              isAdmin={authState.profile?.role === 'admin'}
             />
           </div>
         )}

@@ -68,11 +68,12 @@ function TypeBadge({ type }: { type: 'standard' | 'transfert' }) {
 
 interface AvenantsListProps {
   onBack: () => void;
+  isAdmin?: boolean;
 }
 
 type ViewMode = 'list' | 'form' | 'formTransfert' | 'preview';
 
-export function AvenantsList({ onBack }: AvenantsListProps) {
+export function AvenantsList({ onBack, isAdmin = false }: AvenantsListProps) {
   const [rows, setRows]                             = useState<AvenantRow[]>([]);
   const [loading, setLoading]                       = useState(true);
   const [error, setError]                           = useState<string | null>(null);
@@ -401,16 +402,18 @@ export function AvenantsList({ onBack }: AvenantsListProps) {
                           >
                             <FileDown className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleDelete(row)}
-                            disabled={deletingId === id}
-                            title="Supprimer"
-                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-600 transition"
-                          >
-                            {deletingId === id
-                              ? <Loader2 className="w-4 h-4 animate-spin" />
-                              : <Trash2 className="w-4 h-4" />}
-                          </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDelete(row)}
+                              disabled={deletingId === id}
+                              title="Supprimer"
+                              className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-600 transition"
+                            >
+                              {deletingId === id
+                                ? <Loader2 className="w-4 h-4 animate-spin" />
+                                : <Trash2 className="w-4 h-4" />}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

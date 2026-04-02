@@ -13,7 +13,7 @@ import React, {
   KeyboardEvent,
 } from 'react';
 import * as XLSX from 'xlsx';
-import { Upload, BarChart2, RefreshCw, CheckCircle, AlertCircle, Loader2, ChevronDown, X } from 'lucide-react';
+import { Upload, BarChart2, RefreshCw, CheckCircle, AlertCircle, Loader2, ChevronDown, X, Maximize2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
@@ -40,21 +40,25 @@ interface PortfolioElement {
 // ─── Constantes ─────────────────────────────────────────────────────────────────
 
 const BUBBLE_COLORS = [
-  '#2F5B58',
-  '#3B82F6',
-  '#F59E0B',
-  '#EF4444',
-  '#8B5CF6',
-  '#10B981',
-  '#F97316',
-  '#EC4899',
-  '#06B6D4',
-  '#84CC16',
+  '#E53E3E', // rouge vif
+  '#3182CE', // bleu
+  '#38A169', // vert
+  '#D69E2E', // ambre
+  '#805AD5', // violet
+  '#DD6B20', // orange
+  '#0BC5EA', // cyan
+  '#D53F8C', // rose
+  '#2F855A', // vert foncé
+  '#C05621', // terre cuite
 ];
 
-const MIN_R = 8;
-const MAX_R = 36;
-const DEFAULT_R = 14;
+// Compact view
+const MIN_R     = 10;
+const MAX_R     = 44;
+const DEFAULT_R = 16;
+// Fullscreen view
+const MIN_R_FS  = 14;
+const MAX_R_FS  = 72;
 
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
@@ -232,9 +236,10 @@ function rawToDbRow(raw: RawElement, existing?: PortfolioElement): DbRow {
 // ─── Composant principal ─────────────────────────────────────────────────────────
 
 export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boolean }): React.ReactElement {
-  const fileRef   = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const debounceRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  const fileRef      = useRef<HTMLInputElement>(null);
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const canvasFullRef= useRef<HTMLCanvasElement>(null);
+  const debounceRef  = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   const [elements,      setElements]      = useState<PortfolioElement[]>([]);
   const [selectedId,        setSelectedId]        = useState<number | null>(null);
@@ -243,6 +248,7 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
   const [filterSousFamille, setFilterSousFamille] = useState('');
   const [filterAcheteur,    setFilterAcheteur]    = useState<string[]>([]);
   const [activeMatrix,      setActiveMatrix]      = useState<'contraintes' | 'or'>('or');
+  const [showFullscreen,    setShowFullscreen]    = useState(false);
 
   // ── États Supabase ────────────────────────────────────────────────────────────
   const [loading,     setLoading]     = useState(true);
@@ -417,17 +423,21 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
     ...elements.map(el => Math.max(el.totalRisques, el.totalOpportun)), 0
   ) / 2;
 
-  function getBubbleRadius(id: number): number {
+  function getBubbleRadius(id: number, fullscreen = false): number {
     const el = elements.find(e => e.id === id);
     const m = el?.montant ?? 0;
-    if (m === 0 || maxMontant === 0) return DEFAULT_R;
-    return MIN_R + ((m / maxMontant) * (MAX_R - MIN_R));
+    const minR = fullscreen ? MIN_R_FS : MIN_R;
+    const maxR = fullscreen ? MAX_R_FS : MAX_R;
+    const defR = fullscreen ? 20 : DEFAULT_R;
+    if (m === 0 || maxMontant === 0) return defR;
+    // Racine carrée → proportionnalité des aires (perception visuelle)
+    return minR + (Math.sqrt(m / maxMontant) * (maxR - minR));
   }
 
   // ── Dessin canvas ────────────────────────────────────────────────────────────
 
-  const drawMatrix = useCallback(() => {
-    const canvas = canvasRef.current;
+  const drawMatrix = useCallback((targetCanvas?: HTMLCanvasElement | null, fullscreen = false) => {
+    const canvas = targetCanvas ?? canvasRef.current;
     if (!canvas) return;
 
     const W = (canvas.width  = canvas.offsetWidth);
@@ -438,7 +448,9 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
 
     ctx.clearRect(0, 0, W, H);
 
-    const PAD = { top: 45, right: 30, bottom: 55, left: 65 };
+    const PAD = fullscreen
+      ? { top: 55, right: 40, bottom: 70, left: 80 }
+      : { top: 45, right: 30, bottom: 55, left: 65 };
     const plotW = W - PAD.left - PAD.right;
     const plotH = H - PAD.top  - PAD.bottom;
 
@@ -569,53 +581,101 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
         ? (el.totalCIT + el.totalCIC) / 2
         : el.totalOpportun;
 
-      const r  = getBubbleRadius(el.id);
+      const r  = getBubbleRadius(el.id, fullscreen);
       const cx = Math.min(Math.max(toX(xVal), PAD.left + r + 2), PAD.left + plotW - r - 2);
       const cy = Math.min(Math.max(toY(yVal), PAD.top  + r + 2), PAD.top  + plotH - r - 2);
 
       const color = BUBBLE_COLORS[idx % BUBBLE_COLORS.length];
       const isSelected = el.id === selectedId;
 
-      ctx.shadowColor = 'rgba(0,0,0,0.15)';
-      ctx.shadowBlur  = 4;
+      // Ombre portée
+      ctx.shadowColor    = 'rgba(0,0,0,0.32)';
+      ctx.shadowBlur     = fullscreen ? 14 : 8;
+      ctx.shadowOffsetX  = 2;
+      ctx.shadowOffsetY  = 3;
+
+      // Gradient sphère (reflet haut-gauche)
+      const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.35, r * 0.05, cx, cy, r);
+      grad.addColorStop(0, color + 'ff'); // center light
+      grad.addColorStop(0.45, color + 'ee');
+      grad.addColorStop(1,   color + 'bb'); // edge darker
 
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = color + 'dd';
+      ctx.fillStyle = grad;
       ctx.fill();
 
-      ctx.shadowBlur = 0;
+      ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
 
+      // Contour blanc + anneau couleur si sélectionné
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth   = 2;
+      ctx.lineWidth   = isSelected ? 3 : 2;
       ctx.stroke();
-      ctx.strokeStyle = isSelected ? '#1f2937' : color;
-      ctx.lineWidth   = isSelected ? 2.5 : 1;
-      ctx.stroke();
-
-      // Montant dans la bulle
-      const montant = el.montant;
-      if (r > 14 && montant > 0) {
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${Math.min(12, r * 0.55)}px Inter, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(formatCA(montant), cx, cy);
+      if (isSelected) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
+        ctx.strokeStyle = '#1f2937';
+        ctx.lineWidth   = 2;
+        ctx.stroke();
       }
 
-      // Label avec halo blanc
-      const name = el.displayName || el.sousFamille || el.famille;
-      ctx.font = '9.5px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-      ctx.lineWidth   = 3;
-      ctx.lineJoin    = 'round';
-      ctx.strokeText(name, cx, cy + r + 4);
-      ctx.fillStyle = '#1f2937';
-      ctx.fillText(name, cx, cy + r + 4);
+      // Reflet brillant (arc supérieur)
+      const shineGrad = ctx.createRadialGradient(cx - r * 0.25, cy - r * 0.4, 0, cx - r * 0.1, cy - r * 0.2, r * 0.7);
+      shineGrad.addColorStop(0,   'rgba(255,255,255,0.35)');
+      shineGrad.addColorStop(0.5, 'rgba(255,255,255,0.08)');
+      shineGrad.addColorStop(1,   'rgba(255,255,255,0)');
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = shineGrad;
+      ctx.fill();
+
+      // Contenu de la bulle
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      const montant = el.montant;
+
+      if (fullscreen) {
+        // Plein écran : montant + numéro en petit
+        if (montant > 0 && r > 16) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${Math.min(16, r * 0.38)}px Inter, sans-serif`;
+          ctx.fillText(formatCA(montant), cx, cy - (r > 24 ? 6 : 0));
+        }
+        if (r > 16) {
+          ctx.fillStyle = 'rgba(255,255,255,0.75)';
+          ctx.font = `${Math.min(11, r * 0.28)}px Inter, sans-serif`;
+          ctx.fillText(`#${idx + 1}`, cx, montant > 0 && r > 24 ? cy + 8 : cy);
+        }
+      } else {
+        // Compact : numéro + montant si assez grand
+        if (r > 13) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${Math.min(13, r * 0.45)}px Inter, sans-serif`;
+          ctx.fillText(`${idx + 1}`, cx, montant > 0 && r > 22 ? cy - 7 : cy);
+          if (montant > 0 && r > 22) {
+            ctx.font = `${Math.min(10, r * 0.32)}px Inter, sans-serif`;
+            ctx.fillText(formatCA(montant), cx, cy + 7);
+          }
+        }
+      }
+
+      // Label externe : plein écran seulement (+ élément sélectionné en compact)
+      if (fullscreen || isSelected) {
+        const name = el.displayName || el.sousFamille || el.famille;
+        const fontSize = fullscreen ? 11 : 10;
+        ctx.font = `${isSelected ? 'bold ' : ''}${fontSize}px Inter, sans-serif`;
+        ctx.textBaseline = 'top';
+
+        // Halo blanc
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.lineWidth   = fullscreen ? 4 : 3;
+        ctx.lineJoin    = 'round';
+        ctx.strokeText(name, cx, cy + r + 5);
+        ctx.fillStyle = isSelected ? '#111827' : '#374151';
+        ctx.fillText(name, cx, cy + r + 5);
+      }
     });
 
     ctx.textBaseline = 'alphabetic';
@@ -688,6 +748,21 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
   // ── useEffect dessin / resize / clic ─────────────────────────────────────────
 
   useEffect(() => { drawMatrix(); }, [drawMatrix]);
+
+  // Redessine le canvas plein écran quand il devient visible ou quand les données changent
+  useEffect(() => {
+    if (showFullscreen) {
+      // Attendre que le canvas soit monté dans le DOM
+      requestAnimationFrame(() => drawMatrix(canvasFullRef.current, true));
+    }
+  }, [showFullscreen, drawMatrix]);
+
+  // Fermeture plein écran avec Escape
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') setShowFullscreen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -923,7 +998,7 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
 
             {/* Matrices */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col gap-3">
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveMatrix('or')}
                   className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -939,6 +1014,13 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
                   }`}
                 >
                   Matrice Contraintes
+                </button>
+                <button
+                  onClick={() => setShowFullscreen(true)}
+                  title="Afficher en plein écran"
+                  className="ml-auto p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                >
+                  <Maximize2 size={15} />
                 </button>
               </div>
 
@@ -1036,6 +1118,81 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
               </div>
             </div>
           </main>
+        </div>
+      )}
+
+      {/* ── Overlay Plein Écran ────────────────────────────────────────── */}
+      {showFullscreen && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-gray-900/95"
+          onClick={() => setShowFullscreen(false)}
+        >
+          {/* Barre du haut */}
+          <div
+            className="flex items-center justify-between px-6 py-3 bg-gray-800 flex-shrink-0"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveMatrix('or')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeMatrix === 'or' ? 'bg-[#2F5B58] text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Matrice O/R
+              </button>
+              <button
+                onClick={() => setActiveMatrix('contraintes')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeMatrix === 'contraintes' ? 'bg-[#2F5B58] text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Matrice Contraintes
+              </button>
+            </div>
+            <button
+              onClick={() => setShowFullscreen(false)}
+              className="p-1.5 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Corps : canvas + légende */}
+          <div
+            className="flex flex-1 overflow-hidden gap-4 p-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <canvas
+              ref={canvasFullRef}
+              className="flex-1 min-w-0 cursor-crosshair rounded-xl bg-white"
+              style={{ minHeight: 0 }}
+            />
+
+            {/* Légende numérotée */}
+            <div className="w-72 min-w-[13rem] bg-white rounded-xl overflow-y-auto overflow-x-hidden p-3 flex-shrink-0">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1">
+                Légende
+              </p>
+              {filtered.map((el, idx) => (
+                <div
+                  key={el.id}
+                  className="flex items-start gap-2 py-1.5 border-b border-gray-50 cursor-pointer hover:bg-gray-50 rounded px-1"
+                  onClick={() => setSelectedId(selectedId === el.id ? null : el.id)}
+                >
+                  <span
+                    className="w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{ backgroundColor: BUBBLE_COLORS[idx % BUBBLE_COLORS.length] }}
+                  >
+                    {idx + 1}
+                  </span>
+                  <span className="text-xs text-gray-700 leading-snug">
+                    {el.displayName || el.sousFamille || el.famille}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
