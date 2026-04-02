@@ -325,7 +325,7 @@ export function AvenantForm({ initial, onBack, onSaved }: AvenantFormProps) {
       numero_lot:           c['N° du lot']                      || null,
       montant_initial_ht:   montantInitial,
       montant_precedent_ht: montantInitial,   // sera recalculé par fetchAvenantsPrecedents
-      date_notification:    c['Date notification']              || null,
+      date_notification:    c['Date notification'] ? String(c['Date notification']).split('T')[0] : null,
       frn_nom_signataire:   c['Nom du signataire (fournisseur)'] || '',
       duree_marche:         '',
     }));
