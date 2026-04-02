@@ -818,21 +818,19 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
           </button>
 
-          {/* Import Excel — admin uniquement */}
-          {isAdmin && (
-            <>
-              <input ref={fileRef} type="file" accept=".xlsx" onChange={handleLoad} className="hidden" />
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={importing}
-                title="Remplace toutes les données Supabase par le contenu du fichier Excel"
-                className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm transition-colors disabled:opacity-50"
-              >
-                {importing ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
-                {importing ? 'Import en cours…' : 'Remplacer (Excel)'}
-              </button>
-            </>
-          )}
+          {/* Import Excel */}
+          <>
+            <input ref={fileRef} type="file" accept=".xlsx" onChange={handleLoad} className="hidden" />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={importing}
+              title="Remplace toutes les données Supabase par le contenu du fichier Excel"
+              className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm transition-colors disabled:opacity-50"
+            >
+              {importing ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+              {importing ? 'Import en cours…' : 'Remplacer (Excel)'}
+            </button>
+          </>
         </div>
       </div>
 
