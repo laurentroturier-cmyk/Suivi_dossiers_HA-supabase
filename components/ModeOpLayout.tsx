@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 
 interface ModeOpLayoutProps {
   title: string;
@@ -10,14 +10,40 @@ interface ModeOpLayoutProps {
   children: React.ReactNode;
 }
 
-const ModeOpLayout: React.FC<ModeOpLayoutProps> = ({ 
-  title, 
-  subtitle, 
-  objective, 
-  application = "Suivi dossiers HA", 
-  onNavigate, 
-  children 
+const ModeOpLayout: React.FC<ModeOpLayoutProps> = ({
+  title,
+  subtitle,
+  objective,
+  application = "Suivi dossiers HA",
+  onNavigate,
+  children
 }) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportPdf = async () => {
+    if (!contentRef.current || exporting) return;
+    setExporting(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const html2pdf = (await import('html2pdf.js')).default as any;
+      const filename = title.replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, '').trim().replace(/\s+/g, '_');
+      await html2pdf()
+        .set({
+          margin: [12, 12, 14, 12],
+          filename: `ModeOp_${filename}.pdf`,
+          image: { type: 'jpeg', quality: 0.95 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+        })
+        .from(contentRef.current)
+        .save();
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#f5f6fb] dark:bg-[#0f172a] font-sans selection:bg-blue-100 dark:selection:bg-blue-900/30">
       {/* Fond décoratif (bulles/gradients subtils comme sur la landing) */}
@@ -46,10 +72,21 @@ const ModeOpLayout: React.FC<ModeOpLayoutProps> = ({
             </div>
           </div>
           
-          <div className="hidden md:flex items-center gap-3">
-            <div className="px-3 py-1 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-full">
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex px-3 py-1 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-full">
               <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tighter">Documentation Officielle</span>
             </div>
+            <button
+              onClick={handleExportPdf}
+              disabled={exporting}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 text-sm font-medium transition-colors disabled:opacity-50"
+              title="Télécharger en PDF"
+            >
+              {exporting
+                ? <Loader2 size={15} className="animate-spin" />
+                : <Download size={15} />}
+              <span className="hidden sm:inline">{exporting ? 'Export…' : 'PDF'}</span>
+            </button>
           </div>
         </div>
       </header>
@@ -57,7 +94,7 @@ const ModeOpLayout: React.FC<ModeOpLayoutProps> = ({
       {/* Main Content Area */}
       <main className="max-w-5xl mx-auto px-6 py-10 relative z-10">
         {/* Conteneur de style Glassmorphism (comme les tuiles de la landing) */}
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-slate-800 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all duration-500">
+        <div ref={contentRef} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-slate-800 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all duration-500">
           
           {/* Bannière d'en-tête du document */}
           <div className="p-8 lg:p-12 border-b border-gray-100 dark:border-slate-800 bg-gradient-to-br from-gray-50/50 to-white/50 dark:from-slate-800/20 dark:to-slate-900/20">

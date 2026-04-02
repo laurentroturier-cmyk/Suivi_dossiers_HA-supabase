@@ -28,7 +28,8 @@ const ModesOperatoiresHub: React.FC<ModesOperatoiresHubProps> = ({ onNavigate })
       guides: [
         { label: "Tableau de Bord", tab: "mode-op-tdb" },
         { label: "Planning Gantt", tab: "mode-op-gantt" },
-        { label: "Analyse IT", tab: "mode-op-portefeuille" }
+        { label: "Analyse IT", tab: "mode-op-portefeuille" },
+        { label: "Visualisation Portefeuille", tab: "mode-op-visu-portefeuille" }
       ]
     },
     {

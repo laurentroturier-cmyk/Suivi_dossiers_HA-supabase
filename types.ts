@@ -138,5 +138,6 @@ export type TableType =
   | 'mode-op-hub'
   | 'mode-op-execution'
   | 'mode-op-avenant'
-  | 'mode-op-immo';
+  | 'mode-op-immo'
+  | 'mode-op-visu-portefeuille';
 

@@ -64,6 +64,7 @@ import ModesOperatoires from './components/ModesOperatoires';
 import ModeOpTdb from './components/ModeOpTdb';
 import ModeOpGantt from './components/ModeOpGantt';
 import ModeOpPortefeuille from './components/ModeOpPortefeuille';
+import ModeOpVisuPortefeuille from './components/ModeOpVisuPortefeuille';
 import ModesOperatoiresHub from './components/ModesOperatoiresHub';
 import ModeOpExecution from './components/ModeOpExecution';
 import ModeOpAvenant from './components/ModeOpAvenant';
@@ -3438,6 +3439,11 @@ const App: React.FC = () => {
             {activeTab === 'mode-op-immo' && (
               <div className="animate-in fade-in duration-500">
                 <ModeOpImmo onNavigate={(t) => setActiveTab(t as TableType)} />
+              </div>
+            )}
+            {activeTab === 'mode-op-visu-portefeuille' && (
+              <div className="animate-in fade-in duration-500">
+                <ModeOpVisuPortefeuille onNavigate={(t) => setActiveTab(t as TableType)} />
               </div>
             )}
             {activeTab === 'export' && (
