@@ -8,7 +8,7 @@ import { supabase } from '../../lib/supabase';
 import {
   RefreshCw, Package, TrendingUp, AlertTriangle, BarChart2,
   Shield, Zap, FileText, Info, Download, Upload, FileSpreadsheet, Search,
-  Maximize2, X,
+  Maximize2, X, Trash2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -486,6 +486,44 @@ export default function AnalysePortefeuille() {
       setSupabaseSaving(false);
     }
   }, [donneesStore, contraintesStore, risquesStore, opportunStore, swotStore, couvertureStore]);
+
+  // ─── Suppression d'un élément ─────────────────────────────────────────────
+  const handleDeleteElement = useCallback(async (item: FamilleAchat) => {
+    const label = item.niveau === 'sousfamille' ? 'sous-famille' : item.niveau;
+    if (!window.confirm(`Supprimer "${item.nom}" (${label}) ?\n\nCette action supprimera l'élément du référentiel et toutes ses données d'analyse.`)) return;
+
+    try {
+      // 1. Supprimer du référentiel segmentation selon le niveau
+      const col = item.niveau === 'segment' ? 'dna_segment' : item.niveau === 'famille' ? 'dna_famille' : 'dna_sousfamille';
+      const { error: e1 } = await supabase.from('Referentiel_segmentation').delete().eq(col, item.nom);
+      if (e1) throw e1;
+
+      // 2. Supprimer les données d'analyse
+      const { error: e2 } = await supabase.from('analyse_portefeuille_data').delete().eq('element_nom', item.nom);
+      if (e2) throw e2;
+
+      // 3. Nettoyer les stores locaux
+      const clean = <T extends object>(store: T): T => {
+        const copy = { ...store } as T;
+        delete (copy as any)[item.nom];
+        return copy;
+      };
+      setDonneesStore(clean);
+      setContraintesStore(clean);
+      setRisquesStore(clean);
+      setOpportunStore(clean);
+      setSwotStore(clean);
+      setCouvertureStore(clean);
+
+      // 4. Désélectionner si c'était l'élément actif
+      if (selectedElement === item.nom) setSelectedElement(null);
+
+      // 5. Recharger la hiérarchie
+      await fetchFamilles();
+    } catch (err: any) {
+      alert('Erreur lors de la suppression : ' + (err.message || err));
+    }
+  }, [selectedElement, fetchFamilles]);
 
   // ─── Persistence localStorage ─────────────────────────────────────────────
   useEffect(() => {
@@ -1098,7 +1136,8 @@ export default function AnalysePortefeuille() {
     ctx.fillText('← Contraintes Internes (CI)', 0, 0);
     ctx.restore();
 
-    const analyzed = Object.keys(contraintesStore).filter(k => getCIScore(k) > 0 || getCEScore(k) > 0);
+    const familleNoms = new Set(familles.map(f => f.nom));
+    const analyzed = Object.keys(contraintesStore).filter(k => familleNoms.has(k) && (getCIScore(k) > 0 || getCEScore(k) > 0));
     const items = analyzed.length > 0 ? analyzed : familles.map(f => f.nom);
     const caValues = items.map(n => donneesStore[n]?.ca || 0);
     const maxCA = Math.max(...caValues, 1);
@@ -1194,8 +1233,9 @@ export default function AnalysePortefeuille() {
     ctx.fillText('← Opportunités', 0, 0);
     ctx.restore();
 
-    const riskAnalyzed     = Object.keys(risquesStore).filter(k => hasRisqueData(k));
-    const opportunAnalyzed = Object.keys(opportunStore).filter(k => hasOpportunData(k));
+    const familleNomsOR = new Set(familles.map(f => f.nom));
+    const riskAnalyzed     = Object.keys(risquesStore).filter(k => familleNomsOR.has(k) && hasRisqueData(k));
+    const opportunAnalyzed = Object.keys(opportunStore).filter(k => familleNomsOR.has(k) && hasOpportunData(k));
     const rpKeys  = [...new Set([...riskAnalyzed, ...opportunAnalyzed])];
     const rpItems = rpKeys.length > 0 ? rpKeys : familles.map(f => f.nom);
     const rpCaValues = rpItems.map(n => donneesStore[n]?.ca || 0);
@@ -1592,25 +1632,36 @@ export default function AnalysePortefeuille() {
                       const d = donneesStore[f.nom];
                       const isSelected = f.nom === selectedElement;
                       return (
-                        <button
+                        <div
                           key={f.nom}
-                          onClick={() => { setSelectedElement(f.nom); setDetailTab(0); }}
-                          className={`w-full text-left px-3 py-2.5 flex items-center gap-2 border-b border-gray-50 transition-colors ${
+                          className={`group flex items-center border-b border-gray-50 transition-colors ${
                             isSelected ? 'bg-[#e8f4f3] border-l-2 border-l-[#2F5B58]' : 'hover:bg-[#f4faf9]'
                           }`}
                         >
-                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                            status === 'complete' ? 'bg-green-500' :
-                            status === 'partial'  ? 'bg-amber-400' : 'bg-gray-200'
-                          }`} />
-                          <div className="flex-1 min-w-0">
-                            <div className={`text-xs font-medium truncate ${isSelected ? 'text-[#2F5B58]' : 'text-gray-800'}`}>{f.nom}</div>
-                            <div className="text-[9px] text-gray-400 flex items-center gap-1.5 mt-0.5">
-                              <span className="capitalize">{f.niveau === 'sousfamille' ? 'sous-famille' : f.niveau}</span>
-                              {d?.ca > 0 && <><span>·</span><span>{d.ca.toLocaleString()} k€</span></>}
+                          <button
+                            onClick={() => { setSelectedElement(f.nom); setDetailTab(0); }}
+                            className="flex-1 text-left px-3 py-2.5 flex items-center gap-2 min-w-0"
+                          >
+                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                              status === 'complete' ? 'bg-green-500' :
+                              status === 'partial'  ? 'bg-amber-400' : 'bg-gray-200'
+                            }`} />
+                            <div className="flex-1 min-w-0">
+                              <div className={`text-xs font-medium truncate ${isSelected ? 'text-[#2F5B58]' : 'text-gray-800'}`}>{f.nom}</div>
+                              <div className="text-[9px] text-gray-400 flex items-center gap-1.5 mt-0.5">
+                                <span className="capitalize">{f.niveau === 'sousfamille' ? 'sous-famille' : f.niveau}</span>
+                                {d?.ca > 0 && <><span>·</span><span>{d.ca.toLocaleString()} k€</span></>}
+                              </div>
                             </div>
-                          </div>
-                        </button>
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); handleDeleteElement(f); }}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 mr-1.5 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0"
+                            title={`Supprimer "${f.nom}"`}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       );
                     })
                   )}
@@ -2469,11 +2520,12 @@ export default function AnalysePortefeuille() {
 
       {/* ── Overlay Plein Écran ─────────────────────────────────────────── */}
       {fullscreenMode !== null && (() => {
-        const analyzedC = Object.keys(contraintesStore).filter(k => getCIScore(k) > 0 || getCEScore(k) > 0);
+        const fsNoms = new Set(familles.map(f => f.nom));
+        const analyzedC = Object.keys(contraintesStore).filter(k => fsNoms.has(k) && (getCIScore(k) > 0 || getCEScore(k) > 0));
         const contraItems = analyzedC.length > 0 ? analyzedC : familles.map(f => f.nom);
 
-        const riskAn   = Object.keys(risquesStore).filter(k => hasRisqueData(k));
-        const opporAn  = Object.keys(opportunStore).filter(k => hasOpportunData(k));
+        const riskAn   = Object.keys(risquesStore).filter(k => fsNoms.has(k) && hasRisqueData(k));
+        const opporAn  = Object.keys(opportunStore).filter(k => fsNoms.has(k) && hasOpportunData(k));
         const orKeys   = [...new Set([...riskAn, ...opporAn])];
         const orItems  = orKeys.length > 0 ? orKeys : familles.map(f => f.nom);
 
