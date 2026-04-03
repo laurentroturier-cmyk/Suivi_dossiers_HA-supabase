@@ -235,7 +235,17 @@ function rawToDbRow(raw: RawElement, existing?: PortfolioElement): DbRow {
 
 // ─── Composant principal ─────────────────────────────────────────────────────────
 
-export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boolean }): React.ReactElement {
+interface LastImport { imported_at: string; user_email: string; user_name: string | null }
+
+export function VisualisationPortefeuille({
+  isAdmin = false,
+  userEmail = '',
+  userName = '',
+}: {
+  isAdmin?: boolean;
+  userEmail?: string;
+  userName?: string;
+}): React.ReactElement {
   const fileRef      = useRef<HTMLInputElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const canvasFullRef= useRef<HTMLCanvasElement>(null);
@@ -255,6 +265,7 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
   const [importing,   setImporting]   = useState(false);
   const [saveStatus,  setSaveStatus]  = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [dbError,     setDbError]     = useState<string | null>(null);
+  const [lastImport,  setLastImport]  = useState<LastImport | null>(null);
 
   // ── Chargement initial depuis Supabase ───────────────────────────────────────
 
@@ -282,6 +293,17 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
   useEffect(() => {
     loadFromSupabase();
   }, [loadFromSupabase]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase
+      .from('visu_portefeuille_import_log')
+      .select('imported_at, user_email, user_name')
+      .order('imported_at', { ascending: false })
+      .limit(1)
+      .single()
+      .then(({ data }) => { if (data) setLastImport(data as LastImport); });
+  }, [isAdmin]);
 
   // ── Import Excel → Supabase ──────────────────────────────────────────────────
 
@@ -318,7 +340,16 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
             if (error) throw error;
           }
 
-          // 3. Recharger
+          // 3. Logger l'import
+          const logEntry = { user_email: userEmail, user_name: userName || userEmail };
+          const { data: logRow } = await supabase
+            .from('visu_portefeuille_import_log')
+            .insert(logEntry)
+            .select('imported_at, user_email, user_name')
+            .single();
+          if (logRow) setLastImport(logRow as LastImport);
+
+          // 4. Recharger
           await loadFromSupabase();
           setSelectedId(null);
         } catch (err: unknown) {
@@ -818,9 +849,15 @@ export function VisualisationPortefeuille({ isAdmin = false }: { isAdmin?: boole
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
           </button>
 
-          {/* Import Excel */}
+          {/* Import Excel + info dernier chargement (admin) */}
           <>
             <input ref={fileRef} type="file" accept=".xlsx" onChange={handleLoad} className="hidden" />
+            {isAdmin && lastImport && (
+              <span className="flex flex-col items-end leading-tight text-[11px] text-white/60 pr-1">
+                <span>Dernier import : {new Date(lastImport.imported_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(lastImport.imported_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                <span>par {lastImport.user_name || lastImport.user_email}</span>
+              </span>
+            )}
             <button
               onClick={() => fileRef.current?.click()}
               disabled={importing}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, TrendingUp, Building2, LineChart, Upload, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell, Construction, GitBranch, FileSpreadsheet, ShoppingCart } from 'lucide-react';
+import { BarChart3, FileText, ClipboardList, PlayCircle, Download, Settings, Building2, LineChart, Edit3, ChevronDown, ChevronRight, BookOpen, PackageOpen, Bell, Construction, GitBranch, FileSpreadsheet } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (tab: string) => void;
@@ -89,7 +89,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenAdmin, proj
       titre: 'Rédaction',
       description: 'Rédaction des documents et DCE',
       icon: Edit3,
-      adminOnly: true,
+      adminOnly: false,
       iconColor: 'text-amber-600 dark:text-amber-400',
       iconBg: 'bg-amber-100 dark:bg-amber-500/20',
       borderColor: 'border-amber-200 dark:border-amber-500/40',

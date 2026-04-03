@@ -674,6 +674,16 @@ const App: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[AUTH] State changed:', event, 'Session:', !!session);
 
+      // Log de connexion (SIGNED_IN uniquement, silencieux)
+      if (event === 'SIGNED_IN' && session?.user) {
+        supabase.from('connection_logs').insert({
+          user_id:   session.user.id,
+          user_email: session.user.email ?? '',
+          user_name: null, // sera enrichi via le profil si besoin
+          user_agent: navigator.userAgent,
+        }).then(() => {}).catch(() => {});
+      }
+
       try {
         if (session?.user) {
           console.log('[AUTH] User signed in, fetching profile...');
@@ -3398,7 +3408,11 @@ const App: React.FC = () => {
             )}
             {activeTab === 'visu-portefeuille' && (
               <div className="animate-in fade-in duration-500">
-                <VisualisationPortefeuille isAdmin={authState.profile?.role === 'admin'} />
+                <VisualisationPortefeuille
+  isAdmin={authState.profile?.role === 'admin'}
+  userEmail={authState.profile?.email ?? ''}
+  userName={[authState.profile?.acheteur_prenom, authState.profile?.acheteur_nom].filter(Boolean).join(' ')}
+/>
               </div>
             )}
             {activeTab === 'mode-op-hub' && (

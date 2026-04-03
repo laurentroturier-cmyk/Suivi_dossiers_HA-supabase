@@ -42,13 +42,29 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
   const [error, setError] = useState<string | null>(null);
   const [rlsError, setRlsError] = useState(false);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
-  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import' | 'centres' | 'commandes-fina' | 'fusion-excel'>('data');
+  const [activeTab, setActiveTab] = useState<'data' | 'requests' | 'users' | 'import' | 'centres' | 'commandes-fina' | 'fusion-excel' | 'connexions'>('data');
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [showUserManagement, setShowUserManagement] = useState(true);
   const [powerAutomateLoading, setPowerAutomateLoading] = useState(false);
   const [powerAutomateResult, setPowerAutomateResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [connexionLogs, setConnexionLogs] = useState<{ id: number; user_email: string; user_name: string | null; connected_at: string; user_agent: string | null }[]>([]);
+  const [connexionsLoading, setConnexionsLoading] = useState(false);
+
+  const fetchConnexionLogs = async () => {
+    setConnexionsLoading(true);
+    try {
+      const { data } = await supabase
+        .from('connection_logs')
+        .select('id, user_email, user_name, connected_at, user_agent')
+        .order('connected_at', { ascending: false })
+        .limit(200);
+      setConnexionLogs(data ?? []);
+    } finally {
+      setConnexionsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -430,6 +446,16 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
                 >
                   <FileSpreadsheet className="w-4 h-4" />
                   Fusion Excel
+                </button>
+
+                <button
+                  onClick={() => { setActiveTab('connexions'); fetchConnexionLogs(); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    activeTab === 'connexions' ? 'bg-white/20 dark:bg-slate-700 backdrop-blur-sm border border-white/30 dark:border-slate-600 shadow-lg' : 'text-blue-100 dark:text-slate-200 hover:bg-white/10 dark:hover:bg-slate-700/80 border border-transparent'
+                  }`}
+                >
+                  <Clock className="w-4 h-4" />
+                  Logs Connexions
                 </button>
 
                 <button 
@@ -1023,6 +1049,61 @@ export default function AdminDashboard({ profile, onLogout, onBackToApp }: Admin
         {activeTab === 'fusion-excel' && profile.role === 'admin' && (
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 shadow-sm">
             <ExcelMerger />
+          </div>
+        )}
+
+        {/* Logs Connexions - ADMIN ONLY */}
+        {activeTab === 'connexions' && profile.role === 'admin' && (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-blue-500" />
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Logs de connexion</h2>
+                <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 rounded-full">{connexionLogs.length} entrées</span>
+              </div>
+              <button onClick={fetchConnexionLogs} disabled={connexionsLoading} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50">
+                <RefreshCw className={`w-4 h-4 ${connexionsLoading ? 'animate-spin' : ''}`} />
+                Actualiser
+              </button>
+            </div>
+            {connexionsLoading ? (
+              <div className="flex items-center justify-center py-12 text-gray-400 gap-2">
+                <RefreshCw className="w-5 h-5 animate-spin" />
+                Chargement…
+              </div>
+            ) : connexionLogs.length === 0 ? (
+              <div className="py-12 text-center text-gray-400 text-sm">Aucune connexion enregistrée.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 dark:bg-slate-800 text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                    <tr>
+                      <th className="px-6 py-3 text-left">Utilisateur</th>
+                      <th className="px-6 py-3 text-left">Email</th>
+                      <th className="px-6 py-3 text-left">Date</th>
+                      <th className="px-6 py-3 text-left">Heure</th>
+                      <th className="px-6 py-3 text-left">Navigateur</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
+                    {connexionLogs.map((log, idx) => {
+                      const dt = new Date(log.connected_at);
+                      const ua = log.user_agent ?? '';
+                      const browser = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : ua.includes('Edge') ? 'Edge' : '—';
+                      return (
+                        <tr key={log.id} className={idx % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-gray-50/40 dark:bg-slate-800/30'}>
+                          <td className="px-6 py-3 font-medium text-gray-900 dark:text-white">{log.user_name || '—'}</td>
+                          <td className="px-6 py-3 text-gray-500 dark:text-slate-400">{log.user_email}</td>
+                          <td className="px-6 py-3 text-gray-600 dark:text-slate-300">{dt.toLocaleDateString('fr-FR')}</td>
+                          <td className="px-6 py-3 text-gray-600 dark:text-slate-300">{dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</td>
+                          <td className="px-6 py-3 text-gray-400 dark:text-slate-500">{browser}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </main>
