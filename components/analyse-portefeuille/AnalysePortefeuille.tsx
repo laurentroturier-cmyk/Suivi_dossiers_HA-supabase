@@ -8,8 +8,48 @@ import { supabase } from '../../lib/supabase';
 import {
   RefreshCw, Package, TrendingUp, AlertTriangle, BarChart2,
   Shield, Zap, FileText, Info, Download, Upload, FileSpreadsheet, Search,
+  Maximize2, X,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+
+// ─── Constantes visuelles (identiques à VisualisationPortefeuille) ────────────
+
+const BUBBLE_COLORS_OR = [
+  '#E53E3E', '#3182CE', '#38A169', '#D69E2E',
+  '#805AD5', '#DD6B20', '#0BC5EA', '#D53F8C',
+  '#2F855A', '#C05621',
+];
+const CONTRAINTES_COLOR = (ci: number, ce: number) =>
+  ci >= 50 && ce >= 50 ? '#E53E3E' :
+  ci >= 50             ? '#3182CE' :
+  ce >= 50             ? '#D69E2E' : '#38A169';
+
+function fmtCA(v: number) {
+  return v >= 1000 ? (v / 1000).toFixed(1) + 'M' : v + 'k';
+}
+
+function drawGradientBubble(
+  ctx: CanvasRenderingContext2D,
+  cx: number, cy: number, r: number,
+  color: string, fullscreen: boolean,
+) {
+  const arc = () => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); };
+  ctx.shadowColor = 'rgba(0,0,0,0.30)';
+  ctx.shadowBlur  = fullscreen ? 14 : 8;
+  ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 3;
+  const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.35, r * 0.05, cx, cy, r);
+  grad.addColorStop(0,    color + 'ff');
+  grad.addColorStop(0.45, color + 'ee');
+  grad.addColorStop(1,    color + 'bb');
+  arc(); ctx.fillStyle = grad; ctx.fill();
+  ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+  arc(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+  const shine = ctx.createRadialGradient(cx - r * 0.25, cy - r * 0.4, 0, cx - r * 0.1, cy - r * 0.2, r * 0.7);
+  shine.addColorStop(0,   'rgba(255,255,255,0.35)');
+  shine.addColorStop(0.5, 'rgba(255,255,255,0.08)');
+  shine.addColorStop(1,   'rgba(255,255,255,0)');
+  arc(); ctx.fillStyle = shine; ctx.fill();
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -675,9 +715,11 @@ export default function AnalysePortefeuille() {
   const rpCanvasRef     = useRef<HTMLCanvasElement>(null);
   const radarCanvasRef  = useRef<HTMLCanvasElement>(null);
   const barCanvasRef    = useRef<HTMLCanvasElement>(null);
+  const fsCanvasRef     = useRef<HTMLCanvasElement>(null);
 
   // ─── État onglet Graphiques ───────────────────────────────────────────────
   const [radarElement, setRadarElement] = useState<string>('');
+  const [fullscreenMode, setFullscreenMode] = useState<null | 'contraintes' | 'or'>(null);
 
   // ─── Export JSON ─────────────────────────────────────────────────────────
   const exportJSON = useCallback(() => {
@@ -1013,156 +1055,208 @@ export default function AnalysePortefeuille() {
     XLSX.writeFile(wb, `analyse-portefeuille-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }, [contraintesStore, risquesStore, swotStore, opportunStore, donneesStore, getCIScore, getCEScore, getRisqueScore, getOpportunScore]);
 
-  // ─── Canvas matrice portefeuille (onglet 1) ───────────────────────────────
-  useEffect(() => {
-    if (activeTab !== 1) return;
-    const canvas = canvasRef.current;
+  // ─── Canvas matrice Contraintes ───────────────────────────────────────────
+  const drawContraintes = useCallback((targetCanvas?: HTMLCanvasElement | null, fullscreen = false) => {
+    const canvas = targetCanvas ?? canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const W = canvas.width = canvas.offsetWidth;
+    const W = canvas.width  = canvas.offsetWidth;
     const H = canvas.height = canvas.offsetHeight;
     ctx.clearRect(0, 0, W, H);
 
-    ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+    const PAD = fullscreen ? { t: 30, r: 30, b: 50, l: 30 } : { t: 20, r: 20, b: 40, l: 20 };
 
-    // X=CE, Y=CI — bas-gauche: Simples, bas-droite: Externes (CE↑), haut-gauche: Internes (CI↑), haut-droite: Difficiles
-    const labels = ['Achats\nSimples', 'Achats\nExternes', 'Achats\nInternes', 'Achats\nDifficiles'];
+    // Quadrant labels
+    const qLabels = ['Achats\nSimples', 'Achats\nExternes', 'Achats\nInternes', 'Achats\nDifficiles'];
     const qx = [W*0.25, W*0.75, W*0.25, W*0.75];
     const qy = [H*0.75, H*0.75, H*0.25, H*0.25];
-    const qc = ['#16a34a', '#d97706', '#2563eb', '#dc2626'];
-    labels.forEach((lbl, i) => {
-      ctx.font = '11px sans-serif'; ctx.fillStyle = qc[i]; ctx.globalAlpha = 0.25;
-      ctx.textAlign = 'center';
+    const qc = ['#38A169', '#D69E2E', '#3182CE', '#E53E3E'];
+    ctx.font = `bold ${fullscreen ? 13 : 11}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    qLabels.forEach((lbl, i) => {
+      ctx.globalAlpha = 0.28; ctx.fillStyle = qc[i];
       lbl.split('\n').forEach((line, li) => ctx.fillText(line, qx[i], qy[i] + li * 14 - 7));
     });
     ctx.globalAlpha = 1;
 
+    // Grid cross
+    ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1;
+    ctx.setLineDash([5, 3]);
+    ctx.beginPath(); ctx.moveTo(W/2, PAD.t); ctx.lineTo(W/2, H - PAD.b); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PAD.l, H/2); ctx.lineTo(W - PAD.r, H/2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Axis labels
+    ctx.font = `bold ${fullscreen ? 12 : 10}px Inter, sans-serif`;
+    ctx.fillStyle = '#374151';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Contraintes Externes (CE) →', W / 2, H - 4);
+    ctx.save(); ctx.translate(12, H / 2); ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = 'top';
+    ctx.fillText('← Contraintes Internes (CI)', 0, 0);
+    ctx.restore();
+
     const analyzed = Object.keys(contraintesStore).filter(k => getCIScore(k) > 0 || getCEScore(k) > 0);
     const items = analyzed.length > 0 ? analyzed : familles.map(f => f.nom);
-
     const caValues = items.map(n => donneesStore[n]?.ca || 0);
     const maxCA = Math.max(...caValues, 1);
-    const MIN_R = 8, MAX_R = 28, DEFAULT_R = 16;
+    const MIN_R = fullscreen ? 12 : 8;
+    const MAX_R = fullscreen ? 48 : 28;
+    const DEF_R = fullscreen ? 20 : 16;
 
-    items.forEach((nom) => {
+    items.forEach((nom, idx) => {
       const ci = getCIScore(nom);
       const ce = getCEScore(nom);
-      const x = (ce / 100) * (W - 40) + 20;   // X = CE (Contraintes Externes)
-      const y = H - (ci / 100) * (H - 40) - 20; // Y = CI (Contraintes Internes)
+      const x = PAD.l + (ce / 100) * (W - PAD.l - PAD.r);
+      const y = H - PAD.b - (ci / 100) * (H - PAD.t - PAD.b);
       const ca = donneesStore[nom]?.ca || 0;
-      const r = ca > 0 ? MIN_R + ((ca / maxCA) * (MAX_R - MIN_R)) : DEFAULT_R;
-      const cx = Math.max(r + 2, Math.min(W - r - 2, x));
-      const cy = Math.max(r + 2, Math.min(H - r - 2, y));
+      const r = ca > 0 ? MIN_R + Math.sqrt(ca / maxCA) * (MAX_R - MIN_R) : DEF_R;
+      const cx = Math.max(r + 4, Math.min(W - r - 4, x));
+      const cy = Math.max(r + 4, Math.min(H - r - 4, y));
+      const color = BUBBLE_COLORS_OR[idx % BUBBLE_COLORS_OR.length];
+      drawGradientBubble(ctx, cx, cy, r, color, fullscreen);
+      // Petit point quadrant (indicateur sémantique)
+      ctx.beginPath(); ctx.arc(cx, cy - r * 0.45, 3, 0, Math.PI * 2);
+      ctx.fillStyle = CONTRAINTES_COLOR(ci, ce); ctx.fill();
 
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = ci >= 50 && ce >= 50 ? 'rgba(220,38,38,0.2)' :
-                      ci >= 50 ? 'rgba(37,99,235,0.2)' :
-                      ce >= 50 ? 'rgba(217,119,6,0.2)' : 'rgba(22,163,74,0.2)';
-      ctx.strokeStyle = ci >= 50 && ce >= 50 ? '#dc2626' :
-                        ci >= 50 ? '#2563eb' :
-                        ce >= 50 ? '#d97706' : '#16a34a';
-      ctx.lineWidth = 1.5;
-      ctx.fill(); ctx.stroke();
-
-      // Afficher le CA dans la bulle si disponible
-      if (ca > 0) {
-        ctx.font = `bold ${Math.max(7, Math.min(9, r - 4))}px sans-serif`;
-        ctx.fillStyle = ci >= 50 && ce >= 50 ? '#dc2626' : ci >= 50 ? '#2563eb' : ce >= 50 ? '#d97706' : '#16a34a';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${ca >= 1000 ? (ca/1000).toFixed(1)+'M' : ca+'k'}`, cx, cy + 3);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      if (fullscreen) {
+        if (ca > 0 && r > 14) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${Math.min(15, r * 0.38)}px Inter, sans-serif`;
+          ctx.fillText(fmtCA(ca), cx, cy);
+        }
+        ctx.fillStyle = '#1f2937';
+        ctx.font = `bold ${fullscreen ? 11 : 9}px Inter, sans-serif`;
+        ctx.textBaseline = 'top';
+        ctx.fillText(nom, cx, cy + r + 6);
+      } else {
+        if (ca > 0 && r > 12) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${Math.max(7, Math.min(9, r - 4))}px sans-serif`;
+          ctx.fillText(fmtCA(ca), cx, cy);
+        }
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textBaseline = 'top';
+        const label = nom.length > 12 ? nom.substring(0, 11) + '…' : nom;
+        ctx.fillText(label, cx, cy + r + 5);
       }
-
-      ctx.font = 'bold 10px sans-serif';
-      ctx.fillStyle = '#1f2937';
-      ctx.textAlign = 'center';
-      const label = nom.length > 12 ? nom.substring(0, 11) + '…' : nom;
-      ctx.fillText(label, cx, cy + r + 12);
     });
-  }, [activeTab, familles, contraintesStore, donneesStore, getCIScore, getCEScore]);
+  }, [familles, contraintesStore, donneesStore, getCIScore, getCEScore]);
 
-  // ─── Canvas matrice O/R (onglet 2) ────────────────────────────────────────
   useEffect(() => {
-    if (activeTab !== 2) return;
-    const canvas = rpCanvasRef.current;
+    if (activeTab !== 1) return;
+    drawContraintes();
+  }, [activeTab, drawContraintes]);
+
+  // ─── Canvas matrice O/R ───────────────────────────────────────────────────
+  const drawOR = useCallback((targetCanvas?: HTMLCanvasElement | null, fullscreen = false) => {
+    const canvas = targetCanvas ?? rpCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const W = canvas.width = canvas.offsetWidth;
+    const W = canvas.width  = canvas.offsetWidth;
     const H = canvas.height = canvas.offsetHeight;
     ctx.clearRect(0, 0, W, H);
 
-    ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+    const PAD = fullscreen ? { t: 30, r: 30, b: 50, l: 30 } : { t: 20, r: 20, b: 40, l: 20 };
 
-    // X=Risques, Y=Opportunités — bas-gauche: Simples, bas-droite: Leviers, haut-gauche: Critiques, haut-droite: Stratégiques
+    // Quadrant labels
     const qLabels = ['Achats\nSimples', 'Achats\nLeviers', 'Achats\nCritiques', 'Achats\nStratégiques'];
     const qx = [W*0.25, W*0.75, W*0.25, W*0.75];
     const qy = [H*0.75, H*0.75, H*0.25, H*0.25];
-    const qc2 = ['#16a34a', '#2563eb', '#d97706', '#6c63ff'];
+    const qc2 = ['#38A169', '#3182CE', '#D69E2E', '#805AD5'];
+    ctx.font = `bold ${fullscreen ? 13 : 11}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
     qLabels.forEach((lbl, i) => {
-      ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = qc2[i]; ctx.globalAlpha = 0.25;
-      ctx.textAlign = 'center';
+      ctx.globalAlpha = 0.28; ctx.fillStyle = qc2[i];
       lbl.split('\n').forEach((line, li) => ctx.fillText(line, qx[i], qy[i] + li * 14));
     });
     ctx.globalAlpha = 1;
 
-    ctx.font = '10px sans-serif'; ctx.fillStyle = '#6b7280'; ctx.globalAlpha = 0.7;
-    ctx.textAlign = 'center';
-    ctx.fillText('Risques →', W - 40, H - 6);
-    ctx.save(); ctx.translate(12, H / 2); ctx.rotate(-Math.PI / 2);
-    ctx.fillText('← Opportunités', 0, 0); ctx.restore();
-    ctx.globalAlpha = 1;
+    // Grid cross
+    ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1;
+    ctx.setLineDash([5, 3]);
+    ctx.beginPath(); ctx.moveTo(W/2, PAD.t); ctx.lineTo(W/2, H - PAD.b); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PAD.l, H/2); ctx.lineTo(W - PAD.r, H/2); ctx.stroke();
+    ctx.setLineDash([]);
 
-    const riskAnalyzed    = Object.keys(risquesStore).filter(k => hasRisqueData(k));
+    // Axis labels
+    ctx.font = `bold ${fullscreen ? 12 : 10}px Inter, sans-serif`;
+    ctx.fillStyle = '#374151'; ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Risques →', W / 2, H - 4);
+    ctx.save(); ctx.translate(12, H / 2); ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = 'top';
+    ctx.fillText('← Opportunités', 0, 0);
+    ctx.restore();
+
+    const riskAnalyzed     = Object.keys(risquesStore).filter(k => hasRisqueData(k));
     const opportunAnalyzed = Object.keys(opportunStore).filter(k => hasOpportunData(k));
     const rpKeys  = [...new Set([...riskAnalyzed, ...opportunAnalyzed])];
     const rpItems = rpKeys.length > 0 ? rpKeys : familles.map(f => f.nom);
-
-    const PALETTE = ['#6c63ff', '#2563eb', '#16a34a', '#d97706', '#dc2626', '#0891b2', '#7c3aed', '#c2410c', '#059669', '#db2777'];
-
     const rpCaValues = rpItems.map(n => donneesStore[n]?.ca || 0);
     const rpMaxCA = Math.max(...rpCaValues, 1);
-    const RP_MIN_R = 8, RP_MAX_R = 30, RP_DEFAULT_R = 18;
+    const MIN_R = fullscreen ? 12 : 8;
+    const MAX_R = fullscreen ? 52 : 30;
+    const DEF_R = fullscreen ? 22 : 18;
 
     rpItems.forEach((nom, idx) => {
       const risk   = getRisqueScore(nom);
       const opport = getOpportunScore(nom);
-      const x = (risk / 30) * (W - 60) + 30;
-      const y = H - (opport / 30) * (H - 60) - 30;
-
-      const isHighRisk   = risk   >= 15;
-      const isHighOpport = opport >= 15;
-
-      const quadColor = !isHighRisk && !isHighOpport ? '#16a34a' :   // Simples
-                         isHighRisk && !isHighOpport ? '#2563eb' :   // Leviers (bas-droite)
-                        !isHighRisk &&  isHighOpport ? '#d97706' :   // Critiques (haut-gauche)
-                                                       '#6c63ff';    // Stratégiques
-
-      const bubbleColor = PALETTE[idx % PALETTE.length];
+      const x = PAD.l + (risk   / 30) * (W - PAD.l - PAD.r);
+      const y = H - PAD.b - (opport / 30) * (H - PAD.t - PAD.b);
       const ca = donneesStore[nom]?.ca || 0;
-      const r = ca > 0 ? RP_MIN_R + ((ca / rpMaxCA) * (RP_MAX_R - RP_MIN_R)) : RP_DEFAULT_R;
-      const cx = Math.max(r + 2, Math.min(W - r - 2, x));
-      const cy = Math.max(r + 2, Math.min(H - r - 2, y));
+      const r = ca > 0 ? MIN_R + Math.sqrt(ca / rpMaxCA) * (MAX_R - MIN_R) : DEF_R;
+      const cx = Math.max(r + 4, Math.min(W - r - 4, x));
+      const cy = Math.max(r + 4, Math.min(H - r - 4, y));
+      const color = BUBBLE_COLORS_OR[idx % BUBBLE_COLORS_OR.length];
+      drawGradientBubble(ctx, cx, cy, r, color, fullscreen);
 
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = bubbleColor + '33';
-      ctx.strokeStyle = bubbleColor;
-      ctx.lineWidth = 2;
-      ctx.fill(); ctx.stroke();
-
-      ctx.font = 'bold 9px sans-serif'; ctx.fillStyle = '#1f2937'; ctx.textAlign = 'center';
-      const short = nom.length > 14 ? nom.substring(0, 13) + '…' : nom;
-      ctx.fillText(short, cx, cy + r + 10);
-
-      ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-      ctx.fillStyle = quadColor; ctx.fill();
+      ctx.textAlign = 'center';
+      if (fullscreen) {
+        if (ca > 0 && r > 14) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${Math.min(15, r * 0.38)}px Inter, sans-serif`;
+          ctx.textBaseline = 'middle';
+          ctx.fillText(fmtCA(ca), cx, cy);
+        }
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.textBaseline = 'top';
+        ctx.fillText(nom, cx, cy + r + 6);
+      } else {
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textBaseline = 'top';
+        const short = nom.length > 14 ? nom.substring(0, 13) + '…' : nom;
+        ctx.fillText(short, cx, cy + r + 5);
+      }
     });
-  }, [activeTab, familles, risquesStore, opportunStore, donneesStore, getRisqueScore, getOpportunScore]);
+  }, [familles, risquesStore, opportunStore, donneesStore, getRisqueScore, getOpportunScore]);
+
+  useEffect(() => {
+    if (activeTab !== 2) return;
+    drawOR();
+  }, [activeTab, drawOR]);
+
+  // ─── Fullscreen redraw + Escape ───────────────────────────────────────────
+  useEffect(() => {
+    if (!fullscreenMode) return;
+    requestAnimationFrame(() => {
+      if (fullscreenMode === 'contraintes') drawContraintes(fsCanvasRef.current, true);
+      else drawOR(fsCanvasRef.current, true);
+    });
+  }, [fullscreenMode, drawContraintes, drawOR]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreenMode(null); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   // ─── Init radarElement quand les données changent ─────────────────────────
   useEffect(() => {
@@ -2112,7 +2206,12 @@ export default function AnalysePortefeuille() {
                 ))}
               </div>
               <Card>
-                <CardHeader title="Matrice Portefeuille — Contraintes Internes vs Externes" />
+                <div className="flex items-center justify-between px-4 pt-4 pb-1">
+                  <span className="text-sm font-semibold text-gray-700">Matrice Portefeuille — Contraintes Internes vs Externes</span>
+                  <button onClick={() => setFullscreenMode('contraintes')} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors" title="Plein écran">
+                    <Maximize2 size={15} />
+                  </button>
+                </div>
                 <div className="p-4">
                   <div className="flex gap-2 mb-2">
                     <span className="text-[10px] text-gray-500 flex items-center justify-center" style={{ writingMode: 'vertical-rl', minWidth: 20 }}>CI ↑</span>
@@ -2150,7 +2249,12 @@ export default function AnalysePortefeuille() {
         {activeTab === 2 && (
           <div className="space-y-4">
             <Card>
-              <CardHeader title="Matrice Opportunités / Risques" />
+              <div className="flex items-center justify-between px-4 pt-4 pb-1">
+                <span className="text-sm font-semibold text-gray-700">Matrice Opportunités / Risques</span>
+                <button onClick={() => setFullscreenMode('or')} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors" title="Plein écran">
+                  <Maximize2 size={15} />
+                </button>
+              </div>
               <div className="p-4">
                 <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
                   <strong>Lecture :</strong> X = Score Risques · Y = Score Opportunités · Taille des bulles proportionnelle au CA.
@@ -2362,6 +2466,61 @@ export default function AnalysePortefeuille() {
         })()}
 
       </div>
+
+      {/* ── Overlay Plein Écran ─────────────────────────────────────────── */}
+      {fullscreenMode !== null && (() => {
+        const analyzedC = Object.keys(contraintesStore).filter(k => getCIScore(k) > 0 || getCEScore(k) > 0);
+        const contraItems = analyzedC.length > 0 ? analyzedC : familles.map(f => f.nom);
+
+        const riskAn   = Object.keys(risquesStore).filter(k => hasRisqueData(k));
+        const opporAn  = Object.keys(opportunStore).filter(k => hasOpportunData(k));
+        const orKeys   = [...new Set([...riskAn, ...opporAn])];
+        const orItems  = orKeys.length > 0 ? orKeys : familles.map(f => f.nom);
+
+        const legendItems = fullscreenMode === 'contraintes'
+          ? contraItems.map((nom, idx) => ({ nom, color: BUBBLE_COLORS_OR[idx % BUBBLE_COLORS_OR.length] }))
+          : orItems.map((nom, idx) => ({ nom, color: BUBBLE_COLORS_OR[idx % BUBBLE_COLORS_OR.length] }));
+
+        return (
+          <div className="fixed inset-0 z-50 flex flex-col bg-gray-900/95" onClick={() => setFullscreenMode(null)}>
+            {/* Barre du haut */}
+            <div className="flex items-center justify-between px-6 py-3 bg-gray-800 flex-shrink-0" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setFullscreenMode('contraintes')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${fullscreenMode === 'contraintes' ? 'bg-[#2F5B58] text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                >Matrice Contraintes</button>
+                <button
+                  onClick={() => setFullscreenMode('or')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${fullscreenMode === 'or' ? 'bg-[#2F5B58] text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                >Matrice O/R</button>
+              </div>
+              <button onClick={() => setFullscreenMode(null)} className="p-1.5 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Corps : canvas + légende */}
+            <div className="flex flex-1 overflow-hidden gap-4 p-4" onClick={e => e.stopPropagation()}>
+              <canvas ref={fsCanvasRef} className="flex-1 min-w-0 cursor-crosshair rounded-xl bg-white" style={{ minHeight: 0 }} />
+
+              {/* Légende numérotée */}
+              <div className="w-72 min-w-[13rem] bg-white rounded-xl overflow-y-auto overflow-x-hidden p-3 flex-shrink-0">
+                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1">Légende</p>
+                {legendItems.map(({ nom, color }, idx) => (
+                  <div key={nom} className="flex items-start gap-2 py-1.5 border-b border-gray-50 px-1">
+                    <span
+                      className="w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+                      style={{ backgroundColor: color }}
+                    >{idx + 1}</span>
+                    <span className="text-xs text-gray-700 leading-snug">{nom}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

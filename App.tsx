@@ -674,14 +674,27 @@ const App: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[AUTH] State changed:', event, 'Session:', !!session);
 
-      // Log de connexion (SIGNED_IN uniquement, silencieux)
-      if (event === 'SIGNED_IN' && session?.user) {
-        supabase.from('connection_logs').insert({
-          user_id:   session.user.id,
-          user_email: session.user.email ?? '',
-          user_name: null, // sera enrichi via le profil si besoin
-          user_agent: navigator.userAgent,
-        }).then(() => {}).catch(() => {});
+      // Log de connexion — SIGNED_IN (login fresh) ou INITIAL_SESSION (session restaurée)
+      // Déduplication : on ne relogue pas si une entrée existe déjà dans les 10 dernières minutes
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        supabase
+          .from('connection_logs')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .gte('connected_at', tenMinutesAgo)
+          .limit(1)
+          .then(({ data }) => {
+            if (!data || data.length === 0) {
+              supabase.from('connection_logs').insert({
+                user_id:    session.user.id,
+                user_email: session.user.email ?? '',
+                user_name:  null,
+                user_agent: navigator.userAgent,
+              }).then(() => {}).catch(() => {});
+            }
+          })
+          .catch(() => {});
       }
 
       try {
