@@ -1,4 +1,4 @@
-import { RapportSources, RapportContent, Section1Contexte, Section2Deroulement, Section3DossierConsultation, Section4QuestionsReponses, Section5AnalyseCandidatures, Section6Methodologie, Section7ValeurOffres, Section8Performance, Section9Attribution, Section10Calendrier, DocumentConsultation, CritereAnalyse, OffreClassement, LotPerformanceDetail } from '../types';
+import { RapportSources, RapportContent, Section1Contexte, Section2Deroulement, Section3DossierConsultation, Section4QuestionsReponses, Section5AnalyseCandidatures, Section6Methodologie, Section7ValeurOffres, Section8Performance, Section9Attribution, Section10Calendrier, DocumentConsultation, CritereAnalyse, CritereDetail, OffreClassement, LotPerformanceDetail, MotifsRejet } from '../types';
 import { AnalysisData, Metadata } from '@/components/an01';
 import { DepotsData } from '../../../types/depots';
 import { RetraitsData } from '../../../types/retraits';
@@ -42,10 +42,23 @@ export function generateRapportData(sources: RapportSources): RapportContent {
 function generateContexte(sources: RapportSources): Section1Contexte {
   const procedure = sources.procedure || {};
   const dossier = sources.dossier || {};
-  
+  const dceConfig = sources.dceData?.configuration_globale?.informationsGenerales || {};
+
+  // Priorité : DCE Complet > procédure > dossier
+  const objetMarche = dceConfig.titreMarche
+    || procedure['Nom de la procédure']
+    || dossier['Titre_du_dossier']
+    || '';
+
+  const dureeDCE = dceConfig.dureeMarche ? `${dceConfig.dureeMarche} mois` : '';
+  const dureeProcedure = procedure['Durée du marché (en mois)']
+    ? `${parseInt(procedure['Durée du marché (en mois)'])} mois`
+    : '';
+  const dureeMarche = dureeDCE || dureeProcedure;
+
   return {
-    objetMarche: procedure['Nom de la procédure'] || dossier['Titre_du_dossier'] || '',
-    dureeMarche: procedure['Durée du marché (en mois)'] ? `${parseInt(procedure['Durée du marché (en mois)'])} mois` : '',
+    objetMarche,
+    dureeMarche,
     descriptionPrestations: '', // À compléter manuellement
   };
 }
@@ -56,33 +69,48 @@ function generateDeroulement(sources: RapportSources): Section2Deroulement {
   const dossier = sources.dossier || {};
   const retraits = sources.retraits as RetraitsData;
   const depots = sources.depots as DepotsData;
-  
-  const nombreRetraits = retraits 
-    ? (retraits.stats.totalTelecharges + retraits.stats.totalReprographies) 
+  const ouverture = sources.ouverturePlisData;
+  const dceConfig = sources.dceData?.configuration_globale?.informationsGenerales || {};
+
+  const nombreRetraits = retraits
+    ? (retraits.stats.totalTelecharges + retraits.stats.totalReprographies)
     : 0;
-  
-  const nombrePlisRecus = depots 
-    ? (depots.stats.totalEnveloppesElectroniques + depots.stats.totalEnveloppesPapier) 
-    : 0;
-  
-  // Récupérer la date de publication (Date de lancement de la consultation)
-  // Priorité : 1) date_de_lancement_de_la_consultation de la procédure
-  //            2) Date_de_lancement_de_la_consultation du dossier
-  //            3) datePublication du registre retraits (fallback)
-  const datePublication = procedure['date_de_lancement_de_la_consultation'] 
+
+  // Nombre de plis : priorité ouverture des plis > dépôts
+  const candidats: any[] = ouverture?.candidats || [];
+  const nombrePlisRecus = candidats.length > 0
+    ? candidats.length
+    : depots
+      ? (depots.stats.totalEnveloppesElectroniques + depots.stats.totalEnveloppesPapier)
+      : 0;
+
+  // Hors délai depuis ouverture des plis
+  const nombreHorsDelai = candidats.filter((c: any) => c.horsDelai === true).length;
+
+  const datePublication = procedure['date_de_lancement_de_la_consultation']
     || dossier['Date_de_lancement_de_la_consultation']
-    || retraits?.procedureInfo?.datePublication 
+    || retraits?.procedureInfo?.datePublication
     || '';
-  
+
+  // Type de procédure : DCE Complet > procédure
+  const supportProcedure = dceConfig.typeProcedure
+    || procedure['Support de procédure']
+    || '';
+
+  // Date remise des offres : DCE Complet > procédure
+  const dateReceptionOffres = dceConfig.dateRemiseOffres
+    || procedure['Date de remise des offres']
+    || '';
+
   return {
     clientInterne: dossier['Client_Interne'] || '',
     datePublication,
     nombreRetraits,
-    dateReceptionOffres: procedure['Date de remise des offres'] || '',
+    dateReceptionOffres,
     nombrePlisRecus,
-    nombreHorsDelai: 0, // TODO: Calculer en comparant dates de réception
+    nombreHorsDelai,
     dateOuverturePlis: procedure['Date d\'ouverture des offres'] || '',
-    supportProcedure: procedure['Support de procédure'] || '',
+    supportProcedure,
     listeRetraitsAnnexe: nombreRetraits > 0,
     listeDepotsAnnexe: nombrePlisRecus > 0,
   };
@@ -90,7 +118,15 @@ function generateDeroulement(sources: RapportSources): Section2Deroulement {
 
 // ===== SECTION 3 : DOSSIER DE CONSULTATION =====
 function generateDossierConsultation(sources: RapportSources): Section3DossierConsultation {
-  // Liste standard des documents de consultation
+  // Priorité : liste des documents depuis le Règlement de Consultation du DCE
+  const rcDocs: string[] | undefined = sources.dceData?.reglement_consultation?.dce?.documents;
+  if (Array.isArray(rcDocs) && rcDocs.length > 0) {
+    return {
+      documentsListe: rcDocs.map(nom => ({ nom, inclus: true })),
+    };
+  }
+
+  // Fallback : liste standard
   const documentsStandard: DocumentConsultation[] = [
     { nom: 'Règlement de la Consultation (RC)', inclus: true },
     { nom: 'Acte d\'Engagement (AE)', inclus: true },
@@ -100,7 +136,7 @@ function generateDossierConsultation(sources: RapportSources): Section3DossierCo
     { nom: 'Détail Quantitatif Estimatif (DQE)', inclus: false },
     { nom: 'Cadre de Réponse Technique (CRT) et ses annexes', inclus: true },
   ];
-  
+
   return {
     documentsListe: documentsStandard,
   };
@@ -122,19 +158,39 @@ function generateQuestionsReponses(sources: RapportSources): Section4QuestionsRe
 function generateAnalyseCandidatures(sources: RapportSources): Section5AnalyseCandidatures {
   const depots = sources.depots as DepotsData;
   const an01Data = sources.an01Data as AnalysisData;
-  
+  const ouverture = sources.ouverturePlisData;
+
+  // Priorité : ouverture des plis (données réelles saisies) > dépôts > AN01
+  if (ouverture?.candidats && ouverture.candidats.length > 0) {
+    const candidats: any[] = ouverture.candidats;
+    const rejetes = candidats.filter((c: any) => c.admisRejete === 'Rejeté' || c.admisRejete === 'Non retenu');
+    const recevables = candidats.filter((c: any) => c.admisRejete !== 'Rejeté' && c.admisRejete !== 'Non retenu');
+
+    const motifsRejet: MotifsRejet[] = rejetes.map((c: any) => ({
+      entreprise: c.societe || `${c.prenom || ''} ${c.nom || ''}`.trim() || 'Inconnu',
+      motif: c.motifRejet || 'Non précisé',
+    }));
+
+    return {
+      nombreCandidaturesTotales: candidats.length,
+      nombreCandidaturesRecevables: recevables.length,
+      nombreCandidaturesRejetees: rejetes.length,
+      motifsRejet,
+    };
+  }
+
+  // Fallback AN01 / dépôts
   const nombreTotal = depots?.entreprises?.length || 0;
   const nombreRecevables = an01Data?.offers?.length || 0;
   const nombreRejetees = nombreTotal - nombreRecevables;
-  
-  // Extraire les motifs de rejet depuis AN01 si disponibles
+
   const motifsRejet = an01Data?.offers
     ?.filter((o: any) => o.isRejected)
     .map((o: any) => ({
       entreprise: o.name,
       motif: o.rejectionReason || 'Non précisé',
     })) || [];
-  
+
   return {
     nombreCandidaturesTotales: nombreTotal,
     nombreCandidaturesRecevables: nombreRecevables,
@@ -146,37 +202,54 @@ function generateAnalyseCandidatures(sources: RapportSources): Section5AnalyseCa
 // ===== SECTION 6 : MÉTHODOLOGIE D'ANALYSE DES OFFRES =====
 function generateMethodologie(sources: RapportSources): Section6Methodologie {
   const an01Data = sources.an01Data as AnalysisData;
-  
-  if (!an01Data || !an01Data.offers || an01Data.offers.length === 0) {
-    return {
-      criteres: [],
-      criteresDetails: [],
-      ponderationTechnique: 30,
-      ponderationFinancier: 70,
-    };
+  const qtGenerique = sources.dceData?.qt_generique;
+  const crt = sources.dceData?.crt;
+
+  // Pondérations : AN01 (si chargé) > DCE CRT (partFinanciere/partTechnique) > défaut
+  let poidsTechnique = 30;
+  let poidsFinancier = 70;
+
+  if (an01Data?.metadata) {
+    poidsTechnique = (an01Data.metadata as Metadata)?.poidsTechnique || 30;
+    poidsFinancier = (an01Data.metadata as Metadata)?.poidsFinancier || 70;
+  } else if (crt?.partTechnique != null && crt?.partFinanciere != null) {
+    poidsTechnique = crt.partTechnique;
+    poidsFinancier = crt.partFinanciere;
   }
-  
-  // Récupérer les pondérations depuis les métadonnées AN01 ou calculer
-  const poidsTechnique = (an01Data.metadata as Metadata)?.poidsTechnique || 30;
-  const poidsFinancier = (an01Data.metadata as Metadata)?.poidsFinancier || 70;
-  
+
   const criteres: CritereAnalyse[] = [
     { nom: 'Valeur économique de l\'offre', ponderation: poidsFinancier },
     { nom: 'Valeur technique de l\'offre', ponderation: poidsTechnique },
   ];
-  
-  // Extraire les critères techniques depuis technicalAnalysis
-  const criteresDetails = an01Data.technicalAnalysis?.[0]?.criteria?.map((c: any) => ({
-    nom: c.name,
-    points: parseFloat(c.maxScore) || 0,
-  })) || [];
-  
-  return {
-    criteres,
-    criteresDetails,
-    ponderationTechnique: poidsTechnique,
-    ponderationFinancier: poidsFinancier,
-  };
+
+  // Critères détaillés : AN01 > QT générique du DCE
+  let criteresDetails: CritereDetail[] = [];
+
+  if (an01Data?.technicalAnalysis?.[0]?.criteria) {
+    criteresDetails = an01Data.technicalAnalysis[0].criteria.map((c: any) => ({
+      nom: c.name,
+      points: parseFloat(c.maxScore) || 0,
+    }));
+  } else if (qtGenerique?.criteres) {
+    // Extraire depuis la structure QTGeneriqueCritere[]
+    for (const critere of qtGenerique.criteres) {
+      if (critere.sousCriteres) {
+        for (const sc of critere.sousCriteres) {
+          criteresDetails.push({ nom: sc.intitule || sc.nom || '', points: sc.ponderation || 0 });
+        }
+      } else {
+        criteresDetails.push({ nom: critere.intitule || critere.nom || '', points: critere.ponderation || 0 });
+      }
+    }
+  } else if (crt?.sections) {
+    criteresDetails = crt.sections.map((s: any) => ({ nom: s.titre, points: s.points || 0 }));
+  }
+
+  if (!an01Data || !an01Data.offers || an01Data.offers.length === 0) {
+    return { criteres, criteresDetails, ponderationTechnique: poidsTechnique, ponderationFinancier: poidsFinancier };
+  }
+
+  return { criteres, criteresDetails, ponderationTechnique: poidsTechnique, ponderationFinancier: poidsFinancier };
 }
 
 // ===== SECTION 7 : ANALYSE DE LA VALEUR DES OFFRES =====
@@ -327,9 +400,16 @@ function generatePerformanceFromMultiLots(allLots: AnalysisData[], sources: Rapp
 // ===== SECTION 9 : PROPOSITION D'ATTRIBUTION =====
 function generateAttribution(sources: RapportSources): Section9Attribution {
   const an01Data = sources.an01Data as AnalysisData;
-  
+  const ouverture = sources.ouverturePlisData;
+
+  // Lots infructueux depuis ouverture des plis
+  const lotsInfructueux: string[] = ouverture?.recevabilite?.lotsInfructueux || [];
+  const raisonInfructuosite: string = ouverture?.recevabilite?.raisonInfructuosite || '';
+
   return {
     attributairePressenti: an01Data?.stats?.winner?.name || '',
+    lotsInfructueux: lotsInfructueux.length > 0 ? lotsInfructueux : undefined,
+    raisonInfructuosite: raisonInfructuosite || undefined,
   };
 }
 

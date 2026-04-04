@@ -5,6 +5,8 @@ export interface RapportSources {
   retraits: any; // Données du registre des retraits
   an01Data: any; // Données de l'analyse AN01
   questionsReponses?: QuestionReponse[]; // Questions-réponses (optionnel pour MVP)
+  dceData?: any; // Données complètes du DCE (table dce)
+  ouverturePlisData?: any; // Données de l'ouverture des plis (table ouverture_plis)
 }
 
 export interface QuestionReponse {
@@ -146,6 +148,8 @@ export interface LotPerformanceDetail {
 // Section 9 : Proposition d'attribution
 export interface Section9Attribution {
   attributairePressenti: string;
+  lotsInfructueux?: string[];       // Lots déclarés infructueux
+  raisonInfructuosite?: string;     // Raison de l'infructuosité
 }
 
 // Section 10 : Calendrier de mise en œuvre

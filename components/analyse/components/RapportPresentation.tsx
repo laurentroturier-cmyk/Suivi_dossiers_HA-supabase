@@ -46,11 +46,19 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     rapportGenere: null,
     modeEdition: false,
   });
-  
+
   const [depotsData, setDepotsData] = useState<DepotsData | null>(null);
   const [retraitsData, setRetraitsData] = useState<RetraitsData | null>(null);
   const [an01Data, setAn01Data] = useState<AnalysisData | null>(null);
   const [an01GlobalData, setAn01GlobalData] = useState<any | null>(null); // GlobalAnalysisResult
+  const [ouverturePlisData, setOuverturePlisData] = useState<any | null>(null);
+  const [sourcesStatus, setSourcesStatus] = useState<{
+    depots: 'idle' | 'loading' | 'ok' | 'absent';
+    retraits: 'idle' | 'loading' | 'ok' | 'absent';
+    dce: 'idle' | 'loading' | 'ok' | 'absent';
+    ouverturePlis: 'idle' | 'loading' | 'ok' | 'absent';
+    an01: 'idle' | 'ok' | 'absent';
+  }>({ depots: 'idle', retraits: 'idle', dce: 'idle', ouverturePlis: 'idle', an01: 'idle' });
   const [selectedLotIndex, setSelectedLotIndex] = useState<number>(0);
   const [selectedLots, setSelectedLots] = useState<number[]>([]); // Sélection multiple des lots
   const [numeroAfpa, setNumeroAfpa] = useState('');
@@ -109,7 +117,6 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
   
   // État pour les données DCE
   const [dceData, setDceData] = useState<any>(null);
-  const [loadingDCE, setLoadingDCE] = useState(false);
 
   const procedureSelectionnee = procedures.find(p => p.NumProc === state.procedureSelectionnee);
   const dossierRattache = dossiers.find(d => d.IDProjet === procedureSelectionnee?.IDProjet);
@@ -139,122 +146,93 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     }
   };
 
-  // Charger les données depots/retraits depuis la table procédures
-  const loadDepotsRetraitsFromDB = async () => {
-    if (!procedureSelectionnee?.NumProc) {
-      return;
+  // Chargement automatique de toutes les sources en parallèle
+  const loadAllSources = async () => {
+    if (!procedureSelectionnee?.NumProc) return;
+
+    const numProc = procedureSelectionnee.NumProc;
+    const numeroAfpaComplet = procedureSelectionnee['Numéro de procédure (Afpa)'];
+    const numero5chiffres = numeroAfpaComplet?.match(/^(\d{5})/)?.[1]
+      || procedureSelectionnee['NumeroAfpa5Chiffres']
+      || null;
+
+    setSourcesStatus(s => ({ ...s, depots: 'loading', retraits: 'loading', dce: numero5chiffres ? 'loading' : 'absent', ouverturePlis: 'loading' }));
+
+    const [procResult, dceResult, ouvertureResult] = await Promise.allSettled([
+      // Source 1 : dépôts + retraits (table procédures)
+      supabase.from('procédures').select('depots, retraits').eq('NumProc', numProc).single(),
+      // Source 2 : DCE complet (table dce)
+      numero5chiffres
+        ? supabase.from('dce').select('reglement_consultation, configuration_globale, qt_generique, crt').eq('numero_procedure', numero5chiffres).single()
+        : Promise.resolve({ data: null, error: null }),
+      // Source 3 : ouverture des plis (table ouverture_plis)
+      supabase.from('ouverture_plis').select('candidats, recevabilite, type_analyse').eq('num_proc', numProc).order('updated_at', { ascending: false }).limit(1),
+    ]);
+
+    // --- Dépôts / retraits ---
+    if (procResult.status === 'fulfilled' && !procResult.value.error) {
+      const d = procResult.value.data;
+      if (d?.depots) {
+        const parsed = typeof d.depots === 'string' ? JSON.parse(d.depots) : d.depots;
+        setDepotsData(parsed);
+        setState(prev => ({ ...prev, fichiersCharges: { ...prev.fichiersCharges, depots: true } }));
+        setSourcesStatus(s => ({ ...s, depots: 'ok' }));
+      } else {
+        setSourcesStatus(s => ({ ...s, depots: 'absent' }));
+      }
+      if (d?.retraits) {
+        const parsed = typeof d.retraits === 'string' ? JSON.parse(d.retraits) : d.retraits;
+        setRetraitsData(parsed);
+        setState(prev => ({ ...prev, fichiersCharges: { ...prev.fichiersCharges, retraits: true } }));
+        setSourcesStatus(s => ({ ...s, retraits: 'ok' }));
+      } else {
+        setSourcesStatus(s => ({ ...s, retraits: 'absent' }));
+      }
+    } else {
+      setSourcesStatus(s => ({ ...s, depots: 'absent', retraits: 'absent' }));
     }
 
-    try {
-      // Récupérer les colonnes depots et retraits de la procédure
-      const { data, error } = await supabase
-        .from('procédures')
-        .select('depots, retraits')
-        .eq('NumProc', procedureSelectionnee.NumProc)
-        .single();
-
-      if (error) {
-        console.error('Erreur lors du chargement des depots/retraits:', error);
-        return;
+    // --- DCE ---
+    if (numero5chiffres && dceResult.status === 'fulfilled' && !(dceResult.value as any).error) {
+      const dceRow = (dceResult.value as any).data;
+      if (dceRow) {
+        setDceData(dceRow);
+        setSourcesStatus(s => ({ ...s, dce: 'ok' }));
+        // Auto-remplir chapitre 3 si documents disponibles et chapitre vide
+        const docs = dceRow.reglement_consultation?.dce?.documents;
+        if (Array.isArray(docs) && docs.length > 0) {
+          setContenuChapitre3(prev => {
+            if (prev && prev.trim() !== '') return prev; // ne pas écraser si déjà rempli
+            const docsHtml = docs.map((doc: string) => `<li><p>${doc}</p></li>`).join('');
+            return `<p>Le Dossier de Consultation des Entreprises (DCE) comprend les documents suivants :</p><ol>${docsHtml}</ol>`;
+          });
+        }
+      } else {
+        setSourcesStatus(s => ({ ...s, dce: 'absent' }));
       }
+    } else if (!numero5chiffres) {
+      setSourcesStatus(s => ({ ...s, dce: 'absent' }));
+    } else {
+      setSourcesStatus(s => ({ ...s, dce: 'absent' }));
+    }
 
-      // Parser et charger les données depots
-      if (data?.depots) {
-        const depotsDataParsed = typeof data.depots === 'string' 
-          ? JSON.parse(data.depots) 
-          : data.depots;
-        setDepotsData(depotsDataParsed);
-        setState(prev => ({
-          ...prev,
-          fichiersCharges: { ...prev.fichiersCharges, depots: true },
-        }));
-        console.log('✅ Données dépôts chargées depuis Supabase');
+    // --- Ouverture des plis ---
+    if (ouvertureResult.status === 'fulfilled' && !(ouvertureResult.value as any).error) {
+      const rows = (ouvertureResult.value as any).data;
+      if (rows && rows.length > 0) {
+        setOuverturePlisData(rows[0]);
+        setSourcesStatus(s => ({ ...s, ouverturePlis: 'ok' }));
+      } else {
+        setSourcesStatus(s => ({ ...s, ouverturePlis: 'absent' }));
       }
-
-      // Parser et charger les données retraits
-      if (data?.retraits) {
-        const retraitsDataParsed = typeof data.retraits === 'string'
-          ? JSON.parse(data.retraits)
-          : data.retraits;
-        setRetraitsData(retraitsDataParsed);
-        setState(prev => ({
-          ...prev,
-          fichiersCharges: { ...prev.fichiersCharges, retraits: true },
-        }));
-        console.log('✅ Données retraits chargées depuis Supabase');
-      }
-
-      if (!data?.depots && !data?.retraits) {
-        console.warn('⚠️ Aucune donnée depots/retraits trouvée pour cette procédure');
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des depots/retraits:', error);
+    } else {
+      setSourcesStatus(s => ({ ...s, ouverturePlis: 'absent' }));
     }
   };
 
-  // Charger les données du DCE depuis la table 'dce' (nouveau système)
+  // Conserver pour compatibilité (utilisé dans le bouton DCE manuel si nécessaire)
   const loadDCEData = async () => {
-    if (!procedureSelectionnee?.NumProc) {
-      alert('Aucune procédure sélectionnée');
-      return;
-    }
-
-    // Extraire le numéro à 5 chiffres depuis "Numéro de procédure (Afpa)"
-    const numeroAfpa = procedureSelectionnee['Numéro de procédure (Afpa)'];
-    const numero5chiffres = numeroAfpa?.match(/^(\d{5})/)?.[1] || procedureSelectionnee['NumeroAfpa5Chiffres'];
-    
-    if (!numero5chiffres) {
-      alert(`Impossible de trouver le numéro à 5 chiffres pour la procédure ${procedureSelectionnee.NumProc}`);
-      return;
-    }
-
-    setLoadingDCE(true);
-    try {
-      // Charger depuis la nouvelle table 'dce'
-      const { data, error } = await supabase
-        .from('dce')
-        .select('reglement_consultation')
-        .eq('numero_procedure', numero5chiffres)
-        .single();
-
-      if (error) {
-        // Si le DCE n'existe pas encore
-        if (error.code === 'PGRST116') {
-          alert(`Aucun DCE trouvé pour la procédure ${numero5chiffres} (${procedureSelectionnee.NumProc}).\n\nVeuillez d'abord créer le DCE dans le module "DCE Complet".`);
-          return;
-        }
-        throw error;
-      }
-
-      if (!data?.reglement_consultation) {
-        alert(`Le DCE existe mais le Règlement de Consultation n'a pas encore été rempli.\n\nAllez dans le module "DCE Complet" > "Règlement de Consultation" pour le compléter.`);
-        return;
-      }
-
-      const rcData = data.reglement_consultation;
-      setDceData(rcData);
-
-      // Auto-remplir le champ "Dossier de Consultation" avec la liste des documents
-      if (rcData.dce?.documents && Array.isArray(rcData.dce.documents) && rcData.dce.documents.length > 0) {
-        // Générer du HTML valide pour l'éditeur Tiptap (liste ordonnée)
-        const docsHtml = rcData.dce.documents
-          .map((doc: string) => `<li><p>${doc}</p></li>`)
-          .join('');
-
-        const dceDescription = `<p>Le Dossier de Consultation des Entreprises (DCE) comprend les documents suivants :</p><ol>${docsHtml}</ol>`;
-        setContenuChapitre3(dceDescription);
-
-        alert('✅ Données du DCE chargées avec succès !\n\nLe paragraphe 3 "DOSSIER DE CONSULTATION" a été automatiquement rempli.');
-      } else {
-        alert('⚠️ Le Règlement de Consultation ne contient pas de liste de documents.');
-      }
-
-    } catch (error: any) {
-      console.error('Erreur lors du chargement du DCE:', error);
-      alert(`Erreur lors du chargement du DCE :\n${error.message || 'Erreur inconnue'}`);
-    } finally {
-      setLoadingDCE(false);
-    }
+    await loadAllSources();
   };
 
   // Sauvegarder le rapport actuel
@@ -498,6 +476,9 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     setRetraitsData(null);
     setAn01Data(null);
     setAn01GlobalData(null);
+    setOuverturePlisData(null);
+    setDceData(null);
+    setSourcesStatus({ depots: 'idle', retraits: 'idle', dce: 'idle', ouverturePlis: 'idle', an01: 'idle' });
     setSelectedLotIndex(0);
     setContenuChapitre3('');
     setContenuChapitre4('');
@@ -546,6 +527,9 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         setDepotsData(null);
         setRetraitsData(null);
         setAn01Data(null);
+        setOuverturePlisData(null);
+        setDceData(null);
+        setSourcesStatus({ depots: 'idle', retraits: 'idle', dce: 'idle', ouverturePlis: 'idle', an01: 'idle' });
       }
     } else if (value.length === 0) {
       // Reset si le champ est vidé
@@ -569,17 +553,17 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
     setDepotsData(null);
     setRetraitsData(null);
     setAn01Data(null);
+    setOuverturePlisData(null);
+    setDceData(null);
+    setSourcesStatus({ depots: 'idle', retraits: 'idle', dce: 'idle', ouverturePlis: 'idle', an01: 'idle' });
   };
 
-  // Charger automatiquement les depots/retraits quand une procédure est sélectionnée
+  // Chargement automatique de toutes les sources quand une procédure est sélectionnée
   useEffect(() => {
     if (procedureSelectionnee?.NumProc) {
-      loadDepotsRetraitsFromDB();
+      loadAllSources();
     }
   }, [procedureSelectionnee?.NumProc]);
-
-  // Les données depots/retraits sont maintenant chargées automatiquement depuis Supabase
-  // (voir fonction loadDepotsRetraitsFromDB)
 
   // Handler pour l'upload du fichier AN01 (Excel)
   const handleAn01Upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -601,6 +585,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         ...prev,
         fichiersCharges: { ...prev.fichiersCharges, an01: true },
       }));
+      setSourcesStatus(s => ({ ...s, an01: 'ok' }));
     } catch (error) {
       console.error('Erreur lors du parsing du fichier AN01:', error);
       alert('Erreur lors du chargement du fichier AN01 Excel');
@@ -651,7 +636,9 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
         depots: depotsData,
         retraits: retraitsData,
         an01Data: dataToUse,
-        questionsReponses: [], // TODO: À implémenter avec table Supabase
+        questionsReponses: [],
+        dceData,
+        ouverturePlisData,
       });
 
       setState(prev => ({
@@ -1491,146 +1478,155 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
           )}
         </div>
 
-        {/* Données automatiquement chargées */}
+        {/* Sources de données */}
         {state.procedureSelectionnee && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">2. Données de la procédure</h2>
-            <p className="text-sm text-gray-600 mb-4">📊 Les données des registres sont chargées automatiquement depuis la base de données.</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">2. Sources de données</h2>
+            <p className="text-sm text-gray-500 mb-4">Les sources automatiques sont chargées dès la sélection de la procédure. L'analyse AN01 doit être importée manuellement.</p>
+
+            {/* Grille des sources */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
               {/* Registre Dépôts */}
-              <div className={`border-2 rounded-lg p-4 ${state.fichiersCharges.depots ? 'border-teal-400 bg-teal-50' : 'border-gray-300 bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <FileSpreadsheet className="w-5 h-5 text-gray-600" />
-                    <span className="font-medium text-gray-900">Registre Dépôts</span>
-                  </div>
-                  {state.fichiersCharges.depots && <Check className="w-5 h-5 text-teal-700" />}
-                </div>
-                <div className="text-center py-2 px-4 rounded text-sm">
-                  {state.fichiersCharges.depots ? (
-                    <span className="text-teal-700 font-medium">✓ Chargé depuis Supabase</span>
-                  ) : (
-                    <span className="text-gray-500 italic">Aucune donnée disponible</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Registre Retraits */}
-              <div className={`border-2 rounded-lg p-4 ${state.fichiersCharges.retraits ? 'border-teal-400 bg-teal-50' : 'border-gray-300 bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <FileSpreadsheet className="w-5 h-5 text-gray-600" />
-                    <span className="font-medium text-gray-900">Registre Retraits</span>
-                  </div>
-                  {state.fichiersCharges.retraits && <Check className="w-5 h-5 text-teal-700" />}
-                </div>
-                <div className="text-center py-2 px-4 rounded text-sm">
-                  {state.fichiersCharges.retraits ? (
-                    <span className="text-teal-700 font-medium">✓ Chargé depuis Supabase</span>
-                  ) : (
-                    <span className="text-gray-500 italic">Aucune donnée disponible</span>
-                  )}
-                </div>
-              </div>
-
-              {/* AN01 */}
-              <div className={`border-2 border-dashed rounded-lg p-4 ${state.fichiersCharges.an01 ? 'border-teal-400 bg-teal-50' : 'border-gray-300'}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <FileCog className="w-5 h-5 text-gray-600" />
-                    <span className="font-medium text-gray-900">Analyse AN01</span>
-                  </div>
-                  {state.fichiersCharges.an01 && <Check className="w-5 h-5 text-teal-700" />}
-                </div>
-                <label className="block">
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleAn01Upload}
-                    className="hidden"
-                  />
-                  <div className="cursor-pointer text-center py-2 px-4 bg-blue-100 hover:bg-blue-200 rounded text-sm text-blue-700 font-medium">
-                    {state.fichiersCharges.an01 ? 'Remplacer' : 'Charger Excel'}
-                  </div>
-                </label>
-                
-                {/* Sélection des lots si plusieurs lots */}
-                {an01GlobalData && an01GlobalData.lots && an01GlobalData.lots.length > 1 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Sélectionner le(s) lot(s) à inclure dans le rapport :
-                      </label>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setSelectedLots(an01GlobalData.lots.map((_: any, i: number) => i))}
-                          className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded"
-                        >
-                          Tous
-                        </button>
-                        <button
-                          onClick={() => setSelectedLots([])}
-                          className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded"
-                        >
-                          Aucun
-                        </button>
-                      </div>
+              {(() => {
+                const st = sourcesStatus.depots;
+                return (
+                  <div className={`rounded-lg p-3 border ${st === 'ok' ? 'border-teal-300 bg-teal-50' : st === 'loading' ? 'border-blue-200 bg-blue-50' : st === 'absent' ? 'border-gray-200 bg-gray-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <FileSpreadsheet className="w-4 h-4 text-gray-500" />
+                      {st === 'ok' && <span className="text-xs font-medium text-teal-700 bg-teal-100 px-1.5 py-0.5 rounded">Auto</span>}
+                      {st === 'loading' && <span className="text-xs text-blue-600">…</span>}
+                      {st === 'absent' && <span className="text-xs text-gray-400">—</span>}
                     </div>
-                    
-                    <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
-                      {an01GlobalData.lots.map((lot: any, index: number) => (
-                        <label key={index} className="flex items-center gap-2 p-2 hover:bg-white rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedLots.includes(index)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedLots([...selectedLots, index]);
-                              } else {
-                                setSelectedLots(selectedLots.filter(i => i !== index));
-                              }
-                            }}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                          />
-                          <span className="text-sm font-medium text-gray-700">
-                            {lot.lotName || `Lot ${index + 1}`}
-                          </span>
-                          {lot.metadata?.description && (
-                            <span className="text-xs text-gray-500">- {lot.metadata.description}</span>
-                          )}
-                        </label>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-2 flex items-center gap-2 text-xs">
-                      {selectedLots.length === 0 && (
-                        <p className="text-orange-600">⚠️ Aucun lot sélectionné</p>
-                      )}
-                      {selectedLots.length === 1 && (
-                        <p className="text-blue-600">📊 1 lot sélectionné</p>
-                      )}
-                      {selectedLots.length > 1 && selectedLots.length < an01GlobalData.lots.length && (
-                        <p className="text-teal-700">📊 {selectedLots.length} lots sélectionnés (synthèse multi-lots)</p>
-                      )}
-                      {selectedLots.length === an01GlobalData.lots.length && (
-                        <p className="text-purple-600">📊 Tous les lots sélectionnés (synthèse globale)</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Information si un seul lot */}
-                {an01GlobalData && an01GlobalData.lots && an01GlobalData.lots.length === 1 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <p className="text-sm text-gray-600">
-                      📊 1 lot détecté : {an01GlobalData.lots[0].lotName || 'Lot unique'}
+                    <p className="text-xs font-semibold text-gray-800">Registre Dépôts</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {st === 'ok' ? `${depotsData?.entreprises?.length ?? 0} entreprise(s)` : st === 'loading' ? 'Chargement…' : 'Non disponible'}
                     </p>
                   </div>
-                )}
-              </div>
+                );
+              })()}
+
+              {/* Registre Retraits */}
+              {(() => {
+                const st = sourcesStatus.retraits;
+                return (
+                  <div className={`rounded-lg p-3 border ${st === 'ok' ? 'border-teal-300 bg-teal-50' : st === 'loading' ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <FileSpreadsheet className="w-4 h-4 text-gray-500" />
+                      {st === 'ok' && <span className="text-xs font-medium text-teal-700 bg-teal-100 px-1.5 py-0.5 rounded">Auto</span>}
+                      {st === 'loading' && <span className="text-xs text-blue-600">…</span>}
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800">Registre Retraits</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {st === 'ok' ? `${(retraitsData?.stats?.totalTelecharges ?? 0) + (retraitsData?.stats?.totalReprographies ?? 0)} retrait(s)` : st === 'loading' ? 'Chargement…' : 'Non disponible'}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* DCE Complet */}
+              {(() => {
+                const st = sourcesStatus.dce;
+                return (
+                  <div className={`rounded-lg p-3 border ${st === 'ok' ? 'border-teal-300 bg-teal-50' : st === 'loading' ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <FileText className="w-4 h-4 text-gray-500" />
+                      {st === 'ok' && <span className="text-xs font-medium text-teal-700 bg-teal-100 px-1.5 py-0.5 rounded">Auto</span>}
+                      {st === 'loading' && <span className="text-xs text-blue-600">…</span>}
+                      {st === 'absent' && <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Absent</span>}
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800">DCE Complet</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {st === 'ok'
+                        ? `RC${dceData?.reglement_consultation ? ' ✓' : ''}${dceData?.configuration_globale ? ' · Config ✓' : ''}`
+                        : st === 'loading' ? 'Chargement…'
+                        : 'Créer dans DCE Complet'}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Ouverture des plis */}
+              {(() => {
+                const st = sourcesStatus.ouverturePlis;
+                const nbCandidats = ouverturePlisData?.candidats?.length ?? 0;
+                return (
+                  <div className={`rounded-lg p-3 border ${st === 'ok' ? 'border-teal-300 bg-teal-50' : st === 'loading' ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <FileCheck className="w-4 h-4 text-gray-500" />
+                      {st === 'ok' && <span className="text-xs font-medium text-teal-700 bg-teal-100 px-1.5 py-0.5 rounded">Auto</span>}
+                      {st === 'loading' && <span className="text-xs text-blue-600">…</span>}
+                      {st === 'absent' && <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Absent</span>}
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800">Ouverture des plis</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {st === 'ok' ? `${nbCandidats} candidat(s)` : st === 'loading' ? 'Chargement…' : 'Saisir dans le module'}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
-            
+
+            {/* AN01 — import manuel */}
+            <div className={`border-2 border-dashed rounded-lg p-4 ${state.fichiersCharges.an01 ? 'border-teal-400 bg-teal-50' : 'border-gray-300'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <FileCog className="w-5 h-5 text-gray-600" />
+                  <span className="font-medium text-gray-900">Analyse AN01</span>
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Import manuel</span>
+                </div>
+                {state.fichiersCharges.an01 && <Check className="w-5 h-5 text-teal-700" />}
+              </div>
+              <label className="block">
+                <input type="file" accept=".xlsx,.xls" onChange={handleAn01Upload} className="hidden" />
+                <div className="cursor-pointer text-center py-2 px-4 bg-blue-100 hover:bg-blue-200 rounded text-sm text-blue-700 font-medium">
+                  {state.fichiersCharges.an01 ? 'Remplacer le fichier AN01' : 'Charger le fichier AN01 (.xlsx)'}
+                </div>
+              </label>
+
+              {/* Sélection des lots si plusieurs lots */}
+              {an01GlobalData && an01GlobalData.lots && an01GlobalData.lots.length > 1 && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Sélectionner le(s) lot(s) à inclure dans le rapport :
+                    </label>
+                    <div className="flex gap-2">
+                      <button onClick={() => setSelectedLots(an01GlobalData.lots.map((_: any, i: number) => i))} className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded">Tous</button>
+                      <button onClick={() => setSelectedLots([])} className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded">Aucun</button>
+                    </div>
+                  </div>
+                  <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
+                    {an01GlobalData.lots.map((lot: any, index: number) => (
+                      <label key={index} className="flex items-center gap-2 p-2 hover:bg-white rounded cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedLots.includes(index)}
+                          onChange={(e) => {
+                            if (e.target.checked) { setSelectedLots([...selectedLots, index]); }
+                            else { setSelectedLots(selectedLots.filter(i => i !== index)); }
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">{lot.lotName || `Lot ${index + 1}`}</span>
+                        {lot.metadata?.description && <span className="text-xs text-gray-500">- {lot.metadata.description}</span>}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-2 text-xs">
+                    {selectedLots.length === 0 && <p className="text-orange-600">⚠️ Aucun lot sélectionné</p>}
+                    {selectedLots.length === 1 && <p className="text-blue-600">📊 1 lot sélectionné</p>}
+                    {selectedLots.length > 1 && selectedLots.length < an01GlobalData.lots.length && <p className="text-teal-700">📊 {selectedLots.length} lots sélectionnés (synthèse multi-lots)</p>}
+                    {selectedLots.length === an01GlobalData.lots.length && <p className="text-purple-600">📊 Tous les lots sélectionnés (synthèse globale)</p>}
+                  </div>
+                </div>
+              )}
+              {an01GlobalData && an01GlobalData.lots && an01GlobalData.lots.length === 1 && (
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <p className="text-sm text-gray-600">📊 1 lot détecté : {an01GlobalData.lots[0].lotName || 'Lot unique'}</p>
+                </div>
+              )}
+            </div>
+
             {/* Sélecteur Absence d'offre */}
             {(state.fichiersCharges.depots || state.fichiersCharges.retraits) && (
               <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
@@ -1640,23 +1636,11 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                 </div>
                 <div className="flex items-center gap-6 ml-8">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="absenceOffre"
-                      checked={!absenceOffre}
-                      onChange={() => setAbsenceOffre(false)}
-                      className="w-4 h-4 text-blue-600"
-                    />
+                    <input type="radio" name="absenceOffre" checked={!absenceOffre} onChange={() => setAbsenceOffre(false)} className="w-4 h-4 text-blue-600" />
                     <span className="text-sm text-gray-700">Non — je charge le fichier AN01</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="absenceOffre"
-                      checked={absenceOffre}
-                      onChange={() => setAbsenceOffre(true)}
-                      className="w-4 h-4 text-orange-600"
-                    />
+                    <input type="radio" name="absenceOffre" checked={absenceOffre} onChange={() => setAbsenceOffre(true)} className="w-4 h-4 text-orange-600" />
                     <span className="text-sm font-semibold text-orange-700">Oui — aucune offre reçue</span>
                   </label>
                 </div>
@@ -1672,7 +1656,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
               <div className="mt-4 p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-center gap-2">
                 <Check className="w-5 h-5 text-teal-700" />
                 <span className="text-sm text-green-800 font-medium">
-                  {absenceOffre ? 'Registres chargés — mode absence d\'offre activé ✓' : 'Tous les fichiers sont chargés !'}
+                  {absenceOffre ? 'Registres chargés — mode absence d\'offre activé ✓' : 'Données suffisantes pour générer le rapport !'}
                 </span>
               </div>
             )}
@@ -2006,11 +1990,11 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                   <p className="text-sm text-gray-700 font-medium">✏️ Saisissez ou collez le contenu ci-dessous :</p>
                   <button
                     onClick={loadDCEData}
-                    disabled={!procedureSelectionnee || loadingDCE}
+                    disabled={!procedureSelectionnee || sourcesStatus.dce === 'loading'}
                     className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white text-xs font-semibold rounded-lg flex items-center gap-2 transition-all"
-                    title="Charger automatiquement les données depuis le module DCE Complet"
+                    title="Recharger les données depuis le module DCE Complet"
                   >
-                    {loadingDCE ? (
+                    {sourcesStatus.dce === 'loading' ? (
                       <>
                         <Clock className="w-4 h-4 animate-spin" />
                         Chargement...
@@ -2018,7 +2002,7 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                     ) : (
                       <>
                         <FileCheck className="w-4 h-4" />
-                        Charger depuis DCE
+                        {sourcesStatus.dce === 'ok' ? 'Resynchroniser DCE' : 'Charger depuis DCE'}
                       </>
                     )}
                   </button>
