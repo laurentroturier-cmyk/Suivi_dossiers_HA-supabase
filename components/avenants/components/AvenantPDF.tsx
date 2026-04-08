@@ -239,16 +239,22 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
     </View>
   );
 
+  const sanitize = (s: string) => s.replace(/[<>:"/\\|?*]/g, '').trim();
+  const footerNumProc  = sanitize(data.numero_procedure || data.contrat_reference || 'XXXXX');
+  const footerLotRaw   = sanitize(data.numero_lot || '?');
+  const footerLot      = !isNaN(parseInt(footerLotRaw, 10)) ? String(parseInt(footerLotRaw, 10)).padStart(2, '0') : footerLotRaw;
+  const footerTitulaire = sanitize(data.titulaire_nom || data.titulaire || '');
+  const footerNum       = data.numero_avenant ?? 'X';
+  const footerFilename  = `${footerNumProc}_Lot ${footerLot}_${footerTitulaire}_Avenant ${footerNum}`;
+
   const Footer = () => (
     <View style={styles.footerFixed} fixed>
       <View style={styles.footerContent}>
-        <Text style={styles.footerLeft}>EXE10 – Avenant</Text>
-        <Text style={styles.footerCenter}>
-          ({data.contrat_reference || "référence du marché public ou de l'accord-cadre"})
-        </Text>
+        <Text style={styles.footerLeft}>EXE 10 – Avenant</Text>
+        <Text style={styles.footerCenter}>{footerFilename}</Text>
         <Text
           style={styles.footerRight}
-          render={({ pageNumber, totalPages }) => `Page : ${pageNumber} / ${totalPages}`}
+          render={({ pageNumber, totalPages }) => `Page ${pageNumber}/${totalPages}`}
         />
       </View>
     </View>
@@ -451,26 +457,26 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
             <View style={styles.sectionContent}>
               <View style={styles.sigTable}>
                 <View style={styles.sigTableHead}>
-                  <Text style={[styles.sigTableCellHead, { flex: 2 }]}>
+                  <Text style={[styles.sigTableCellHead, { flex: 1.5 }]}>
                     Nom, prénom et qualité{'\n'}du signataire (*)
                   </Text>
                   <Text style={[styles.sigTableCellHead, { flex: 1.5 }]}>Lieu et date de signature</Text>
-                  <Text style={[styles.sigTableCellHLast, { flex: 1 }]}>Signature</Text>
+                  <Text style={[styles.sigTableCellHLast, { flex: 2 }]}>Signature électronique</Text>
                 </View>
                 {/* 1ère ligne : préremplie si signataire connu */}
                 <View style={styles.sigTableRow}>
-                  <Text style={[styles.sigTableCell, { flex: 2 }]}>
+                  <Text style={[styles.sigTableCell, { flex: 1.5 }]}>
                     {[data.frn_nom_signataire, data.frn_fonction_signataire].filter(Boolean).join('\n') || ' '}
                   </Text>
                   <Text style={[styles.sigTableCell, { flex: 1.5 }]}>{' '}</Text>
-                  <Text style={[styles.sigTableCellLast, { flex: 1 }]}>{' '}</Text>
+                  <Text style={[styles.sigTableCellLast, { flex: 2 }]}>{' '}</Text>
                 </View>
                 {/* 4 lignes vides */}
                 {[...Array(4)].map((_, i) => (
                   <View key={i} style={styles.sigTableRow}>
-                    <Text style={[styles.sigTableCell, { flex: 2 }]}>{' '}</Text>
                     <Text style={[styles.sigTableCell, { flex: 1.5 }]}>{' '}</Text>
-                    <Text style={[styles.sigTableCellLast, { flex: 1 }]}>{' '}</Text>
+                    <Text style={[styles.sigTableCell, { flex: 1.5 }]}>{' '}</Text>
+                    <Text style={[styles.sigTableCellLast, { flex: 2 }]}>{' '}</Text>
                   </View>
                 ))}
               </View>
@@ -484,25 +490,22 @@ export function AvenantPDF({ data, logoAfpa, logoRepublique }: AvenantPDFProps) 
               F — Signature du pouvoir adjudicateur
           ═══════════════════════════════════════════════════════ */}
           <View style={styles.section}>
-            <SectionHeader letter="F" title="Signature du pouvoir adjudicateur ou de l'entité adjudicatrice" />
+            <SectionHeader letter="F" title="Signature de l'Afpa" />
             <View style={styles.sectionContent}>
               <Text style={[styles.paragraph, { fontWeight: 'bold' }]}>
-                Pour l'AFPA et ses établissements :
-              </Text>
-              <Text style={styles.instruction}>
-                (Visa ou avis de l'autorité chargée du contrôle financier.)
+                Pour l'Afpa et ses établissements :
               </Text>
 
               {/* Bloc signature officiel — aligné à droite */}
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
                 <View style={{ width: '55%', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 8, color: TEXT_DARK, textAlign: 'center', marginBottom: 20 }}>
+                  <Text style={{ fontSize: 8, color: TEXT_DARK, textAlign: 'center', marginBottom: 4 }}>
                     A Montreuil, le ……………………
                   </Text>
                   <Text style={{ fontSize: 8, color: TEXT_DARK, textAlign: 'center', marginBottom: 3 }}>
                     Signature
                   </Text>
-                  <Text style={{ fontSize: 6.5, fontStyle: 'italic', color: TEXT_GRAY, textAlign: 'center' }}>
+                  <Text style={{ fontSize: 6.5, fontStyle: 'italic', color: TEXT_GRAY, textAlign: 'center', marginBottom: 40 }}>
                     (représentant du pouvoir adjudicateur ou de l'entité adjudicatrice)
                   </Text>
                 </View>

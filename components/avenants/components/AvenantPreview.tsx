@@ -297,11 +297,11 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
             <table className="w-full border-collapse text-[10px] border border-[#a7d4d1] rounded overflow-hidden">
               <thead>
                 <tr className="bg-[#2F5B58] text-white">
-                  <th className="px-3 py-2 text-left font-bold border-r border-[#5a9c98] w-2/5">
+                  <th className="px-3 py-2 text-left font-bold border-r border-[#5a9c98] w-[30%]">
                     Nom, prénom et qualité<br />du signataire (*)
                   </th>
-                  <th className="px-3 py-2 text-left font-bold border-r border-[#5a9c98] w-1/3">Lieu et date de signature</th>
-                  <th className="px-3 py-2 text-left font-bold">Signature</th>
+                  <th className="px-3 py-2 text-left font-bold border-r border-[#5a9c98] w-[30%]">Lieu et date de signature</th>
+                  <th className="px-3 py-2 text-left font-bold w-[40%]">Signature électronique</th>
                 </tr>
               </thead>
               <tbody>
@@ -328,18 +328,17 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
             </p>
           </div>
 
-          {/* ─── F — Signature du pouvoir adjudicateur ─── */}
-          <SectionHeader letter="F" title="Signature du pouvoir adjudicateur ou de l'entité adjudicatrice" />
+          {/* ─── F — Signature de l'Afpa ─── */}
+          <SectionHeader letter="F" title="Signature de l'Afpa" />
           <div className="bg-[#e8f4f3] border border-[#a7d4d1] border-t-0 rounded-b-lg p-3 mb-1">
-            <p className="text-[10px] font-bold text-[#1e3d3b] mb-1">Pour l'AFPA et ses établissements :</p>
-            <Instruction>(Visa ou avis de l'autorité chargée du contrôle financier.)</Instruction>
+            <p className="text-[10px] font-bold text-[#1e3d3b] mb-3">Pour l'Afpa et ses établissements :</p>
 
             {/* Bloc signature officiel */}
-            <div className="flex justify-end">
+            <div className="flex justify-end mt-4">
               <div className="w-1/2 flex flex-col items-center">
-                <p className="text-[10px] text-gray-700 mb-6">A Montreuil, le ………………</p>
+                <p className="text-[10px] text-gray-700 mb-1">A Montreuil, le ………………</p>
                 <p className="text-[10px] text-gray-700 mb-1">Signature</p>
-                <p className="text-[9px] italic text-gray-500 text-center">
+                <p className="text-[9px] italic text-gray-500 text-center mb-16">
                   (représentant du pouvoir adjudicateur ou de l'entité adjudicatrice)
                 </p>
               </div>
@@ -347,11 +346,22 @@ export function AvenantPreview({ data, onClose, onExport, isExporting }: Avenant
           </div>
 
           {/* Pied de page */}
-          <div className="mt-8 pt-3 border-t border-gray-100 flex justify-between text-[9px] text-gray-300">
-            <span>EXE10 – Avenant</span>
-            <span>({data.contrat_reference || "référence du marché public ou de l'accord-cadre"})</span>
-            <span>Généré le {today}</span>
-          </div>
+          {(() => {
+            const sanitize = (s: string) => s.replace(/[<>:"/\\|?*]/g, '').trim();
+            const footerNumProc   = sanitize(data.numero_procedure || data.contrat_reference || 'XXXXX');
+            const footerLotRaw    = sanitize(data.numero_lot || '?');
+            const footerLot       = !isNaN(parseInt(footerLotRaw, 10)) ? String(parseInt(footerLotRaw, 10)).padStart(2, '0') : footerLotRaw;
+            const footerTitulaire = sanitize(data.titulaire_nom || data.titulaire || '');
+            const footerNum       = data.numero_avenant ?? 'X';
+            const footerFilename  = `${footerNumProc}_Lot ${footerLot}_${footerTitulaire}_Avenant ${footerNum}`;
+            return (
+              <div className="mt-8 pt-3 border-t border-[#a7d4d1]/50 flex justify-between text-[9px] text-[#2F5B58]/60">
+                <span className="italic">EXE 10 – Avenant</span>
+                <span>{footerFilename}</span>
+                <span>Page 1/1</span>
+              </div>
+            );
+          })()}
 
         </div>
       </div>
