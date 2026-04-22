@@ -412,61 +412,50 @@ export const parsePdfDepots = async (file: File): Promise<DepotsData> => {
       });
     }
 
-    // Rechercher les entrées du tableau en identifiant le fichier .crypt
-    // Stratégie robuste : trouver toutes les lignes contenant un .crypt,
-    // puis chercher le numéro d'ordre et le mode dans un voisinage de ±3 lignes.
-    
+    // ─── Identifier les entrées par fichier .crypt ─────────────────────────────
     const entryIndices: { index: number; ordre: string; mode: string; fichier: string }[] = [];
-    
+
     for (let i = 0; i < allLines.length; i++) {
       const line = allLines[i].trim();
 
-      // Cas 1 (idéal) : tout sur une ligne "N Electronique fichier.crypt"
-      const fullMatch = line.match(/^(\d+)\s+(Electronique|Électronique|Papier)\s+(\S+\.crypt)/i);
-      if (fullMatch) {
-        entryIndices.push({
-          index: i,
-          ordre: fullMatch[1],
-          mode: fullMatch[2],
-          fichier: fullMatch[3]
-        });
-        continue;
-      }
+      // Toute ligne contenant un .crypt est une entrée candidate
+      const cryptMatch = line.match(/(\S+\.crypt\b)/i);
+      if (!cryptMatch) continue;
 
-      // Cas 2 : la ligne contient un fichier .crypt mais pas le format complet
-      // (le numéro ou le mode peut être sur une ligne adjacente)
-      const cryptOnLine = line.match(/(\S+\.crypt\b)/i);
-      if (!cryptOnLine) continue;
-
-      // Éviter les doublons si déjà capturé par cas 1
-      const fichier = cryptOnLine[1];
-
+      const fichier = cryptMatch[1];
       let ordre = '';
       let mode = '';
 
-      // Chercher numéro d'ordre et mode dans la ligne courante et ±3 lignes autour
-      const windowStart = Math.max(0, i - 3);
-      const windowEnd = Math.min(allLines.length - 1, i + 3);
-      for (let j = windowStart; j <= windowEnd; j++) {
-        const adj = allLines[j].trim();
+      // Chercher ordre et mode sur la ligne courante d'abord (format le plus courant)
+      // Accepte du contenu quelconque entre le mode et le fichier (ex: "CEDEX 1")
+      const lineOrdreMode = line.match(/^(\d{1,2})\s+(Electronique|Électronique|Papier)\b/i);
+      if (lineOrdreMode) {
+        ordre = lineOrdreMode[1];
+        mode  = lineOrdreMode[2];
+      }
 
-        // Numéro seul sur une ligne
-        if (!ordre && /^\d{1,2}$/.test(adj)) {
-          ordre = adj;
-        }
-        // Numéro en début de ligne (ex: "6 JAM CONSTRUCTION ...")
-        if (!ordre) {
-          const m = adj.match(/^(\d{1,2})\s+/);
-          if (m) ordre = m[1];
-        }
-        // Mode seul ou en début de ligne
-        if (!mode) {
-          if (/(^|\s)(Electronique|Électronique)(\s|$)/i.test(adj)) mode = 'Electronique';
-          else if (/(^|\s)Papier(\s|$)/i.test(adj)) mode = 'Papier';
+      // Sinon chercher dans les lignes adjacentes (±3)
+      if (!ordre || !mode) {
+        const wStart = Math.max(0, i - 3);
+        const wEnd   = Math.min(allLines.length - 1, i + 3);
+        for (let j = wStart; j <= wEnd; j++) {
+          const adj = allLines[j].trim();
+          if (!ordre) {
+            if (/^\d{1,2}$/.test(adj)) {
+              ordre = adj;
+            } else {
+              const m = adj.match(/^(\d{1,2})\s+(Electronique|Électronique|Papier)\b/i);
+              if (m) { ordre = m[1]; mode = mode || m[2]; }
+            }
+          }
+          if (!mode) {
+            if (/(^|\s)(Electronique|Électronique)(\s|$)/i.test(adj)) mode = 'Electronique';
+            else if (/(^|\s)Papier(\s|$)/i.test(adj)) mode = 'Papier';
+          }
         }
       }
 
-      if (!ordre && !mode) continue; // pas une vraie entrée
+      if (!ordre && !mode) continue;
 
       entryIndices.push({
         index: i,
@@ -476,15 +465,13 @@ export const parsePdfDepots = async (file: File): Promise<DepotsData> => {
       });
     }
 
-    // Pour chaque entrée, collecter les données autour
+    // ─── Extraire les données autour de chaque entrée ──────────────────────────
     for (let entryIdx = 0; entryIdx < entryIndices.length; entryIdx++) {
-      const entry = entryIndices[entryIdx];
+      const entry          = entryIndices[entryIdx];
       const currentLineIdx = entry.index;
-      
-      // Déterminer les bornes de recherche
-      const prevEntryIdx = entryIdx > 0 ? entryIndices[entryIdx - 1].index : 0;
-      const nextEntryIdx = entryIdx < entryIndices.length - 1 
-        ? entryIndices[entryIdx + 1].index 
+      const prevAnchor     = entryIdx > 0 ? entryIndices[entryIdx - 1].index : 0;
+      const nextAnchor     = entryIdx < entryIndices.length - 1
+        ? entryIndices[entryIdx + 1].index
         : allLines.length;
 
       const entreprise: EntrepriseDepot = {
@@ -502,139 +489,150 @@ export const parsePdfDepots = async (file: File): Promise<DepotsData> => {
         observations: '',
         lot: '',
         nomFichier: entry.fichier,
-        tailleFichier: ''
+        tailleFichier: '',
       };
 
-      // Chercher dans les lignes AVANT la ligne principale (société, contact, adresse, lot)
-      // et les lignes APRÈS (heure, taille, téléphone, fax, email)
-      
-      // Lignes avant (entre l'entrée précédente et celle-ci)
-      const linesBefore = allLines.slice(Math.max(prevEntryIdx + 1, currentLineIdx - 20), currentLineIdx);
-      // Lignes après (jusqu'à la prochaine entrée)
-      const linesAfter = allLines.slice(currentLineIdx + 1, Math.min(currentLineIdx + 15, nextEntryIdx));
+      const linesBefore = allLines.slice(Math.max(prevAnchor + 1, currentLineIdx - 20), currentLineIdx);
+      const linesAfter  = allLines.slice(currentLineIdx + 1, Math.min(currentLineIdx + 15, nextAnchor));
 
-      // Collecter les lignes candidates pour société et contact
       const candidateLines: string[] = [];
 
-      // Parser les lignes AVANT pour société, contact, adresse, lot, date+ville
       for (const line of linesBefore) {
-        const trimmed = line.trim();
-        
-        // Date avec CP/ville mélangés: "12/02/2025 à 02100 - SAINT-QUENTIN"
-        const dateVilleMatch = trimmed.match(/^(\d{2}\/\d{2}\/\d{4})\s*à?\s*(\d{5})\s*-\s*(.+)/);
-        if (dateVilleMatch) {
+        const t = line.trim();
+
+        // ── 1. Date + CP + ville sur la même ligne: "30/03/2026 à 63200 - MOZAC"
+        const dateVilleMatch = t.match(/^(\d{2}\/\d{2}\/\d{4})\s*(?:à\s+)?(\d{5})\s*[-–]\s*(.+)/);
+        if (dateVilleMatch && !entreprise.dateReception) {
           entreprise.dateReception = dateVilleMatch[1];
-          entreprise.cp = dateVilleMatch[2];
-          entreprise.ville = dateVilleMatch[3].trim();
+          if (!entreprise.cp)   entreprise.cp   = dateVilleMatch[2];
+          if (!entreprise.ville) entreprise.ville = dateVilleMatch[3].trim();
           continue;
         }
 
-        // Lot: "- Lot unique :" ou "- Lot N :"
-        if (trimmed.startsWith('- Lot')) {
-          entreprise.lot = trimmed.replace(/^-\s*/, '').replace(/:$/, '').trim();
+        // ── 2. Date seule ou partielle: "27/03/2026 à" ou "27/03/2026 à 10h35"
+        const dateOnlyMatch = t.match(/^(\d{2}\/\d{2}\/\d{4})(?:\s+à\s*(\d{2}h\d{2})?)?$/);
+        if (dateOnlyMatch && !entreprise.dateReception) {
+          entreprise.dateReception = dateOnlyMatch[1];
+          if (dateOnlyMatch[2]) entreprise.dateReception += ` à ${dateOnlyMatch[2]}`;
           continue;
         }
 
-        // Adresse (commence par un numéro, suivi de rue/boulevard/etc)
-        if (!entreprise.adresse && trimmed.match(/^\d+[\s,]/) && 
-            !trimmed.match(/^\d{5}/) && !trimmed.match(/^\d{2}\/\d{2}/)) {
-          entreprise.adresse = trimmed;
+        // ── 3. CP + ville + lot: "63037 - CLERMONT FERRAND - Lot unique :"
+        //    (layout PDF: colonne Société et colonne Observations fusionnées sur la même ligne)
+        const cpCityLotMatch = t.match(/^(\d{5})\s*[-–]\s*(.+?)\s+[-–]\s+(Lot\s+.+?)(?:\s*:)?\s*$/i);
+        if (cpCityLotMatch && !entreprise.cp) {
+          entreprise.cp   = cpCityLotMatch[1];
+          entreprise.ville = cpCityLotMatch[2].trim();
+          if (!entreprise.lot) entreprise.lot = cpCityLotMatch[3].trim();
           continue;
         }
 
-        // Ignorer les en-têtes de tableau et lignes parasites
-        if (trimmed.match(/^Date|^Ordre|^Mode|^Société|^Observations|^Plis|^d'arrivée|^réception|^OFFRE/i)) {
-          continue;
-        }
-        
-        // Ignorer les lignes contenant "Total" ou "enveloppes" (lignes de stats)
-        if (trimmed.match(/Total|enveloppes|offre:/i)) {
-          continue;
-        }
-        
-        // Ignorer les lignes entre parenthèses (tailles de fichiers)
-        if (trimmed.match(/^\(.+\)$/)) {
-          continue;
-        }
-        
-        // Ignorer les lignes de téléphone/fax/email (appartiennent à l'entrée précédente)
-        if (trimmed.match(/^Tél|^Fax|@/i)) {
-          continue;
-        }
-        
-        // Ignorer les lignes d'heure seule
-        if (trimmed.match(/^\d{2}h\d{2}$/)) {
+        // ── 4. CP + ville seuls: "63200 - MOZAC" ou "63037 - CLERMONT FERRAND CEDEX 1"
+        const cpCityMatch = t.match(/^(\d{5})\s*[-–]\s*(.+)$/);
+        if (cpCityMatch && !entreprise.cp) {
+          entreprise.cp    = cpCityMatch[1];
+          entreprise.ville = cpCityMatch[2].trim();
           continue;
         }
 
-        // Collecter les lignes candidates (nom société ou contact)
-        if (trimmed.length > 2 && trimmed.length < 80 && !trimmed.match(/^\d/) && !trimmed.startsWith('-')) {
-          candidateLines.push(trimmed);
+        // ── 5. Lot seul: "- Lot unique :" ou "– Lot 2 :"
+        if (/^[-–]\s*Lot\s+/i.test(t)) {
+          if (!entreprise.lot)
+            entreprise.lot = t.replace(/^[-–]\s*/, '').replace(/\s*:$/, '').trim();
+          continue;
+        }
+
+        // ── 6. Adresse (commence par numéro, pas un CP, pas une date)
+        if (!entreprise.adresse &&
+            /^\d+[\s,]/.test(t) &&
+            !/^\d{5}/.test(t) &&
+            !/^\d{2}\/\d{2}/.test(t)) {
+          entreprise.adresse = t;
+          continue;
+        }
+
+        // ── 7. Filtres négatifs — lignes parasites à ignorer
+        if (/^(Date|Ordre|Mode|Société|Observations|Plis|d'arrivée|réception|OFFRE|REGISTRE)/i.test(t)) continue;
+        if (/^(Auteur|Objet|Votre|ID\s+EMP)/i.test(t)) continue;
+        if (/Total|enveloppes/i.test(t)) continue;
+        if (/^\(.+\)$/.test(t)) continue;
+        if (/^(Tél|Fax)/i.test(t) || t.includes('@')) continue;
+        if (/^\d{2}h\d{2}$/.test(t)) continue;
+
+        // ── 8. Candidat société / contact
+        if (t.length > 2 && t.length < 80 && !/^\d/.test(t) && !t.startsWith('-')) {
+          candidateLines.push(t);
         }
       }
 
-      // Analyser les candidats pour distinguer société et contact
-      // Contact = format "Prénom NOM" (prénom commence par majuscule, reste minuscule, NOM tout en majuscules)
-      // Société = tout le reste (acronymes, noms avec points, backslash, etc.)
-      
+      // ── Distinguer société et contact ────────────────────────────────────────
+      // Contact = "Prénom NOM" (prénom mixed-case, nom tout en majuscules)
+      // Société = tout le reste
       for (const candidate of candidateLines) {
-        // Pattern contact: "Prénom NOM" ou "Prénom NOM NOM"
-        // Prénom: commence par majuscule, suivi de minuscules (avec accents possibles)
-        // NOM: tout en majuscules (au moins 2 caractères)
-        const isContact = /^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç]+\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ]{2,}/.test(candidate) &&
-                          !candidate.includes('.') && 
-                          !candidate.includes('\\') &&
-                          !candidate.includes("'") &&
-                          candidate.split(' ').length <= 3;
+        // Supprimer le préfixe "Entreprise" avant le test
+        const stripped = candidate.replace(/^Entreprise\s+/i, '').trim();
+
+        // Pattern: "Prénom NOM" ou "Prénom-Prénom NOM" (avec traits d'union possibles)
+        const isContact =
+          /^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç]+(?:[-\s][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç]+)?\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ\-]{2,}/.test(stripped) &&
+          !stripped.includes('.') &&
+          !stripped.includes('\\') &&
+          stripped.split(/\s+/).length <= 4;
 
         if (isContact && !entreprise.contact) {
-          entreprise.contact = candidate;
+          entreprise.contact = stripped;
         } else if (!entreprise.societe) {
-          entreprise.societe = candidate;
+          entreprise.societe = stripped;
         }
       }
 
-      // Parser les lignes APRÈS pour heure, taille, téléphone, fax, email
+      // ── Parser les lignes APRÈS (heure, taille, tel, fax, email) ─────────────
       for (const line of linesAfter) {
-        const trimmed = line.trim();
+        const t = line.trim();
 
-        // Heure seule: "12h15"
-        if (!entreprise.dateReception.includes('h') && trimmed.match(/^\d{2}h\d{2}$/)) {
-          entreprise.dateReception += ` à ${trimmed}`;
+        // Heure seule "10h35" — compléter la date seulement si elle existe déjà
+        if (/^\d{2}h\d{2}$/.test(t) && entreprise.dateReception && !entreprise.dateReception.includes('h')) {
+          entreprise.dateReception += ` à ${t}`;
           continue;
         }
 
-        // Taille fichier: "(98.2 Mo)"
-        const tailleMatch = trimmed.match(/^\((\d+\.?\d*\s*Mo)\)$/);
+        // Taille fichier: "(6.6 Mo)" ou "(98 Ko)"
+        const tailleMatch = t.match(/^\((\d+\.?\d*\s*(?:Mo|Ko|MB|KB|GB))\)$/i);
         if (tailleMatch) {
           entreprise.tailleFichier = tailleMatch[1];
           continue;
         }
 
-        // Téléphone: "Tél.: 0323647230"
-        const telMatch = trimmed.match(/^Tél\.?\s*:?\s*([\d\s.]+)/i);
+        // Téléphone: "Tél.: 0473983250"
+        const telMatch = t.match(/^Tél\.?\s*:?\s*([\d\s.+()\-]+)/i);
         if (telMatch && telMatch[1].trim()) {
-          entreprise.telephone = telMatch[1].replace(/[\s.]/g, '');
+          entreprise.telephone = telMatch[1].replace(/[\s.]/g, '').trim();
           continue;
         }
 
-        // Fax: "Fax: 0372390692" ou "Fax:"
-        const faxMatch = trimmed.match(/^Fax\s*:?\s*([\d\s.]*)/i);
+        // Fax: "Fax: 0473983251" ou "Fax:"
+        const faxMatch = t.match(/^Fax\s*:?\s*([\d\s.]*)/i);
         if (faxMatch) {
-          entreprise.fax = faxMatch[1] ? faxMatch[1].replace(/[\s.]/g, '') : '';
+          entreprise.fax = (faxMatch[1] || '').replace(/[\s.]/g, '').trim();
           continue;
         }
 
         // Email
-        if (trimmed.includes('@')) {
-          const emailMatch = trimmed.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]{2,})/);
-          if (emailMatch) {
-            entreprise.email = emailMatch[1].toLowerCase();
-          }
+        if (t.includes('@')) {
+          const emailMatch = t.match(/([a-zA-Z0-9._+\-]+@[a-zA-Z0-9._\-]+\.[a-zA-Z]{2,})/);
+          if (emailMatch) entreprise.email = emailMatch[1].toLowerCase();
         }
       }
 
       entreprises.push(entreprise);
+    }
+
+    // Fallback : si l'en-tête n'a pas fourni les totaux, compter depuis les entrées
+    if (totalEnveloppesElectroniques === 0 && totalEnveloppesPapier === 0) {
+      entreprises.forEach(e => {
+        if (/electronique|électronique/i.test(e.modeReception)) totalEnveloppesElectroniques++;
+        else totalEnveloppesPapier++;
+      });
     }
 
     const procedureInfo: DepotsProcedureInfo = {
