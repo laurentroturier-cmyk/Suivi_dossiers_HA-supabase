@@ -112,6 +112,7 @@ export const PROCEDURE_GROUPS: Record<string, { label: string; fields: string[] 
       'Acheteur',
       'Numéro de procédure (Afpa)',
       'Type de procédure',
+      'Famille Achat Principale',
       'Code CPV Principal',
       'Nom de la procédure',
       'Objet court',
