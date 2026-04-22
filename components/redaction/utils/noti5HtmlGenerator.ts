@@ -466,11 +466,11 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
       <p class="field-note">(Cocher la case correspondante.)</p>
       
       <div class="checkbox-item">
-        ${data.notification?.executionImmediateChecked || data.executionPrestations?.type === 'immediate' ? '🗹' : '☐'} L'exécution commencera à compter de la date de notification et selon les modalités prévues aux documents de la consultation.
+        ${(data.executionPrestations?.type ? data.executionPrestations.type === 'immediate' : (data.notification?.executionImmediateChecked || false)) ? '🗹' : '☐'} L'exécution commencera à compter de la date de notification et selon les modalités prévues aux documents de la consultation.
       </div>
-      
+
       <div class="checkbox-item">
-        ${data.notification?.executionOrdreServiceChecked || data.executionPrestations?.type === 'sur_commande' ? '🗹' : '☐'} L'exécution commencera à compter de la réception de l'ordre de service qui vous sera adressé dans les conditions prévues par les documents de la consultation.
+        ${(data.executionPrestations?.type ? data.executionPrestations.type === 'sur_commande' : (data.notification?.executionOrdreServiceChecked || false)) ? '🗹' : '☐'} L'exécution commencera à compter de la réception de l'ordre de service qui vous sera adressé dans les conditions prévues par les documents de la consultation.
       </div>
     </div>
   </div>
@@ -568,16 +568,6 @@ export async function generateNoti5Html(data: Noti5Data): Promise<string> {
         ${data.signature.signataireNom ? `<p style="margin-top: 30px;"><strong>${escapeHtml(data.signature.signataireNom)}</strong></p>` : ''}
         ${data.signature.signataireTitre ? `<p style="margin-top: 8px;">${escapeHtml(data.signature.signataireTitre)}</p>` : ''}
       </div>
-    </div>
-  </div>
-  
-  <!-- Section H -->
-  <div class="section-group">
-    <div class="section-header">H - Notification du marché public au titulaire</div>
-    <div class="section-content">
-      <p class="field-note">Cette rubrique comprend tous les éléments relatifs à la réception de la notification du marché public, que cette notification soit remise contre récépissé, ou qu'elle soit transmise par courrier (lettre recommandée avec accusé de réception) ou par voie électronique (profil d'acheteur).</p>
-      
-      <p><strong>La date d'effet du marché public court à compter de la réception de cette notification par l'attributaire, qui devient alors le titulaire du marché public et responsable de sa bonne exécution.</strong></p>
     </div>
   </div>
   

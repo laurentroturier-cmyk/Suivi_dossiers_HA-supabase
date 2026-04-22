@@ -853,7 +853,7 @@ const App: React.FC = () => {
         client.from('Referentiel_liste_procédures').select('*'),
         client.from('Clients_internes').select('dna_title'),
         client.from('codes_cpv_long').select('TitreLong').limit(5000),
-        client.from('Referentiel_segmentation').select('dna_sousfamille').limit(5000),
+        client.from('Referentiel_segmentation').select('dna_famille').limit(5000),
         client.from('LeviersHA').select('*'),
       ]);
       setDossiers(d || []);
@@ -862,7 +862,7 @@ const App: React.FC = () => {
       setRefProcedures(rp || []);
       setRefClientsInternes(Array.from(new Set((ci || []).map((x: any) => x.dna_title).filter(Boolean))).sort());
       setRefCpv((cpvData || []).map(x => x.TitreLong).filter(Boolean));
-      setRefSegSousfamilles(Array.from(new Set((seg || []).map((x: any) => x.dna_sousfamille).filter(Boolean))).sort());
+      setRefSegSousfamilles(Array.from(new Set((seg || []).map((x: any) => x.dna_famille).filter(Boolean))).sort());
       // Construire la liste des leviers à partir de la table LeviersHA (on tente plusieurs noms de colonnes possibles)
       const leviersList = Array.from(
         new Set(
@@ -2156,7 +2156,7 @@ const App: React.FC = () => {
             );
           }
 
-          // Recherche dynamique Supabase pour Famille Achat (sous-famille)
+          // Recherche dynamique Supabase pour Famille Achat
           if (key === "Famille Achat Principale" && type === 'procedure') {
             const remoteSearchSeg = async (term: string): Promise<string[]> => {
               if (!supabaseClient) return [];
@@ -2165,12 +2165,12 @@ const App: React.FC = () => {
               const stem = q.length > 3 && (q.endsWith('s') || q.endsWith('x')) ? q.slice(0, -1) : q;
               const { data: r } = await supabaseClient
                 .from('Referentiel_segmentation')
-                .select('dna_sousfamille')
-                .or(`dna_sousfamille.ilike.%${q}%,dna_sousfamille.ilike.%${stem}%`)
+                .select('dna_famille')
+                .or(`dna_famille.ilike.%${q}%,dna_famille.ilike.%${stem}%`)
                 .limit(100);
-              return (r || []).map((x: any) => x.dna_sousfamille).filter(Boolean);
+              return Array.from(new Set((r || []).map((x: any) => x.dna_famille).filter(Boolean)));
             };
-            return <SearchableSelect key={key} label={label} options={refSegSousfamilles} value={val} placeholder="Sous-famille..." onChange={v => handleFieldChange(type, key, v)} onRemoteSearch={remoteSearchSeg} />;
+            return <SearchableSelect key={key} label={label} options={refSegSousfamilles} value={val} placeholder="Famille d'achat..." onChange={v => handleFieldChange(type, key, v)} onRemoteSearch={remoteSearchSeg} />;
           }
           
           // Champ IDProjet avec recherche de projet (OBLIGATOIRE pour les procédures)

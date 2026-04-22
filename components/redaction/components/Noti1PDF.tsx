@@ -441,7 +441,7 @@ export const Noti1PDF = ({
             <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b' }]}>Uniquement si les informations permettant d'accéder aux documents de preuve n'ont pas été fournis à l'occasion de la présentation des candidatures ou s'ils n'ont pas déjà été fournis par l'opérateur concerné :</Text>
             <Text style={[styles.paragraph, { fontSize: 7, fontStyle: 'italic', color: '#64748b', marginTop: 4 }]}>(Lister les documents de preuve exigés)</Text>
             <Text style={[styles.fieldValueFull, { fontWeight: 'bold', marginTop: 6 }]}>Les documents à produire sont :</Text>
-            <Text style={styles.fieldValueFull}>{data.documents.documentsPreuve || '• Attestation fiscale\n• Attestation URSSAF'}</Text>
+            <Text style={styles.fieldValueFull}>{data.documents.documentsPreuve || '________'}</Text>
             <Text style={[styles.fieldValueFull, { fontWeight: 'bold', marginTop: 8 }]}>Délai pour répondre à la demande, à défaut de quoi l'offre sera rejetée :</Text>
             <Text style={styles.fieldValueFull}>{(() => {
               if (!data.documents.delaiReponse) return '________';

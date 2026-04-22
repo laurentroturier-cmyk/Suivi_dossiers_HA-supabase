@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   
   // Sections
   section: {
-    marginBottom: 10,
+    marginBottom: 7,
     breakInside: 'avoid',
   },
   
@@ -495,12 +495,12 @@ export const Noti5PDF = ({
             )}
             
             <Text style={[styles.paragraph, { marginTop: 12, marginBottom: 6 }]}>Début d'exécution :</Text>
-            <Checkbox 
-              checked={data.notification.executionImmediateChecked || data.executionPrestations?.type === 'immediate' || false} 
+            <Checkbox
+              checked={data.executionPrestations?.type ? data.executionPrestations.type === 'immediate' : (data.notification.executionImmediateChecked || false)}
               label="L'exécution commencera à compter de la date de notification et selon les modalités prévues aux documents de la consultation."
             />
-            <Checkbox 
-              checked={data.notification.executionOrdreServiceChecked || data.executionPrestations?.type === 'sur_commande' || false} 
+            <Checkbox
+              checked={data.executionPrestations?.type ? data.executionPrestations.type === 'sur_commande' : (data.notification.executionOrdreServiceChecked || false)}
               label="L'exécution commencera à compter de la réception de l'ordre de service qui vous sera adressé dans les conditions prévues par les documents de la consultation."
             />
           </View>
@@ -589,7 +589,7 @@ export const Noti5PDF = ({
         </View>
 
         {/* Section G - Signature */}
-        <View style={styles.section} wrap={false}>
+        <View style={styles.section}>
           <Text style={styles.sectionHeader}>G – Signature</Text>
           <View style={styles.sectionContent}>
             <View style={styles.signatureBlock}>

@@ -437,7 +437,7 @@ export async function generateNoti1Html(data: Noti1Data): Promise<string> {
       <p style="font-size: 9pt; font-style: italic; color: #6b7280; margin-bottom: 8px;">Uniquement si les informations permettant d'accéder aux documents de preuve n'ont pas été fournis à l'occasion de la présentation des candidatures ou s'ils n'ont pas déjà été fournis par l'opérateur concerné :</p>
       <p style="font-size: 9pt; font-style: italic; color: #6b7280; margin-bottom: 4px;">(Lister les documents de preuve exigés)</p>
       <div class="field-label">Les documents à produire sont :</div>
-      <div class="field-value" style="white-space: pre-wrap;">${escapeHtml(data.documents.documentsPreuve || '• Attestation fiscale\n• Attestation URSSAF')}</div>
+      <div class="field-value" style="white-space: pre-wrap;">${escapeHtml(data.documents.documentsPreuve || '________')}</div>
       <div class="field-label" style="margin-top: 12px;">Délai pour répondre à la demande, à défaut de quoi l'offre sera rejetée :</div>
       <div class="field-value">${(() => {
         if (!data.documents.delaiReponse) return '________';
