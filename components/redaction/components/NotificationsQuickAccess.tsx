@@ -113,7 +113,7 @@ function findCandidatCoordonnees(
       societe: candidatDR.societe || candidatDR.raisonSociale || '',
       siret: candidatDR.siret || '',
       adresse: candidatDR.adresse || candidatDR.adressePostale || '',
-      codePostal: candidatDR.codePostal || '',
+      codePostal: candidatDR.codePostal || candidatDR.cp || '',
       ville: candidatDR.ville || '',
       email: candidatDR.email || '',
       telephone: candidatDR.telephone || candidatDR.tel || '',
@@ -179,31 +179,33 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
           try {
             if (procedure.depots) {
               if (typeof procedure.depots === 'string') {
-                candidatsDepots = JSON.parse(procedure.depots);
+                const parsed = JSON.parse(procedure.depots);
+                candidatsDepots = parsed?.entreprises || (Array.isArray(parsed) ? parsed : []);
               } else if (Array.isArray(procedure.depots)) {
                 candidatsDepots = procedure.depots;
               } else if (typeof procedure.depots === 'object' && procedure.depots !== null) {
-                candidatsDepots = Object.values(procedure.depots);
+                candidatsDepots = (procedure.depots as any).entreprises || [];
               }
             }
           } catch (e) {
             console.error('Erreur parsing depots:', e);
           }
-          
+
           try {
             if (procedure.retraits) {
               if (typeof procedure.retraits === 'string') {
-                candidatsRetraits = JSON.parse(procedure.retraits);
+                const parsed = JSON.parse(procedure.retraits);
+                candidatsRetraits = parsed?.entreprises || (Array.isArray(parsed) ? parsed : []);
               } else if (Array.isArray(procedure.retraits)) {
                 candidatsRetraits = procedure.retraits;
               } else if (typeof procedure.retraits === 'object' && procedure.retraits !== null) {
-                candidatsRetraits = Object.values(procedure.retraits);
+                candidatsRetraits = (procedure.retraits as any).entreprises || [];
               }
             }
           } catch (e) {
             console.error('Erreur parsing retraits:', e);
           }
-          
+
           // S'assurer que ce sont bien des tableaux
           candidatsDepots = Array.isArray(candidatsDepots) ? candidatsDepots : [];
           candidatsRetraits = Array.isArray(candidatsRetraits) ? candidatsRetraits : [];
@@ -298,33 +300,33 @@ export default function NotificationsQuickAccess({ procedures = [], onClose, pre
       try {
         if (procedure.depots) {
           if (typeof procedure.depots === 'string') {
-            candidatsDepots = JSON.parse(procedure.depots);
+            const parsed = JSON.parse(procedure.depots);
+            candidatsDepots = parsed?.entreprises || (Array.isArray(parsed) ? parsed : []);
           } else if (Array.isArray(procedure.depots)) {
             candidatsDepots = procedure.depots;
           } else if (typeof procedure.depots === 'object' && procedure.depots !== null) {
-            // Si c'est un objet, essayer de le convertir en tableau
-            candidatsDepots = Object.values(procedure.depots);
+            candidatsDepots = (procedure.depots as any).entreprises || [];
           }
         }
       } catch (e) {
         console.error('Erreur parsing depots:', e);
       }
-      
+
       try {
         if (procedure.retraits) {
           if (typeof procedure.retraits === 'string') {
-            candidatsRetraits = JSON.parse(procedure.retraits);
+            const parsed = JSON.parse(procedure.retraits);
+            candidatsRetraits = parsed?.entreprises || (Array.isArray(parsed) ? parsed : []);
           } else if (Array.isArray(procedure.retraits)) {
             candidatsRetraits = procedure.retraits;
           } else if (typeof procedure.retraits === 'object' && procedure.retraits !== null) {
-            // Si c'est un objet, essayer de le convertir en tableau
-            candidatsRetraits = Object.values(procedure.retraits);
+            candidatsRetraits = (procedure.retraits as any).entreprises || [];
           }
         }
       } catch (e) {
         console.error('Erreur parsing retraits:', e);
       }
-      
+
       // S'assurer que ce sont bien des tableaux
       candidatsDepots = Array.isArray(candidatsDepots) ? candidatsDepots : [];
       candidatsRetraits = Array.isArray(candidatsRetraits) ? candidatsRetraits : [];
