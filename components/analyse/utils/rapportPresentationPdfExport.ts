@@ -64,6 +64,10 @@ function fmt(amount: number): string {
     .format(amount).replace(/\u202F/g, '\u00a0');
 }
 
+function fmtN(n: number, dec = 2): string {
+  return n.toLocaleString('fr-FR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
 // ─── Builder principal ────────────────────────────────────────────────────────
 
 async function buildRapportPdf(data: any): Promise<jsPDF> {
@@ -393,9 +397,9 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
         const body7 = (lot.tableau as any[]).map((o: any) => [
           o.raisonSociale || '—',
           String(o.rangFinal ?? '—'),
-          Number(o.noteFinaleSur100).toFixed(2),
-          Number(o.noteFinanciere ?? o.noteFinanciereSur60 ?? 0).toFixed(2),
-          Number(o.noteTechnique  ?? o.noteTechniqueSur40  ?? 0).toFixed(2),
+          fmtN(Number(o.noteFinaleSur100)),
+          fmtN(Number(o.noteFinanciere ?? o.noteFinanciereSur60 ?? 0)),
+          fmtN(Number(o.noteTechnique  ?? o.noteTechniqueSur40  ?? 0)),
           fmt(o.montantTTC || 0),
         ]);
         // Largeurs fixes pour tous les lots (évite décalage de la colonne Rang)
@@ -420,9 +424,9 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
     const body7 = tab.map((o: any) => [
       `#${o.rangFinal ?? '—'}`,
       o.raisonSociale || '—',
-      Number(o.noteTechnique  ?? o.noteTechniqueSur40  ?? 0).toFixed(2),
-      Number(o.noteFinanciere ?? o.noteFinanciereSur60 ?? 0).toFixed(2),
-      Number(o.noteFinaleSur100).toFixed(2),
+      fmtN(Number(o.noteTechnique  ?? o.noteTechniqueSur40  ?? 0)),
+      fmtN(Number(o.noteFinanciere ?? o.noteFinanciereSur60 ?? 0)),
+      fmtN(Number(o.noteFinaleSur100)),
       fmt(o.montantTTC || 0),
     ]);
     const colStylesMono = {
@@ -441,7 +445,7 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
     if (estim > 0 && attr) {
       const e = attr - estim;
       const s = e >= 0 ? '+' : '';
-      addText(`Écart par rapport à l'estimation : ${s}${fmt(e)} (${s}${((e / estim) * 100).toFixed(2)}%)`, { size: 10, lh: 5 });
+      addText(`Écart par rapport à l'estimation : ${s}${fmt(e)} (${s}${fmtN((e / estim) * 100)}%)`, { size: 10, lh: 5 });
     }
   }
   } // fin else absenceOffre §7
@@ -467,7 +471,7 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
       fmt(l.offreRetenueTTC || 0),
       fmt(l.gainsHT || 0),
       fmt(l.gainsTTC || 0),
-      `${Number(l.gainsPourcent ?? 0).toFixed(1)}%`,
+      `${fmtN(Number(l.gainsPourcent ?? 0), 1)}%`,
     ]);
     const colStyles8 = {
       1: { halign: 'right' as const },
@@ -479,23 +483,23 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
       7: { halign: 'right' as const },
     };
     addTable(head8, body8, colStyles8);
-    addText(`Performance achat globale (${refCal}) : ${Number(s8.performanceAchatPourcent).toFixed(1)}%`, { size: 10, lh: 5 });
+    addText(`Performance achat globale (${refCal}) : ${fmtN(Number(s8.performanceAchatPourcent), 1)}%`, { size: 10, lh: 5 });
     addText(`Impact budgétaire total estimé : ${fmt(s8.impactBudgetaireTTC)} TTC (soit ${fmt(s8.impactBudgetaireHT)} HT)`, { size: 10, lh: 5 });
   } else if (data?.section8_1_synthesePerformance) {
     const s8b = data.section8_1_synthesePerformance;
-    addText(`Performance achat globale (${refCal}) : ${Number(s8b.performanceGlobalePourcent).toFixed(1)}%`, { size: 10, lh: 5 });
+    addText(`Performance achat globale (${refCal}) : ${fmtN(Number(s8b.performanceGlobalePourcent), 1)}%`, { size: 10, lh: 5 });
     addText(`Impact budgétaire total estimé : ${fmt(s8b.impactBudgetaireTotalTTC)} TTC (soit ${fmt(s8b.impactBudgetaireTotalHT)} HT)`, { size: 10, lh: 5 });
     if (s8b.lotsDetails?.length > 0) {
       y += 2;
       addText('Détail de la performance par lot :', { size: 10, lh: 5, bold: true });
       addTable([['Lot', 'Performance', 'Impact TTC']], (s8b.lotsDetails as any[]).map((l: any) => [
         l.nomLot || '—',
-        `${Number(l.performancePourcent).toFixed(1)}%`,
+        `${fmtN(Number(l.performancePourcent), 1)}%`,
         fmt(l.impactBudgetaireTTC || 0),
       ]), { 1: { halign: 'right' as const }, 2: { halign: 'right' as const } });
     }
   } else if (s8) {
-    addText(`Performance achat (${refCal}) : ${Number(s8.performanceAchatPourcent).toFixed(1)}%`, { size: 10, lh: 5 });
+    addText(`Performance achat (${refCal}) : ${fmtN(Number(s8.performanceAchatPourcent), 1)}%`, { size: 10, lh: 5 });
     addText(`Impact budgétaire estimé : ${fmt(s8.impactBudgetaireTTC)} TTC (soit ${fmt(s8.impactBudgetaireHT)} HT)`, { size: 10, lh: 5 });
   }
   } // fin else absenceOffre §8

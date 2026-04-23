@@ -2249,25 +2249,33 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                             {lot.nomLot}
                           </p>
                           <div className="mt-2 overflow-x-auto">
-                            <table className="min-w-full text-xs border border-gray-200">
+                            <table className="w-full text-xs border border-gray-200" style={{ tableLayout: 'fixed' }}>
+                              <colgroup>
+                                <col style={{ width: '34%' }} />
+                                <col style={{ width: '7%' }} />
+                                <col style={{ width: '11%' }} />
+                                <col style={{ width: '11%' }} />
+                                <col style={{ width: '11%' }} />
+                                <col style={{ width: '26%' }} />
+                              </colgroup>
                               <thead className="bg-gray-100">
                                 <tr>
                                   <th className="px-2 py-1 text-left border-b">Raison sociale</th>
                                   <th className="px-2 py-1 text-center border-b">Rang</th>
-                                  <th className="px-2 py-1 text-center border-b">Note /100</th>
-                                  <th className="px-2 py-1 text-center border-b">Note Fin. /{lot.poidsFinancier}</th>
-                                  <th className="px-2 py-1 text-center border-b">Note Tech. /{lot.poidsTechnique}</th>
+                                  <th className="px-2 py-1 text-right border-b">Note /100</th>
+                                  <th className="px-2 py-1 text-right border-b">Note Fin. /{lot.poidsFinancier}</th>
+                                  <th className="px-2 py-1 text-right border-b">Note Tech. /{lot.poidsTechnique}</th>
                                   <th className="px-2 py-1 text-right border-b">Montant TTC</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {lot.tableau.map((offre: any, offreIdx: number) => (
-                                  <tr key={offreIdx} className={offreIdx === 0 ? 'bg-green-50 font-semibold' : ''}>
-                                    <td className="px-2 py-1 border-b">{offre.raisonSociale}</td>
+                                  <tr key={offreIdx} className={offre.rangFinal === 1 ? 'bg-green-50 font-semibold' : ''}>
+                                    <td className="px-2 py-1 border-b truncate">{offre.raisonSociale}</td>
                                     <td className="px-2 py-1 border-b text-center">{offre.rangFinal}</td>
-                                    <td className="px-2 py-1 border-b text-center">{offre.noteFinaleSur100.toFixed(2)}</td>
-                                    <td className="px-2 py-1 border-b text-center">{offre.noteFinanciere.toFixed(2)}</td>
-                                    <td className="px-2 py-1 border-b text-center">{offre.noteTechnique.toFixed(2)}</td>
+                                    <td className="px-2 py-1 border-b text-right">{offre.noteFinaleSur100.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                                    <td className="px-2 py-1 border-b text-right">{offre.noteFinanciere.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                                    <td className="px-2 py-1 border-b text-right">{offre.noteTechnique.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
                                     <td className="px-2 py-1 border-b text-right">{formatCurrency(offre.montantTTC)}</td>
                                   </tr>
                                 ))}
@@ -2295,12 +2303,12 @@ const RapportPresentation: React.FC<Props> = ({ procedures, dossiers }) => {
                           </thead>
                           <tbody>
                             {state.rapportGenere.section7_valeurOffres.tableau.map((offre, idx) => (
-                              <tr key={idx} className={idx === 0 ? 'bg-green-50 font-semibold' : ''}>
+                              <tr key={idx} className={offre.rangFinal === 1 ? 'bg-green-50 font-semibold' : ''}>
                                 <td className="px-3 py-2 border-b">#{offre.rangFinal}</td>
                                 <td className="px-3 py-2 border-b">{offre.raisonSociale}</td>
-                                <td className="px-3 py-2 border-b text-right">{offre.noteTechnique?.toFixed(2) || offre.noteTechniqueSur40?.toFixed(2)}</td>
-                                <td className="px-3 py-2 border-b text-right">{offre.noteFinanciere?.toFixed(2) || offre.noteFinanciereSur60?.toFixed(2)}</td>
-                                <td className="px-3 py-2 border-b text-right">{offre.noteFinaleSur100.toFixed(2)}</td>
+                                <td className="px-3 py-2 border-b text-right">{(offre.noteTechnique ?? offre.noteTechniqueSur40 ?? 0).toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                                <td className="px-3 py-2 border-b text-right">{(offre.noteFinanciere ?? offre.noteFinanciereSur60 ?? 0).toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                                <td className="px-3 py-2 border-b text-right">{offre.noteFinaleSur100.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
                                 <td className="px-3 py-2 border-b text-right">{formatCurrency(offre.montantTTC)}</td>
                               </tr>
                             ))}
