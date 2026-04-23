@@ -60,7 +60,7 @@ export default function MultiLotsDashboard({
   onClose,
 }: MultiLotsDashboardProps) {
   const [expandedCandidat, setExpandedCandidat] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<'all' | 'gagnants' | 'perdants' | 'mixtes'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'gagnants' | 'perdants'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showZipPanel, setShowZipPanel] = useState(false);
@@ -82,9 +82,8 @@ export default function MultiLotsDashboard({
   // Filtrer les candidats
   const filteredCandidats = analysis.candidats.filter((c) => {
     // Filtre par type
-    if (filterType === 'gagnants' && c.lotsPerdus.length > 0) return false;
-    if (filterType === 'perdants' && c.lotsGagnes.length > 0) return false;
-    if (filterType === 'mixtes' && (c.lotsGagnes.length === 0 || c.lotsPerdus.length === 0)) return false;
+    if (filterType === 'gagnants' && c.lotsGagnes.length === 0) return false;
+    if (filterType === 'perdants' && c.lotsPerdus.length === 0) return false;
 
     // Filtre par recherche
     if (searchTerm) {
@@ -104,21 +103,20 @@ export default function MultiLotsDashboard({
     setIsGenerating(true);
     try {
       const zip = new JSZip();
-      const candidatsAvecLots = [...analysis.candidatsGagnants, ...analysis.candidatsMixtes];
+      const candidatsAvecLots = analysis.candidats.filter(c => c.lotsGagnes.length > 0);
+      const prefix = procedureInfo.numeroAfpa.substring(0, 5);
 
       for (const candidat of candidatsAvecLots) {
         const noti1Data = buildNoti1Data(candidat);
         const blob = await generateNoti1HtmlAsBlob(noti1Data);
-        const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
         const lots = candidat.lotsGagnes.filter(l => l.numero).map(l => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
         const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
         const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
-        const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI1.html`;
-        zip.file(fileName, blob);
+        zip.file(`${prefix}_${lotStr}_${titulaireStr}_NOTI1.html`, blob);
       }
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
-      saveAs(zipBlob, `NOTI1_${procedureInfo.numeroAfpa.replace(/\//g, '-')}.zip`);
+      saveAs(zipBlob, `NOTI1_${prefix}.zip`);
       alert(`${candidatsAvecLots.length} documents NOTI1 générés avec succès !`);
     } catch (error) {
       console.error('Erreur génération NOTI1:', error);
@@ -133,21 +131,20 @@ export default function MultiLotsDashboard({
     setIsGenerating(true);
     try {
       const zip = new JSZip();
-      const candidatsAvecLots = [...analysis.candidatsGagnants, ...analysis.candidatsMixtes];
+      const candidatsAvecLots = analysis.candidats.filter(c => c.lotsGagnes.length > 0);
+      const prefix = procedureInfo.numeroAfpa.substring(0, 5);
 
       for (const candidat of candidatsAvecLots) {
         const noti1Data = buildNoti1Data(candidat);
         const blob = await generateNoti1PdfBlobReact(noti1Data);
-        const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
         const lots = candidat.lotsGagnes.filter(l => l.numero).map(l => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
         const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
         const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
-        const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI1.pdf`;
-        zip.file(fileName, blob);
+        zip.file(`${prefix}_${lotStr}_${titulaireStr}_NOTI1.pdf`, blob);
       }
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
-      saveAs(zipBlob, `NOTI1_PDF_${procedureInfo.numeroAfpa.replace(/\//g, '-')}.zip`);
+      saveAs(zipBlob, `NOTI1_PDF_${prefix}.zip`);
       alert(`${candidatsAvecLots.length} PDF NOTI1 générés avec succès !`);
     } catch (error) {
       console.error('Erreur génération NOTI1 PDF:', error);
@@ -162,21 +159,20 @@ export default function MultiLotsDashboard({
     setIsGenerating(true);
     try {
       const zip = new JSZip();
-      const candidatsAvecLots = [...analysis.candidatsGagnants, ...analysis.candidatsMixtes];
+      const candidatsAvecLots = analysis.candidats.filter(c => c.lotsGagnes.length > 0);
+      const prefix = procedureInfo.numeroAfpa.substring(0, 5);
 
       for (const candidat of candidatsAvecLots) {
         const noti5Data = buildNoti5Data(candidat);
         const blob = await generateNoti5HtmlAsBlob(noti5Data);
-        const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
         const lots = candidat.lotsGagnes.filter(l => l.numero).map(l => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
         const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
         const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
-        const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI5.html`;
-        zip.file(fileName, blob);
+        zip.file(`${prefix}_${lotStr}_${titulaireStr}_NOTI5.html`, blob);
       }
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
-      saveAs(zipBlob, `NOTI5_${procedureInfo.numeroAfpa.replace(/\//g, '-')}.zip`);
+      saveAs(zipBlob, `NOTI5_${prefix}.zip`);
       alert(`${candidatsAvecLots.length} documents NOTI5 générés avec succès !`);
     } catch (error) {
       console.error('Erreur génération NOTI5:', error);
@@ -191,21 +187,20 @@ export default function MultiLotsDashboard({
     setIsGenerating(true);
     try {
       const zip = new JSZip();
-      const candidatsAvecLots = [...analysis.candidatsGagnants, ...analysis.candidatsMixtes];
+      const candidatsAvecLots = analysis.candidats.filter(c => c.lotsGagnes.length > 0);
+      const prefix = procedureInfo.numeroAfpa.substring(0, 5);
 
       for (const candidat of candidatsAvecLots) {
         const noti5Data = buildNoti5Data(candidat);
         const blob = await generateNoti5PdfBlobReact(noti5Data);
-        const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
         const lots = candidat.lotsGagnes.filter(l => l.numero).map(l => l.numero.replace(/[^a-zA-Z0-9]/g, ''));
         const lotStr = lots.length > 0 ? `Lot${lots.join('-')}` : 'Lot';
         const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
-        const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI5.pdf`;
-        zip.file(fileName, blob);
+        zip.file(`${prefix}_${lotStr}_${titulaireStr}_NOTI5.pdf`, blob);
       }
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
-      saveAs(zipBlob, `NOTI5_PDF_${procedureInfo.numeroAfpa.replace(/\//g, '-')}.zip`);
+      saveAs(zipBlob, `NOTI5_PDF_${prefix}.zip`);
       alert(`${candidatsAvecLots.length} PDF NOTI5 générés avec succès !`);
     } catch (error) {
       console.error('Erreur génération NOTI5 PDF:', error);
@@ -220,24 +215,22 @@ export default function MultiLotsDashboard({
     setIsGenerating(true);
     try {
       const zip = new JSZip();
-      const candidatsAvecPerdus = [...analysis.candidatsPerdants, ...analysis.candidatsMixtes];
+      const candidatsAvecPerdus = analysis.candidats.filter(c => c.lotsPerdus.length > 0);
+      const prefix = procedureInfo.numeroAfpa.substring(0, 5);
 
       for (const candidat of candidatsAvecPerdus) {
-        // 1 document par lot perdu
         for (const lotPerdu of candidat.lotsPerdus) {
           const noti3Data = buildNoti3DataForLot(candidat, lotPerdu);
           const blob = await generateNoti3HtmlAsBlob(noti3Data);
-          const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
           const lotStr = `Lot${lotPerdu.numero.replace(/[^a-zA-Z0-9]/g, '')}`;
           const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
-          const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI3.html`;
-          zip.file(fileName, blob);
+          zip.file(`${prefix}_${lotStr}_${titulaireStr}_NOTI3.html`, blob);
         }
       }
 
       const totalDocs = candidatsAvecPerdus.reduce((sum, c) => sum + c.lotsPerdus.length, 0);
       const zipBlob = await zip.generateAsync({ type: 'blob' });
-      saveAs(zipBlob, `NOTI3_${procedureInfo.numeroAfpa.replace(/\//g, '-')}.zip`);
+      saveAs(zipBlob, `NOTI3_${prefix}.zip`);
       alert(`${totalDocs} documents NOTI3 générés avec succès !`);
     } catch (error) {
       console.error('Erreur génération NOTI3:', error);
@@ -252,24 +245,22 @@ export default function MultiLotsDashboard({
     setIsGenerating(true);
     try {
       const zip = new JSZip();
-      const candidatsAvecPerdus = [...analysis.candidatsPerdants, ...analysis.candidatsMixtes];
+      const candidatsAvecPerdus = analysis.candidats.filter(c => c.lotsPerdus.length > 0);
+      const prefix = procedureInfo.numeroAfpa.substring(0, 5);
 
       for (const candidat of candidatsAvecPerdus) {
-        // 1 document par lot perdu
         for (const lotPerdu of candidat.lotsPerdus) {
           const noti3Data = buildNoti3DataForLot(candidat, lotPerdu);
           const blob = await generateNoti3PdfBlobReact(noti3Data);
-          const prefix = procedureInfo.numeroAfpa.replace(/[^a-zA-Z0-9]/g, '_');
           const lotStr = `Lot${lotPerdu.numero.replace(/[^a-zA-Z0-9]/g, '')}`;
           const titulaireStr = sanitizeFileName(candidat.nom).substring(0, 25);
-          const fileName = `${prefix}_${lotStr}_${titulaireStr}_NOTI3.pdf`;
-          zip.file(fileName, blob);
+          zip.file(`${prefix}_${lotStr}_${titulaireStr}_NOTI3.pdf`, blob);
         }
       }
 
       const totalDocs = candidatsAvecPerdus.reduce((sum, c) => sum + c.lotsPerdus.length, 0);
       const zipBlob = await zip.generateAsync({ type: 'blob' });
-      saveAs(zipBlob, `NOTI3_PDF_${procedureInfo.numeroAfpa.replace(/\//g, '-')}.zip`);
+      saveAs(zipBlob, `NOTI3_PDF_${prefix}.zip`);
       alert(`${totalDocs} PDF NOTI3 générés avec succès !`);
     } catch (error) {
       console.error('Erreur génération NOTI3 PDF:', error);
@@ -559,17 +550,12 @@ export default function MultiLotsDashboard({
         </span>
         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-100 border border-green-100 dark:border-green-700">
           <Award className="w-3 h-3" />
-          <span className="font-medium">{analysis.candidatsGagnants.length}</span>
+          <span className="font-medium">{analysis.candidats.filter(c => c.lotsGagnes.length > 0).length}</span>
           <span className="opacity-80">gagnants</span>
-        </span>
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-900/30 text-orange-800 dark:text-orange-100 border border-orange-100 dark:border-orange-700">
-          <Users className="w-3 h-3" />
-          <span className="font-medium">{analysis.candidatsMixtes.length}</span>
-          <span className="opacity-80">mixtes</span>
         </span>
         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-100 border border-red-100 dark:border-red-700">
           <XCircle className="w-3 h-3" />
-          <span className="font-medium">{analysis.candidatsPerdants.length}</span>
+          <span className="font-medium">{analysis.candidats.filter(c => c.lotsPerdus.length > 0).length}</span>
           <span className="opacity-80">perdants</span>
         </span>
       </div>
@@ -595,58 +581,58 @@ export default function MultiLotsDashboard({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
               <button
                 onClick={generateAllNoti1}
-                disabled={isGenerating || (analysis.candidatsGagnants.length + analysis.candidatsMixtes.length === 0)}
+                disabled={isGenerating || analysis.candidats.filter(c => c.lotsGagnes.length > 0).length === 0}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors text-sm"
               >
                 <FileText className="w-4 h-4" />
-                NOTI1 ({analysis.candidatsGagnants.length + analysis.candidatsMixtes.length})
+                NOTI1 ({analysis.candidats.filter(c => c.lotsGagnes.length > 0).length})
               </button>
 
               <button
                 onClick={generateAllNoti5}
-                disabled={isGenerating || (analysis.candidatsGagnants.length + analysis.candidatsMixtes.length === 0)}
+                disabled={isGenerating || analysis.candidats.filter(c => c.lotsGagnes.length > 0).length === 0}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors text-sm"
               >
                 <FileText className="w-4 h-4" />
-                NOTI5 ({analysis.candidatsGagnants.length + analysis.candidatsMixtes.length})
+                NOTI5 ({analysis.candidats.filter(c => c.lotsGagnes.length > 0).length})
               </button>
 
               <button
                 onClick={generateAllNoti3}
-                disabled={isGenerating || (analysis.candidatsPerdants.length + analysis.candidatsMixtes.length === 0)}
+                disabled={isGenerating || analysis.candidats.filter(c => c.lotsPerdus.length > 0).length === 0}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors text-sm"
               >
                 <FileText className="w-4 h-4" />
-                NOTI3 ({analysis.candidatsPerdants.reduce((sum, c) => sum + c.lotsPerdus.length, 0) + analysis.candidatsMixtes.reduce((sum, c) => sum + c.lotsPerdus.length, 0)} docs)
+                NOTI3 ({analysis.candidats.filter(c => c.lotsPerdus.length > 0).reduce((sum, c) => sum + c.lotsPerdus.length, 0)} docs)
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <button
                 onClick={generateAllNoti1Pdf}
-                disabled={isGenerating || (analysis.candidatsGagnants.length + analysis.candidatsMixtes.length === 0)}
+                disabled={isGenerating || analysis.candidats.filter(c => c.lotsGagnes.length > 0).length === 0}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors text-sm"
               >
                 <FileText className="w-4 h-4" />
-                NOTI1 PDF ({analysis.candidatsGagnants.length + analysis.candidatsMixtes.length})
+                NOTI1 PDF ({analysis.candidats.filter(c => c.lotsGagnes.length > 0).length})
               </button>
 
               <button
                 onClick={generateAllNoti5Pdf}
-                disabled={isGenerating || (analysis.candidatsGagnants.length + analysis.candidatsMixtes.length === 0)}
+                disabled={isGenerating || analysis.candidats.filter(c => c.lotsGagnes.length > 0).length === 0}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors text-sm"
               >
                 <FileText className="w-4 h-4" />
-                NOTI5 PDF ({analysis.candidatsGagnants.length + analysis.candidatsMixtes.length})
+                NOTI5 PDF ({analysis.candidats.filter(c => c.lotsGagnes.length > 0).length})
               </button>
 
               <button
                 onClick={generateAllNoti3Pdf}
-                disabled={isGenerating || (analysis.candidatsPerdants.length + analysis.candidatsMixtes.length === 0)}
+                disabled={isGenerating || analysis.candidats.filter(c => c.lotsPerdus.length > 0).length === 0}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors text-sm"
               >
                 <FileText className="w-4 h-4" />
-                NOTI3 PDF ({analysis.candidatsPerdants.reduce((sum, c) => sum + c.lotsPerdus.length, 0) + analysis.candidatsMixtes.reduce((sum, c) => sum + c.lotsPerdus.length, 0)} docs)
+                NOTI3 PDF ({analysis.candidats.filter(c => c.lotsPerdus.length > 0).reduce((sum, c) => sum + c.lotsPerdus.length, 0)} docs)
               </button>
             </div>
           </div>
@@ -668,7 +654,7 @@ export default function MultiLotsDashboard({
             />
             
             <div className="flex gap-2">
-              {(['all', 'gagnants', 'perdants', 'mixtes'] as const).map((type) => (
+              {(['all', 'gagnants', 'perdants'] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => setFilterType(type)}

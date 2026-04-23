@@ -93,6 +93,7 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
     doc.setFontSize(7.5);
     doc.setTextColor(140, 140, 140);
     if (numAfpa) doc.text(`N° ${numAfpa}`, ML, FOOTER_Y);
+    doc.text('Rapport de présentation', W / 2, FOOTER_Y, { align: 'center' });
     doc.text(`${pg} / ${total}`, W - ML, FOOTER_Y, { align: 'right' });
     doc.setTextColor(0, 0, 0);
   };
@@ -189,7 +190,7 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
     head: string[][],
     body: (string | number)[][],
     colStyles?: any,
-    highlightFirst = false
+    highlightRowIdx: number | false = false
   ) => {
     brk(30);
     autoTable(doc, {
@@ -213,9 +214,9 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
       },
       alternateRowStyles: { fillColor: GRAY_LT },
       margin: { left: ML, right: ML },
-      didParseCell: highlightFirst
+      didParseCell: highlightRowIdx !== false
         ? (data: any) => {
-            if (data.section === 'body' && data.row.index === 0) {
+            if (data.section === 'body' && data.row.index === highlightRowIdx) {
               data.cell.styles.fillColor = [209, 250, 229];
               data.cell.styles.fontStyle = 'bold';
             }
@@ -378,7 +379,9 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
   y += 3;
 
   if (data?.section7_2_syntheseLots?.lots) {
-    (data.section7_2_syntheseLots.lots as any[]).forEach((lot: any) => {
+    (data.section7_2_syntheseLots.lots as any[]).forEach((lot: any, lotIdx: number) => {
+      // Espace AVANT le titre du lot (sauf premier), pas après
+      if (lotIdx > 0) y += 6;
       addSubTitle(lot.nomLot || 'Lot');
       if (lot.tableau?.length > 0) {
         const head7: string[][] = [[
@@ -395,7 +398,18 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
           Number(o.noteTechnique  ?? o.noteTechniqueSur40  ?? 0).toFixed(2),
           fmt(o.montantTTC || 0),
         ]);
-        addTable(head7, body7, {}, true);
+        // Largeurs fixes pour tous les lots (évite décalage de la colonne Rang)
+        const colStyles7 = {
+          0: { cellWidth: 58 },                        // Raison sociale
+          1: { cellWidth: 12, halign: 'center' as const },  // Rang
+          2: { cellWidth: 18, halign: 'right' as const },   // Note /100
+          3: { cellWidth: 18, halign: 'right' as const },   // Fin.
+          4: { cellWidth: 18, halign: 'right' as const },   // Tech.
+          5: { cellWidth: 'auto' as const, halign: 'right' as const }, // Montant TTC
+        };
+        // Surligner la ligne dont le rang est 1 (pas forcément la première ligne)
+        const rank1Idx = body7.findIndex(row => row[1] === '1');
+        addTable(head7, body7, colStyles7, rank1Idx >= 0 ? rank1Idx : false);
       }
     });
     const total7 = data.section7_2_syntheseLots.montantTotalTTC;
@@ -411,7 +425,15 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
       Number(o.noteFinaleSur100).toFixed(2),
       fmt(o.montantTTC || 0),
     ]);
-    addTable(head7, body7, {}, true);
+    const colStylesMono = {
+      0: { cellWidth: 14, halign: 'center' as const }, // Rang
+      2: { halign: 'right' as const }, // Tech.
+      3: { halign: 'right' as const }, // Fin.
+      4: { halign: 'right' as const }, // Note /100
+      5: { halign: 'right' as const }, // Montant TTC
+    };
+    const rank1IdxMono = body7.findIndex(row => row[0] === '#1');
+    addTable(head7, body7, colStylesMono, rank1IdxMono >= 0 ? rank1IdxMono : false);
     const estim = data.section7_valeurOffres.montantEstime;
     const attr  = data.section7_valeurOffres.montantAttributaire;
     if (estim > 0) addText(`Montant de l'estimation : ${fmt(estim)}`, { size: 10, lh: 5 });
@@ -447,7 +469,16 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
       fmt(l.gainsTTC || 0),
       `${Number(l.gainsPourcent ?? 0).toFixed(1)}%`,
     ]);
-    addTable(head8, body8);
+    const colStyles8 = {
+      1: { halign: 'right' as const },
+      2: { halign: 'right' as const },
+      3: { halign: 'right' as const },
+      4: { halign: 'right' as const },
+      5: { halign: 'right' as const },
+      6: { halign: 'right' as const },
+      7: { halign: 'right' as const },
+    };
+    addTable(head8, body8, colStyles8);
     addText(`Performance achat globale (${refCal}) : ${Number(s8.performanceAchatPourcent).toFixed(1)}%`, { size: 10, lh: 5 });
     addText(`Impact budgétaire total estimé : ${fmt(s8.impactBudgetaireTTC)} TTC (soit ${fmt(s8.impactBudgetaireHT)} HT)`, { size: 10, lh: 5 });
   } else if (data?.section8_1_synthesePerformance) {
@@ -461,7 +492,7 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
         l.nomLot || '—',
         `${Number(l.performancePourcent).toFixed(1)}%`,
         fmt(l.impactBudgetaireTTC || 0),
-      ]));
+      ]), { 1: { halign: 'right' as const }, 2: { halign: 'right' as const } });
     }
   } else if (s8) {
     addText(`Performance achat (${refCal}) : ${Number(s8.performanceAchatPourcent).toFixed(1)}%`, { size: 10, lh: 5 });
@@ -482,7 +513,7 @@ async function buildRapportPdf(data: any): Promise<jsPDF> {
       const r1 = lot.tableau?.find((o: any) => o.rangFinal === 1) || lot.tableau?.[0];
       return [lot.nomLot || '—', r1?.raisonSociale || '—', r1 ? fmt(r1.montantTTC || 0) : '—'];
     });
-    addTable(head9, body9);
+    addTable(head9, body9, { 2: { halign: 'right' as const } });
     addText(`Montant total de l'attribution : ${fmt(data.section7_2_syntheseLots.montantTotalTTC)}`, { size: 10, lh: 5, bold: true });
   } else {
     addText(
