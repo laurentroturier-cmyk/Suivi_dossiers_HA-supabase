@@ -364,7 +364,7 @@ export default function NotiParLots({
         maxEco,
         maxTech,
       },
-      delaiStandstill: '11 jours',
+      delaiStandstill: '11',
       signature: {
         lieu: 'Montreuil',
         date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),

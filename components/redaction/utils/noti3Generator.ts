@@ -537,7 +537,7 @@ function createNoti3Document(data: Noti3Data): Document {
         new Paragraph({
           children: [
             new TextRun({
-              text: `Le délai de suspension de la signature du marché public ou de l'accord-cadre est de ${data.delaiStandstill} jours, à compter de la date d'envoi de la présente notification.`,
+              text: `Le délai de suspension de la signature du marché public ou de l'accord-cadre est de ${data.delaiStandstill || '0'} jours, à compter de la date d'envoi de la présente notification.`,
               font: 'Aptos (Corps)',
               size: 22,
             }),

@@ -500,7 +500,7 @@ export async function generateNoti3Html(data: Noti3Data): Promise<string> {
     <div class="section-header">F - Délais et voies de recours</div>
     <div class="section-content">
       <p style="margin-bottom: 12px; page-break-inside: avoid;">
-        Le délai de suspension de la signature du marché public ou de l'accord-cadre est de <strong>${escapeHtml(data.delaiStandstill)} jours</strong>,
+        Le délai de suspension de la signature du marché public ou de l'accord-cadre est de <strong>${escapeHtml(data.delaiStandstill || '0')} jours</strong>,
         à compter de la date d'envoi de la présente notification.
       </p>
 

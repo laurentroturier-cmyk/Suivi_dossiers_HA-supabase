@@ -606,7 +606,7 @@ export const Noti3PDF = ({
           <Text style={styles.sectionHeader}>F – Délais et voies de recours</Text>
           <View style={styles.sectionContent}>
             <Text style={[styles.paragraph, { marginBottom: 6 }]}>
-              {`Le délai de suspension de la signature du marché public ou de l'accord-cadre est de ${data.delaiStandstill || '11'} jours, à compter de la date d'envoi de la présente notification.`}
+              {`Le délai de suspension de la signature du marché public ou de l'accord-cadre est de ${data.delaiStandstill || '0'} jours, à compter de la date d'envoi de la présente notification.`}
             </Text>
 
             <View style={{ marginTop: 10, breakInside: 'avoid' }}>
