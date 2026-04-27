@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, ClipboardList } from 'lucide-react';
 import { NAVIGATION_DOMAINES } from '@/config/navigationConfig';
 
 interface LandingPageProps {
