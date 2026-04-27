@@ -89,7 +89,7 @@ import { ThemeToggle } from './components/ThemeToggle';
 
 // Import Navigation System
 import { useNavigationHistory } from './hooks';
-import NavigationControls from './components/NavigationControls';
+import ModuleSidebar from './components/ModuleSidebar';
 
 const BUCKET_NAME = 'Projets DNA';
 
@@ -3160,23 +3160,18 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Navigation Controls */}
-      {!isOnHomePage && (
-        <div className={`${activeTab === 'home' ? 'max-w-7xl mx-auto px-6' : 'w-full px-6'} mt-6`}>
-          <NavigationControls
-            onBack={handleGoBack}
-            onHome={handleGoToHome}
-            canGoBack={canGoBack}
-            isHome={isOnHomePage}
-            currentPageTitle={navState?.title || ''}
-            mode="full"
-            showBreadcrumb={true}
-            breadcrumb={getBreadcrumb()}
-          />
-        </div>
-      )}
-
-      <main className={`${activeTab === 'home' ? 'max-w-7xl mx-auto px-6' : 'w-full px-6'} mt-10`}>
+      {/* Layout flex : sidebar + contenu */}
+      <div className="flex min-h-0">
+        <ModuleSidebar
+          isVisible={!isOnHomePage}
+          activeTab={activeTab}
+          onNavigate={(tab, title) => navigateTo(tab, title)}
+          onGoHome={handleGoToHome}
+          onOpenAdmin={() => setShowAdminDashboard(true)}
+          isAdmin={authState.profile?.role === 'admin' || authState.profile?.role === 'gral'}
+        />
+        <div className="flex-1 min-w-0">
+      <main className={`${activeTab === 'home' ? 'max-w-7xl mx-auto px-6' : 'px-6'} mt-10`}>
         {!editingProject && !editingProcedure && (
           <>
             {activeTab === 'home' && (
@@ -5734,6 +5729,8 @@ const App: React.FC = () => {
         })()}
 
       </main>
+        </div>{/* end flex-1 content wrapper */}
+      </div>{/* end flex sidebar+content row */}
 
       {/* Modal de prévisualisation du projet rattaché */}
       {showProjectPreview && editingProcedure && editingProcedure.IDProjet && (() => {
